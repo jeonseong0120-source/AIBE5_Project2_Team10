@@ -1,0 +1,73 @@
+# 🚀 DevNear (AI 기반 지역·재능 매칭 플랫폼)
+
+<p align="center">
+  <img width="633" height="298" alt="image" src="https://github.com/user-attachments/assets/5c21e5b1-72f7-42b5-987b-0c6f87d31d2f" />
+
+  alt="DevNear Logo" 
+</p>
+
+## 📌 프로젝트 개요
+**DevNear**는 기존 직무 중심 프리랜서 플랫폼의 한계를 극복하고, **‘재능(Skill)’**과 **‘지역(Location)’**을 기반으로 사용자와 프리랜서를 연결하는 하이브리드 매칭 플랫폼입니다. AI 기반 추천 시스템을 통해 최적의 파트너를 자동으로 매칭하며, 온라인뿐만 아니라 오프라인 협업 환경까지 완벽하게 지원합니다.
+
+* **개발 기간:** 202X.XX.XX ~ 202X.XX.XX
+* **참여 인원:** [X]명
+
+---
+
+## 🎯 주요 기능 (Core Features)
+
+### 1. 사용자 맞춤형 역할 시스템
+* **클라이언트 (Client):** 프로젝트 등록, 조건(예산, 기술, 지역 등) 설정, 프리랜서 탐색 및 제안
+* **프리랜서 (Freelancer):** 프로필 및 포트폴리오 관리, 재능/지역 설정, 프로젝트 지원
+* **겸업 사용자 (Both):** 하나의 계정으로 클라이언트/프리랜서 모드를 자유롭게 전환 (GNB 토글 지원)
+
+### 2. AI & 지역 기반 매칭 시스템 (핵심 도메인)
+* **재능 태그 유사도 분석:** 요구 기술과 보유 기술을 비교하여 일치율 계산
+* **지역 기반 필터링:** 오프라인 협업 시 좌표 및 거리 기반 근거리 사용자 우선 탐색
+* **매칭 점수 산정:** `재능 태그 일치율` + `평점` + `등급 가중치`를 종합하여 최적의 파트너 추천
+
+### 3. 신뢰 기반 리뷰 및 사용자 검증
+* **상호 평가 시스템:** 프로젝트 완료 후 클라이언트와 프리랜서 양방향 5점 만점 별점 및 리뷰 작성
+* **프리랜서 등급제:** 인증 프리랜서, TOP Talent 등 조건 달성에 따른 등급 부여 (매칭 가중치 반영)
+
+### 4. 탐색 및 커뮤니케이션
+* **Pinterest형 피드:** 직관적인 포트폴리오 탐색 환경 제공
+* **1:1 채팅:** 프로젝트 단위 채팅방 생성 및 실시간 메시지 송수신
+* **커뮤니티:** 프리랜서 간 정보 공유 및 네트워킹을 위한 게시판
+
+---
+
+## ⚙️ 시스템 아키텍처 및 기술 스택 (Tech Stack)
+
+### Backend
+* [Java 17+] / [Spring Boot]
+* [MySQL] / [JPA (Hibernate)]
+* [JWT (JSON Web Token)]
+
+### Frontend
+* [React] / [Vue.js]
+* [Tailwind CSS] / [Styled Components]
+
+### Infrastructure & Tools
+* [AWS EC2 / RDS]
+* [Git / GitHub] / [Figma]
+
+*(※ 위 기술 스택은 예시이므로 실제 프로젝트 환경에 맞게 수정해 주세요.)*
+
+---
+
+## 📊 데이터베이스 모델링 (ERD)
+<img width="2840" height="1892" alt="Project_erd" src="https://github.com/user-attachments/assets/5ee13eed-e49a-4ee1-b0ee-8653ce9bb0b9" />
+
+
+*(프로젝트의 주요 테이블 구조: User, Project, Freelancer, Review, Chat, Community 등)*
+
+---
+
+## 📍 향후 고도화 계획 (Roadmap)
+- [ ] 추천 알고리즘 고도화 (머신러닝 API 연동)
+- [ ] 오프라인 매칭을 위한 지도 기반 UI/UX 적용
+- [ ] 실시간 채팅 내 이미지 전송 및 알림 고도화 (WebSocket 적용)
+- [ ] 허위 리뷰 방지 및 신고 시스템 도입
+
+---
