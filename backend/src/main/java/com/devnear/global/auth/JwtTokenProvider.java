@@ -50,16 +50,21 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-
-    public boolean validateToken(String token) {
+    /**
+     * 토큰의 유효성을 검사합니다.
+     * @throws JwtException | IllegalArgumentException 토큰이 유효하지 않을 경우 발생
+     */
+    public void validateToken(String token) {
         try {
             Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token);
-            return true;
+            // 검증 성공 시 아무것도 하지 않고 통과
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            // 에러를 삼키지 않고 다시 던짐
+            // 이렇게 해야 Filter의 catch 블록에서 로그를 상세히 남길 수 있음
+            throw e;
         }
     }
 
