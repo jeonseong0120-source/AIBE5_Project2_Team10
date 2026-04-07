@@ -1,0 +1,4 @@
+reviews:
+  auto_review: true
+  auto_summarize: true
+  request_changes_workflow: true
