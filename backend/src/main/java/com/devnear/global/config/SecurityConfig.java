@@ -1,33 +1,49 @@
 package com.devnear.global.config;
 
+import com.devnear.global.auth.JwtAuthenticationFilter; // 추가
+import com.devnear.global.auth.JwtTokenProvider; // 추가
+import lombok.RequiredArgsConstructor; // 추가
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy; // 추가
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // 추가
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor // 1. JwtTokenProvider 주입을 위해 추가
 public class SecurityConfig {
+
+    private final JwtTokenProvider jwtTokenProvider; // 2. 추가
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // API 서버이므로 CSRF 보안은 끕니다.
+                .csrf(AbstractHttpConfigurer::disable)
+                // 3. 세션 사용 안 함 설정 (JWT 방식의 필수 관문)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authorizeHttpRequests(auth -> auth
-                        // 1. 회원가입과 스웨거 관련 주소는 모두 허용
-                        .requestMatchers("/api/users/register", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        // 2. 나머지는 일단 다 열어둠 (나중에 기능 완성되면 하나씩 잠글 거임)
-                        .anyRequest().permitAll()
-                );
-
+                        // 회원가입, 로그인, 스웨거는 검문 없이 통과
+                        .requestMatchers("/api/users/register", "/api/users/login", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // 4. 나머지는 이제 '인증(JWT)'이 필요함 (anyRequest().authenticated()로 변경)
+                        .anyRequest().authenticated()
+                )
+                // 5. 검문소(JwtAuthenticationFilter)를 기본 로그인 필터 앞에 배치
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-    // 비밀번호 암호화
+
     @Bean
-    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
-        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
