@@ -7,6 +7,7 @@ import com.devnear.web.dto.skill.SkillResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -69,7 +70,13 @@ public class SkillService {
                 .category(category)
                 .isDefault(false)
                 .build();
-        return SkillResponse.from(skillRepository.save(skill));
+        
+        try {
+            return SkillResponse.from(skillRepository.save(skill));
+        } catch (DataIntegrityViolationException e) {
+            // 다른 사용자가 0.001초 차이로 먼저 같은 이름의 스킬을 저장했을 때 방어
+            throw new IllegalArgumentException("이미 존재하는 스킬입니다: " + name);
+        }
     }
 
     // 스킬 삭제
