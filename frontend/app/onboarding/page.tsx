@@ -14,7 +14,8 @@ export default function OnboardingPage() {
     useEffect(() => {
         const checkGuest = async () => {
             try {
-                const res = await api.get("/api/v1/users/me");
+                // [수정] api 인스턴스에 이미 baseURL이 /api로 설정되어 있으므로 /api를 빼야 합니다.
+                const res = await api.get("/v1/users/me");
                 const currentRole = res.data.role;
                 if (!(currentRole === "GUEST" || currentRole === "ROLE_GUEST")) {
                     router.push("/");
@@ -37,7 +38,8 @@ export default function OnboardingPage() {
 
         setLoading(true);
         try {
-            const res = await api.post("/api/v1/users/onboarding", { nickname: normalizedNickname, role });
+            // [수정] api 인스턴스에 이미 baseURL이 /api로 설정되어 있으므로 /api를 빼야 합니다.
+            const res = await api.post("/v1/users/onboarding", { nickname: normalizedNickname, role });
 
             // [수정 포인트] 토큰이 없으면 여기서 바로 컷! (Fail-Fast)
             const newToken = res.data.accessToken;
@@ -51,12 +53,13 @@ export default function OnboardingPage() {
             console.log("정식 요원 증표 교체 완료!");
 
             try {
-                              const userRes = await api.get("/api/v1/users/me");
-                              alert(`${userRes.data.nickname}님, 합류를 환영합니다!`);
+                // [수정] api 인스턴스에 이미 baseURL이 /api로 설정되어 있으므로 /api를 빼야 합니다.
+                const userRes = await api.get("/v1/users/me");
+                alert(`${userRes.data.nickname}님, 합류를 환영합니다!`);
             } catch {
-                                alert(`${normalizedNickname}님, 합류를 환영합니다!`);
+                alert(`${normalizedNickname}님, 합류를 환영합니다!`);
             }
-            +            router.replace("/");
+            router.replace("/");
 
         } catch (err: any) {
             // 토큰 누락 에러나 API 에러가 여기서 타당하게 처리됩니다.

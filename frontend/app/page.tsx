@@ -21,7 +21,7 @@ export default function Home() {
       }
 
       try {
-        const res = await api.get("/api/v1/users/me");
+        const res = await api.get("/v1/users/me");
         console.log("2. 서버 응답 데이터:", res.data.role); // 역할(role)이 어떻게 오는지 확인
 
         const currentRole = res.data.role;
@@ -61,7 +61,7 @@ export default function Home() {
           <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
             {/* 로그인 상태에 따라 메시지 변경 */}
             <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-              {user ? `${user.nickname} 요원님, 기지에 오신 걸 환영합니다!` : "To get started, edit the page.tsx file."}
+              {user ? `${user.nickname} 회원님, 환영합니다 오늘 기분은 어떠신가요?` : "To get started, edit the page.tsx file."}
             </h1>
 
             <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
