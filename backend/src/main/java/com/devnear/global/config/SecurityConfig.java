@@ -41,6 +41,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                // [추가] 인증 실패 시 리다이렉트 방지 로직입니당
+                .exceptionHandling(exception -> exception
+                        // 인증되지 않은 사용자가 API 요청 시 302(리다이렉트)가 아닌 401(Unauthorized)을 반환하게 함
+                        .authenticationEntryPoint(new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED))
+                )
                 .authorizeHttpRequests(auth -> auth
                         // [추가] 브라우저의 preflight(OPTIONS) 요청이 소셜 로그인 페이지로 리다이렉트 되는 현상 방지
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
