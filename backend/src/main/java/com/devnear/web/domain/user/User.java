@@ -105,5 +105,9 @@ public class User extends BaseTimeEntity implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return this.status == UserStatus.ACTIVE; }
+    public boolean isEnabled() { 
+        // [수정] INACTIVE(휴식 중) 유저도 로그인 자체는 가능해야 하므로,
+        // 오직 WITHDRAWN(탈퇴) 상태인 경우에만 비활성화(false)로 처리함.
+        return this.status != UserStatus.WITHDRAWN; 
+    }
 }
