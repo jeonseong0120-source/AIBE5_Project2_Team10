@@ -50,9 +50,13 @@ export default function OnboardingPage() {
             localStorage.setItem("accessToken", newToken);
             console.log("정식 요원 증표 교체 완료!");
 
-            const userRes = await api.get("/api/v1/users/me");
-            alert(`${userRes.data.nickname}님, 합류를 환영합니다!`);
-            router.push("/");
+            try {
+                              const userRes = await api.get("/api/v1/users/me");
+                              alert(`${userRes.data.nickname}님, 합류를 환영합니다!`);
+            } catch {
+                                alert(`${normalizedNickname}님, 합류를 환영합니다!`);
+            }
+            +            router.replace("/");
 
         } catch (err: any) {
             // 토큰 누락 에러나 API 에러가 여기서 타당하게 처리됩니다.
