@@ -28,6 +28,7 @@ export default function LoginPage() {
         }
     };
 
+    // [수정] 배포 환경을 고려하여 .env.local의 API 주소를 사용하도록 수정
     const handleGoogleLogin = () => {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
         window.location.href = `${baseUrl}/oauth2/authorization/google`;
@@ -183,12 +184,14 @@ const matchingScore = (tags, rating, tier) => {
                     </div>
                     <div className="grid md:grid-cols-3 gap-8">
                         {[
-                            { title: "일반 회원", req: "가입 완료", color: "zinc-400", desc: "기지 활동의 시작" },
-                            { title: "인증 프리랜서", req: "완료 3건 + 평점 4.0↑", color: "[#7A4FFF]", desc: "신뢰받는 검증 회원" },
-                            { title: "TOP Talent", req: "완료 10건 + 평점 4.5↑", color: "[#FF7D00]", desc: "기지 최상위 능력자" },
+                            // [수정] Tailwind CSS에서 동적 클래스(`bg-${color}`)를 쓰면 빌드 시 색상이 날아가는 버그 수정
+                            // 전체 클래스명("bg-zinc-400" 등)을 온전히 적어주어야 PurgeCSS가 인식하고 남겨둠
+                            { title: "일반 회원", req: "가입 완료", color: "bg-zinc-400", desc: "기지 활동의 시작" },
+                            { title: "인증 프리랜서", req: "완료 3건 + 평점 4.0↑", color: "bg-[#7A4FFF]", desc: "신뢰받는 검증 회원" },
+                            { title: "TOP Talent", req: "완료 10건 + 평점 4.5↑", color: "bg-[#FF7D00]", desc: "기지 최상위 능력자" },
                         ].map((tier, idx) => (
                             <div key={idx} className="bg-white p-10 rounded-[2.5rem] border border-zinc-100 shadow-lg hover:-translate-y-2 transition-transform">
-                                <div className={`w-12 h-1 bg-${tier.color} mb-6`}></div>
+                                <div className={`w-12 h-1 ${tier.color} mb-6`}></div>
                                 <h3 className="text-2xl font-black mb-2">{tier.title}</h3>
                                 <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">Requirements: {tier.req}</p>
                                 <p className="text-zinc-500 font-medium">{tier.desc}</p>

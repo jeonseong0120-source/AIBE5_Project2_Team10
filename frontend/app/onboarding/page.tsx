@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "../lib/axios";
-import Link from "next/link";
 
 export default function OnboardingPage() {
     const [nickname, setNickname] = useState("");
@@ -14,6 +13,7 @@ export default function OnboardingPage() {
     useEffect(() => {
         const checkGuest = async () => {
             try {
+                // api 인스턴스에 이미 baseURL이 /api로 설정되어 있으므로 /api를 빼야 합니다.
                 const res = await api.get("/v1/users/me");
                 const currentRole = res.data.role;
                 if (!(currentRole === "GUEST" || currentRole === "ROLE_GUEST")) {
@@ -37,13 +37,18 @@ export default function OnboardingPage() {
 
         setLoading(true);
         try {
+            // api 인스턴스에 이미 baseURL이 /api로 설정되어 있으므로 /api를 빼야 합니다.
             const res = await api.post("/v1/users/onboarding", { nickname: normalizedNickname, role });
+
+            // 토큰이 없으면 여기서 바로 컷! (Fail-Fast)
             const newToken = res.data.accessToken;
             if (!newToken) {
                 throw new Error("인증 토큰을 받지 못했습니다. 다시 로그인해주세요.");
             }
 
+            // 토큰이 있을 때만 안전하게 저장하고 다음 단계 진행
             localStorage.setItem("accessToken", newToken);
+            console.log("정식 요원 증표 교체 완료!");
 
             try {
                 const userRes = await api.get("/v1/users/me");
@@ -98,7 +103,7 @@ export default function OnboardingPage() {
 
             {/* [상단 네비게이션] 블랙 배경 + 컬러 로고 */}
             <nav className="w-full py-5 px-10 bg-zinc-950 border-b border-zinc-800 flex justify-between items-center fixed top-0 left-0 z-50">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
+                <div className="font-black text-2xl tracking-tighter cursor-default">
                     <span className="text-[#FF7D00]">Dev</span>
                     <span className="text-[#7A4FFF]">Near</span>
                 </div>
