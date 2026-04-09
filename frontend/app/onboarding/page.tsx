@@ -35,9 +35,21 @@ export default function OnboardingPage() {
 
         setLoading(true);
         try {
-            await api.post("/api/v1/users/onboarding", { nickname, role });
-            const res = await api.get("/api/v1/users/me");
-            alert(`${res.data.nickname}님, DevNear에 오신 것을 환영합니다!`);
+            // 1. 온보딩 요청을 보내고 '새로운 토큰'이 담긴 응답을 받습니다.
+            const res = await api.post("/api/v1/users/onboarding", { nickname, role });
+
+            // 2. [핵심] 백엔드가 준 승격된 새 토큰(ROLE_USER 등)을 금고에 저장합니다.
+            // 백엔드 DTO 구조에 따라 res.data.accessToken 또는 res.data 등으로 확인 필요!
+            const newToken = res.data.accessToken;
+            if (newToken) {
+                localStorage.setItem("accessToken", newToken);
+                console.log("새로운 정식 요원 증표 저장 완료!");
+            }
+
+            // 3. 이제 새 토큰을 들고 내 정보를 다시 가져옵니다. (이제 정식 요원으로 보임)
+            const userRes = await api.get("/api/v1/users/me");
+            alert(`${userRes.data.nickname}님, DevNear에 오신 것을 환영합니다!`);
+
             router.push("/");
         } catch (err: any) {
             alert(err.response?.data?.message || "설정 중 오류가 발생했습니다.");
@@ -45,7 +57,6 @@ export default function OnboardingPage() {
             setLoading(false);
         }
     };
-
     if (loading) return <div className="flex min-h-screen items-center justify-center bg-white font-bold">기지 스캔 중...</div>;
 
     return (
