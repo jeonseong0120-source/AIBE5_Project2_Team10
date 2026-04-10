@@ -49,9 +49,19 @@ public class Project extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean offline; // 상주 근무 여부 (기본값 0/false)
 
+    @Column(length = 500)
+    private String location;
+
+    @Column
+    private Double latitude; // 위도
+
+    @Column
+    private Double longitude; // 경도
+
     @Builder
     public Project(ClientProfile clientProfile, String projectName, Integer budget,
-                   LocalDate deadline, String detail, boolean online, boolean offline) {
+                   LocalDate deadline, String detail, boolean online, boolean offline,
+                   String location, Double latitude, Double longitude) {
         this.clientProfile = clientProfile;
         this.projectName = projectName;
         this.budget = budget;
@@ -59,6 +69,9 @@ public class Project extends BaseTimeEntity {
         this.detail = detail;
         this.online = online;
         this.offline = offline;
+        this.location = location;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.status = ProjectStatus.OPEN; // 기본값 모집중(OPEN)
     }
 
@@ -69,6 +82,9 @@ public class Project extends BaseTimeEntity {
         this.detail = request.getDetail();
         this.online = request.isOnline();
         this.offline = request.isOffline();
+        this.location = request.getLocation();
+        this.latitude = request.getLatitude();
+        this.longitude = request.getLongitude();
     }
 
     public void close() {

@@ -1,12 +1,10 @@
 package com.devnear.web.dto.project;
 
-import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.project.Project;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -20,6 +18,9 @@ public class ProjectResponse {
     private String status;
     private boolean online;
     private boolean offline;
+    private String location;
+    private Double latitude;
+    private Double longitude;
 
     public static ProjectResponse from(Project project) {
         return ProjectResponse.builder()
@@ -32,6 +33,9 @@ public class ProjectResponse {
                 .status(project.getStatus().name())
                 .online(project.isOnline())
                 .offline(project.isOffline())
+                .location(project.getLocation())
+                .latitude(project.getLatitude())
+                .longitude(project.getLongitude())
                 .build();
     }
 }
