@@ -9,53 +9,61 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/skills")
+// [보고] 프론트엔드 버전 규칙 통일을 위해 v1 경로 추가 허용
+@RequestMapping(value = {"/api/skills", "/api/v1/skills"})
 @RequiredArgsConstructor
 public class SkillController {
 
     private final SkillService skillService;
 
-    // 전체 스킬 목록 조회
-    // GET /api/skills
+    /**
+     * [보고] 전체 스킬 목록 조회 (비로그인 허용)
+     */
     @GetMapping
     public ResponseEntity<List<SkillResponse>> getAllSkills() {
         return ResponseEntity.ok(skillService.getAllSkills());
     }
 
-    // 기본 제공 스킬 목록 조회
-    // GET /api/skills/default
+    /**
+     * [보고] 기본 제공 스킬 목록 조회 (비로그인 허용)
+     */
     @GetMapping("/default")
     public ResponseEntity<List<SkillResponse>> getDefaultSkills() {
         return ResponseEntity.ok(skillService.getDefaultSkills());
     }
 
-    // 카테고리별 스킬 조회
-    // GET /api/skills/category?name={name}
+    /**
+     * [보고] 카테고리별 스킬 조회 (비로그인 허용)
+     */
     @GetMapping("/category")
     public ResponseEntity<List<SkillResponse>> getSkillsByCategory(
             @RequestParam String name) {
         return ResponseEntity.ok(skillService.getSkillsByCategory(name));
     }
 
-    // 스킬 이름 검색 (통합 검색 - 스킬 태그 #)
-    // GET /api/skills/search?keyword={keyword}
+    /**
+     * [보고] 스킬 이름 검색 (통합 검색 - 스킬 태그 #, 비로그인 허용)
+     */
     @GetMapping("/search")
     public ResponseEntity<List<SkillResponse>> searchSkills(
             @RequestParam String keyword) {
         return ResponseEntity.ok(skillService.searchSkills(keyword));
     }
 
-    // 커스텀 스킬 등록 (is_default = false)
-    // POST /api/skills
-    // body: { "name": "Rust", "category": "시스템" }
+    /**
+     * [보고] 커스텀 스킬 등록 (is_default = false)
+     * [권한] FREELANCER 또는 BOTH 역할만 접근 가능 (SecurityConfig에서 제어)
+     */
     @PostMapping
     public ResponseEntity<SkillResponse> addCustomSkill(
             @RequestBody com.devnear.web.dto.skill.SkillCreateRequest request) {
         return ResponseEntity.ok(skillService.addCustomSkill(request));
     }
 
-    // 스킬 삭제
-    // DELETE /api/skills/{skillId}
+    /**
+     * [보고] 스킬 삭제
+     * [권한] FREELANCER 또는 BOTH 역할만 접근 가능 (SecurityConfig에서 제어)
+     */
     @DeleteMapping("/{skillId}")
     public ResponseEntity<Void> deleteSkill(@PathVariable Long skillId) {
         skillService.deleteSkill(skillId);

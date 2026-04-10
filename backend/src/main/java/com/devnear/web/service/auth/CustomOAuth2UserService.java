@@ -65,11 +65,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String sub = (String) attributes.get("sub");
 
         if (email == null || sub == null) {
-            // [보고] 필수 정보가 없으면 인증 실패 처리를 던지는 것이 타당함
             throw new OAuth2AuthenticationException("필수 인증 정보(email, sub)가 누락되었습니다.");
         }
 
-        // [보고] 이메일로 기존 유저인지 확인하고, 이름이나 사진이 바뀌었으면 업데이트 (트랜잭션 덕분에 자동 반영됨)
         return userRepository.findByEmail(email)
                 .map(entity -> entity.update(name, picture, registrationId, sub))
                 .orElseGet(() -> {
@@ -80,9 +78,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                             .email(email)
                             .name(name)
                             .nickname(safeNickname)
-                            // [보고] DB에서 password의 NOT NULL 제약을 해제하셨으므로, 더미 비밀번호 생성을 제거하고 null로 둡니다.
                             .profileImageUrl(picture)
-                            .role(Role.CLIENT)
+                            // [수정] 신규 가입 유저의 기본 권한을 온보딩용 GUEST로 설정함
+                            .role(Role.GUEST)
                             .provider(registrationId)
                             .providerId(sub)
                             .build());

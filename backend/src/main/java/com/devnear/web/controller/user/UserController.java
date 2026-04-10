@@ -1,21 +1,44 @@
 package com.devnear.web.controller.user;
 
+import com.devnear.web.dto.user.OnboardingRequest;
+import com.devnear.web.dto.user.TokenResponse;
+import com.devnear.web.dto.user.UserInfoResponse;
 import com.devnear.web.service.user.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "User", description = "회원 관련 API")
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping(value = {"/api/users", "/api/v1/users"})
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
-    // [보고] 인증(로그인, 회원가입) 기능은 AuthController(/api/auth)로 바꿨습니다!
-    // 저희 팀 API 명세서 보고 수정했어용
-    // 추후 회원 정보 조회, 수정 기능(예: /api/users/me)을 이 곳에 추가하시면 됩니다.
+    @Operation(summary = "온보딩 처리", description = "GUEST 유저가 닉네임과 역할을 선택하여 권한을 승격합니다.")
+    @PostMapping("/onboarding")
+    public ResponseEntity<TokenResponse> onboarding(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody OnboardingRequest request) {
+        
+        // [보고] UserService를 통해 DB 업데이트 및 새 JWT 토큰(권한 승격됨)을 발급받아 반환합니다.
+        TokenResponse response = userService.onboarding(userDetails.getUsername(), request);
+        return ResponseEntity.ok(response);
+    }
 
+    @Operation(summary = "내 정보 조회", description = "현재 로그인된 사용자의 정보를 조회합니다.")
+    @GetMapping("/me")
+    public ResponseEntity<UserInfoResponse> getMyInfo(@AuthenticationPrincipal UserDetails userDetails) {
+        UserInfoResponse response = userService.getUserInfo(userDetails.getUsername());
+        return ResponseEntity.ok(response);
+    }
 }

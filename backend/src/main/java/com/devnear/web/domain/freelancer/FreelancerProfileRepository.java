@@ -1,0 +1,39 @@
+package com.devnear.web.domain.freelancer;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.Optional;
+import java.util.List;
+
+public interface FreelancerProfileRepository extends JpaRepository<FreelancerProfile, Long> {
+    
+    Optional<FreelancerProfile> findByUser_Id(Long userId);
+
+    @Query("SELECT DISTINCT fp FROM FreelancerProfile fp " +
+           "LEFT JOIN FETCH fp.freelancerSkills fs " +
+           "LEFT JOIN FETCH fs.skill " +
+           "WHERE fp.user.id = :userId")
+    Optional<FreelancerProfile> findByUserIdWithSkills(@Param("userId") Long userId);
+
+    // [API] 프리랜서 상세 조회 (id로 찾기)
+    @Query("SELECT DISTINCT fp FROM FreelancerProfile fp " +
+           "LEFT JOIN FETCH fp.freelancerSkills fs " +
+           "LEFT JOIN FETCH fs.skill " +
+           "WHERE fp.id = :id")
+    Optional<FreelancerProfile> findByIdWithSkills(@Param("id") Long id);
+
+    // [API] 목록 탐색 필터링용 (skill, region)
+    // 활동중(isActive=true)인 사용자만 노출
+    @Query("SELECT DISTINCT fp FROM FreelancerProfile fp " +
+           "LEFT JOIN FETCH fp.freelancerSkills fs " +
+           "LEFT JOIN FETCH fs.skill " +
+           "WHERE fp.isActive = true " +
+           "AND (:region IS NULL OR fp.location LIKE %:region%) " +
+           "AND (:skill IS NULL OR EXISTS (" +
+           "    SELECT 1 FROM FreelancerSkill sub_fs JOIN sub_fs.skill sub_s " +
+           "    WHERE sub_fs.freelancerProfile = fp AND sub_s.name LIKE %:skill%" +
+           "))")
+    List<FreelancerProfile> searchFreelancers(@Param("skill") String skill, @Param("region") String region);
+}

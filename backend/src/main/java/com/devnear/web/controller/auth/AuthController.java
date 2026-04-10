@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Auth", description = "인증(회원가입/로그인) 관련 API")
 @RestController
-@RequestMapping("/api/auth")
+// [보고] 프론트엔드 버전 규칙 통일을 위해 v1 경로 추가 허용
+@RequestMapping(value = {"/api/auth", "/api/v1/auth"})
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -24,7 +25,7 @@ public class AuthController {
     private final UserService userService;
 
     @Operation(summary = "회원가입", description = "이메일, 비밀번호 등을 입력받아 회원가입을 진행합니다.")
-    @PostMapping("/signup") // 명세서 요구사항에 맞춰 /register 에서 /signup 으로 변경
+    @PostMapping("/signup") // [보고] 명세서 요구사항에 맞춰 /register 에서 /signup 으로 변경
     public ResponseEntity<Long> signup(@RequestBody UserRegisterRequest request) {
         Long userId = userService.register(request);
         return ResponseEntity.ok(userId);

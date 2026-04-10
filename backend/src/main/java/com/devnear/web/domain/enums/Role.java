@@ -5,6 +5,8 @@ package com.devnear.web.domain.enums;
  * Spring Security의 권한 검증(GrantedAuthority)과 연동하여 사용됨.
  */
 public enum Role {
+    // [추가] 소셜 로그인 직후 온보딩 절차(닉네임, 권한 선택)를 거치지 않은 임시 상태의 권한
+    GUEST,
     // [보고] 서비스를 의뢰하는 일반 클라이언트 사용자 권한.
     CLIENT,      
     // [보고] 서비스를 제공하는 프리랜서 사용자 권한.

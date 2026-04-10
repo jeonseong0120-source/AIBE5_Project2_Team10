@@ -44,7 +44,7 @@ public class User extends BaseTimeEntity implements UserDetails {
     @Column(nullable = false, length = 50)
     private String name;
 
-    // [수정] 봇 리뷰 반영: 이제 항상 임시 닉네임을 생성해서 넣어주므로 nullable = false로 복구
+    // [수정] 항상 임시 닉네임을 생성해서 넣어주므로 nullable = false
     @Column(nullable = false, unique = true, length = 50)
     private String nickname;
 
@@ -87,15 +87,21 @@ public class User extends BaseTimeEntity implements UserDetails {
 
     /**
      * [보고] 소셜 로그인 정보 업데이트 및 계정 연동을 위한 메서드.
-     * 이름, 프로필 사진뿐만 아니라 제공자(provider) 정보까지 갱신하여
-     * 기존 LOCAL 계정과 소셜 계정을 타당하게 통합함.
      */
     public User update(String name, String profileImageUrl, String provider, String providerId) {
         this.name = name;
         this.profileImageUrl = profileImageUrl;
-        this.provider = provider;     // [추가] 제공자 정보 업데이트 (google 등)
-        this.providerId = providerId; // [추가] 제공자 고유 ID 업데이트
+        this.provider = provider;
+        this.providerId = providerId;
         return this;
+    }
+
+    /**
+     * [추가] 온보딩 완료 시 닉네임과 역할을 업데이트합니다.
+     */
+    public void onboard(String nickname, Role role) {
+        this.nickname = nickname;
+        this.role = role;
     }
 
     // ================= UserDetails 필수 구현 메서드 =================
@@ -121,7 +127,7 @@ public class User extends BaseTimeEntity implements UserDetails {
 
     @Override
     public boolean isEnabled() { 
-        // [수정] 봇 리뷰 반영: "화이트리스트" 방식으로 허용되는 상태만 명시함
+        // [수정] "화이트리스트" 방식으로 허용되는 상태만 명시함
         return this.status == UserStatus.ACTIVE || this.status == UserStatus.INACTIVE;
     }
 }

@@ -35,8 +35,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             return;
         }
 
-        // 2. 토큰 재료 준비
-        Long userId = (Long) attributes.get("id");
+        // 2. 토큰 재료 준비 (안전한 타입 변환)
+        Object idAttr = attributes.get("id");
+        Long userId = (idAttr instanceof Integer) ? ((Integer) idAttr).longValue() : (Long) idAttr;
         String email = (String) attributes.get("email");
         String role = authentication.getAuthorities().iterator().next().getAuthority();
 
