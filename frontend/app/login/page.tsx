@@ -42,8 +42,8 @@ export default function LoginPage() {
                  style={{ backgroundImage: 'linear-gradient(#f0f0f0 1px, transparent 1px), linear-gradient(90deg, #f0f0f0 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
             <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] bg-[#7A4FFF] opacity-[0.05] blur-[120px] rounded-full z-0"></div>
             <div className="fixed bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-[#FF7D00] opacity-[0.05] blur-[120px] rounded-full z-0"></div>
-            {/* [배경 레이어 3] 마스터가 좋아하시는 코드 데코레이션 (전체 섹션에 걸쳐 배치) */}
-            <div className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-none opacity-[0.12] font-mono text-[11px] md:text-[14px] p-10 leading-relaxed">
+            {/* [배경 레이어 3]코드 데코레이션 (전체 섹션에 걸쳐 배치) */}
+            <div className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-none opacity-[0.25] font-mono text-[11px] md:text-[14px] p-10 leading-relaxed">
                 <div className="absolute top-[15%] left-[5%] rotate-[-3deg] text-[#FF7D00]">
                     {`@RestController\npublic class AuthController {\n  @PostMapping("/login")\n  public ResponseEntity<?> login() { ... }\n}`}
                 </div>
