@@ -18,7 +18,7 @@ public class CommunityPostController {
 
     @PostMapping
     public ResponseEntity<Long> create(@RequestBody CommunityPostCreateRequest request,
-                                       @RequestHeader("X-USER-ID") Long userId) {
+                                       @RequestHeader("USER-ID") Long userId) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(communityPostService.create(request, userId));
     }
@@ -38,27 +38,27 @@ public class CommunityPostController {
     @PutMapping("/{postId}")
     public ResponseEntity<CommunitySuccessResponse> update(@PathVariable Long postId,
                                                            @RequestBody CommunityPostUpdateRequest request,
-                                                           @RequestHeader("X-USER-ID") Long userId) {
+                                                           @RequestHeader("USER-ID") Long userId) {
         communityPostService.update(postId, request, userId);
         return ResponseEntity.ok(new CommunitySuccessResponse(true));
     }
 
     @DeleteMapping("/{postId}")
     public ResponseEntity<CommunitySuccessResponse> delete(@PathVariable Long postId,
-                                                           @RequestHeader("X-USER-ID") Long userId) {
+                                                           @RequestHeader("USER-ID") Long userId) {
         communityPostService.delete(postId, userId);
         return ResponseEntity.ok(new CommunitySuccessResponse(true));
     }
 
     @PostMapping("/{postId}/like")
     public ResponseEntity<CommunityLikeResponse> like(@PathVariable Long postId,
-                                                      @RequestHeader("X-USER-ID") Long userId) {
+                                                      @RequestHeader("USER-ID") Long userId) {
         return ResponseEntity.ok(communityPostService.like(postId, userId));
     }
 
     @DeleteMapping("/{postId}/like")
     public ResponseEntity<CommunityLikeResponse> cancelLike(@PathVariable Long postId,
-                                                            @RequestHeader("X-USER-ID") Long userId) {
+                                                            @RequestHeader("USER-ID") Long userId) {
         return ResponseEntity.ok(communityPostService.cancelLike(postId, userId));
     }
 }
