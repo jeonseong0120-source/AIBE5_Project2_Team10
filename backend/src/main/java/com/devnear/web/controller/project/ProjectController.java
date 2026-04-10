@@ -71,4 +71,11 @@ public class ProjectController {
         Page<ProjectResponse> responses = projectService.getMyProjectList(user, pageable);
         return ResponseEntity.ok(responses);
     }
+
+    @Operation(summary = "프로젝트 공고 단건 조회", description = "프로젝트 공고 상세를 조회합니다.")
+    @GetMapping("/{projectId}")
+    public ResponseEntity<ProjectResponse> getProject(@PathVariable Long projectId) {
+        ProjectResponse response = projectService.getProject(projectId);
+        return ResponseEntity.ok(response);
+    }
 }

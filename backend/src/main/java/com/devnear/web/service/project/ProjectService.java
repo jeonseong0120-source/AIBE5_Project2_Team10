@@ -76,6 +76,14 @@ public class ProjectService {
                 .map(ProjectResponse::from);
     }
 
+    @Transactional(readOnly = true)
+    public ProjectResponse getProject(Long projectId) {
+        Project project = projectRepository.findByIdWithClientProfile(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 프로젝트 공고를 찾을 수 없습니다. ID: " + projectId));
+
+        return ProjectResponse.from(project);
+    }
+
     private ClientProfile findClientProfileByUser(User user) {
         return clientProfileRepository.findByUser(user)
                 .orElseThrow(() -> new ResourceNotFoundException("클라이언트 프로필이 등록되지 않았습니다."));
