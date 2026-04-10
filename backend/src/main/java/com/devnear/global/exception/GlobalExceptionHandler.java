@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.devnear.web.exception.ResourceConflictException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -53,6 +54,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception e, HttpServletRequest request) {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.", request);
+    }
+
+    @ExceptionHandler(ResourceConflictException.class)
+    public ResponseEntity<ErrorResponse> handleResourceConflict(
+            ResourceConflictException e, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, e.getMessage(), request);
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(
