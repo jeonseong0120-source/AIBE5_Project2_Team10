@@ -5,13 +5,17 @@ import com.devnear.web.domain.community.CommunityPostLike;
 import com.devnear.web.domain.community.CommunityPostLikeRepository;
 import com.devnear.web.domain.community.CommunityPostRepository;
 import com.devnear.web.dto.community.*;
+import com.devnear.web.exception.ResourceConflictException;
+import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -28,27 +32,35 @@ public class CommunityPostService {
         return communityPostRepository.save(post).getId();
     }
 
-    public List<CommunityPostResponse> findAll(String keyword, String sort) {
-        List<CommunityPost> posts;
+    public CommunityPostPageResponse findAll(String keyword, String sort, Pageable pageable) {
+        Page<CommunityPost> postPage;
 
         if (keyword != null && !keyword.isBlank()) {
-            posts = communityPostRepository
-                    .findByTitleContainingIgnoreCaseOrContentContainingIgnoreCaseOrderByIdDesc(keyword, keyword);
+            postPage = communityPostRepository
+                    .findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(keyword, keyword, pageable);
         } else if ("popular".equalsIgnoreCase(sort)) {
-            posts = communityPostRepository.findAllByOrderByLikeCountDescIdDesc();
+            postPage = communityPostRepository.findAllByOrderByLikeCountDescIdDesc(pageable);
         } else {
-            posts = communityPostRepository.findAllByOrderByIdDesc();
+            postPage = communityPostRepository.findAllByOrderByIdDesc(pageable);
         }
 
-        return posts.stream()
+        List<CommunityPostResponse> content = postPage.getContent().stream()
                 .map(CommunityPostResponse::new)
                 .toList();
+
+        return new CommunityPostPageResponse(
+                content,
+                postPage.getNumber(),
+                postPage.getSize(),
+                postPage.getTotalElements(),
+                postPage.getTotalPages()
+        );
     }
 
     @Transactional
     public CommunityPostResponse findById(Long postId) {
         CommunityPost post = getPost(postId);
-        post.increaseViewCount();
+        communityPostRepository.incrementViewCount(postId);
         return new CommunityPostResponse(post);
     }
 
@@ -71,31 +83,31 @@ public class CommunityPostService {
     public CommunityLikeResponse like(Long postId, Long userId) {
         CommunityPost post = getPost(postId);
 
-        if (communityPostLikeRepository.existsByPostIdAndUserId(postId, userId)) {
-            throw new IllegalStateException("이미 좋아요를 누른 게시글입니다.");
+        try {
+            communityPostLikeRepository.save(new CommunityPostLike(postId, userId));
+            communityPostRepository.incrementLikeCount(postId);
+            return new CommunityLikeResponse(true, post.getLikeCount() + 1);
+        } catch (DataIntegrityViolationException e) {
+            throw new ResourceConflictException("이미 좋아요를 누른 게시글입니다.");
         }
-
-        communityPostLikeRepository.save(new CommunityPostLike(postId, userId));
-        post.increaseLikeCount();
-        return new CommunityLikeResponse(true, post.getLikeCount());
     }
 
     @Transactional
     public CommunityLikeResponse cancelLike(Long postId, Long userId) {
         CommunityPost post = getPost(postId);
 
-        if (!communityPostLikeRepository.existsByPostIdAndUserId(postId, userId)) {
-            throw new NoSuchElementException("좋아요 기록이 없습니다.");
+        int deletedCount = communityPostLikeRepository.deleteByPostIdAndUserId(postId, userId);
+        if (deletedCount == 0) {
+            throw new ResourceNotFoundException("좋아요 기록이 없습니다.");
         }
 
-        communityPostLikeRepository.deleteByPostIdAndUserId(postId, userId);
-        post.decreaseLikeCount();
-        return new CommunityLikeResponse(true, post.getLikeCount());
+        communityPostRepository.decrementLikeCount(postId);
+        return new CommunityLikeResponse(true, post.getLikeCount() > 0 ? post.getLikeCount() - 1 : 0);
     }
 
     CommunityPost getPost(Long postId) {
         return communityPostRepository.findById(postId)
-                .orElseThrow(() -> new NoSuchElementException("게시글이 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("게시글이 없습니다."));
     }
 
     private void validatePostRequest(String title, String content) {

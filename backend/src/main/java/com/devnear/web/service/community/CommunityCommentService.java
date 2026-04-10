@@ -3,16 +3,17 @@ package com.devnear.web.service.community;
 import com.devnear.web.domain.community.CommunityComment;
 import com.devnear.web.domain.community.CommunityCommentRepository;
 import com.devnear.web.domain.community.CommunityPost;
+import com.devnear.web.domain.community.CommunityPostRepository;
 import com.devnear.web.dto.community.CommunityCommentCreateRequest;
 import com.devnear.web.dto.community.CommunityCommentResponse;
 import com.devnear.web.dto.community.CommunityCommentUpdateRequest;
+import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -21,15 +22,22 @@ public class CommunityCommentService {
 
     private final CommunityCommentRepository communityCommentRepository;
     private final CommunityPostService communityPostService;
+    private final CommunityPostRepository communityPostRepository;
 
     @Transactional
     public Long create(CommunityCommentCreateRequest request, Long authorId) {
+        if (request.getPostId() == null) {
+            throw new IllegalArgumentException("게시글 ID는 필수입니다.");
+        }
+        if (authorId == null) {
+            throw new IllegalArgumentException("작성자 ID는 필수입니다.");
+        }
         validateCommentRequest(request.getContent());
         CommunityPost post = communityPostService.getPost(request.getPostId());
 
         CommunityComment comment = new CommunityComment(post.getId(), authorId, request.getContent());
         Long commentId = communityCommentRepository.save(comment).getId();
-        post.increaseCommentCount();
+        communityPostRepository.incrementCommentCount(post.getId());
         return commentId;
     }
 
@@ -53,14 +61,14 @@ public class CommunityCommentService {
         CommunityComment comment = getComment(commentId);
         validateAuthor(comment.getAuthorId(), userId);
 
-        CommunityPost post = communityPostService.getPost(comment.getPostId());
-        post.decreaseCommentCount();
+        Long postId = comment.getPostId();
         communityCommentRepository.delete(comment);
+        communityPostRepository.decrementCommentCount(postId);
     }
 
     private CommunityComment getComment(Long commentId) {
         return communityCommentRepository.findById(commentId)
-                .orElseThrow(() -> new NoSuchElementException("댓글이 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("댓글이 없습니다."));
     }
 
     private void validateCommentRequest(String content) {
