@@ -91,4 +91,45 @@ public class PortfolioService {
         // 3. 권한 문제없으면 삭제 실행 (Cascade 속성으로 인해 딸려있던 기술스택 데이터도 알아서 날아감)
         portfolioRepository.delete(portfolio);
     }
+
+    // [수정] PUT /api/portfolios/{id}
+    @Transactional
+    public void updatePortfolio(User user, Long portfolioId, PortfolioRequest request) {
+        // 1. 엔티티 우선 조회 및 404 방어
+        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+                .orElseThrow(() -> new IllegalArgumentException("수정하려는 포트폴리오를 찾을 수 없습니다."));
+
+        // 2. 권한 검증 (보안)
+        if (!portfolio.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("본인의 포트폴리오만 수정할 수 있습니다.");
+        }
+
+        // 3. 포트폴리오 기본 정보 업데이트
+        portfolio.update(request.getTitle(), request.getDesc(), request.getThumbnailUrl());
+
+        // 4. 기존 관련 데이터 비우기 (orphanRemoval = true)
+        portfolio.getPortfolioImages().clear();
+        portfolio.getPortfolioSkills().clear();
+
+        // 5. 다중 이미지 재연결
+        for (String imageUrl : request.getPortfolioImages()) {
+            portfolio.addPortfolioImage(PortfolioImage.builder()
+                    .portfolio(portfolio)
+                    .imageUrl(imageUrl)
+                    .build());
+        }
+
+        // 6. 스킬 존재 여부 재검증 및 재연결
+        List<Skill> selectedSkills = skillRepository.findAllById(request.getSkills());
+        if (selectedSkills.size() != request.getSkills().size()) {
+            throw new IllegalArgumentException("존재하지 않는 스킬 ID가 포함되어 있습니다.");
+        }
+
+        for (Skill skill : selectedSkills) {
+            portfolio.addPortfolioSkill(PortfolioSkill.builder()
+                    .portfolio(portfolio)
+                    .skill(skill)
+                    .build());
+        }
+    }
 }

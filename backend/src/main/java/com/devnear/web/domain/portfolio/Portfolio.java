@@ -67,4 +67,11 @@ public class Portfolio extends BaseTimeEntity {
             portfolioImage.setPortfolio(this);
         }
     }
+
+    // [비즈니스 로직] 포트폴리오 정보 수정
+    public void update(String title, String desc, String thumbnailUrl) {
+        this.title = title;
+        this.desc = desc;
+        this.thumbnailUrl = thumbnailUrl;
+    }
 }

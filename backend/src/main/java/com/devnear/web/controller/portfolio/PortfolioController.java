@@ -59,4 +59,32 @@ public class PortfolioController {
         portfolioService.deletePortfolio(user, id);
         return ResponseEntity.ok(Map.of("success", true));
     }
+
+    // [수정] PUT /api/portfolios/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, Boolean>> updatePortfolio(
+            @AuthenticationPrincipal User user,
+            @PathVariable("id") Long id,
+            @Valid @RequestBody PortfolioRequest request) {
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        portfolioService.updatePortfolio(user, id, request);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    // [내 포트폴리오 조회] GET /api/portfolios/me
+    @GetMapping("/me")
+    public ResponseEntity<List<PortfolioResponse>> getMyPortfolios(
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // 로그인한 유지의 ID를 기반으로 목록 조회
+        return ResponseEntity.ok(portfolioService.getPortfoliosByUserId(user.getId()));
+    }
 }
