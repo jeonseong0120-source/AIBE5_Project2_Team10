@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,7 +68,8 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
 
-        if (!user.getNickname().equals(request.getNickname()) &&
+        // [보고] 리뷰 반영: NPE(NullPointerException) 방지를 위해 Objects.equals()로 안전하게 닉네임 변경 여부를 체크함
+        if (!Objects.equals(user.getNickname(), request.getNickname()) &&
                 userRepository.existsByNickname(request.getNickname())) {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }

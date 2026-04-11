@@ -18,10 +18,10 @@ interface FreelancerExtraFormProps {
 }
 
 export default function FreelancerExtraForm({ freelancerData, setFreelancerData }: FreelancerExtraFormProps) {
-    const [availableSkills, setAvailableSkills] = useState<{id: number, name: string, category: string}[]>([]);
+    // [수정] 백엔드 DTO(SkillResponse)의 필드명인 skillId를 정확히 명시
+    const [availableSkills, setAvailableSkills] = useState<{skillId: number, name: string, category: string}[]>([]);
 
     useEffect(() => {
-        // [수정] 하드코딩된 스킬 ID를 제거하고 백엔드에서 실시간으로 스킬 목록을 받아옵니다.
         const fetchSkills = async () => {
             try {
                 const res = await api.get("/v1/skills/default");
@@ -56,7 +56,6 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
 
                 {/* 한 줄 소개 */}
                 <div className="space-y-1">
-                    {/* [수정] htmlFor 속성 추가 */}
                     <label htmlFor="intro-input" className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Introduction *</label>
                     <textarea
                         id="intro-input"
@@ -82,7 +81,6 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                     {/* 희망 시급 */}
                     <div className="space-y-1">
                         <label htmlFor="hourly-rate-input" className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Hourly Rate (₩) *</label>
-                        {/* [수정] min="0" 속성 추가하여 음수 입력 방지 */}
                         <input
                             id="hourly-rate-input"
                             type="number"
@@ -122,10 +120,10 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                     <div className="flex flex-wrap gap-2">
                         {availableSkills.map((skill) => (
                             <div
-                                key={skill.id}
-                                onClick={() => toggleSkill(skill.id)}
+                                key={skill.skillId}
+                                onClick={() => toggleSkill(skill.skillId)}
                                 className={`px-3 py-1.5 rounded-full text-[11px] font-bold cursor-pointer transition-all border ${
-                                    freelancerData.skillIds.includes(skill.id)
+                                    freelancerData.skillIds.includes(skill.skillId)
                                         ? "bg-[#7A4FFF] text-white border-[#7A4FFF] shadow-md"
                                         : "bg-zinc-50 text-zinc-500 border-zinc-100 hover:bg-zinc-100"
                                 }`}
