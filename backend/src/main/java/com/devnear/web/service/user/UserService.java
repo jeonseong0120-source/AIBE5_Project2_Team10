@@ -75,7 +75,7 @@ public class UserService {
         // 1. 유저 기본 정보 업데이트
         user.onboard(request.getNickname(), request.getRole());
 
-        // [보고] 500 에러 및 Null 방지를 위해 선택한 역할에 따른 프로필 데이터 누락 검증 (Fail-Fast)
+        // [보고] 500 에러 방지를 위해 필수 프로필 정보 누락 검증
         if ((request.getRole() == Role.CLIENT || request.getRole() == Role.BOTH) && request.getClientProfile() == null) {
             throw new IllegalArgumentException("클라이언트 프로필 정보가 누락되었습니다.");
         }
@@ -85,13 +85,22 @@ public class UserService {
 
         // 2. 클라이언트 프로필 저장 (CLIENT 또는 BOTH)
         if (request.getRole() == Role.CLIENT || request.getRole() == Role.BOTH) {
-            // [보고] 트랜잭션이 하나로 묶여있어 외래키 문제나 정합성 오류가 발생하지 않습니다.
-            clientProfileRepository.save(request.getClientProfile().toEntity(user));
+            // [보고] 리뷰 반영: 멱등성 보장 - 기존 프로필이 있으면 업데이트, 없으면 생성
+            clientProfileRepository.findByUser(user)
+                    .ifPresentOrElse(
+                            existingProfile -> existingProfile.update(request.getClientProfile()), // 이미 있으면 Update
+                            () -> clientProfileRepository.save(request.getClientProfile().toEntity(user)) // 없으면 Create
+                    );
         }
 
-        // 3. [추가] 프리랜서 프로필 저장 (FREELANCER 또는 BOTH)
+        // 3. 프리랜서 프로필 저장 (FREELANCER 또는 BOTH)
         if (request.getRole() == Role.FREELANCER || request.getRole() == Role.BOTH) {
             FreelancerProfileRequest fReq = request.getFreelancerProfile();
+
+            // [보고] 리뷰 반영: 멱등성 보장 - 기존 프리랜서 프로필이 이미 있으면 에러 처리(혹은 Update)
+            if (freelancerProfileRepository.findByUser_Id(user.getId()).isPresent()) {
+                throw new IllegalStateException("이미 프리랜서 프로필이 존재합니다.");
+            }
 
             FreelancerProfile profile = FreelancerProfile.builder()
                     .user(user)

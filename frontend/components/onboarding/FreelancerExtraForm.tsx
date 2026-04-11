@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import api from "../../app/lib/axios";
 
 interface FreelancerExtraFormProps {
     freelancerData: {
@@ -16,14 +18,20 @@ interface FreelancerExtraFormProps {
 }
 
 export default function FreelancerExtraForm({ freelancerData, setFreelancerData }: FreelancerExtraFormProps) {
-    // 테스트용 스킬 더미 데이터 (나중에 백엔드 /api/v1/skills 에서 받아와야 함)
-    const availableSkills = [
-        { id: 1, name: "Java", category: "Backend" },
-        { id: 2, name: "React", category: "Frontend" },
-        { id: 3, name: "Spring Boot", category: "Backend" },
-        { id: 4, name: "TypeScript", category: "Frontend" },
-        { id: 5, name: "Figma", category: "Design" },
-    ];
+    const [availableSkills, setAvailableSkills] = useState<{id: number, name: string, category: string}[]>([]);
+
+    useEffect(() => {
+        // [수정] 하드코딩된 스킬 ID를 제거하고 백엔드에서 실시간으로 스킬 목록을 받아옵니다.
+        const fetchSkills = async () => {
+            try {
+                const res = await api.get("/v1/skills/default");
+                setAvailableSkills(res.data);
+            } catch (err) {
+                console.error("스킬 목록을 불러오지 못했습니다.", err);
+            }
+        };
+        fetchSkills();
+    }, []);
 
     const toggleSkill = (skillId: number) => {
         const newSkills = freelancerData.skillIds.includes(skillId)
@@ -48,8 +56,10 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
 
                 {/* 한 줄 소개 */}
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Introduction *</label>
+                    {/* [수정] htmlFor 속성 추가 */}
+                    <label htmlFor="intro-input" className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Introduction *</label>
                     <textarea
+                        id="intro-input"
                         value={freelancerData.introduction}
                         onChange={(e) => setFreelancerData({ ...freelancerData, introduction: e.target.value })}
                         placeholder="마스터의 기술력과 경험을 짧게 소개해 주세요."
@@ -60,8 +70,9 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                 <div className="grid grid-cols-2 gap-4">
                     {/* 활동 지역 */}
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Location</label>
+                        <label htmlFor="location-input" className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Location</label>
                         <input
+                            id="location-input"
                             value={freelancerData.location}
                             onChange={(e) => setFreelancerData({ ...freelancerData, location: e.target.value })}
                             placeholder="예: 서울시 강남구"
@@ -70,9 +81,12 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                     </div>
                     {/* 희망 시급 */}
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Hourly Rate (₩) *</label>
+                        <label htmlFor="hourly-rate-input" className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Hourly Rate (₩) *</label>
+                        {/* [수정] min="0" 속성 추가하여 음수 입력 방지 */}
                         <input
+                            id="hourly-rate-input"
                             type="number"
+                            min="0"
                             value={freelancerData.hourlyRate}
                             onChange={(e) => setFreelancerData({ ...freelancerData, hourlyRate: Number(e.target.value) })}
                             placeholder="0"

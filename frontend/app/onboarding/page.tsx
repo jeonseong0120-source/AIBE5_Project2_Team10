@@ -13,7 +13,7 @@ export default function OnboardingPage() {
     const [role, setRole] = useState("");
 
     const [clientData, setClientData] = useState({
-        companyName: "", representativeName: "", bn: "", introduction: "", homepageUrl: "", phoneNum: "", address: ""
+        companyName: "", representativeName: "", bn: "", introduction: "", homepageUrl: "", phoneNum: ""
     });
 
     const [freelancerData, setFreelancerData] = useState({
