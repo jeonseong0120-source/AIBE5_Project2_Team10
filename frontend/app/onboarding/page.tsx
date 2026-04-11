@@ -3,17 +3,35 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "../lib/axios";
+import { AnimatePresence, motion } from "framer-motion";
+import ClientExtraForm from "@/components/onboarding/ClientExtraForm";
+import FreelancerExtraForm from "@/components/onboarding/FreelancerExtraForm";
 
 export default function OnboardingPage() {
+    const [step, setStep] = useState(1); // [추가] 현재 단계 (1, 2, 3)
     const [nickname, setNickname] = useState("");
     const [role, setRole] = useState("");
+
+    const [clientData, setClientData] = useState({
+        companyName: "", representativeName: "", bn: "", introduction: "", homepageUrl: "", phoneNum: ""
+    });
+
+    const [freelancerData, setFreelancerData] = useState({
+        introduction: "",
+        location: "",
+        latitude: 37.5665,
+        longitude: 126.9780,
+        hourlyRate: 0,
+        workStyle: "HYBRID",
+        skillIds: [] as number[],
+    });
+
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
         const checkGuest = async () => {
             try {
-                // api 인스턴스에 이미 baseURL이 /api로 설정되어 있으므로 /api를 빼야 합니다.
                 const res = await api.get("/v1/users/me");
                 const currentRole = res.data.role;
                 if (!(currentRole === "GUEST" || currentRole === "ROLE_GUEST")) {
@@ -29,40 +47,68 @@ export default function OnboardingPage() {
         checkGuest();
     }, [router]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const normalizedNickname = nickname.trim();
-        if (!normalizedNickname) return alert("닉네임을 입력해주세요");
-        if (!role) return alert("역할을 선택해주세요");
+    // [로직] 다음 단계로 이동 제어
+    const handleNext = () => {
+        if (step === 1) {
+            if (!nickname.trim() || !role) return alert("닉네임과 역할을 선택해주세요.");
+            // 역할에 따른 분기: 프리랜서면 바로 3단계로, 아니면 2단계로
+            if (role === "FREELANCER") setStep(3);
+            else setStep(2);
+        } else if (step === 2) {
+            // BOTH면 다음(프리랜서)으로, CLIENT면 바로 제출
+            if (role === "BOTH") setStep(3);
+            else handleSubmit();
+        } else if (step === 3) {
+            handleSubmit();
+        }
+    };
 
+    // [로직] 이전 단계로 이동
+    const handleBack = () => {
+        if (step === 3 && role === "FREELANCER") setStep(1);
+        else setStep(prev => prev - 1);
+    };
+
+    const handleSubmit = async () => {
         setLoading(true);
         try {
-            // api 인스턴스에 이미 baseURL이 /api로 설정되어 있으므로 /api를 빼야 합니다.
-            const res = await api.post("/v1/users/onboarding", { nickname: normalizedNickname, role });
+            const onboardingPayload: any = {
+                nickname: nickname.trim(),
+                role: role,
+            };
 
-            // 토큰이 없으면 여기서 바로 컷! (Fail-Fast)
+            if (role === "CLIENT" || role === "BOTH") {
+                onboardingPayload.clientProfile = clientData;
+            }
+
+            if (role === "FREELANCER" || role === "BOTH") {
+                onboardingPayload.freelancerProfile = freelancerData;
+            }
+
+            const res = await api.post("/v1/users/onboarding", onboardingPayload);
             const newToken = res.data.accessToken;
-            if (!newToken) {
-                throw new Error("인증 토큰을 받지 못했습니다. 다시 로그인해주세요.");
+
+            if (newToken) {
+                localStorage.setItem("accessToken", newToken);
+                api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
             }
 
-            // 토큰이 있을 때만 안전하게 저장하고 다음 단계 진행
-            localStorage.setItem("accessToken", newToken);
-            console.log("정식 요원 증표 교체 완료!");
-
-            try {
-                const userRes = await api.get("/v1/users/me");
-                alert(`${userRes.data.nickname}님, 합류를 환영합니다!`);
-            } catch {
-                alert(`${normalizedNickname}님, 합류를 환영합니다!`);
-            }
+            alert("기지 설정 완료! 정식 요원이 되신 것을 환영합니다.");
             router.replace("/");
 
         } catch (err: any) {
-            alert(err.message || err.response?.data?.message || "설정 중 오류 발생");
+            console.error("온보딩 에러:", err);
+            alert(err.response?.data?.message || "설정 중 오류가 발생했습니다.");
         } finally {
             setLoading(false);
         }
+    };
+
+    const stepVariants = {
+        initial: { x: 20, opacity: 0 },
+        animate: { x: 0, opacity: 1 },
+        exit: { x: -20, opacity: 0 },
+        transition: { duration: 0.3 }
     };
 
     if (loading) return (
@@ -72,112 +118,100 @@ export default function OnboardingPage() {
     );
 
     return (
-        <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-white font-sans text-zinc-900">
+        <div className="relative flex items-center justify-center min-h-screen overflow-x-hidden bg-white font-sans text-zinc-900">
 
-            {/* [배경 레이어 1] 설계도 그리드 */}
-            <div className="absolute inset-0 z-0 opacity-[0.4]"
-                 style={{ backgroundImage: 'linear-gradient(#f0f0f0 1px, transparent 1px), linear-gradient(90deg, #f0f0f0 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-
-            {/* [배경 레이어 2] 메쉬 글로우 */}
+            {/* [배경 레이어 - 기존 유지] */}
+            <div className="absolute inset-0 z-0 opacity-[0.4]" style={{ backgroundImage: 'linear-gradient(#f0f0f0 1px, transparent 1px), linear-gradient(90deg, #f0f0f0 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
             <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#7A4FFF] opacity-[0.08] blur-[120px] rounded-full"></div>
             <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-[#FF7D00] opacity-[0.08] blur-[120px] rounded-full"></div>
 
-            {/* [배경 레이어 3] 온보딩 전용 코드 데코레이션 */}
-            <div className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-none opacity-[0.12] font-mono text-[11px] md:text-[14px] p-10 leading-relaxed">
-                <div className="absolute top-[15%] left-[5%] rotate-[-3deg] text-[#FF7D00]">
-                    {`@PostMapping("/v1/users/onboarding")\npublic ResponseEntity<?> setupProfile() {\n  return ResponseEntity.ok(new TokenResponse(accessToken));\n}`}
-                </div>
-                <div className="absolute bottom-[20%] left-[8%] rotate-[4deg] text-[#7A4FFF]">
-                    {`const handleOnboarding = async () => {\n  const res = await api.post("/v1/users/onboarding", { nickname, role });\n  localStorage.setItem("accessToken", res.data.accessToken);\n}`}
-                </div>
-                <div className="absolute top-[45%] left-[2%] rotate-[10deg] text-zinc-300">
-                    {`UPDATE members SET \n  nickname = :nickname, \n  role = :role \nWHERE member_id = :id;`}
-                </div>
-                <div className="absolute top-[10%] right-[15%] rotate-[-8deg] text-[#FF7D00]">
-                    {`# Agent Deployment\nmetadata:\n  name: devnear-new-agent\n  labels:\n    status: guest-to-member`}
-                </div>
-                <div className="absolute bottom-[35%] right-[12%] rotate-[-15deg] text-[#7A4FFF]">
-                    {`$ git branch -M main\n$ git add . \n$ git commit -m "feat: complete onboarding"`}
-                </div>
+            {/* [상단 진행 바] */}
+            <div className="fixed top-24 left-1/2 -translate-x-1/2 flex gap-3 z-50">
+                {[1, 2, 3].map((s) => (
+                    <div key={s} className={`h-1.5 rounded-full transition-all duration-500 ${
+                        step === s ? "w-12 bg-[#7A4FFF]" : s < step ? "w-6 bg-zinc-900" : "w-6 bg-zinc-200"
+                    }`} />
+                ))}
             </div>
 
-            {/* [상단 네비게이션] 블랙 배경 + 컬러 로고 */}
             <nav className="w-full py-5 px-10 bg-zinc-950 border-b border-zinc-800 flex justify-between items-center fixed top-0 left-0 z-50">
-                <div className="font-black text-2xl tracking-tighter cursor-default">
-                    <span className="text-[#FF7D00]">Dev</span>
-                    <span className="text-[#7A4FFF]">Near</span>
-                </div>
+                <div className="font-black text-2xl tracking-tighter cursor-default"><span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span></div>
             </nav>
 
-            <div className="relative z-10 max-w-6xl w-full grid md:grid-cols-2 gap-16 items-center px-8 mt-24 mb-12">
-
-                {/* 좌측: 브랜딩 문구 */}
+            <div className="relative z-10 max-w-6xl w-full grid md:grid-cols-2 gap-16 items-center px-8 mt-32 mb-16">
                 <div className="hidden md:block">
-                    <div className="flex items-center gap-2 mb-6">
-                        <span className="w-8 h-[2px] bg-[#FF7D00]"></span>
-                        <span className="text-xs font-bold tracking-widest text-zinc-400 uppercase">Identity Initialization</span>
-                    </div>
-                    <h1 className="text-7xl font-black leading-tight mb-8 tracking-tighter text-zinc-900">
-                        Complete <br />
-                        <span className="text-[#FF7D00]">Profile,</span> <br />
-                        Start <span className="text-[#7A4FFF]">Access.</span>
-                    </h1>
-                    <p className="text-zinc-500 text-xl font-medium max-w-md leading-relaxed">
-                        이제 마지막 단계입니다. <br />
-                        devnear에서 사용할 <span className="text-zinc-900 font-bold">닉네임</span>과 <span className="text-zinc-900 font-bold">역할</span>을 선택하여 정식 회원으로 등록하세요.
-                    </p>
+                    <div className="flex items-center gap-2 mb-6"><span className="w-8 h-[2px] bg-[#FF7D00]"></span><span className="text-xs font-bold tracking-widest text-zinc-400 uppercase">Identity Initialization</span></div>
+                    <h1 className="text-7xl font-black leading-tight mb-8 tracking-tighter text-zinc-900">Complete <br /><span className="text-[#FF7D00]">Profile,</span> <br />Start <span className="text-[#7A4FFF]">Access.</span></h1>
+                    <p className="text-zinc-500 text-xl font-medium max-w-md leading-relaxed">단계별로 정보를 입력하고 <br /><span className="text-zinc-900 font-bold">DevNear</span>의 정식 멤버로 합류하세요.</p>
                 </div>
 
-                {/* 우측: 온보딩 카드 */}
-                <div className="bg-white/95 p-10 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[3rem] border border-zinc-100 relative overflow-hidden">
-                    <h2 className="text-3xl font-bold mb-2 text-zinc-900 tracking-tight">회원 정보 설정</h2>
-                    <p className="text-zinc-400 mb-8 text-sm font-medium italic">// Finish setting up your account</p>
+                <div className="bg-white/95 p-10 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] rounded-[3rem] border border-zinc-100 relative overflow-hidden transition-all duration-500 min-h-[500px] flex flex-col">
+                    <div className="flex justify-between items-start mb-8">
+                        <div>
+                            <h2 className="text-3xl font-bold text-zinc-900 tracking-tight">회원 설정 ({step}/3)</h2>
+                            <p className="text-zinc-400 text-sm font-medium italic">// Step {step}: {step === 1 ? "Identity" : step === 2 ? "Business" : "Professional"}</p>
+                        </div>
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest group-focus-within:text-[#7A4FFF]">Agent Nickname</label>
-                            <input
-                                required
-                                type="text"
-                                value={nickname}
-                                onChange={(e) => setNickname(e.target.value)}
-                                placeholder="활동할 닉네임을 입력하세요"
-                                className="w-full p-4 bg-zinc-50 border border-zinc-100 text-zinc-900 rounded-2xl focus:ring-2 focus:ring-[#7A4FFF] focus:bg-white outline-none transition-all placeholder:text-zinc-300"
-                            />
+                    <form className="space-y-6 flex-1 flex flex-col" onSubmit={(e) => e.preventDefault()}>
+                        <div className="flex-1">
+                            <AnimatePresence mode="wait">
+                                {step === 1 && (
+                                    <motion.div key="step1" {...stepVariants}>
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest">Agent Nickname</label>
+                                                <input required type="text" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="활동할 닉네임" className="w-full p-4 bg-zinc-50 border border-zinc-100 text-zinc-900 rounded-2xl focus:ring-2 focus:ring-[#7A4FFF] outline-none transition-all" />
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest">Select Agent Role</label>
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    {[
+                                                        { id: "FREELANCER", label: "🎨 프리랜서", desc: "나의 기술로 가치를 만들고 싶어요" },
+                                                        { id: "CLIENT", label: "💼 클라이언트", desc: "함께 성장할 파트너를 찾고 있어요" },
+                                                        { id: "BOTH", label: "🚀 둘 다 할래요", desc: "모든 가능성을 열어두고 싶어요" },
+                                                    ].map((opt) => (
+                                                        <div key={opt.id} onClick={() => setRole(opt.id)} className={`p-4 rounded-2xl border-2 text-left cursor-pointer transition-all ${role === opt.id ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-50 bg-zinc-50 text-zinc-800 hover:border-zinc-200"}`}>
+                                                            <div className="font-bold text-sm">{opt.label}</div>
+                                                            <div className="text-[10px] opacity-60">{opt.desc}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {step === 2 && (
+                                    <motion.div key="step2" {...stepVariants}>
+                                        <ClientExtraForm clientData={clientData} setClientData={setClientData} />
+                                    </motion.div>
+                                )}
+
+                                {step === 3 && (
+                                    <motion.div key="step3" {...stepVariants}>
+                                        <FreelancerExtraForm freelancerData={freelancerData} setFreelancerData={setFreelancerData} />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
 
-                        {/* 역할 선택 섹션 */}
-                        <div className="space-y-3 pt-2">
-                            <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest">Select Agent Role</label>
-                            <div className="grid grid-cols-1 gap-3">
-                                {[
-                                    { id: "FREELANCER", label: "🎨 프리랜서", desc: "나의 기술로 가치를 만들고 싶어요" },
-                                    { id: "CLIENT", label: "💼 클라이언트", desc: "함께 성장할 파트너를 찾고 있어요" },
-                                    { id: "BOTH", label: "🚀 둘 다 할래요", desc: "모든 가능성을 열어두고 싶어요" },
-                                ].map((opt) => (
-                                    <div
-                                        key={opt.id}
-                                        onClick={() => setRole(opt.id)}
-                                        className={`p-4 rounded-2xl border-2 text-left cursor-pointer transition-all ${
-                                            role === opt.id
-                                                ? "border-zinc-900 bg-zinc-900 text-white"
-                                                : "border-zinc-50 bg-zinc-50 text-zinc-800 hover:border-zinc-200"
-                                        }`}
-                                    >
-                                        <div className="font-bold text-base">{opt.label}</div>
-                                        <div className={`text-xs ${role === opt.id ? "text-zinc-400" : "text-zinc-400"}`}>{opt.desc}</div>
-                                    </div>
-                                ))}
-                            </div>
+                        {/* 하단 버튼 액션 */}
+                        <div className="flex gap-3 pt-6 mt-auto">
+                            {step > 1 && (
+                                <button type="button" onClick={handleBack} className="flex-1 p-4 border border-zinc-200 rounded-2xl font-black text-zinc-400 hover:bg-zinc-50 transition-all">
+                                    이전
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={handleNext}
+                                disabled={loading}
+                                className="flex-[2] bg-zinc-900 text-white p-4 rounded-2xl font-black text-lg hover:bg-gradient-to-r hover:from-[#FF7D00] hover:to-[#7A4FFF] transition-all shadow-lg active:scale-95 disabled:bg-zinc-100"
+                            >
+                                {loading ? "처리 중..." : (step === 3 || (step === 2 && role === "CLIENT")) ? "합류하기" : "다음 단계로"}
+                            </button>
                         </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading || !nickname || !role}
-                            className="w-full bg-zinc-900 text-white p-5 rounded-2xl font-black text-lg hover:bg-gradient-to-r hover:from-[#FF7D00] hover:to-[#7A4FFF] transition-all shadow-lg active:scale-95 disabled:bg-zinc-200 mt-4"
-                        >
-                            {loading ? "기록 중..." : "설정 완료"}
-                        </button>
                     </form>
                 </div>
             </div>

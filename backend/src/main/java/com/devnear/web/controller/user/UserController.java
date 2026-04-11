@@ -6,6 +6,7 @@ import com.devnear.web.dto.user.UserInfoResponse;
 import com.devnear.web.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,7 +29,7 @@ public class UserController {
     @PostMapping("/onboarding")
     public ResponseEntity<TokenResponse> onboarding(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody OnboardingRequest request) {
+            @RequestBody @Valid OnboardingRequest request) {
         
         // [보고] UserService를 통해 DB 업데이트 및 새 JWT 토큰(권한 승격됨)을 발급받아 반환합니다.
         TokenResponse response = userService.onboarding(userDetails.getUsername(), request);

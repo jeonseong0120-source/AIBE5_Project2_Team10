@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import com.devnear.web.domain.client.ClientProfile;
+import com.devnear.web.domain.freelancer.FreelancerProfile;
 
 import java.util.Collection;
 import java.util.List;
@@ -68,6 +70,14 @@ public class User extends BaseTimeEntity implements UserDetails {
 
     @Column(name = "provider_id", length = 100)
     private String providerId;
+
+    // [수정] 리뷰 피드백 반영: @OneToOne의 기본 로딩은 Eager(즉시 로딩)이므로 N+1 및 성능 이슈 방지를 위해 LAZY로 강제 지정
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private ClientProfile clientProfile;
+
+    // [수정] 리뷰 피드백 반영: 동일하게 성능 이슈 방지를 위해 LAZY 로딩 적용
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private FreelancerProfile freelancerProfile;
 
     @Builder
     public User(String email, String password, String name, String nickname,
@@ -128,6 +138,6 @@ public class User extends BaseTimeEntity implements UserDetails {
     @Override
     public boolean isEnabled() { 
         // [수정] "화이트리스트" 방식으로 허용되는 상태만 명시함
-        return this.status == UserStatus.ACTIVE || this.status == UserStatus.INACTIVE;
+        return this.status == UserStatus.ACTIVE || this.status == UserStatus.INACTIVE; 
     }
 }
