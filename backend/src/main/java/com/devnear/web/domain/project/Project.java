@@ -110,7 +110,7 @@ public class Project extends BaseTimeEntity {
         this.status = ProjectStatus.COMPLETED;
     }
 
-    
+
     public void updateSkills(List<ProjectSkill> newProjectSkills) {
         this.projectSkills.clear();
         this.projectSkills.addAll(newProjectSkills);

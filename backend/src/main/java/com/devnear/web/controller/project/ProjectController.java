@@ -78,4 +78,31 @@ public class ProjectController {
         ProjectResponse response = projectService.getProject(projectId);
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "프로젝트 마감", description = "프로젝트 공고를 마감합니다.")
+    @PatchMapping("/{projectId}/close")
+    public ResponseEntity<Void> closeProject(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long projectId) {
+        projectService.closeProject(user, projectId);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "프로젝트 시작", description = "프로젝트를 진행중으로 변경합니다.")
+    @PatchMapping("/{projectId}/start")
+    public ResponseEntity<Void> startProject(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long projectId) {
+        projectService.startProject(user, projectId);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "프로젝트 완료", description = "프로젝트를 완료 처리합니다.")
+    @PatchMapping("/{projectId}/complete")
+    public ResponseEntity<Void> completeProject(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long projectId) {
+        projectService.completeProject(user, projectId);
+        return ResponseEntity.ok().build();
+    }
 }

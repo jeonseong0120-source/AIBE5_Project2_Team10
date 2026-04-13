@@ -149,4 +149,22 @@ public class ProjectService {
         if (address == null || address.length() < 5) return "****";
         return address.substring(0, 5) + "...(하위 주소 마스킹)";
     }
+
+    @Transactional
+    public void closeProject(User user, Long projectId) {
+        Project project = findProjectAndValidateOwner(user, projectId);
+        project.close();
+    }
+
+    @Transactional
+    public void startProject(User user, Long projectId) {
+        Project project = findProjectAndValidateOwner(user, projectId);
+        project.start();
+    }
+
+    @Transactional
+    public void completeProject(User user, Long projectId) {
+        Project project = findProjectAndValidateOwner(user, projectId);
+        project.complete();
+    }
 }
