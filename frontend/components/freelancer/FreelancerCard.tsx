@@ -18,13 +18,12 @@ export default function FreelancerCard({ data }: Props) {
             >
                 {/* 상단 이미지 */}
                 <div className="h-36 bg-gradient-to-br from-zinc-100 to-zinc-200">
-                    {data.profileImageUrl && (
-                        <img
-                            src={data.profileImageUrl}
-                            alt={data.nickname}
-                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                        />
-                    )}
+                    <img
+                        src={data.profileImageUrl || 'https://via.placeholder.com/150'}
+                        alt={data.nickname}
+                        onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/150'; }}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                    />
                 </div>
 
                 <div className="p-4">
@@ -34,7 +33,7 @@ export default function FreelancerCard({ data }: Props) {
 
                         <div className="flex items-center text-[#FF7D00] text-sm font-bold">
                             <Star size={14} fill="currentColor" />
-                            <span className="ml-1">{data.averageRating.toFixed(1)}</span>
+                            <span className="ml-1 font-mono">{data.averageRating.toFixed(1)}</span>
                         </div>
                     </div>
 
@@ -48,7 +47,7 @@ export default function FreelancerCard({ data }: Props) {
                         {data.skills.slice(0, 3).map((skill) => (
                             <span
                                 key={skill.id}
-                                className="px-2 py-0.5 text-[10px] rounded-md bg-orange-50 text-[#FF7D00] border border-orange-100 font-semibold"
+                                className="px-2 py-0.5 text-[10px] rounded-md bg-orange-50 text-[#FF7D00] border border-orange-100 font-semibold font-mono uppercase"
                             >
                                 {skill.name}
                             </span>
@@ -56,13 +55,13 @@ export default function FreelancerCard({ data }: Props) {
                     </div>
 
                     {/* 하단 */}
-                    <div className="flex justify-between items-center pt-3 border-t border-zinc-100 text-xs text-zinc-500">
+                    <div className="flex justify-between items-center pt-3 border-t border-zinc-100 text-xs text-zinc-500 font-mono font-bold">
                         <div className="flex items-center">
-                            <MapPin size={12} className="mr-1"/>
+                            <MapPin size={12} className="mr-1 text-zinc-400"/>
                             {data.location}
                         </div>
 
-                        <div className="font-bold text-[#FF7D00]">
+                        <div className="text-[#7A4FFF]">
                             ₩{data.hourlyRate.toLocaleString()}
                         </div>
                     </div>

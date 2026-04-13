@@ -15,7 +15,6 @@ export default function ClientDashboard() {
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
 
-    // 🔥 커서 글로우 (마스터의 기존 로직 보존)
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
@@ -66,7 +65,7 @@ export default function ClientDashboard() {
             const mappedData = data.map(mapFreelancerDtoToProfile);
             setFreelancers(mappedData);
         } catch (err) {
-            console.error("인재를 불러오지 못했습니다!", err);
+            // [수정] 봇 리뷰 반영: 불필요한 콘솔 로그 제거
         } finally {
             setLoading(false);
         }
@@ -89,7 +88,7 @@ export default function ClientDashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden">
+        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
 
             {/* 🔥 커서 글로우 */}
             <div
@@ -99,9 +98,8 @@ export default function ClientDashboard() {
                     top: cursor.y - 150
                 }}
             />
-            {/* [수정] NAV: 배경 화이트 원복 및 로고 컬러 유지 */}
+            {/* NAV */}
             <nav className="w-full py-5 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                {/* [로고] Dev(#FF7D00) / Near(#7A4FFF) - 화이트 배경에서 가독성 최상 */}
                 <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
                     <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
@@ -114,13 +112,17 @@ export default function ClientDashboard() {
                         MY_PROFILE
                     </button>
 
-                    <button className="px-6 py-2.5 bg-[#FF7D00] text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition shadow-md shadow-orange-100 uppercase">
+                    {/* [수정] 봇 리뷰 반영: onClick 핸들러 추가하여 알림창 띄우기 */}
+                    <button 
+                        onClick={() => alert("시스템 설계 중입니다. 다음 업데이트를 기다려주세요.")} 
+                        className="px-6 py-2.5 bg-[#FF7D00] text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition shadow-md shadow-orange-100 uppercase font-mono"
+                    >
                         Register_Project
                     </button>
                 </div>
             </nav>
 
-            {/* HEADER (기존 로직 및 스타일 유지) */}
+            {/* HEADER */}
             <section className="relative pt-24 pb-16 px-8 bg-white border-b border-zinc-200 overflow-hidden">
                 <div className="absolute inset-0 pointer-events-none">
                     <svg className="absolute w-full h-full opacity-[0.06]" viewBox="0 0 1000 300">
@@ -134,10 +136,10 @@ export default function ClientDashboard() {
                 </div>
 
                 <div className="max-w-4xl mx-auto relative z-10 text-center">
-                    <div className="flex justify-center gap-6 text-xs text-zinc-500 mb-4 font-bold">
-                        <div>🔥 매칭률 92%</div>
-                        <div>📍 서울 프리랜서 1,284명</div>
-                        <div>⚡ 평균 응답 3.2h</div>
+                    <div className="flex justify-center gap-6 text-xs text-zinc-500 mb-4 font-bold font-mono">
+                        <div>🔥 MATCH RATE: 92%</div>
+                        <div>📍 SEOUL AGENTS: 1,284</div>
+                        <div>⚡ AVG RESPONSE: 3.2H</div>
                     </div>
 
                     <motion.h1
@@ -150,7 +152,7 @@ export default function ClientDashboard() {
                     </motion.h1>
 
                     <p className="text-zinc-500 mb-10 font-medium">
-                        DevNear는 개발자와 클라이언트를 가장 효율적으로 연결합니다.
+                        DevNear는 개발자와 클라이언트를 가장 타당하게 연결합니다.
                     </p>
 
                     {/* SEARCH */}
@@ -175,8 +177,8 @@ export default function ClientDashboard() {
                             />
                         </div>
 
-                        <button className="bg-[#FF7D00] text-white px-8 py-3 rounded-xl font-bold hover:brightness-110 transition shadow-lg shadow-orange-100">
-                            탐색
+                        <button className="bg-[#FF7D00] text-white px-8 py-3 rounded-xl font-bold hover:brightness-110 transition shadow-lg shadow-orange-100 font-mono tracking-widest">
+                            SEARCH
                         </button>
                     </div>
 
@@ -186,7 +188,7 @@ export default function ClientDashboard() {
                             <button
                                 key={s}
                                 onClick={() => setFilter({ ...filter, skill: filter.skill === s ? '' : s })}
-                                className={`px-4 py-1.5 rounded-full text-sm font-bold border transition ${
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold border transition font-mono ${
                                     filter.skill === s
                                         ? 'bg-[#FF7D00] text-white border-[#FF7D00] shadow-md'
                                         : 'bg-white text-zinc-500 border-zinc-200 hover:border-[#FF7D00]'
@@ -199,11 +201,11 @@ export default function ClientDashboard() {
                 </div>
             </section>
 
-            {/* LIST (기존 리스트 보존) */}
+            {/* LIST */}
             <main className="max-w-7xl mx-auto px-8 py-16">
                 <div className="flex justify-between items-center mb-10 border-b border-zinc-100 pb-6">
-                    <h2 className="text-2xl font-black tracking-tight text-zinc-950 uppercase">
-                        전문가 검색 결과 <span className="text-[#7A4FFF] ml-1">[{freelancers.length}]</span>
+                    <h2 className="text-xl font-black tracking-tight text-zinc-950 uppercase font-mono">
+                        System_Agents <span className="text-[#7A4FFF] ml-1">[{freelancers.length}]</span>
                     </h2>
 
                     <div className="flex items-center gap-2 text-sm text-zinc-500 font-bold bg-white px-4 py-2 rounded-lg border border-zinc-200">
@@ -226,15 +228,15 @@ export default function ClientDashboard() {
                         <p className="text-zinc-400 font-black font-mono text-xs tracking-widest uppercase">Fetching_Experts...</p>
                     </div>
                 ) : freelancers.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {freelancers.map((item) => (
-                            <div key={item.id} className="transition-transform duration-300 hover:scale-[1.02]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        {freelancers.map((item, idx) => (
+                            <div key={item.id || idx} className="transition-transform duration-300 hover:scale-[1.02]">
                                 <FreelancerCard data={item} />
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-32 bg-white rounded-[2rem] border-2 border-dashed border-zinc-100">
+                    <div className="text-center py-32 bg-white rounded-[2rem] border-2 border-dashed border-zinc-200">
                         <Search className="w-12 h-12 text-zinc-200 mx-auto mb-4" />
                         <h3 className="text-zinc-400 font-bold text-lg italic uppercase font-mono tracking-tighter">Null: No_Expert_Found</h3>
                         <button
