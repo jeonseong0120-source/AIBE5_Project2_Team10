@@ -1,9 +1,15 @@
-// 프론트엔드 내부에서 사용할 정제된 인터페이스
+// 1. 기초가 되는 스킬 인터페이스 정의 (이게 없어서 TS2304 에러 발생)
 export interface Skill {
     id: number;
     name: string;
 }
 
+export interface ApiSkill {
+    skillId: number;
+    name: string;
+}
+
+// 2. 프론트엔드 내부에서 사용할 정제된 인터페이스
 export interface FreelancerProfile {
     id: number;
     nickname: string;
@@ -14,14 +20,10 @@ export interface FreelancerProfile {
     workStyle: 'ONLINE' | 'OFFLINE' | 'HYBRID';
     skills: Skill[];
     averageRating: number;
+    completedProjects?: number; // 상세 페이지용 추가
 }
 
-// 백엔드 API 응답(DTO) 형태에 맞춘 인터페이스
-export interface ApiSkill {
-    skillId: number;
-    name: string;
-}
-
+// 3. 백엔드 API 응답(DTO) 형태
 export interface ApiFreelancerDto {
     profileId: number;
     userName: string;
@@ -32,9 +34,10 @@ export interface ApiFreelancerDto {
     workStyle: 'ONLINE' | 'OFFLINE' | 'HYBRID';
     skills: ApiSkill[];
     averageRating: number | null;
+    completedProjects?: number; // 상세 페이지용 추가
 }
 
-// API DTO를 프론트엔드 인터페이스로 안전하게 변환해주는 매퍼 함수
+// 4. 매퍼 함수
 export function mapFreelancerDtoToProfile(dto: ApiFreelancerDto): FreelancerProfile {
     return {
         id: dto.profileId,
@@ -48,7 +51,7 @@ export function mapFreelancerDtoToProfile(dto: ApiFreelancerDto): FreelancerProf
             id: skill.skillId,
             name: skill.name,
         })) : [],
-        // averageRating이 null일 경우 0으로 안전하게 처리
         averageRating: dto.averageRating ?? 0,
+        completedProjects: dto.completedProjects ?? 0,
     };
 }

@@ -15,7 +15,7 @@ export default function ClientDashboard() {
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
 
-    // 🔥 커서 글로우
+    // 🔥 커서 글로우 (마스터의 기존 로직 보존)
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
@@ -99,29 +99,28 @@ export default function ClientDashboard() {
                     top: cursor.y - 150
                 }}
             />
-
-            {/* NAV */}
-            <nav className="w-full py-4 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50">
-                <div className="font-black text-2xl tracking-tight cursor-pointer" onClick={() => router.push("/")}>
-                    <span className="text-[#FF7D00]">Dev</span>
-                    <span className="text-zinc-900">Near</span>
+            {/* [수정] NAV: 배경 화이트 원복 및 로고 컬러 유지 */}
+            <nav className="w-full py-5 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+                {/* [로고] Dev(#FF7D00) / Near(#7A4FFF) - 화이트 배경에서 가독성 최상 */}
+                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
+                    <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
 
-                <div className="flex gap-4 items-center">
+                <div className="flex gap-6 items-center">
                     <button
                         onClick={() => router.push('/profile')}
-                        className="text-sm font-semibold text-zinc-500 hover:text-zinc-900 transition"
+                        className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono"
                     >
-                        내 프로필
+                        MY_PROFILE
                     </button>
 
-                    <button className="px-5 py-2 bg-[#FF7D00] text-white rounded-xl text-sm font-bold hover:brightness-110 transition shadow-md">
-                        프로젝트 등록
+                    <button className="px-6 py-2.5 bg-[#FF7D00] text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition shadow-md shadow-orange-100 uppercase">
+                        Register_Project
                     </button>
                 </div>
             </nav>
 
-            {/* HEADER */}
+            {/* HEADER (기존 로직 및 스타일 유지) */}
             <section className="relative pt-24 pb-16 px-8 bg-white border-b border-zinc-200 overflow-hidden">
                 <div className="absolute inset-0 pointer-events-none">
                     <svg className="absolute w-full h-full opacity-[0.06]" viewBox="0 0 1000 300">
@@ -200,17 +199,17 @@ export default function ClientDashboard() {
                 </div>
             </section>
 
-            {/* LIST */}
+            {/* LIST (기존 리스트 보존) */}
             <main className="max-w-7xl mx-auto px-8 py-16">
                 <div className="flex justify-between items-center mb-10 border-b border-zinc-100 pb-6">
-                    <h2 className="text-2xl font-black tracking-tight">
-                        전문가 검색 결과 <span className="text-[#FF7D00] ml-1">{freelancers.length}</span>
+                    <h2 className="text-2xl font-black tracking-tight text-zinc-950 uppercase">
+                        전문가 검색 결과 <span className="text-[#7A4FFF] ml-1">[{freelancers.length}]</span>
                     </h2>
 
                     <div className="flex items-center gap-2 text-sm text-zinc-500 font-bold bg-white px-4 py-2 rounded-lg border border-zinc-200">
                         <SlidersHorizontal className="w-4 h-4 text-zinc-400" />
                         <select
-                            className="bg-transparent outline-none cursor-pointer"
+                            className="bg-transparent outline-none cursor-pointer font-mono tracking-widest text-[10px] uppercase font-black"
                             value={filter.sort}
                             onChange={(e) => setFilter({ ...filter, sort: e.target.value })}
                         >
@@ -223,8 +222,8 @@ export default function ClientDashboard() {
 
                 {loading ? (
                     <div className="flex flex-col items-center py-32">
-                        <div className="w-12 h-12 border-4 border-[#FF7D00] border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <p className="text-zinc-400 font-bold text-sm tracking-widest">FETCHING EXPERTS...</p>
+                        <div className="w-12 h-12 border-4 border-[#7A4FFF] border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-zinc-400 font-black font-mono text-xs tracking-widest uppercase">Fetching_Experts...</p>
                     </div>
                 ) : freelancers.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -237,12 +236,12 @@ export default function ClientDashboard() {
                 ) : (
                     <div className="text-center py-32 bg-white rounded-[2rem] border-2 border-dashed border-zinc-100">
                         <Search className="w-12 h-12 text-zinc-200 mx-auto mb-4" />
-                        <h3 className="text-zinc-400 font-bold text-lg italic">일치하는 전문가가 없습니다.</h3>
+                        <h3 className="text-zinc-400 font-bold text-lg italic uppercase font-mono tracking-tighter">Null: No_Expert_Found</h3>
                         <button
                             onClick={() => setFilter({ skill: '', region: '', sort: 'id' })}
-                            className="mt-4 text-[#FF7D00] font-black underline decoration-2 underline-offset-4 uppercase text-xs tracking-widest"
+                            className="mt-4 text-[#FF7D00] font-black underline decoration-2 underline-offset-4 uppercase text-xs tracking-widest font-mono"
                         >
-                            Reset Filter
+                            Reset_System_Filter
                         </button>
                     </div>
                 )}
