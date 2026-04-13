@@ -1,6 +1,7 @@
 package com.devnear.web.domain.project;
 
 import com.devnear.web.domain.client.ClientProfile;
+import com.devnear.web.domain.enums.ProjectStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -27,4 +28,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "projectSkills", "projectSkills.skill"})
     Page<Project> findAllByClientProfile(ClientProfile clientProfile, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "projectSkills", "projectSkills.skill"})
+    Page<Project> findAllByClientProfileAndStatus(ClientProfile clientProfile, ProjectStatus status, Pageable pageable);
 }

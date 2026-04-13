@@ -93,6 +93,9 @@ public class Project extends BaseTimeEntity {
     }
 
     public void close() {
+        if (this.status != ProjectStatus.OPEN) {
+            throw new IllegalStateException("모집 중인 프로젝트만 마감할 수 있습니다.");
+        }
         this.status = ProjectStatus.CLOSED;
     }
 
@@ -109,6 +112,7 @@ public class Project extends BaseTimeEntity {
         }
         this.status = ProjectStatus.COMPLETED;
     }
+
 
     public void updateSkills(List<ProjectSkill> newProjectSkills) {
         this.projectSkills.clear();

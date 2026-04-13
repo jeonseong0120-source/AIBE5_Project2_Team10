@@ -2,6 +2,7 @@ package com.devnear.web.service.project;
 
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.client.ClientProfileRepository;
+import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
 import com.devnear.web.domain.project.ProjectSkill;
@@ -110,8 +111,13 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProjectResponse> getMyProjectList(User user, Pageable pageable) {
+    public Page<ProjectResponse> getMyProjectList(User user, ProjectStatus status, Pageable pageable) {
         ClientProfile clientProfile = findClientProfileByUser(user);
+
+        if (status != null) {
+            return projectRepository.findAllByClientProfileAndStatus(clientProfile, status, pageable)
+                    .map(ProjectResponse::from);
+        }
         return projectRepository.findAllByClientProfile(clientProfile, pageable)
                 .map(ProjectResponse::from);
     }
@@ -142,5 +148,23 @@ public class ProjectService {
     private String maskAddress(String address) {
         if (address == null || address.length() < 5) return "****";
         return address.substring(0, 5) + "...(하위 주소 마스킹)";
+    }
+
+    @Transactional
+    public void closeProject(User user, Long projectId) {
+        Project project = findProjectAndValidateOwner(user, projectId);
+        project.close();
+    }
+
+    @Transactional
+    public void startProject(User user, Long projectId) {
+        Project project = findProjectAndValidateOwner(user, projectId);
+        project.start();
+    }
+
+    @Transactional
+    public void completeProject(User user, Long projectId) {
+        Project project = findProjectAndValidateOwner(user, projectId);
+        project.complete();
     }
 }

@@ -1,5 +1,6 @@
 package com.devnear.web.controller.project;
 
+import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.project.ProjectRequest;
 import com.devnear.web.dto.project.ProjectResponse;
@@ -66,10 +67,9 @@ public class ProjectController {
     @GetMapping("/me")
     public ResponseEntity<Page<ProjectResponse>> getMyProjects(
             @AuthenticationPrincipal User user,
+            @RequestParam(required = false) ProjectStatus status,  // 추가
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-
-        Page<ProjectResponse> responses = projectService.getMyProjectList(user, pageable);
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(projectService.getMyProjectList(user, status, pageable));
     }
 
     @Operation(summary = "프로젝트 공고 단건 조회", description = "프로젝트 공고 상세를 조회합니다.")
@@ -77,5 +77,32 @@ public class ProjectController {
     public ResponseEntity<ProjectResponse> getProject(@PathVariable Long projectId) {
         ProjectResponse response = projectService.getProject(projectId);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "프로젝트 마감", description = "프로젝트 공고를 마감합니다.")
+    @PatchMapping("/{projectId}/close")
+    public ResponseEntity<Void> closeProject(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long projectId) {
+        projectService.closeProject(user, projectId);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "프로젝트 시작", description = "프로젝트를 진행중으로 변경합니다.")
+    @PatchMapping("/{projectId}/start")
+    public ResponseEntity<Void> startProject(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long projectId) {
+        projectService.startProject(user, projectId);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "프로젝트 완료", description = "프로젝트를 완료 처리합니다.")
+    @PatchMapping("/{projectId}/complete")
+    public ResponseEntity<Void> completeProject(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long projectId) {
+        projectService.completeProject(user, projectId);
+        return ResponseEntity.ok().build();
     }
 }

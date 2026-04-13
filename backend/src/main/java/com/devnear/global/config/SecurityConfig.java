@@ -68,8 +68,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/projects", "/api/v1/projects").hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers(HttpMethod.PUT, "/api/projects/**", "/api/v1/projects/**").hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers(HttpMethod.DELETE, "/api/projects/**", "/api/v1/projects/**").hasAnyRole("CLIENT", "BOTH")
-                        .requestMatchers(HttpMethod.PATCH, "/api/projects/*/applications", "/api/v1/projects/*/applications", "/api/applications/*/accept", "/api/v1/applications/*/accept").hasAnyRole("CLIENT", "BOTH")
+                        .requestMatchers(HttpMethod.PATCH,
+                                "/api/projects/*/applications", "/api/v1/projects/*/applications",
+                                "/api/applications/*/accept", "/api/v1/applications/*/accept",
+                                "/api/projects/*/close", "/api/v1/projects/*/close",
+                                "/api/projects/*/start", "/api/v1/projects/*/start",
+                                "/api/projects/*/complete", "/api/v1/projects/*/complete"
+                        ).hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers("/api/client/**", "/api/v1/client/**").hasAnyRole("CLIENT", "BOTH")
+                        .requestMatchers("/api/bookmarks/**", "/api/v1/bookmarks/**").hasAnyRole("CLIENT", "BOTH")
 
                         // 5. [나머지] 커뮤니티 글쓰기, 좋아요, 댓글 작성 등은 GUEST를 제외한 정식 유저만 가능!
                         .anyRequest().hasAnyRole("CLIENT", "FREELANCER", "BOTH")
