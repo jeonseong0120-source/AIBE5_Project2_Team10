@@ -8,7 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "project_skills")
+@Table(name = "project_skills",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"project_id", "skill_id"}))  // 추가
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProjectSkill {
@@ -16,7 +17,7 @@ public class ProjectSkill {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "project_skill_id")
-    private Long id;
+    private Long projectSkillId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
@@ -29,6 +30,6 @@ public class ProjectSkill {
     @Builder
     public ProjectSkill(Project project, Skill skill) {
         this.project = project;
-        this.skill = skill;
+        this.skill   = skill;
     }
 }

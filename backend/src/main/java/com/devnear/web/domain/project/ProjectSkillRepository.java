@@ -7,6 +7,5 @@ import java.util.List;
 
 @Repository
 public interface ProjectSkillRepository extends JpaRepository<ProjectSkill, Long> {
-    void deleteByProject(Project project);
-    List<ProjectSkill> findAllByProject(Project project);
+
 }

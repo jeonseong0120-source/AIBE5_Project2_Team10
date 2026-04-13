@@ -5,7 +5,6 @@ import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
 import com.devnear.web.domain.project.ProjectSkill;
-import com.devnear.web.domain.project.ProjectSkillRepository;
 import com.devnear.web.domain.skill.Skill;
 import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
@@ -32,30 +31,6 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final ClientProfileRepository clientProfileRepository;
     private final SkillRepository skillRepository;
-    private final ProjectSkillRepository projectSkillRepository;
-
-    @Transactional
-    public Long createProject(User user, ProjectRequest request) {
-        ClientProfile clientProfile = findClientProfileByUser(user);
-
-        if (request.isOffline() && (request.getLocation() == null || request.getLatitude() == null)) {
-            throw new IllegalArgumentException("오프라인 프로젝트는 장소 정보가 필수입니다.");
-        }
-
-        Project project = projectRepository.save(request.toEntity(clientProfile));
-
-        // 태그(스킬) 처리
-        if (request.getSkillNames() != null && !request.getSkillNames().isEmpty()) {
-            mapSkillsToProject(project, request.getSkillNames());
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("새 프로젝트 등록 - ID: {}, 작성자: {}, 오프라인: {}, 주소: {}",
-                    project.getId(), user.getEmail(), request.isOffline(), maskAddress(request.getLocation()));
-        }
-
-        return project.getId();
-    }
 
     @Transactional
     public void updateProject(User user, Long projectId, ProjectRequest request) {
@@ -67,29 +42,24 @@ public class ProjectService {
 
         project.update(request);
 
-        // 스킬 정보 업데이트
         if (request.getSkillNames() != null) {
-            projectSkillRepository.deleteByProject(project);
+            project.updateSkills(Collections.emptyList());
             if (!request.getSkillNames().isEmpty()) {
                 mapSkillsToProject(project, request.getSkillNames());
-            } else {
-                project.updateSkills(Collections.emptyList());
             }
         }
     }
 
-    /**
-     * 입력받은 스킬 이름들을 기반으로 스킬 엔티티를 찾거나 생성하고, 프로젝트에 연결합니다.
-     */
     private void mapSkillsToProject(Project project, List<String> skillNames) {
         List<ProjectSkill> projectSkills = skillNames.stream()
                 .map(String::trim)
                 .filter(name -> !name.isEmpty())
+                .distinct()
                 .map(name -> {
                     Skill skill = skillRepository.findByName(name)
                             .orElseGet(() -> skillRepository.save(Skill.builder()
                                     .name(name)
-                                    .isDefault(false) // 사용자가 직접 추가한 경우(태그)
+                                    .isDefault(false)
                                     .build()));
                     return ProjectSkill.builder()
                             .project(project)
@@ -98,7 +68,6 @@ public class ProjectService {
                 })
                 .collect(Collectors.toList());
 
-        projectSkillRepository.saveAll(projectSkills);
         project.updateSkills(projectSkills);
     }
 

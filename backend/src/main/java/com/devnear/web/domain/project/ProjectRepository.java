@@ -21,12 +21,10 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
            "WHERE p.id = :projectId")
     Optional<Project> findByIdWithClientProfile(@Param("projectId") Long projectId);
 
-    // 페이징 목록 조회 시 N+1 문제 해결 (스킬 정보도 함께 가져옴)
     @Override
     @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "projectSkills", "projectSkills.skill"})
     Page<Project> findAll(Pageable pageable);
 
-    // 특정 클라이언트의 공고 목록 조회
     @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "projectSkills", "projectSkills.skill"})
     Page<Project> findAllByClientProfile(ClientProfile clientProfile, Pageable pageable);
 }
