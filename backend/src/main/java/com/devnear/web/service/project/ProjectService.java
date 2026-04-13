@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -31,6 +32,28 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final ClientProfileRepository clientProfileRepository;
     private final SkillRepository skillRepository;
+
+    @Transactional
+    public Long createProject(User user, ProjectRequest request) {
+        ClientProfile clientProfile = findClientProfileByUser(user);
+
+        if (request.isOffline() && (request.getLocation() == null || request.getLatitude() == null)) {
+            throw new IllegalArgumentException("오프라인 프로젝트는 장소 정보가 필수입니다.");
+        }
+
+        Project project = projectRepository.save(request.toEntity(clientProfile));
+
+        if (request.getSkillNames() != null && !request.getSkillNames().isEmpty()) {
+            mapSkillsToProject(project, request.getSkillNames());
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("새 프로젝트 등록 - ID: {}, 작성자: {}, 오프라인: {}, 주소: {}",
+                    project.getId(), user.getEmail(), request.isOffline(), maskAddress(request.getLocation()));
+        }
+
+        return project.getId();
+    }
 
     @Transactional
     public void updateProject(User user, Long projectId, ProjectRequest request) {
@@ -52,6 +75,7 @@ public class ProjectService {
 
     private void mapSkillsToProject(Project project, List<String> skillNames) {
         List<ProjectSkill> projectSkills = skillNames.stream()
+                .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(name -> !name.isEmpty())
                 .distinct()
