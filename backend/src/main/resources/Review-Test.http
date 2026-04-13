@@ -18,7 +18,7 @@ Content-Type: application/json
 
 ### 프리랜서 리뷰 작성
 POST http://localhost:8080/api/reviews/freelancers
-Authorization: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJlbWFpbEBtYWlsLmNvbSIsInVzZXJJZCI6Miwicm9sZSI6IkNMSUVOVCIsImlhdCI6MTc3NjA4MDI5NywiZXhwIjoxNzc2MTY2Njk3fQ.ByufrXspSkl-Vlxt8IvYXwbCh5y-ZDTbHht2i0mHCchsPU1jxVn-RAQ2O7xC4LKz-xbm5C8C0uLG-aOKd7c1Ug"
+Authorization: Bearer {{client_jwt}}
 Content-Type: application/json
 
 {
