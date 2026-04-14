@@ -10,6 +10,9 @@ interface Props {
 }
 
 export default function FreelancerCard({ data }: Props) {
+    // [수정] 무한 루프 에러를 막기 위해 안전한 Fallback URL 상수화 및 브랜드 컬러 적용
+    const FALLBACK_IMAGE_URL = "https://ui-avatars.com/api/?name=Agent&background=F4F4F5&color=A1A1AA&size=150";
+
     return (
         <Link href={`/freelancer/${data.id}`}>
             <motion.div
@@ -19,9 +22,15 @@ export default function FreelancerCard({ data }: Props) {
                 {/* 상단 이미지 */}
                 <div className="h-36 bg-gradient-to-br from-zinc-100 to-zinc-200">
                     <img
-                        src={data.profileImageUrl || 'https://via.placeholder.com/150'}
+                        src={data.profileImageUrl || FALLBACK_IMAGE_URL}
                         alt={data.nickname}
-                        onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/150'; }}
+                        onError={(e) => { 
+                            // [핵심] 이미지가 깨졌을 때 Fallback 이미지로 교체하되, 
+                            // 교체한 이미지마저 깨지면 무한루프에 빠지지 않도록 방어 코드 추가!
+                            if (e.currentTarget.src !== FALLBACK_IMAGE_URL) {
+                                e.currentTarget.src = FALLBACK_IMAGE_URL; 
+                            }
+                        }}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                     />
                 </div>

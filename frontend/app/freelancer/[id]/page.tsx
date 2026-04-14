@@ -13,6 +13,8 @@ export default function FreelancerDetailPage() {
     const [freelancer, setFreelancer] = useState<FreelancerProfile | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const FALLBACK_IMAGE_URL = "https://ui-avatars.com/api/?name=Agent&background=F4F4F5&color=A1A1AA&size=150";
+
     useEffect(() => {
         const fetchDetail = async () => {
             try {
@@ -89,10 +91,14 @@ export default function FreelancerDetailPage() {
                     <div className="relative shrink-0">
                         <div className="w-32 h-32 md:w-40 md:h-40 rounded-full p-1 bg-gradient-to-tr from-[#FF7D00] to-[#7A4FFF]">
                             <img
-                                src={freelancer.profileImageUrl || 'https://via.placeholder.com/150'}
+                                src={freelancer.profileImageUrl || FALLBACK_IMAGE_URL}
                                 alt={freelancer.nickname}
-                                onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/150'; }}
-                                className="w-full h-full rounded-full object-cover border-4 border-white"
+                                onError={(e) => { 
+                                    if (e.currentTarget.src !== FALLBACK_IMAGE_URL) {
+                                        e.currentTarget.src = FALLBACK_IMAGE_URL; 
+                                    }
+                                }}
+                                className="w-full h-full rounded-full object-cover border-4 border-white bg-white"
                             />
                         </div>
                     </div>
