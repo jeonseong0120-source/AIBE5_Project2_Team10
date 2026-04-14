@@ -117,4 +117,12 @@ public class FreelancerProfile extends BaseTimeEntity {
             }
         }
     }
+    // 리뷰 평균 점수를 갱신하는 메서드
+    public void updateAverageRating(Double averageRating) {
+        this.averageRating = averageRating;
+    }
+    // 리뷰 개수를 갱신하는 메서드
+    public void updateReviewCount(Integer reviewCount) {
+        this.reviewCount = reviewCount;
+    }
 }

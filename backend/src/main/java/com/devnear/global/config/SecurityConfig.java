@@ -57,6 +57,22 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/users/onboarding", "/api/v1/users/onboarding", "/api/users/onboarding/", "/api/v1/users/onboarding/").hasRole("GUEST")
 
                         .requestMatchers("/api/users/me", "/api/v1/users/me", "/api/users/me/", "/api/v1/users/me/").authenticated()
+                        //    프리랜서 리뷰 등록
+                        //    클라이언트가 프리랜서를 평가하는 구조이므로
+                        //    CLIENT 또는 BOTH 권한이 있어야 작성 가능
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/reviews/freelancers", "/api/v1/reviews/freelancers"
+                        ).hasAnyRole("CLIENT", "BOTH")
+
+
+                        //    프리랜서가 클라이언트를 평가하는 구조이므로
+                        //    FREELANCER 또는 BOTH 권한이 있어야 작성 가능
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/clients", "/api/v1/reviews/clients").hasAnyRole("FREELANCER", "BOTH")
+
+                        // 리뷰 목록 조회는 공개하고 싶다면 GET 허용
+                        //    Swagger 테스트나 상세 조회 확인할 때 편함
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/**", "/api/v1/reviews/**").permitAll()
 
                         // 3. [권한] 프리랜서 전용 구역
                         .requestMatchers(HttpMethod.POST, "/api/portfolios", "/api/v1/portfolios", "/api/applications", "/api/v1/applications", "/api/skills", "/api/v1/skills").hasAnyRole("FREELANCER", "BOTH")

@@ -96,5 +96,11 @@ public class ClientProfile extends BaseTimeEntity {
         this.homepageUrl = request.getHomepageUrl();
         this.phoneNum = request.getPhoneNum();
     }
+
+    // 리뷰가 등록되거나 수정되었을 때,
+    // 클라이언트의 평균 평점을 갱신하기 위한 메서드
+    public void updateRating(BigDecimal rating) {
+        this.rating = rating;
+    }
 }
 

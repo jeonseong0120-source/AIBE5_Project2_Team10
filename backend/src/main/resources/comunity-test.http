@@ -3,7 +3,7 @@ GET http://localhost:8080/api/hello
 
 ### 1. 커뮤니티 게시글 작성
 POST http://localhost:8080/api/community/posts
-X-USER-ID: 1
+USER-ID: 1
 Content-Type: application/json
 
 {
@@ -19,7 +19,7 @@ GET http://localhost:8080/api/community/posts/1
 
 ### 4. 커뮤니티 게시글 수정
 PUT http://localhost:8080/api/community/posts/1
-X-USER-ID: 1
+USER-ID: 1
 Content-Type: application/json
 
 {
@@ -32,7 +32,7 @@ GET http://localhost:8080/api/community/posts/1
 
 ### 6. 댓글 작성
 POST http://localhost:8080/api/community/comments
-X-USER-ID: 2
+USER-ID: 2
 Content-Type: application/json
 
 {
@@ -45,12 +45,12 @@ GET http://localhost:8080/api/community/posts/1/comments
 
 ### 8. 좋아요 추가
 POST http://localhost:8080/api/community/posts/1/like
-X-USER-ID: 2
+USER-ID: 2
 
 ### 9. 좋아요 취소
 DELETE http://localhost:8080/api/community/posts/1/like
-X-USER-ID: 2
+USER-ID: 2
 
 ### 10. 게시글 삭제
 DELETE http://localhost:8080/api/community/posts/1
-X-USER-ID: 1
+USER-ID: 1

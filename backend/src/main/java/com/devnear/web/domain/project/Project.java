@@ -3,6 +3,7 @@ package com.devnear.web.domain.project;
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.common.BaseTimeEntity;
 import com.devnear.web.domain.enums.ProjectStatus;
+import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.dto.project.ProjectRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -29,6 +30,11 @@ public class Project extends BaseTimeEntity {
     @JoinColumn(name = "client_id", nullable = false)
     private ClientProfile clientProfile;
 
+    // 추가: 실제 수행 프리랜서
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "freelancer_id")
+    private FreelancerProfile freelancerProfile;
+
     @Column(name = "project_name", nullable = false, length = 100)
     private String projectName;
 
@@ -46,19 +52,19 @@ public class Project extends BaseTimeEntity {
     private ProjectStatus status;
 
     @Column(nullable = false)
-    private boolean online; // 원격 근무 여부 (기본값 0/false)
+    private boolean online;
 
     @Column(nullable = false)
-    private boolean offline; // 상주 근무 여부 (기본값 0/false)
+    private boolean offline;
 
     @Column(length = 500)
     private String location;
 
     @Column
-    private Double latitude; // 위도
+    private Double latitude;
 
     @Column
-    private Double longitude; // 경도
+    private Double longitude;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectSkill> projectSkills = new ArrayList<>();
@@ -77,7 +83,7 @@ public class Project extends BaseTimeEntity {
         this.location = location;
         this.latitude = latitude;
         this.longitude = longitude;
-        this.status = ProjectStatus.OPEN; // 기본값 모집중(OPEN)
+        this.status = ProjectStatus.OPEN;
     }
 
     public void update(ProjectRequest request) {
@@ -90,6 +96,11 @@ public class Project extends BaseTimeEntity {
         this.location = request.getLocation();
         this.latitude = request.getLatitude();
         this.longitude = request.getLongitude();
+    }
+
+    // 추가: 프로젝트에 프리랜서 매칭
+    public void assignFreelancer(FreelancerProfile freelancerProfile) {
+        this.freelancerProfile = freelancerProfile;
     }
 
     public void close() {
