@@ -12,6 +12,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "projects")
@@ -64,6 +66,9 @@ public class Project extends BaseTimeEntity {
     @Column
     private Double longitude;
 
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectSkill> projectSkills = new ArrayList<>();
+
     @Builder
     public Project(ClientProfile clientProfile, String projectName, Integer budget,
                    LocalDate deadline, String detail, boolean online, boolean offline,
@@ -99,6 +104,9 @@ public class Project extends BaseTimeEntity {
     }
 
     public void close() {
+        if (this.status != ProjectStatus.OPEN) {
+            throw new IllegalStateException("모집 중인 프로젝트만 마감할 수 있습니다.");
+        }
         this.status = ProjectStatus.CLOSED;
     }
 
@@ -114,5 +122,11 @@ public class Project extends BaseTimeEntity {
             throw new IllegalStateException("진행 중인 프로젝트만 완료할 수 있습니다.");
         }
         this.status = ProjectStatus.COMPLETED;
+    }
+
+
+    public void updateSkills(List<ProjectSkill> newProjectSkills) {
+        this.projectSkills.clear();
+        this.projectSkills.addAll(newProjectSkills);
     }
 }

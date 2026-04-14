@@ -15,7 +15,8 @@ import java.util.Map;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/freelancers")
+// [수정] 프론트엔드의 v1 API 호출 규격과 맞추기 위해 매핑을 확장했습니다!
+@RequestMapping(value = {"/api/freelancers", "/api/v1/freelancers"})
 @RequiredArgsConstructor
 public class FreelancerController {
 
@@ -28,8 +29,6 @@ public class FreelancerController {
     public ResponseEntity<FreelancerProfileResponse> getMyProfile(
             @AuthenticationPrincipal User user) {
 
-        // 본래 SecurityConfig에서 차단되어야 할 비회원의 '/me' 조회를
-        // Controller 내에서 스스스로 방어(401 Unauthorized 반환)하도록 백업 보안 처리
         if (user == null) {
             return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
                     .build();
@@ -39,7 +38,6 @@ public class FreelancerController {
 
         if (response == null) {
             return ResponseEntity.noContent().build();
-                    
         }
 
         return ResponseEntity.ok(response);
@@ -67,7 +65,12 @@ public class FreelancerController {
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String sort) {
 
-        return ResponseEntity.ok(freelancerService.searchFreelancers(skill, region, sort));
+        // [수정] 프론트에서 빈 문자열("")을 보낼 때 500 쿼리 에러나 필터 누락이 생기지 않도록 null로 치환
+        String safeSkill = (skill != null && skill.trim().isEmpty()) ? null : skill;
+        String safeRegion = (region != null && region.trim().isEmpty()) ? null : region;
+        String safeSort = (sort != null && sort.trim().isEmpty()) ? null : sort;
+
+        return ResponseEntity.ok(freelancerService.searchFreelancers(safeSkill, safeRegion, safeSort));
     }
 
     // [조회] 특정 타 프리랜서의 상세 정보 보기

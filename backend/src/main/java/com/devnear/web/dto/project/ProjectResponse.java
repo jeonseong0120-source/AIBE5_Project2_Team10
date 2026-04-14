@@ -1,10 +1,13 @@
 package com.devnear.web.dto.project;
 
 import com.devnear.web.domain.project.Project;
+import com.devnear.web.domain.project.ProjectSkill;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Builder
@@ -21,6 +24,7 @@ public class ProjectResponse {
     private String location;
     private Double latitude;
     private Double longitude;
+    private List<String> skills; // 연결된 기술 스택 이름 목록
 
     public static ProjectResponse from(Project project) {
         return ProjectResponse.builder()
@@ -36,6 +40,9 @@ public class ProjectResponse {
                 .location(project.getLocation())
                 .latitude(project.getLatitude())
                 .longitude(project.getLongitude())
+                .skills(project.getProjectSkills().stream()
+                        .map(ps -> ps.getSkill().getName())
+                        .collect(Collectors.toList()))
                 .build();
     }
 }

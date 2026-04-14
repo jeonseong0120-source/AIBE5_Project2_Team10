@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
             IllegalArgumentException e, HttpServletRequest request) {
-        return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request); // 중복 코드 제거
+        return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request);
     }
 
     @ExceptionHandler(DuplicateProfileException.class)  // 추가

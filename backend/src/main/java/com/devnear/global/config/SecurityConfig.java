@@ -32,8 +32,6 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
-    // [보고] application.yml 에서 CORS 허용 주소를 읽어오도록 외부화 (배포 환경 대응)
-    // 설정이 없을 경우 기본값으로 로컬호스트 주소를 사용합니다.
     @Value("${app.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}")
     private List<String> allowedOrigins;
 
@@ -52,7 +50,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/auth/**", "/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/login/**", "/oauth2/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/freelancers/**", "/api/v1/freelancers/**", "/api/projects/**", "/api/v1/projects/**", "/api/portfolios/**", "/api/v1/portfolios/**", "/api/skills/**", "/api/v1/skills/**").permitAll()
+                        
+                        // [추가] 커뮤니티(Community) 조회 권한 추가 (명세서 준수: 누구나 조회 가능)
+                        .requestMatchers(HttpMethod.GET, "/api/freelancers/**", "/api/v1/freelancers/**", "/api/projects/**", "/api/v1/projects/**", "/api/portfolios/**", "/api/v1/portfolios/**", "/api/skills/**", "/api/v1/skills/**", "/api/community/**", "/api/v1/community/**").permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/users/onboarding", "/api/v1/users/onboarding", "/api/users/onboarding/", "/api/v1/users/onboarding/").hasRole("GUEST")
 
@@ -74,17 +74,27 @@ public class SecurityConfig {
                         //    Swagger 테스트나 상세 조회 확인할 때 편함
                         .requestMatchers(HttpMethod.GET, "/api/reviews/**", "/api/v1/reviews/**").permitAll()
 
+                        // 3. [권한] 프리랜서 전용 구역
                         .requestMatchers(HttpMethod.POST, "/api/portfolios", "/api/v1/portfolios", "/api/applications", "/api/v1/applications", "/api/skills", "/api/v1/skills").hasAnyRole("FREELANCER", "BOTH")
                         .requestMatchers(HttpMethod.DELETE, "/api/portfolios/**", "/api/v1/portfolios/**", "/api/skills/**", "/api/v1/skills/**").hasAnyRole("FREELANCER", "BOTH")
                         .requestMatchers(HttpMethod.PATCH, "/api/freelancers/status", "/api/v1/freelancers/status").hasAnyRole("FREELANCER", "BOTH")
                         .requestMatchers("/api/freelancer/**", "/api/v1/freelancer/**").hasAnyRole("FREELANCER", "BOTH")
 
+                        // 4. [권한] 클라이언트 전용 구역
                         .requestMatchers(HttpMethod.POST, "/api/projects", "/api/v1/projects").hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers(HttpMethod.PUT, "/api/projects/**", "/api/v1/projects/**").hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers(HttpMethod.DELETE, "/api/projects/**", "/api/v1/projects/**").hasAnyRole("CLIENT", "BOTH")
-                        .requestMatchers(HttpMethod.PATCH, "/api/projects/*/applications", "/api/v1/projects/*/applications", "/api/applications/*/accept", "/api/v1/applications/*/accept").hasAnyRole("CLIENT", "BOTH")
+                        .requestMatchers(HttpMethod.PATCH,
+                                "/api/projects/*/applications", "/api/v1/projects/*/applications",
+                                "/api/applications/*/accept", "/api/v1/applications/*/accept",
+                                "/api/projects/*/close", "/api/v1/projects/*/close",
+                                "/api/projects/*/start", "/api/v1/projects/*/start",
+                                "/api/projects/*/complete", "/api/v1/projects/*/complete"
+                        ).hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers("/api/client/**", "/api/v1/client/**").hasAnyRole("CLIENT", "BOTH")
+                        .requestMatchers("/api/bookmarks/**", "/api/v1/bookmarks/**").hasAnyRole("CLIENT", "BOTH")
 
+                        // 5. [나머지] 커뮤니티 글쓰기, 좋아요, 댓글 작성 등은 GUEST를 제외한 정식 유저만 가능!
                         .anyRequest().hasAnyRole("CLIENT", "FREELANCER", "BOTH")
                 )
                 .oauth2Login(oauth2 -> oauth2
@@ -101,7 +111,6 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        // [수정] @Value로 읽어온 리스트(allowedOrigins)를 삽입하여 배포 환경 변경 대응
         config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

@@ -28,7 +28,6 @@ export default function LoginPage() {
         }
     };
 
-    // [수정] 배포 환경을 고려하여 .env.local의 API 주소를 사용하도록 수정
     const handleGoogleLogin = () => {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
         window.location.href = `${baseUrl}/oauth2/authorization/google`;
@@ -42,29 +41,46 @@ export default function LoginPage() {
                  style={{ backgroundImage: 'linear-gradient(#f0f0f0 1px, transparent 1px), linear-gradient(90deg, #f0f0f0 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
             <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] bg-[#7A4FFF] opacity-[0.05] blur-[120px] rounded-full z-0"></div>
             <div className="fixed bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-[#FF7D00] opacity-[0.05] blur-[120px] rounded-full z-0"></div>
-            {/* [배경 레이어 3]코드 데코레이션 (전체 섹션에 걸쳐 배치) */}
-            <div className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-none opacity-[0.25] font-mono text-[11px] md:text-[14px] p-10 leading-relaxed">
-                <div className="absolute top-[15%] left-[5%] rotate-[-3deg] text-[#FF7D00]">
-                    {`@RestController\npublic class AuthController {\n  @PostMapping("/login")\n  public ResponseEntity<?> login() { ... }\n}`}
+
+            {/* [배경 레이어] 코드 데코레이션 - 마스터 요청에 따라 300% 강화 */}
+            <div className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-none opacity-[0.25] font-mono text-[10px] md:text-[12px] p-6 leading-relaxed">
+                {/* 상단: API & Security */}
+                <div className="absolute top-[3%] left-[2%] rotate-[-2deg] text-[#FF7D00]">
+                    {`@RestController\npublic class MatchingController {\n  @PostMapping("/v1/match/ai")\n  public ResponseEntity<List<Agent>> getOptimalMatch(@RequestBody Request req) {\n    return service.calculate(req.getTags(), req.getLoc());\n  }\n}`}
                 </div>
-                <div className="absolute bottom-[10%] left-[8%] rotate-[4deg] text-[#7A4FFF]">
-                    {`const { user } = useAuth();\nuseEffect(() => {\n  console.log("Welcome Master Jeonseong");\n}, [user]);`}
+                <div className="absolute top-[8%] right-[5%] rotate-[4deg] text-[#7A4FFF]">
+                    {`const useModeSwitch = create((set) => ({\n  mode: 'CLIENT',\n  toggle: () => set((state) => ({ mode: state.mode === 'CLIENT' ? 'FREELANCER' : 'CLIENT' })),\n}));`}
                 </div>
-                <div className="absolute top-[45%] left-[2%] rotate-[10deg] text-zinc-300">
-                    {`SELECT name, role FROM developers\nWHERE location = 'SEOUL_GU'\nORDER BY rating DESC;`}
+
+                {/* 중단: DB & Spatial Index */}
+                <div className="absolute top-[25%] left-[5%] rotate-[8deg] text-zinc-300">
+                    {`-- HYPER-LOCAL SPATIAL SEARCH OPTIMIZATION\nCREATE SPATIAL INDEX idx_user_location ON freelancer_profile(location);\nSELECT * FROM freelancer_profile \nWHERE MBRContains(ST_Buffer(POINT(126.67, 37.59), 5000), location);`}
                 </div>
-                <div className="absolute top-[10%] right-[15%] rotate-[-8deg] text-[#FF7D00]">
-                    {`# Docker Compose\nservices:\n  backend:\n    image: devnear-api:latest\n    ports: ["8080:8080"]`}
+                <div className="absolute top-[35%] right-[2%] rotate-[-10deg] text-[#FF7D00]/50">
+                    {`# INFRASTRUCTURE BLUEPRINT\nversion: '3.8'\nservices:\n  redis:\n    image: redis:alpine\n    ports: ["6379:6379"]\n  matching-engine:\n    build: ./ai-model`}
                 </div>
-                <div className="absolute bottom-[35%] right-[12%] rotate-[-15deg] text-[#7A4FFF]">
-                    {`$ git checkout -b feature/matching-logic\n$ git commit -m "feat: AI scoring v1"\n$ git push origin main`}
+
+                {/* 중앙: AI 로직 & 인터페이스 */}
+                <div className="absolute top-[50%] left-[2%] rotate-[-5deg] text-zinc-200">
+                    {`interface AIPromptConfig {\n  model: "gpt-4-turbo";\n  temperature: 0.2;\n  system: "You are a talent matching assistant for DevNear. Find experts with skill similarity > 0.85";\n}`}
                 </div>
-                <div className="absolute top-[70%] left-[15%] rotate-[-5deg] text-zinc-200">
-                    {`interface MatchingScore {\n  skillMatch: number;\n  locationWeight: number;\n  finalScore: number;\n}`}
+                <div className="absolute top-[45%] right-[8%] rotate-[12deg] text-[#7A4FFF]/40">
+                    {`// WEIGHTED RATING ALGORITHM\nconst finalRating = (allAvg, recentAvg) => {\n  const decayFactor = 0.7;\n  return (allAvg * decayFactor) + (recentAvg * (1 - decayFactor));\n};`}
+                </div>
+
+                {/* 하단: 실시간 통신 & Git */}
+                <div className="absolute bottom-[20%] left-[3%] rotate-[5deg] text-[#FF7D00]/30">
+                    {`socket.on("message:send", (data) => {\n  const chat = new ChatEntity(data);\n  repository.save(chat);\n  broadcastTo(data.roomId, chat);\n});`}
+                </div>
+                <div className="absolute bottom-[35%] right-[5%] rotate-[-8deg] text-zinc-300/40">
+                    {`$ git checkout -b feature/pinterest-ui-feed\n$ git commit -m "feat: implement masonry layout for portfolio feed"\n$ git push origin staging`}
+                </div>
+                <div className="absolute bottom-[5%] left-[15%] rotate-[-2deg] text-[#7A4FFF]/30">
+                    {`@Entity\npublic class Review {\n  @Min(1) @Max(5)\n  private Integer quality;\n  @Column(columnDefinition = "TEXT")\n  private String content;\n}`}
                 </div>
             </div>
 
-            {/* [상단 네비게이션] 블랙 배경 - 고정 */}
+            {/* [상단 네비게이션] (기본 유지) */}
             <nav className="w-full py-5 px-10 bg-zinc-950 border-b border-zinc-800 flex justify-between items-center fixed top-0 left-0 z-50">
                 <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
                     <span className="text-[#FF7D00]">Dev</span>
@@ -75,7 +91,7 @@ export default function LoginPage() {
                 </div>
             </nav>
 
-            {/* [Section 1] Hero & Login 카드 */}
+            {/* [Section 1] Hero & Login (기존 텍스트 유지) */}
             <section className="relative z-10 min-h-screen flex items-center justify-center pt-20 px-8">
                 <div className="max-w-6xl w-full grid md:grid-cols-2 gap-16 items-center">
                     <div className="space-y-8">
@@ -92,10 +108,6 @@ export default function LoginPage() {
                             재능과 지역을 잇는 가장 타당한 방법. <br />
                             지금 기지에 접속하여 우산을 펼치세요.
                         </p>
-                        <div className="pt-4 flex items-center gap-4 text-zinc-400 animate-bounce">
-                            <span className="text-sm font-bold uppercase tracking-widest">Scroll to view blueprint</span>
-                            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 14l-7 7-7-7m14-8l-7 7-7-7"></path></svg>
-                        </div>
                     </div>
 
                     <div className="bg-white/95 p-10 md:p-14 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] rounded-[3rem] border border-zinc-100">
@@ -125,98 +137,117 @@ export default function LoginPage() {
                 </div>
             </section>
 
-            {/* [Section 2] 가치 제안: 기존 플랫폼의 한계 해결 */}
+            {/* [Section 2] 가치 제안 (SaaS형 내용 보강) */}
             <section className="relative z-10 min-h-screen flex items-center justify-center px-8 bg-zinc-50/50">
                 <div className="max-w-6xl w-full grid md:grid-cols-2 gap-20 items-center">
                     <div className="font-mono text-sm opacity-40 select-none">
                         <div className="p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm text-red-400 mb-4">
-                            {`// AS-IS: 기존의 비효율\nconst matching = legacySearch(\n  category: "JOB_TITLE",\n  method: "KEYWORD_ONLY"\n); // 불명확한 실력 검증...`}
+                            {`// 기존 플랫폼: 키워드 검색의 한계\nconst legacy = platform.search("React 개발자");\n// 결과: 실력 검증 없는 단순 나열...`}
                         </div>
                         <div className="p-6 bg-white border border-[#7A4FFF]/20 rounded-2xl shadow-md text-[#7A4FFF]">
-                            {`// TO-BE: DevNear의 타당한 연결\nconst agent = DevNearAI.match({\n  skillTags: ["React", "Java"],\n  location: "Seoul/Seo-gu",\n  trustLevel: "TOP_TALENT"\n}); // 정밀 매칭 성공!`}
+                            {`// DevNear: AI 기반 역량 정밀 매칭\nconst nearTalent = DevNearAI.match({\n  skills: ["React", "Spring Boot"],\n  location: "INCHEON_SEOGU",\n  weight: "QUALITY_FIRST"\n}); // 정밀 매칭 성공!`}
                         </div>
                     </div>
                     <div className="space-y-6">
-                        <h2 className="text-5xl font-black tracking-tighter">단순한 검색이 아닌,<br/><span className="text-[#7A4FFF]">데이터 기반</span>의 추천.</h2>
+                        <h2 className="text-5xl font-black tracking-tighter">단순한 검색이 아닌,<br/><span className="text-[#7A4FFF]">재능 태그</span> 기반 AI 추천.</h2>
                         <p className="text-zinc-500 text-lg leading-relaxed font-medium">
-                            기존 직무 중심의 검색 방식은 회원님 세분화된 재능을 담지 못합니다.
-                            DevNear는 재능 태그와 지역 정보를 결합해 온/오프라인을 아우르는 최적의 프리랜서/클라이언트를 찾아냅니다.
+                            기존 직무 중심 카테고리의 한계를 넘어, 세분화된 재능 태그를 기반으로 역량을 정의합니다.
+                            사용자가 직접 탐색할 필요 없이 **AI 추천 시스템**이 유사도 분석을 통해 최적의 파트너를 자동으로 도출합니다.
                         </p>
-                        <div className="flex gap-6 pt-4">
-                            <div className="flex flex-col"><span className="text-3xl font-black text-[#FF7D00]">98%</span><span className="text-xs font-bold text-zinc-400 uppercase">Match Rate</span></div>
-                            <div className="flex flex-col"><span className="text-3xl font-black text-[#7A4FFF]">AI</span><span className="text-xs font-bold text-zinc-400 uppercase">Scoring</span></div>
+                        <ul className="space-y-2 text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                            <li className="flex items-center gap-2"><span className="w-4 h-[1px] bg-[#7A4FFF]"></span> Pinterest-Style Portfolio Feed</li>
+                            <li className="flex items-center gap-2"><span className="w-4 h-[1px] bg-[#7A4FFF]"></span> Hyper-Granular Skill Tagging</li>
+                            <li className="flex items-center gap-2"><span className="w-4 h-[1px] bg-[#7A4FFF]"></span> AI-Driven Recommendation Engine</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            {/* [Section 3] 지역 기반 매칭 (SaaS형 내용 보강) */}
+            <section className="relative z-10 min-h-screen flex items-center justify-center px-8 bg-white">
+                <div className="max-w-6xl w-full flex flex-col items-center text-center space-y-12">
+                    <div className="flex items-center gap-2">
+                        <span className="w-8 h-[2px] bg-[#FF7D00]"></span>
+                        <span className="text-xs font-bold tracking-[0.3em] text-zinc-400 uppercase">Geospatial Hybrid Matching</span>
+                        <span className="w-8 h-[2px] bg-[#FF7D00]"></span>
+                    </div>
+                    <h2 className="text-6xl font-black tracking-tighter">가까운 거리, <br/> 무한한 <span className="text-[#FF7D00]">협업 시너지.</span></h2>
+                    <p className="text-zinc-500 text-xl font-medium max-w-2xl leading-relaxed">
+                        온라인의 효율과 오프라인의 신뢰를 결합한 **하이브리드 협업** 환경을 제공합니다.
+                        인천 서구부터 서울 전역까지, 사용자 활동 지역 설정을 통해 대면 미팅이 가능한 파트너를 1차 필터링하여 매칭의 현실성을 높입니다.
+                    </p>
+                    <div className="grid md:grid-cols-2 gap-8 w-full max-w-4xl text-left">
+                        <div className="p-10 bg-zinc-50 rounded-[2.5rem] border border-zinc-100 shadow-sm">
+                            <h3 className="text-2xl font-black mb-4 underline decoration-[#FF7D00] decoration-4 underline-offset-8">오프라인 가용성 필터</h3>
+                            <p className="text-zinc-500 leading-relaxed font-medium">프로젝트 등록 시 '오프라인' 협업 방식을 선택하세요. 주소 기반 위치 설정으로 반경 내 인재를 즉시 소집합니다.</p>
+                        </div>
+                        <div className="p-10 bg-zinc-50 rounded-[2.5rem] border border-zinc-100 shadow-sm">
+                            <h3 className="text-2xl font-black mb-4 underline decoration-[#7A4FFF] decoration-4 underline-offset-8">실시간 거리 기반 정렬</h3>
+                            <p className="text-zinc-500 leading-relaxed font-medium">단순 지역명이 아닌, 실제 지리 좌표 데이터(GPS)를 기반으로 거리순 정렬을 제공하여 오프라인 접근성을 보장합니다.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* [Section 3] 핵심 로직: AI 매칭 스코어링 (기획안 6.4 반영) */}
-            <section className="relative z-10 min-h-screen flex items-center justify-center px-8">
-                <div className="max-w-4xl w-full text-center space-y-12">
-                    <h2 className="text-5xl font-black tracking-tighter">타당한 <span className="text-[#FF7D00]">매칭 점수</span> 산정 방식</h2>
-                    <div className="p-10 bg-zinc-950 rounded-[3rem] shadow-2xl relative overflow-hidden text-left">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#FF7D00] to-[#7A4FFF] opacity-20 blur-3xl"></div>
-                        <code className="text-[#7A4FFF] block mb-4 text-xs font-bold tracking-widest">// ALGORITHM_V1_SCORE_LOGIC</code>
-                        <pre className="text-white font-mono text-sm md:text-lg leading-relaxed overflow-x-auto">
-{`const calculateFinalRating = (totalAvg, recentAvg) => {
-  // 최근 프로젝트에 더 높은 가중치를 부여합니다.
-  return (totalAvg * 0.7) + (recentAvg * 0.3);
-};
+            {/* [Section 4] 매칭 로직 (기획서 수식 반영) */}
+            <section className="relative z-10 min-h-screen flex items-center justify-center px-8 bg-zinc-50/50">
+                <div className="max-w-5xl w-full text-center space-y-12">
+                    <h2 className="text-5xl font-black tracking-tighter">데이터로 검증된 <br /><span className="text-[#FF7D00]">매칭 정밀도</span></h2>
+                    <div className="p-12 bg-zinc-950 rounded-[3.5rem] shadow-2xl relative overflow-hidden text-left border border-zinc-800">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#7A4FFF] opacity-10 blur-[100px]"></div>
+                        <pre className="text-white font-mono text-sm md:text-lg leading-relaxed">
+{`// DevNear PROPRIETARY ALGORITHM v1.0.0
+const calculateMatchingScore = (agent, project) => {
+  const skillMatch = analyzeTagSimilarity(agent.tags, project.requiredTags); // 50%
+  const ratingScore = (agent.totalAvg * 0.7) + (agent.recentAvg * 0.3);      // 30%
+  const tierWeight = getTierBonus(agent.rank);                             // 20%
 
-const matchingScore = (tags, rating, tier) => {
-  return (tagMatchRate * 0.5) + (rating * 0.3) + (tierWeight * 0.2);
+  return (skillMatch * 0.5) + (ratingScore * 0.3) + (tierWeight * 0.2);
 };`}
                         </pre>
                     </div>
                     <p className="text-zinc-500 text-lg font-medium max-w-2xl mx-auto">
-                        DevNear는 최근 성과에 가중치를 두어
-                        활동적인 고숙련 프리랜서를 가장 타당하게 추천합니다.
+                        최근 프로젝트 평점에 가중치를 두는 **시계열 평점 산정 방식**을 통해 <br />
+                        현재 가장 활동적이고 신뢰할 수 있는 요원을 상단에 노출합니다.
                     </p>
                 </div>
             </section>
 
-            {/* [Section 4] 등급 시스템 (기획안 6.2 반영) */}
-            <section className="relative z-10 min-h-screen flex items-center justify-center px-8 bg-zinc-50/50">
-                <div className="max-w-6xl w-full">
-                    <div className="text-center mb-16">
-                        <h2 className="text-5xl font-black tracking-tighter mb-4">검증된 회원 <span className="text-[#7A4FFF]">등급 시스템</span></h2>
-                        <p className="text-zinc-400 font-medium italic">// Verification & Tier Blueprint</p>
-                    </div>
+            {/* Section 5: 등급 시스템 (기획서 상세 기준 반영) */}
+            <section className="relative z-10 min-h-screen flex items-center justify-center px-8">
+                <div className="max-w-6xl w-full text-center">
+                    <h2 className="text-5xl font-black tracking-tighter mb-4">신뢰 기반의 <span className="text-[#7A4FFF]">등급 에코시스템</span></h2>
+                    <p className="text-zinc-400 font-medium italic mb-16">// Rigorous Verification & Tiering Standards</p>
                     <div className="grid md:grid-cols-3 gap-8">
                         {[
-                            // [수정] Tailwind CSS에서 동적 클래스(`bg-${color}`)를 쓰면 빌드 시 색상이 날아가는 버그 수정
-                            // 전체 클래스명("bg-zinc-400" 등)을 온전히 적어주어야 PurgeCSS가 인식하고 남겨둠
-                            { title: "일반 회원", req: "가입 완료", color: "bg-zinc-400", desc: "기지 활동의 시작" },
-                            { title: "인증 프리랜서", req: "완료 3건 + 평점 4.0↑", color: "bg-[#7A4FFF]", desc: "신뢰받는 검증 회원" },
-                            { title: "TOP Talent", req: "완료 10건 + 평점 4.5↑", color: "bg-[#FF7D00]", desc: "기지 최상위 능력자" },
+                            { title: "일반 회원", req: "가입 및 기초 인증 완료", color: "bg-zinc-400", desc: "기지 내 모든 공고 탐색 및 기본 활동 권한 부여" },
+                            { title: "인증 프리랜서", req: "프로젝트 3건↑ + 평점 4.0↑", color: "bg-[#7A4FFF]", desc: "포트폴리오 검증 완료 및 신뢰 마크 획득 요원" },
+                            { title: "TOP Talent", req: "프로젝트 10건↑ + 리뷰 20개↑", color: "bg-[#FF7D00]", desc: "평균 평점 4.5 이상 유지 중인 기지 최상위 마스터" },
                         ].map((tier, idx) => (
-                            <div key={idx} className="bg-white p-10 rounded-[2.5rem] border border-zinc-100 shadow-lg hover:-translate-y-2 transition-transform">
-                                <div className={`w-12 h-1 ${tier.color} mb-6`}></div>
-                                <h3 className="text-2xl font-black mb-2">{tier.title}</h3>
-                                <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4">Requirements: {tier.req}</p>
-                                <p className="text-zinc-500 font-medium">{tier.desc}</p>
+                            <div key={idx} className="bg-white p-12 rounded-[3rem] border border-zinc-100 shadow-xl hover:shadow-2xl transition-all border-b-8 hover:-translate-y-2">
+                                <div className={`w-16 h-1.5 ${tier.color} mb-8 rounded-full`}></div>
+                                <h3 className="text-2xl font-black mb-3">{tier.title}</h3>
+                                <p className="text-xs font-bold text-[#7A4FFF] uppercase tracking-tighter mb-6">{tier.req}</p>
+                                <p className="text-zinc-500 font-medium leading-relaxed">{tier.desc}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* [Section 5] Final CTA */}
+            {/* Final CTA (기존 유지) */}
             <section className="relative z-10 py-32 px-8 text-center bg-zinc-950">
-                <div className="max-w-4xl mx-auto space-y-10">
-                    <h2 className="text-6xl font-black tracking-tighter text-white">
-                        지금, 당신의 <span className="text-[#FF7D00]">Blueprint</span>를 <br/>
-                        현실로 만드세요.
+                <div className="max-w-4xl mx-auto space-y-10 text-zinc-100">
+                    <h2 className="text-6xl font-black tracking-tighter">
+                        당신의 <span className="text-[#FF7D00]">재능</span>에 <br/>
+                        가장 타당한 자리를.
                     </h2>
                     <p className="text-zinc-400 text-xl font-medium">
-                        재능 있는 회원들이 당신의 합류를 기다리고 있습니다.
+                        재능 있는 파트너들이 지금 마스터의 합류를 기다리고 있습니다.
                     </p>
                     <div className="pt-8">
-                        <button
-                            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                            className="px-12 py-5 bg-white text-black rounded-full font-black text-xl hover:bg-[#7A4FFF] hover:text-white transition-all shadow-2xl"
-                        >
-                            devnear에 접속하여 누리기
+                        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="px-12 py-6 bg-white text-black rounded-full font-black text-xl hover:bg-[#7A4FFF] hover:text-white transition-all shadow-[0_0_50px_rgba(122,79,255,0.3)]">
+                            DEVNEAR 기지 접속하기
                         </button>
                     </div>
                 </div>

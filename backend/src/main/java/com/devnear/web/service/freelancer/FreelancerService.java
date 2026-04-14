@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -90,12 +91,16 @@ public class FreelancerService {
         // 지역 및 스킬 조건 필터링
         List<FreelancerProfile> profiles = profileRepository.searchFreelancers(skill, region);
 
-        // 정렬 수행 (평점순 / 최신가입순)
+        // [수정] 500 에러 방지: 정렬 필드(rating, projects)가 null일 경우를 대비하여 안전한 비교 로직으로 수정
+        Comparator<FreelancerProfile> comparator;
         if ("rating".equalsIgnoreCase(sort)) {
-            profiles.sort((a, b) -> Double.compare(b.getAverageRating(), a.getAverageRating()));
+            comparator = Comparator.comparing(FreelancerProfile::getAverageRating, Comparator.nullsLast(Comparator.reverseOrder()));
+        } else if ("projects".equalsIgnoreCase(sort)) {
+            comparator = Comparator.comparing(FreelancerProfile::getCompletedProjects, Comparator.nullsLast(Comparator.reverseOrder()));
         } else {
-            profiles.sort((a, b) -> b.getId().compareTo(a.getId()));
+            comparator = Comparator.comparing(FreelancerProfile::getId, Comparator.reverseOrder());
         }
+        profiles.sort(comparator);
 
         return profiles.stream()
                 .map(FreelancerProfileResponse::from)

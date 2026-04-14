@@ -31,6 +31,12 @@ export default function Home() {
           return;
         }
 
+        // [수정] 메인 페이지에서도 CLIENT나 BOTH 권한이면 즉시 대시보드로 이동시킵니다!
+        if (currentRole === "CLIENT" || currentRole === "BOTH" || currentRole === "ROLE_CLIENT" || currentRole === "ROLE_BOTH") {
+          router.replace("/dashboard");
+          return;
+        }
+
         setUser(res.data);
       } catch (err: any) {
         console.error("4. 에러 발생:", err.response?.status, err.message);
@@ -44,7 +50,11 @@ export default function Home() {
   }, [router]);
 
   // 로딩 중일 때 잠깐 보여줄 화면
-  if (loading) return <div className="flex min-h-screen items-center justify-center font-black">기지 보안 스캔 중...</div>;
+  if (loading) return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-black text-[#FF7D00] text-xl animate-pulse">
+        기지 보안 스캔 중...
+      </div>
+  );
 
   return (
       <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
@@ -73,7 +83,7 @@ export default function Home() {
             {/* 유저가 없을 때만 로그인 버튼 보여주기 (예시) */}
             {!user && (
                 <a
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-39.5"
                     href="/login"
                 >
                   로그인하기
@@ -81,7 +91,7 @@ export default function Home() {
             )}
 
             <a
-                className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
+                className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/8 px-5 transition-colors hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-39.5"
                 href="https://nextjs.org/docs"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -92,8 +102,12 @@ export default function Home() {
             {/* 로그아웃 버튼 (로그인 시에만 노출) */}
             {user && (
                 <button
-                    onClick={() => { localStorage.removeItem("accessToken"); window.location.reload(); }}
-                    className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-red-100 px-5 text-red-500 hover:bg-red-50 md:w-[158px]"
+                    onClick={() => { 
+                      localStorage.removeItem("accessToken"); 
+                      // [수정] 로그아웃 후 즉시 로그인 창으로 튕겨냄
+                      router.replace("/login"); 
+                    }}
+                    className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-red-100 px-5 text-red-500 hover:bg-red-50 md:w-39.5"
                 >
                   로그아웃
                 </button>

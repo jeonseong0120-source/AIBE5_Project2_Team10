@@ -1,16 +1,13 @@
 package com.devnear.web.dto.project;
 
 import com.devnear.web.domain.client.ClientProfile;
-import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.project.Project;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-
-import jakarta.validation.GroupSequence;
-import jakarta.validation.groups.Default;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -20,11 +17,11 @@ public class ProjectRequest {
     private String projectName;
 
     @NotNull(message = "예산은 필수입니다.")
-    @Positive(message = "예산은 0보다 커야 합니다.")  // 추가
+    @Positive(message = "예산은 0보다 커야 합니다.")
     private Integer budget;
 
     @NotNull(message = "마감기한은 필수입니다.")
-    @Future(message = "마감기한은 오늘 이후여야 합니다.")  // 추가
+    @Future(message = "마감기한은 오늘 이후여야 합니다.")
     private LocalDate deadline;
 
     private String detail;
@@ -42,16 +39,18 @@ public class ProjectRequest {
     @DecimalMax(value = "180.0", message = "경도는 180 이하여야 합니다.")
     private Double longitude;
 
+    private List<String> skillNames; // 태그 형식으로 입력받는 기술 스택 이름 목록
+
     @AssertTrue(message = "오프라인 프로젝트는 주소 정보가 필수입니다.")
     private boolean isOfflineLocationValid() {
         if (!offline) {
-            return true; // 오프라인이 아니면 검증 통과
+            return true;
         }
 
-    return location != null && !location.trim().isEmpty()
-            && latitude != null && longitude != null
-            && latitude >= -90.0 && latitude <= 90.0
-            && longitude >= -180.0 && longitude <= 180.0;
+        return location != null && !location.trim().isEmpty()
+                && latitude != null && longitude != null
+                && latitude >= -90.0 && latitude <= 90.0
+                && longitude >= -180.0 && longitude <= 180.0;
     }
 
     public Project toEntity(ClientProfile clientProfile) {
