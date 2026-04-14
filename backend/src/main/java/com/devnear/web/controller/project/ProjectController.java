@@ -60,9 +60,12 @@ public class ProjectController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String skill,
+            @RequestParam(required = false) Boolean online,
+            @RequestParam(required = false) Boolean offline,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<ProjectResponse> responses = projectService.searchProjects(keyword, location, skill, pageable);
+        // [수정] 프론트엔드 리뷰 반영: 온라인/오프라인 필터 파라미터 추가
+        Page<ProjectResponse> responses = projectService.searchProjects(keyword, location, skill, online, offline, pageable);
         return ResponseEntity.ok(responses);
     }
 

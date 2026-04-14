@@ -110,14 +110,14 @@ public class ProjectService {
                 .map(ProjectResponse::from);
     }
 
-    // [추가] 프리랜서 탐색용 필터 검색 메서드
+    // [수정] 프론트엔드 리뷰 반영: activeTab(온/오프라인) 추가
     @Transactional(readOnly = true)
-    public Page<ProjectResponse> searchProjects(String keyword, String location, String skill, Pageable pageable) {
+    public Page<ProjectResponse> searchProjects(String keyword, String location, String skill, Boolean online, Boolean offline, Pageable pageable) {
         String safeKeyword = (keyword != null && keyword.trim().isEmpty()) ? null : keyword;
         String safeLocation = (location != null && location.trim().isEmpty()) ? null : location;
         String safeSkill = (skill != null && skill.trim().isEmpty()) ? null : skill;
 
-        return projectRepository.searchProjects(safeKeyword, safeLocation, safeSkill, pageable)
+        return projectRepository.searchProjects(safeKeyword, safeLocation, safeSkill, online, offline, pageable)
                 .map(ProjectResponse::from);
     }
 

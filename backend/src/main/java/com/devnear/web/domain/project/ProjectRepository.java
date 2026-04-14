@@ -32,14 +32,18 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "projectSkills", "projectSkills.skill"})
     Page<Project> findAllByClientProfileAndStatus(ClientProfile clientProfile, ProjectStatus status, Pageable pageable);
 
-    // [추가] 프리랜서 메인 대시보드(Explore)에서 프로젝트 필터 검색용
+    // [수정] 프론트엔드 리뷰 반영: activeTab(온라인/오프라인) 동적 필터링 파라미터 추가
     @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "projectSkills", "projectSkills.skill"})
     @Query("SELECT p FROM Project p " +
            "WHERE (:keyword IS NULL OR p.projectName LIKE %:keyword% OR p.clientProfile.companyName LIKE %:keyword%) " +
            "AND (:location IS NULL OR p.location LIKE %:location%) " +
-           "AND (:skill IS NULL OR EXISTS (SELECT 1 FROM ProjectSkill ps JOIN ps.skill s WHERE ps.project = p AND s.name LIKE %:skill%))")
+           "AND (:skill IS NULL OR EXISTS (SELECT 1 FROM ProjectSkill ps JOIN ps.skill s WHERE ps.project = p AND s.name LIKE %:skill%)) " +
+           "AND (:online IS NULL OR p.online = :online) " +
+           "AND (:offline IS NULL OR p.offline = :offline)")
     Page<Project> searchProjects(@Param("keyword") String keyword, 
                                  @Param("location") String location, 
                                  @Param("skill") String skill, 
+                                 @Param("online") Boolean online,
+                                 @Param("offline") Boolean offline,
                                  Pageable pageable);
 }

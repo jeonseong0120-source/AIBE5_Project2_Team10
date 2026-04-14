@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface ProjectCardProps {
     data: any;
@@ -9,13 +10,20 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ data, index }: ProjectCardProps) {
-    // [보고] 백엔드의 ProjectResponse.java를 보면, ProjectSkill 엔티티를 
-    // List<String> skills = ["Java", "React"] 형태로 평탄화(Flatten)해서 보내줍니다!
-    // 따라서 data.projectSkills가 아니라 data.skills를 꺼내 쓰면 됩니다.
+    const router = useRouter();
     const skillList = data.skills || [];
+
+    // [수정] 카드 전체 영역 또는 버튼 클릭 시 상세 페이지로 라우팅
+    const handleViewMission = () => {
+        const id = data.projectId || data.id;
+        if (id) {
+            router.push(`/projects/${id}`);
+        }
+    };
 
     return (
         <motion.div
+            onClick={handleViewMission}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -59,7 +67,6 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
                                 </span>
                             ))
                         ) : (
-                            /* 데이터가 아예 없을 때 출력 (디버깅용) */
                             <span className="text-[10px] font-mono text-zinc-300 italic">No_Skills_Attached</span>
                         )}
                     </div>
