@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface ProjectRepository extends JpaRepository<Project, Long> {
+public interface ProjectRepository extends JpaRepository<Project, Long>, ProjectRepositoryCustom {
 
     // 수정/삭제 시 권한 확인 및 상세 조회용 (스킬 정보 포함)
     @Query("SELECT DISTINCT p FROM Project p " +

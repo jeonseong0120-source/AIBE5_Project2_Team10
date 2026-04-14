@@ -1,5 +1,6 @@
 package com.devnear.web.dto.project;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.project.Project;
 import jakarta.validation.constraints.*;
@@ -39,7 +40,11 @@ public class ProjectRequest {
     @DecimalMax(value = "180.0", message = "경도는 180 이하여야 합니다.")
     private Double longitude;
 
-    private List<String> skillNames; // 태그 형식으로 입력받는 기술 스택 이름 목록
+    @JsonAlias({"skills", "projectSkills"})
+    private List<String> skillNames;
+
+    @JsonAlias({"skillIds"})
+    private List<Long> skillIds; // 숫자 ID 기반 입력 호환용
 
     @AssertTrue(message = "오프라인 프로젝트는 주소 정보가 필수입니다.")
     private boolean isOfflineLocationValid() {
@@ -66,5 +71,9 @@ public class ProjectRequest {
                 .latitude(latitude)
                 .longitude(longitude)
                 .build();
+    }
+
+    public boolean hasSkillPayload() {
+        return skillNames != null || skillIds != null;
     }
 }

@@ -10,6 +10,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -66,6 +67,7 @@ public class Project extends BaseTimeEntity {
     @Column
     private Double longitude;
 
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectSkill> projectSkills = new ArrayList<>();
 

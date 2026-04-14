@@ -1,6 +1,7 @@
 package com.devnear.web.controller.project;
 
 import com.devnear.web.domain.enums.ProjectStatus;
+import com.devnear.web.domain.project.ProjectSearchCond;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.project.ProjectRequest;
 import com.devnear.web.dto.project.ProjectResponse;
@@ -54,12 +55,13 @@ public class ProjectController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "전체 프로젝트 목록 조회", description = "최신순으로 프로젝트 공고를 페이징하여 조회합니다.")
+    @Operation(summary = "프로젝트 검색 및 목록 조회", description = "검색 조건(키워드, 기술 스택, 위치 등)에 맞는 프로젝트 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<Page<ProjectResponse>> getProjectList(
+            ProjectSearchCond cond,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<ProjectResponse> responses = projectService.getProjectList(pageable);
+        Page<ProjectResponse> responses = projectService.searchProjects(cond, pageable);
         return ResponseEntity.ok(responses);
     }
 

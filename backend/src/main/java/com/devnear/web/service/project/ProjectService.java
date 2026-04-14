@@ -5,6 +5,7 @@ import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
+import com.devnear.web.domain.project.ProjectSearchCond;
 import com.devnear.web.domain.project.ProjectSkill;
 import com.devnear.web.domain.skill.Skill;
 import com.devnear.web.domain.skill.SkillRepository;
@@ -21,8 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -44,8 +47,9 @@ public class ProjectService {
 
         Project project = projectRepository.save(request.toEntity(clientProfile));
 
-        if (request.getSkillNames() != null && !request.getSkillNames().isEmpty()) {
-            mapSkillsToProject(project, request.getSkillNames());
+        List<Skill> skills = resolveSkills(request);
+        if (!skills.isEmpty()) {
+            mapSkillsToProject(project, skills);
         }
 
         if (log.isDebugEnabled()) {
@@ -66,34 +70,50 @@ public class ProjectService {
 
         project.update(request);
 
-        if (request.getSkillNames() != null) {
+        if (request.hasSkillPayload()) {
             project.updateSkills(Collections.emptyList());
-            if (!request.getSkillNames().isEmpty()) {
-                mapSkillsToProject(project, request.getSkillNames());
+            List<Skill> skills = resolveSkills(request);
+            if (!skills.isEmpty()) {
+                mapSkillsToProject(project, skills);
             }
         }
     }
 
-    private void mapSkillsToProject(Project project, List<String> skillNames) {
-        List<ProjectSkill> projectSkills = skillNames.stream()
-                .filter(Objects::nonNull)
-                .map(String::trim)
-                .filter(name -> !name.isEmpty())
-                .distinct()
-                .map(name -> {
-                    Skill skill = skillRepository.findByName(name)
-                            .orElseGet(() -> skillRepository.save(Skill.builder()
-                                    .name(name)
-                                    .isDefault(false)
-                                    .build()));
-                    return ProjectSkill.builder()
-                            .project(project)
-                            .skill(skill)
-                            .build();
-                })
+    private void mapSkillsToProject(Project project, List<Skill> skills) {
+        List<ProjectSkill> projectSkills = skills.stream()
+                .map(skill -> ProjectSkill.builder()
+                        .project(project)
+                        .skill(skill)
+                        .build())
                 .collect(Collectors.toList());
 
         project.updateSkills(projectSkills);
+    }
+
+    private List<Skill> resolveSkills(ProjectRequest request) {
+        Set<Skill> resolvedSkills = new LinkedHashSet<>();
+
+        if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
+            List<Skill> skillsByIds = skillRepository.findAllById(request.getSkillIds());
+            resolvedSkills.addAll(skillsByIds);
+        }
+
+        if (request.getSkillNames() != null && !request.getSkillNames().isEmpty()) {
+            List<Skill> skillsByNames = request.getSkillNames().stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(name -> !name.isEmpty())
+                    .distinct()
+                    .map(name -> skillRepository.findByName(name)
+                            .orElseGet(() -> skillRepository.save(Skill.builder()
+                                    .name(name)
+                                    .isDefault(false)
+                                    .build())))
+                    .collect(Collectors.toList());
+            resolvedSkills.addAll(skillsByNames);
+        }
+
+        return List.copyOf(resolvedSkills);
     }
 
     @Transactional
@@ -102,12 +122,6 @@ public class ProjectService {
         projectRepository.delete(project);
 
         log.info("프로젝트 삭제 완료 - ID: {}, 삭제자: {}", projectId, user.getEmail());
-    }
-
-    @Transactional(readOnly = true)
-    public Page<ProjectResponse> getProjectList(Pageable pageable) {
-        return projectRepository.findAll(pageable)
-                .map(ProjectResponse::from);
     }
 
     @Transactional(readOnly = true)
@@ -128,6 +142,12 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("해당 프로젝트 공고를 찾을 수 없습니다. ID: " + projectId));
 
         return ProjectResponse.from(project);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProjectResponse> searchProjects(ProjectSearchCond cond, Pageable pageable) {
+        return projectRepository.search(cond, pageable)
+                .map(ProjectResponse::from);
     }
 
     private ClientProfile findClientProfileByUser(User user) {
