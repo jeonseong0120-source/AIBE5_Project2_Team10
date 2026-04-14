@@ -13,13 +13,30 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
     const router = useRouter();
     const skillList = data.skills || [];
 
-    // [수정] 카드 전체 영역 또는 버튼 클릭 시 상세 페이지로 라우팅
     const handleViewMission = () => {
         const id = data.projectId || data.id;
         if (id) {
             router.push(`/projects/${id}`);
         }
     };
+
+    // [수정] 봇 리뷰 반영: 백엔드 ProjectStatus Enum 값에 맞춘 동적 배지 스타일 및 텍스트 렌더링
+    const getStatusConfig = (status: string) => {
+        switch (status) {
+            case 'OPEN':
+                return { text: '모집중', classes: 'bg-dn-orange/10 text-dn-orange' };
+            case 'IN_PROGRESS':
+                return { text: '진행중', classes: 'bg-blue-50 text-blue-600' };
+            case 'COMPLETED':
+                return { text: '완료됨', classes: 'bg-green-50 text-green-600' };
+            case 'CLOSED':
+                return { text: '마감됨', classes: 'bg-zinc-100 text-zinc-500' };
+            default:
+                return { text: status || 'OPEN', classes: 'bg-dn-orange/10 text-dn-orange' };
+        }
+    };
+
+    const statusConfig = getStatusConfig(data.status);
 
     return (
         <motion.div
@@ -34,10 +51,8 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
                 {/* 좌측 정보 */}
                 <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase font-mono tracking-tighter ${
-                            data.status === '긴급' ? 'bg-red-50 text-red-500' : 'bg-dn-orange/10 text-dn-orange'
-                        }`}>
-                            {data.status || 'OPEN'}
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase font-mono tracking-tighter ${statusConfig.classes}`}>
+                            {statusConfig.text}
                         </span>
                         <span className="text-zinc-300 font-mono text-[10px] tracking-widest">{data.createdAt || data.deadline}</span>
                     </div>
