@@ -42,7 +42,7 @@ public class Project extends BaseTimeEntity {
     @Column(nullable = false)
     private Integer budget;
 
-    @Column(name = "Deadline", nullable = false)
+    @Column(name = "deadline", nullable = false)
     private LocalDate deadline;
 
     @Column(columnDefinition = "TEXT")

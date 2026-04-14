@@ -22,8 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -71,8 +73,8 @@ public class ProjectService {
         project.update(request);
 
         if (request.hasSkillPayload()) {
-            project.updateSkills(Collections.emptyList());
             List<Skill> skills = resolveSkills(request);
+            project.updateSkills(Collections.emptyList());
             if (!skills.isEmpty()) {
                 mapSkillsToProject(project, skills);
             }
@@ -94,26 +96,51 @@ public class ProjectService {
         Set<Skill> resolvedSkills = new LinkedHashSet<>();
 
         if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
-            List<Skill> skillsByIds = skillRepository.findAllById(request.getSkillIds());
+            List<Long> requestedSkillIds = request.getSkillIds().stream()
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            List<Skill> skillsByIds = skillRepository.findAllById(requestedSkillIds);
+            if (skillsByIds.size() != requestedSkillIds.size()) {
+                Set<Long> foundIds = skillsByIds.stream()
+                        .map(Skill::getId)
+                        .collect(Collectors.toSet());
+                List<Long> missingIds = requestedSkillIds.stream()
+                        .filter(id -> !foundIds.contains(id))
+                        .collect(Collectors.toList());
+                throw new IllegalArgumentException("존재하지 않는 스킬 ID가 포함되어 있습니다: " + missingIds);
+            }
             resolvedSkills.addAll(skillsByIds);
         }
 
         if (request.getSkillNames() != null && !request.getSkillNames().isEmpty()) {
-            List<Skill> skillsByNames = request.getSkillNames().stream()
+            List<String> requestedSkillNames = request.getSkillNames().stream()
                     .filter(Objects::nonNull)
                     .map(String::trim)
                     .filter(name -> !name.isEmpty())
                     .distinct()
-                    .map(name -> skillRepository.findByName(name)
-                            .orElseGet(() -> skillRepository.save(Skill.builder()
-                                    .name(name)
-                                    .isDefault(false)
-                                    .build())))
                     .collect(Collectors.toList());
-            resolvedSkills.addAll(skillsByNames);
+
+            List<Skill> existingSkills = skillRepository.findByNameIn(requestedSkillNames);
+            Map<String, Skill> existingSkillMap = new HashMap<>();
+            for (Skill skill : existingSkills) {
+                existingSkillMap.put(skill.getName(), skill);
+            }
+
+            List<Skill> resolvedByNames = requestedSkillNames.stream()
+                    .map(name -> existingSkillMap.getOrDefault(name, getOrCreateSkillByName(name)))
+                    .collect(Collectors.toList());
+            resolvedSkills.addAll(resolvedByNames);
         }
 
         return List.copyOf(resolvedSkills);
+    }
+
+    private Skill getOrCreateSkillByName(String name) {
+        skillRepository.upsertByName(name);
+        return skillRepository.findByName(name)
+                .orElseThrow(() -> new IllegalStateException("업서트 후 스킬 조회에 실패했습니다: " + name));
     }
 
     @Transactional
