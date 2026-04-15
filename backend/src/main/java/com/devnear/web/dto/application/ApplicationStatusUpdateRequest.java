@@ -1,6 +1,7 @@
 package com.devnear.web.dto.application;
 
 import com.devnear.web.domain.enums.ApplicationStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 
@@ -11,6 +12,11 @@ import lombok.Getter;
 public class ApplicationStatusUpdateRequest {
 
     @NotBlank(message = "status는 필수입니다. (ACCEPTED 또는 REJECTED)")
+    @Schema(
+            description = "변경할 지원 상태 (ACCEPTED 또는 REJECTED만 허용)",
+            example = "ACCEPTED",
+            allowableValues = {"ACCEPTED", "REJECTED"}
+    )
     private String status;
 
     public ApplicationStatus toStatus() {
