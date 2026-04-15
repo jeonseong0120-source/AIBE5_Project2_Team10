@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>Chat Test</title>
+</head>
+<body>
+<h2>채팅 테스트</h2>
+
+<div>
+    <label>JWT 토큰</label><br />
+    <textarea id="token" rows="4" cols="100" placeholder="accessToken 붙여넣기"></textarea>
+</div>
+
+<br />
+
+<div>
+    <label>Room ID</label><br />
+    <input type="number" id="roomId" value="1" />
+</div>
+
+<br />
+
+<button onclick="connectWebSocket()">연결</button>
+<button onclick="disconnectWebSocket()">연결 해제</button>
+
+<hr />
+
+<div>
+    <label>보낼 메시지</label><br />
+    <input type="text" id="messageInput" size="60" placeholder="메시지 입력" />
+    <button onclick="sendMessage()">보내기</button>
+</div>
+
+<hr />
+
+<h3>로그</h3>
+<pre id="log" style="background:#f4f4f4; padding:12px; height:300px; overflow:auto;"></pre>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.1.1/bundles/stomp.umd.min.js"></script>
+<script>
+    let client = null;
+
+    function addLog(message) {
+        const log = document.getElementById("log");
+        log.textContent += message + "\n";
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function connectWebSocket() {
+        const token = document.getElementById("token").value.trim();
+        const roomId = document.getElementById("roomId").value.trim();
+
+        if (!token) {
+            alert("JWT 토큰을 넣어주세요.");
+            return;
+        }
+
+        client = new StompJs.Client({
+            webSocketFactory: () => new SockJS("http://localhost:8080/ws-chat"),
+            reconnectDelay: 5000,
+            connectHeaders: {
+                Authorization: `Bearer ${token}`
+            },
+            debug: function (str) {
+                addLog("[DEBUG] " + str);
+            },
+            onConnect: function () {
+                addLog("웹소켓 연결 성공");
+
+                client.subscribe(`/sub/chat/rooms/${roomId}`, function (message) {
+                    addLog("[수신] " + message.body);
+                });
+
+                addLog(`/sub/chat/rooms/${roomId} 구독 완료`);
+            },
+            onStompError: function (frame) {
+                addLog("[STOMP ERROR] " + (frame.headers["message"] || ""));
+                addLog(frame.body || "");
+            },
+            onWebSocketError: function (error) {
+                addLog("[WS ERROR]");
+                console.error(error);
+            },
+            onWebSocketClose: function (event) {
+                addLog("[WS CLOSE] code=" + event.code + ", reason=" + event.reason);
+            }
+        });
+
+        client.activate();
+    }
+
+    function sendMessage() {
+        const roomId = document.getElementById("roomId").value.trim();
+        const content = document.getElementById("messageInput").value.trim();
+
+        if (!client || !client.connected) {
+            alert("먼저 연결하세요.");
+            return;
+        }
+
+        if (!content) {
+            alert("메시지를 입력하세요.");
+            return;
+        }
+
+        const body = {
+            roomId: Number(roomId),
+            content: content
+        };
+
+        client.publish({
+            destination: "/pub/chat/send",
+            body: JSON.stringify(body)
+        });
+
+        addLog("[송신] " + JSON.stringify(body));
+        document.getElementById("messageInput").value = "";
+    }
+
+    function disconnectWebSocket() {
+        if (client) {
+            client.deactivate();
+            addLog("웹소켓 연결 해제");
+        }
+    }
+</script>
+</body>
+</html>

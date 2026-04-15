@@ -49,6 +49,10 @@ dependencies {
 	annotationProcessor "com.querydsl:querydsl-apt:5.1.0:jakarta"
 	annotationProcessor "jakarta.annotation:jakarta.annotation-api"
 	annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+	//채팅창 웹소켓 연동 의존성 부여
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	implementation 'org.springframework:spring-messaging'
+	implementation 'org.springframework:spring-websocket'
 }
 
 def querydslDir = layout.buildDirectory.dir("generated/querydsl").get().asFile
