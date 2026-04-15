@@ -18,10 +18,10 @@ public class ChatSocketController {
     private final SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/chat/send")
-    public void sendMessage(ChatMessageSendRequest request, Authentication authentication) {
-        // 웹소켓 인증 객체에서 현재 로그인 유저 꺼내기
-        User user = (User) authentication.getPrincipal();
-
+    public void sendMessage(`@Valid` ChatMessageSendRequest request, Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new AccessDeniedException("웹소켓 인증 정보가 유효하지 않습니다.");
+        }
         // 메시지 저장
         ChatMessageResponse response = chatService.saveMessage(user, request);
 
