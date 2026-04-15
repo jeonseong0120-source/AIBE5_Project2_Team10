@@ -114,6 +114,13 @@ public class User extends BaseTimeEntity implements UserDetails {
         this.role = role;
     }
 
+    /**
+     * [추가] Cloudinary 프로필 이미지 업로드 후 URL을 갱신합니다.
+     */
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
     // ================= UserDetails 필수 구현 메서드 =================
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

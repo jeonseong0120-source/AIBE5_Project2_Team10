@@ -141,5 +141,17 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
         return new UserInfoResponse(user);
     }
+
+    /**
+     * [Cloudinary] 프로필 이미지 URL을 DB에 반영합니다.
+     * ImageController에서 Cloudinary 업로드 완료 후 호출됩니다.
+     */
+    @Transactional
+    public void updateProfileImage(String email, String newImageUrl) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        user.updateProfileImageUrl(newImageUrl);
+        // @Transactional + Dirty Checking으로 별도 save() 불필요
+    }
 }
 

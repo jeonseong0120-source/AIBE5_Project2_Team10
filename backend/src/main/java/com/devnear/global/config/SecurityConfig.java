@@ -80,6 +80,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/freelancers/status", "/api/v1/freelancers/status").hasAnyRole("FREELANCER", "BOTH")
                         .requestMatchers("/api/freelancer/**", "/api/v1/freelancer/**").hasAnyRole("FREELANCER", "BOTH")
 
+                        // [Cloudinary] 이미지 업로드: 포트폴리오 이미지는 프리랜서, 프로필 이미지는 인증된 모든 사용자
+                        .requestMatchers(HttpMethod.POST, "/api/images/portfolio", "/api/images/portfolios/bulk").hasAnyRole("FREELANCER", "BOTH")
+                        .requestMatchers(HttpMethod.POST, "/api/images/profile").authenticated()
+
                         // 4. [권한] 클라이언트 전용 구역
                         .requestMatchers(HttpMethod.POST, "/api/projects", "/api/v1/projects").hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers(HttpMethod.PUT, "/api/projects/**", "/api/v1/projects/**").hasAnyRole("CLIENT", "BOTH")
