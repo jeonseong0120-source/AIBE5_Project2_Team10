@@ -3,9 +3,9 @@ package com.devnear.web.service.client;
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.user.User;
-import com.devnear.web.domain.user.UserRepository;
+import com.devnear.web.domain.user.UserRepository; // 🔍 1. 임포트 확인
 import com.devnear.web.dto.client.ClientProfileRequest;
-import com.devnear.web.dto.client.ClientProfileResponse; // 추가
+import com.devnear.web.dto.client.ClientProfileResponse;
 import com.devnear.web.exception.DuplicateProfileException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ClientService {
 
     private final ClientProfileRepository clientProfileRepository;
+    private final UserRepository userRepository; // 🔍 추가(final 필수)
 
     @Transactional
     public Long registerProfile(User user, ClientProfileRequest request) {
@@ -44,11 +45,18 @@ public class ClientService {
 
     @Transactional
     public void updateProfile(User user, ClientProfileRequest request) {
-        ClientProfile profile = findProfileByUser(user);
+        // 🔍 3. 핵심: 넘겨받은 user 대신, DB에서 진짜 "관리 대상(Managed)" 유저를 다시 찾음
+        User managedUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+
+        ClientProfile profile = findProfileByUser(managedUser);
+
         if (clientProfileRepository.existsByBnAndIdNot(request.getBn(), profile.getId())){
             throw new DuplicateProfileException("이미 등록된 사업자 번호입니다.");
         }
+
         profile.update(request);
+        managedUser.setNickname(request.getNickname());
     }
 
     @Transactional
@@ -61,9 +69,3 @@ public class ClientService {
                 .orElseThrow(() -> new ResourceNotFoundException("클라이언트 프로필을 찾을 수 없습니다."));
     }
 }
-
-//    @Transactional
-//    public void updateLogo(String email, String logoUrl) {
-//        ClientProfile profile = findProfileByEmail(email);
-//        profile.updateLogo(logoUrl);
-//    }

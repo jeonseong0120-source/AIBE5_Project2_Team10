@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import FreelancerCard from '@/components/freelancer/FreelancerCard';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
-import api from '../lib/axios';
+import api from '../../lib/axios';
 import { Search, MapPin, SlidersHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -106,15 +106,14 @@ export default function ClientDashboard() {
 
                 <div className="flex gap-6 items-center">
                     <button
-                        onClick={() => router.push('/profile')}
+                        onClick={() => router.push('/client/mypage')} // <-- 딱 여기만 '/profile'에서 변경했습니다!
                         className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono"
                     >
                         MY_PROFILE
                     </button>
-
                     {/* [수정] 봇 리뷰 반영: onClick 핸들러 추가하여 알림창 띄우기 */}
-                    <button 
-                        onClick={() => alert("시스템 설계 중입니다. 다음 업데이트를 기다려주세요.")} 
+                    <button
+                        onClick={() => alert("시스템 설계 중입니다. 다음 업데이트를 기다려주세요.")}
                         className="px-6 py-2.5 bg-[#FF7D00] text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition shadow-md shadow-orange-100 uppercase font-mono"
                     >
                         Register_Project
