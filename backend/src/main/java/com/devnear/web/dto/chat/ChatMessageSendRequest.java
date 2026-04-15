@@ -14,6 +14,7 @@ public class ChatMessageSendRequest {
     private Long roomId;
 
     // 실제 메시지 내용
-    @NotBlank
+    `@NotBlank`
+    `@Size`(max = 2000)
     private String content;
 }
