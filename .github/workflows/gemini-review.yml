@@ -1,0 +1,21 @@
+name: Gemini Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Gemini Code Review
+        uses: google-gemini/code-review-action@v1
+        with:
+          # ✅ 아래처럼 작성해야 깃허브 금고(Secrets)에서 안전하게 키를 가져옴
+          api_key: ${{ secrets.GEMINI_API_KEY }}
+          model: "gemini-1.5-flash"
+          # ✅ 한글 리뷰 설정: 주석(#)을 풀고 내용을 입력
+          custom_prompts: "모든 코드 리뷰는 한국어로 진행해줘. 시니어 개발자처럼 친절하고 구체적인 개선 방향을 제시해줘."
