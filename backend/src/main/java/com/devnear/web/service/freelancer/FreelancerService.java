@@ -135,4 +135,12 @@ public class FreelancerService {
                 profile.getWorkStyle(),
                 isActive);
     }
+
+    // [삭제] 내 프리랜서 프로필 삭제
+    @Transactional
+    public void deleteMyProfile(User user) {
+        FreelancerProfile profile = profileRepository.findByUser_Id(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("프로필이 존재하지 않습니다."));
+        profileRepository.delete(profile);
+    }
 }
