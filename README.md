@@ -98,6 +98,25 @@ PR을 통해 팀원과 코드 내용을 공유하고 리뷰 후 병합합니다.
 
 ---
 
+## 🔐 백엔드 환경 변수 설정
+
+백엔드 실행 전에 `backend/.env.example`의 키를 기준으로 OS/IDE 환경 변수에 값을 설정하세요.
+
+필수 변수:
+- `DB_URL`
+- `DB_USERNAME`
+- `DB_PASSWORD`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `JWT_SECRET`
+- `JWT_EXPIRATION_MS`
+- `KAKAO_MAPS_API_KEY`
+- `KAKAO_REST_API_KEY`
+
+`application.yml`과 `application.yml.sample`은 위 변수들을 `${변수명}` 형태로 참조합니다.
+
+---
+
 ## 📊 데이터베이스 모델링 (ERD)
 <img width="2840" height="1892" alt="Project_erd" src="https://github.com/user-attachments/assets/5ee13eed-e49a-4ee1-b0ee-8653ce9bb0b9" />
 

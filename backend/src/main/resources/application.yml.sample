@@ -1,10 +1,9 @@
 # application.yml.sample
 spring:
   datasource:
-    # 도커 DB 포트가 3307인 경우 그대로 사용, 3306인 경우 수정하세요.
-    url: jdbc:mysql://localhost:3307/devnear?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: user
-    password: user123
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -17,17 +16,42 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         default_batch_fetch_size: 100
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+
 # ==========================================
 # 보안 및 인증 설정 (JWT)
 # ==========================================
 jwt:
-  # [보안 주의] 토큰 서명 및 검증에 사용되는 비밀 키
-  # - 개발 편의를 위해 로컬 테스트용 기본값을 제공
-  # - 실제 운영 환경(Production)에서는 보안을 위해 반드시 외부 환경 변수를 통해 주입해야 함
-  # - HS256 알고리즘 사용 시 최소 32자 이상의 복잡한 문자열을 권장
-  secret: your_local_test_secret_key_at_least_32_characters_long
+  # 운영 환경에서는 반드시 환경 변수로 주입하세요.
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION_MS:3600000}
 
-  # 토큰 유효 기간 설정 (단위: 밀리초 / ms)
-  # - 3,600,000ms = 1시간
-  # - 서비스 정책에 따라 적절한 만료 시간을 설정
-  expiration: 3600000
+app:
+  cors:
+    allowed-origins:
+      - ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+      - http://127.0.0.1:3000
+
+  oauth2:
+    redirect-uri: ${APP_OAUTH2_REDIRECT_URI:http://localhost:3000/oauth/redirect}
+    error-uri: ${APP_OAUTH2_ERROR_URI:http://localhost:3000/login}
+
+kakao:
+  maps:
+    api-key: ${KAKAO_MAPS_API_KEY}
+    rest-api-key: ${KAKAO_REST_API_KEY}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+  upload-folder: ${CLOUDINARY_UPLOAD_FOLDER:devnear}

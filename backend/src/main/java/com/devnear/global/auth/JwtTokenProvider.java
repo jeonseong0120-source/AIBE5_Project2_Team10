@@ -1,10 +1,10 @@
 package com.devnear.global.auth;
 
+import com.devnear.global.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,15 +22,15 @@ public class JwtTokenProvider {
     private final SecretKey key; // final 유지
     private final long validityInMilliseconds; // final 유지
 
-    // 2. 생성자를 통해 설정값(@Value)과 의존성(UserDetailsService)을 한꺼번에 주입
+    // 2. 생성자를 통해 설정값(ConfigurationProperties)과 의존성을 한꺼번에 주입
     public JwtTokenProvider(
             UserDetailsService userDetailsService,
-            @Value("${jwt.secret}") String secretString,
-            @Value("${jwt.expiration}") long validityInMilliseconds
+            JwtProperties jwtProperties
     ) {
         this.userDetailsService = userDetailsService;
-        this.validityInMilliseconds = validityInMilliseconds;
+        this.validityInMilliseconds = jwtProperties.getExpiration();
         // 주입받은 secretString으로 여기서 Key를 생성합니다.
+        String secretString = jwtProperties.getSecret();
         this.key = Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
     }
 
