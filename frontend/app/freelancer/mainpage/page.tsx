@@ -20,7 +20,7 @@ export default function FreelancerExplorePage() {
 
     const locations = ['인천', '서울', '경기', '부산', '대구', '원격'];
 
-    // [복구] 필터 초기화 로직
+    // [필터 초기화 로직
     const resetFilters = () => {
         setSearchQuery('');
         setSelectedLocation('전체');
