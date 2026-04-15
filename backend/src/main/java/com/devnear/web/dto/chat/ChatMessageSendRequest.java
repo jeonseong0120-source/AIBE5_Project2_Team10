@@ -2,6 +2,7 @@ package com.devnear.web.dto.chat;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -14,7 +15,7 @@ public class ChatMessageSendRequest {
     private Long roomId;
 
     // 실제 메시지 내용
-    `@NotBlank`
-    `@Size`(max = 2000)
+    @NotBlank
+    @Size(max = 2000)
     private String content;
 }
