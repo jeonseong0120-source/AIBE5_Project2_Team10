@@ -1,29 +1,15 @@
-name: Gemini Code Review
-
-on:
-  pull_request:
-    types: [opened, synchronize]
-
-jobs:
-  review:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Run Gemini CLI
-        uses: google-github-actions/run-gemini-cli@v0.1.21
-        with:
-          # 🚨 1. 키 이름 확인 (Secrets에 저장한 이름과 똑같아야 함)
-          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-          
-          # 🚨 2. 모델 변경 (Flash가 안 되면 Pro로 뚫어야 합니다)
-          gemini_model: "gemini-1.5-pro"
-          
-          # 🚨 3. 명령어 수정 (이 비서는 /review 명령어를 좋아합니다)
-          prompt: "/review 모든 리뷰는 한국어로 진행해주고, 시니어 개발자처럼 구체적인 개선안을 제시해줘."
+# version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    container_name: devnear-db
+    ports:
+      - "3307:3306"  # 왼쪽 3306을 3307로 바꿉니다!
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: devnear
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user123
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    restart: always
