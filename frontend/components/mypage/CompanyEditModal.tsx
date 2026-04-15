@@ -29,7 +29,14 @@ export default function CompanyEditModal({ isOpen, onClose, onSuccess }: Company
             const fetchData = async () => {
                 try {
                     const { data } = await api.get('/client/profile');
-                    setEditForm(data);
+                    // [AI 리뷰 반영] 서버 데이터로 전체를 덮어쓰지 않고, 기존 상태 구조를 유지하며 병합합니다.
+                    setEditForm(prev => ({
+                        ...prev,
+                        ...data,
+                        // 만약 서버에서 nickname이 오지 않았다면 이전 값이나 빈 문자열을 유지
+                        nickname: data.nickname || prev.nickname || '',
+                        phoneNum: data.phoneNum || prev.phoneNum || ''
+                    }));
                     if (data.bn?.match(/^\d{3}-\d{2}-\d{5}$/)) setIsBnVerified(true);
                 } catch (err) { console.error("데이터 로드 실패", err); }
             };

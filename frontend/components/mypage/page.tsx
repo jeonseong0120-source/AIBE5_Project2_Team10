@@ -24,7 +24,13 @@ export default function ProfileEditModal({ isOpen, onClose, onSuccess }: Profile
             const fetchData = async () => {
                 try {
                     const { data } = await api.get('/client/profile');
-                    setEditForm(data);
+                    // [AI 리뷰 반영] 서버 데이터로 전체를 덮어쓰지 않고, 기존 상태 구조를 유지하며 병합합니다.
+                    setEditForm(prev => ({
+                        ...prev,
+                        ...data,
+                        nickname: data.nickname || prev.nickname || '',
+                        phoneNum: data.phoneNum || prev.phoneNum || ''
+                    }));
                 } catch (err) { console.error(err); }
             };
             fetchData();

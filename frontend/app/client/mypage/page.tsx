@@ -285,7 +285,8 @@ export default function ClientMyPage() {
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 onSuccess={(newName) => {
-                    setUser(prev => prev ? { ...prev, nickname: newName, name: newName } : null);
+                    // [AI 리뷰 반영] nickname만 수정하고, name은 그대로 둡니다.
+                    setUser(prev => prev ? { ...prev, nickname: newName } : null);
                 }}
             />
 

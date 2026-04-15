@@ -3,7 +3,7 @@ package com.devnear.web.service.client;
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.user.User;
-import com.devnear.web.domain.user.UserRepository; // 🔍 1. 임포트 확인
+import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.client.ClientProfileRequest;
 import com.devnear.web.dto.client.ClientProfileResponse;
 import com.devnear.web.exception.DuplicateProfileException;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ClientService {
 
     private final ClientProfileRepository clientProfileRepository;
-    private final UserRepository userRepository; // 🔍 추가(final 필수)
+    private final UserRepository userRepository;
 
     @Transactional
     public Long registerProfile(User user, ClientProfileRequest request) {
@@ -28,6 +28,10 @@ public class ClientService {
         }
         if (clientProfileRepository.existsByBn(request.getBn())) {
             throw new DuplicateProfileException("이미 등록된 사업자 번호입니다.");
+        }
+
+        if (request.getNickname() != null && userRepository.existsByNickname(request.getNickname())) {
+            throw new DuplicateProfileException("이미 사용 중인 닉네임입니다.");
         }
 
         try {
@@ -45,7 +49,6 @@ public class ClientService {
 
     @Transactional
     public void updateProfile(User user, ClientProfileRequest request) {
-        // 🔍 3. 핵심: 넘겨받은 user 대신, DB에서 진짜 "관리 대상(Managed)" 유저를 다시 찾음
         User managedUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
 
@@ -55,8 +58,16 @@ public class ClientService {
             throw new DuplicateProfileException("이미 등록된 사업자 번호입니다.");
         }
 
+        // [AI 리뷰 반영] 닉네임 변경 시, 현재 내 닉네임과 다른 경우에만 중복 검사를 수행
+        if (request.getNickname() != null && !request.getNickname().equals(managedUser.getNickname())) {
+            if (userRepository.existsByNickname(request.getNickname())) {
+                throw new DuplicateProfileException("이미 사용 중인 닉네임입니다.");
+            }
+            // 중복이 아닐 경우에만 닉네임 업데이트
+            managedUser.setNickname(request.getNickname());
+        }
+
         profile.update(request);
-        managedUser.setNickname(request.getNickname());
     }
 
     @Transactional
