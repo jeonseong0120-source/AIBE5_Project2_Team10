@@ -93,4 +93,17 @@ public class FreelancerController {
 
         return ResponseEntity.ok(Map.of("message", "success"));
     }
+
+    // [삭제] 내 프리랜서 프로필 삭제
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteMyProfile(
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).build();
+        }
+
+        freelancerService.deleteMyProfile(user);
+        return ResponseEntity.noContent().build();
+    }
 }
