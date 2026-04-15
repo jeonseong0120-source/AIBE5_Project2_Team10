@@ -56,13 +56,22 @@ public class ChatService {
 
         // 이미 같은 프로젝트 + 같은 두 유저 조합의 채팅방이 있으면 기존 방 반환
         ChatRoom room = chatRoomRepository.findByProjectAndUser1AndUser2(project, first, second)
-                .orElseGet(() -> chatRoomRepository.save(
+                .orElse(null);
+
+        if (room == null) {
+            try {
+                room = chatRoomRepository.save(
                         ChatRoom.builder()
                                 .project(project)
                                 .user1(first)
                                 .user2(second)
                                 .build()
-                ));
+                );
+            } catch (DataIntegrityViolationException e) {
+                room = chatRoomRepository.findByProjectAndUser1AndUser2(project, first, second)
+                        .orElseThrow(() -> e);
+            }
+        }
 
         return ChatRoomResponse.from(room, me);
     }
