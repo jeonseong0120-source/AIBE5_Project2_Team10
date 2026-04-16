@@ -1,4 +1,5 @@
-﻿
+﻿// @/app/client/projects/[id]/edit/page.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -18,9 +19,15 @@ export default function ClientProjectEditPage() {
         const fetchDetail = async () => {
             if (!id) return;
             try {
-// 🔍 [v1] 주소 누락 체크 완료
                 const { data } = await api.get(`/v1/projects/${id}`);
-                setInitialData(data);
+
+                // 🔍 [수정] 백엔드의 'skills' 필드를 'skillNames'로 변환하여 전달
+                const mappedData = {
+                    ...data,
+                    skillNames: data.skills || [], // 이름 통일
+                };
+
+                setInitialData(mappedData);
             } catch (err) {
                 alert("데이터 로드 실패 (404/500)");
                 router.push("/client/dashboard");
@@ -29,7 +36,11 @@ export default function ClientProjectEditPage() {
         fetchDetail();
     }, [id, router]);
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-[#FF7D00] animate-pulse">BOOTING_EDIT_SYSTEM...</div>;
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center font-black text-[#FF7D00] animate-pulse">
+            BOOTING_EDIT_SYSTEM...
+        </div>
+    );
     if (!initialData) return null;
 
     return (
