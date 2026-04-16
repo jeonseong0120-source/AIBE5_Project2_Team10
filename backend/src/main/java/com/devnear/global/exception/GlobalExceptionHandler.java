@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request);
     }
 
-    @ExceptionHandler(DuplicateProfileException.class)  // 추가
+    @ExceptionHandler(DuplicateProfileException.class) // 추가
     public ResponseEntity<ErrorResponse> handleDuplicate(
             DuplicateProfileException e, HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, e.getMessage(), request);
@@ -48,7 +48,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, e.getMessage(), request);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException .class)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(
             MethodArgumentNotValidException e, HttpServletRequest request) {
         String message = e.getBindingResult().getFieldErrors().stream()
@@ -60,7 +60,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception e, HttpServletRequest request) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.", request);
+        // [Temp Debugging] 500 에러 원인 즉시 파악용
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, e.getClass().getSimpleName() + ": " + e.getMessage(),
+                request);
     }
 
     @ExceptionHandler(ResourceConflictException.class)

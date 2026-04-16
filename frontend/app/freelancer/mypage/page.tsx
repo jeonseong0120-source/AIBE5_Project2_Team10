@@ -1,0 +1,923 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { User as UserIcon, Code2, Briefcase, Star, Award, Settings, Save, MapPin, Activity, Plus, Trash2, X, Clock, Image as ImageIcon, Upload, Loader2, Calendar } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import api from '@/app/lib/axios';
+
+const TABS = [
+    { id: 'portfolio', label: 'PORTFOLIO', icon: Briefcase },
+    { id: 'reviews', label: 'REVIEWS', icon: Star },
+    { id: 'grade', label: 'RANK', icon: Award },
+];
+
+const LOCATION_COORDS: Record<string, { lat: number, lng: number }> = {
+    '서울': { lat: 37.5665, lng: 126.9780 },
+    '경기': { lat: 37.4138, lng: 127.5183 },
+    '인천': { lat: 37.4563, lng: 126.7052 },
+    '부산': { lat: 35.1796, lng: 129.0756 },
+    '대구': { lat: 35.8714, lng: 128.6014 },
+    '원격': { lat: 0, lng: 0 },
+    '': { lat: 37.5665, lng: 126.9780 }
+};
+
+export default function FreelancerMyPage() {
+    const router = useRouter();
+    const [activeTab, setActiveTab] = useState('portfolio');
+    const [loading, setLoading] = useState(true);
+    const [authorized, setAuthorized] = useState(false);
+
+    const [profile, setProfile] = useState<any>(null);
+    const [portfolios, setPortfolios] = useState<any[]>([]);
+    const [reviews, setReviews] = useState<any[]>([]);
+    const [userId, setUserId] = useState<number | null>(null);
+    const [allGlobalSkills, setAllGlobalSkills] = useState<any[]>([]);
+
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [editProfileData, setEditProfileData] = useState<any>({});
+    const [mySkillIds, setMySkillIds] = useState<number[]>([]);
+    const [skillSearchQuery, setSkillSearchQuery] = useState('');
+    const [validationError, setValidationError] = useState('');
+
+    const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
+    const [portfolioForm, setPortfolioForm] = useState({ title: '', desc: '', thumbnailUrl: '', portfolioImages: [] as string[], skills: [] as number[] });
+    const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
+
+    // 업로드 로딩 상태 관리
+    const [isProfileUploading, setIsProfileUploading] = useState(false);
+    const [isThumbUploading, setIsThumbUploading] = useState(false);
+    const [isBulkUploading, setIsBulkUploading] = useState(false);
+
+    // 숨김 파일 입력용 ref
+    const profileFileInputRef = useRef<HTMLInputElement>(null);
+    const thumbFileInputRef = useRef<HTMLInputElement>(null);
+    const bulkFileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const init = async () => {
+            const token = localStorage.getItem("accessToken");
+            if (!token) {
+                alert("로그인이 필요합니다.");
+                router.replace("/login");
+                return;
+            }
+
+            try {
+                const userRes = await api.get("/v1/users/me");
+                const role = userRes.data.role;
+                if (role === "GUEST" || role === "ROLE_GUEST") {
+                    router.replace("/onboarding");
+                    return;
+                }
+                if (role === "CLIENT" || role === "ROLE_CLIENT") {
+                    alert("프리랜서 전용 화면입니다.");
+                    router.replace("/dashboard");
+                    return;
+                }
+
+                setUserId(userRes.data.user_id || userRes.data.id);
+                setAuthorized(true);
+
+                await Promise.all([fetchProfile(), fetchGlobalSkills()]);
+            } catch (err) {
+                console.error("접근 권한 확인 실패", err);
+                router.replace("/login");
+            }
+        };
+        init();
+    }, [router]);
+
+    useEffect(() => {
+        if (!authorized) return;
+        if (activeTab === 'portfolio' && portfolios.length === 0) fetchPortfolios();
+        if (activeTab === 'reviews' && reviews.length === 0 && userId) fetchReviews(userId);
+    }, [activeTab, authorized, userId]);
+
+    const fetchGlobalSkills = async () => {
+        try {
+            const { data } = await api.get('/v1/skills');
+            setAllGlobalSkills(data || []);
+        } catch (e) { console.error("스킬 목록 조회 실패", e); }
+    }
+
+    const fetchProfile = async () => {
+        setLoading(true);
+        try {
+            const { data } = await api.get('/v1/freelancers/me');
+            if (data) {
+                setProfile(data);
+                setEditProfileData({
+                    profileImageUrl: data.profileImageUrl || '',
+                    introduction: data.introduction || '',
+                    location: data.location || '',
+                    latitude: data.latitude || 37.5665,
+                    longitude: data.longitude || 126.9780,
+                    hourlyRate: data.hourlyRate || 0,
+                    workStyle: data.workStyle || 'ONLINE',
+                    isActive: data.isActive !== false,
+                    skills: data.skills || []
+                });
+                setMySkillIds((data.skills || []).map((s: any) => s.id));
+            }
+        } catch (error) {
+            console.error("프로필 로드 실패", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchPortfolios = async () => {
+        setLoading(true);
+        try {
+            const { data } = await api.get('/portfolios/me');
+            setPortfolios(data || []);
+        } catch (error) {
+            console.error("포트폴리오 로드 실패", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchReviews = async (id: number) => {
+        setLoading(true);
+        try {
+            const { data } = await api.get(`/reviews/freelancers/${id}`);
+            setReviews(data || []);
+        } catch (error) {
+            console.error("리뷰 로드 실패", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleProfileAndSkillUpdate = async () => {
+        setValidationError('');
+
+        if (mySkillIds.length === 0) {
+            setValidationError('최소 1개 이상의 스킬을 선택해야 합니다.');
+            return;
+        }
+
+        const hRate = Number(editProfileData.hourlyRate?.toString().replace(/,/g, ''));
+        if (isNaN(hRate) || hRate < 0) {
+            setValidationError('시급은 0 이상이어야 합니다.');
+            return;
+        }
+
+        const locationKey = editProfileData.location || '서울';
+        const coords = LOCATION_COORDS[locationKey] || LOCATION_COORDS['서울'];
+
+        try {
+            const requestBody = {
+                profileImageUrl: editProfileData.profileImageUrl || null,
+                introduction: editProfileData.introduction || '',
+                location: locationKey,
+                latitude: coords.lat,
+                longitude: coords.lng,
+                hourlyRate: hRate,
+                workStyle: editProfileData.workStyle || 'ONLINE',
+                isActive: editProfileData.isActive !== false,
+                skillIds: mySkillIds
+            };
+
+            await api.put('/v1/freelancers/me', requestBody);
+            alert('정보가 업데이트 되었습니다.');
+            setIsEditingProfile(false);
+            fetchProfile();
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.message || '모든 필수값을 확인해주세요.';
+            setValidationError(errorMsg);
+            console.error(error);
+        }
+    };
+
+    const handleToggleStatus = async () => {
+        try {
+            const newStatus = !profile.isActive;
+            await api.patch('/v1/freelancers/status', { isActive: newStatus });
+            setProfile({ ...profile, isActive: newStatus });
+            setEditProfileData({ ...editProfileData, isActive: newStatus });
+            alert(newStatus ? '활동중으로 변경되었습니다.' : '휴식중으로 변경되었습니다.');
+        } catch (error) {
+            alert('상태 변경 실패');
+        }
+    }
+
+    const toggleSkill = (skillId: number) => {
+        if (mySkillIds.includes(skillId)) {
+            setMySkillIds(mySkillIds.filter(id => id !== skillId));
+        } else {
+            setMySkillIds([...mySkillIds, skillId]);
+        }
+    };
+
+    // =====================================
+    // 💡 이미지 업로드 로직 (Cloudinary API 연동)
+    // =====================================
+
+    // 1. 프로필 이미지 업로드
+    const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsProfileUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const { data } = await api.post('/images/profile', formData);
+            // DB에 즉시 반영되므로 프론트 상태만 갱신
+            const newImageUrl = data.imageUrl;
+            setProfile({ ...profile, profileImageUrl: newImageUrl });
+            setEditProfileData({ ...editProfileData, profileImageUrl: newImageUrl });
+            alert('프로필 이미지가 변경되었습니다.');
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.message || error.message || '알 수 없는 오류';
+            alert('프로필 업로드 실패: ' + errorMsg);
+            console.error(error);
+        } finally {
+            setIsProfileUploading(false);
+        }
+    };
+
+    // 2. 포트폴리오 썸네일 단일 업로드
+    const handleThumbUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsThumbUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const { data } = await api.post('/images/portfolio', formData);
+            setPortfolioForm({ ...portfolioForm, thumbnailUrl: data.imageUrl });
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.message || error.message || '알 수 없는 오류';
+            alert('썸네일 업로드 실패: ' + errorMsg);
+            console.error(error);
+        } finally {
+            setIsThumbUploading(false);
+        }
+    };
+
+    // 3. 포트폴리오 다중 이미지 업로드
+    const handleBulkImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        if (files.length > 10) {
+            alert("최대 10장까지 업로드할 수 있습니다.");
+            return;
+        }
+
+        setIsBulkUploading(true);
+        const formData = new FormData();
+        Array.from(files).forEach((file) => formData.append('files', file));
+
+        try {
+            const { data } = await api.post('/images/portfolios/bulk', formData);
+            // 기존 이미지 + 새로 업로드된 이미지
+            setPortfolioForm({
+                ...portfolioForm,
+                portfolioImages: [...portfolioForm.portfolioImages, ...data.imageUrls].slice(0, 10)
+            });
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.message || error.message || '알 수 없는 오류';
+            alert('다중 이미지 업로드 실패: ' + errorMsg);
+            console.error(error);
+        } finally {
+            setIsBulkUploading(false);
+        }
+    };
+
+    const removePortfolioImage = (indexToRemove: number) => {
+        setPortfolioForm(prev => ({
+            ...prev,
+            portfolioImages: prev.portfolioImages.filter((_, idx) => idx !== indexToRemove)
+        }));
+    };
+
+    const handleSavePortfolio = async () => {
+        if (!portfolioForm.title || !portfolioForm.desc) {
+            alert("제목과 내용을 입력해주세요.");
+            return;
+        }
+
+        try {
+            const requestBody = {
+                title: portfolioForm.title,
+                desc: portfolioForm.desc,
+                thumbnailUrl: portfolioForm.thumbnailUrl || null,
+                portfolioImages: portfolioForm.portfolioImages.length > 0 ? portfolioForm.portfolioImages : ["https://placehold.co/600x400?text=No+Image"],
+                skills: portfolioForm.skills.length > 0 ? portfolioForm.skills : [1]
+            };
+            await api.post('/portfolios', requestBody);
+            alert('포트폴리오가 등록되었습니다.');
+            setIsPortfolioModalOpen(false);
+            fetchPortfolios();
+            setPortfolioForm({ title: '', desc: '', thumbnailUrl: '', portfolioImages: [], skills: [] });
+        } catch (e) {
+            alert('상세 정보를 확인해주세요.');
+            console.error(e);
+        }
+    };
+
+    const handleDeletePortfolio = async (id: number) => {
+        if (!confirm("이 포트폴리오를 삭제하시겠습니까?")) return;
+        try {
+            await api.delete(`/portfolios/${id}`);
+            alert("포트폴리오가 삭제되었습니다.");
+            setSelectedPortfolio(null);
+            fetchPortfolios();
+        } catch (err) {
+            alert("포트폴리오 삭제에 실패했습니다.");
+            console.error(err);
+        }
+    };
+
+    if (!authorized) return <div className="min-h-screen bg-white flex items-center justify-center text-[#7A4FFF] font-black tracking-widest animate-pulse font-mono uppercase">System_Authorizing...</div>;
+    if (!profile && !isEditingProfile) return null;
+
+    return (
+        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 font-sans">
+            {/* Nav */}
+            <nav className="w-full py-5 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
+                    <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
+                </div>
+                <div className="flex gap-6 items-center">
+                    <button onClick={() => router.push('/freelancer/dashboard')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
+                        DASHBOARD
+                    </button>
+                    <button onClick={() => router.push('/freelancer/explore')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
+                        EXPLORE
+                    </button>
+                    <div className="w-8 h-8 rounded-full bg-[#7A4FFF] border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-white font-bold text-xs">
+                        {profile?.userName ? profile.userName.charAt(0) : 'U'}
+                    </div>
+                </div>
+            </nav>
+
+            <main className="max-w-5xl mx-auto px-6 mt-10">
+                {/* 상단 프로필 영역 (편집 모드 시 폼으로 확장) */}
+                <div className="bg-white rounded-[2rem] p-8 md:p-10 border border-zinc-200 shadow-sm mb-8 relative overflow-hidden flex flex-col gap-8 transition-all">
+                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                        style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+
+                    {/* 상단 헤더 & 상태 (항상 보임) */}
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10 w-full">
+                        <div className="w-32 h-32 rounded-full border-4 border-white shadow-xl relative bg-zinc-100 flex-shrink-0 group overflow-hidden">
+                            {isProfileUploading ? (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400 bg-zinc-200 animate-pulse">
+                                    <Loader2 className="animate-spin mb-2" size={24} />
+                                    <span className="text-[10px] font-mono font-black" >UPLOADING</span>
+                                </div>
+                            ) : profile?.profileImageUrl ? (
+                                <img src={profile.profileImageUrl} alt="profile" className="w-full h-full object-cover rounded-full" />
+                            ) : (
+                                <div className="w-full h-full bg-zinc-200 rounded-full flex items-center justify-center text-zinc-400">
+                                    <UserIcon size={40} />
+                                </div>
+                            )}
+
+                            {/* 프로필 이미지 업로드 레이어 */}
+                            {isEditingProfile && !isProfileUploading && (
+                                <div
+                                    className="absolute inset-0 bg-black/60 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
+                                    onClick={() => profileFileInputRef.current?.click()}
+                                >
+                                    <Upload size={24} className="mb-1" />
+                                    <span className="text-[10px] font-mono font-bold tracking-widest">CHANGE</span>
+                                </div>
+                            )}
+
+                            {/* 숨겨진 Input File (Profile) */}
+                            <input
+                                type="file"
+                                ref={profileFileInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleProfileImageUpload}
+                            />
+                        </div>
+
+                        <div className="flex-1 w-full">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                                <div className="flex items-center gap-3">
+                                    <h1 className="text-3xl font-black tracking-tight">{profile?.userName || 'Unknown'}</h1>
+                                    <span className={`px-3 py-1 text-[10px] font-black tracking-widest font-mono uppercase rounded-full border ${profile?.isActive ? 'bg-[#7A4FFF]/10 text-[#7A4FFF] border-[#7A4FFF]/20' : 'bg-red-50 text-red-500 border-red-100'}`}>
+                                        {profile?.isActive ? '활동중 (ACTIVE)' : '휴식중 (REST)'}
+                                    </span>
+                                </div>
+
+                                {/* 우측 설정 버튼들 */}
+                                {!isEditingProfile ? (
+                                    <div className="flex gap-2">
+                                        <button onClick={handleToggleStatus} className={`px-4 py-2 border rounded-xl text-xs font-bold transition-all font-mono tracking-widest uppercase flex items-center gap-2 ${profile?.isActive ? 'bg-red-50 text-red-500 border-red-100 hover:bg-red-100' : 'bg-[#7A4FFF]/10 text-[#7A4FFF] border-[#7A4FFF]/20 hover:bg-[#7A4FFF]/20'}`}>
+                                            <Activity size={14} /> {profile?.isActive ? '휴식중 전환' : '활동중 전환'}
+                                        </button>
+                                        <button onClick={() => setIsEditingProfile(true)} className="px-4 py-2 bg-zinc-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-colors font-mono tracking-widest uppercase flex items-center gap-2 shadow-md">
+                                            <Settings size={14} /> 정보 편집
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2 relative">
+                                        <button onClick={() => { setIsEditingProfile(false); setMySkillIds((profile?.skills || []).map((s: any) => s.id)); setValidationError(''); }} className="px-5 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-xl text-xs font-black font-mono">
+                                            취소
+                                        </button>
+                                        <button onClick={handleProfileAndSkillUpdate} className="px-5 py-2.5 bg-[#7A4FFF] hover:bg-purple-600 text-white shadow-lg rounded-xl text-xs font-black font-mono flex items-center gap-2">
+                                            <Save size={16} /> 수정 완료
+                                        </button>
+                                        {validationError && (
+                                            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="absolute top-12 right-0 text-[10px] text-red-500 font-bold whitespace-nowrap bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 shadow-sm z-50">
+                                                🚨 {validationError}
+                                            </motion.div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 읽기 모드일 때만 보이는 요약 정보 */}
+                            <AnimatePresence>
+                                {!isEditingProfile && (
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                                        <p className="text-zinc-500 font-mono text-xs uppercase tracking-widest leading-relaxed mb-6 line-clamp-2">
+                                            {profile?.introduction || 'No Introduction Provided.'}
+                                        </p>
+                                        <div className="flex flex-wrap items-center gap-6 text-sm">
+                                            <div className="flex items-center gap-2 group">
+                                                <Star size={16} className="text-[#FF7D00]" />
+                                                <span className="font-black text-xl">{profile?.averageRating?.toFixed(1) || '0.0'}</span>
+                                                <span className="text-[10px] text-zinc-400 font-mono">({profile?.reviewCount || 0})</span>
+                                            </div>
+                                            <div className="w-px h-6 bg-zinc-200" />
+                                            <div className="flex items-center gap-2 group">
+                                                <Briefcase size={16} className="text-[#7A4FFF]" />
+                                                <span className="font-black text-xl">{profile?.completedProjects || 0}</span>
+                                            </div>
+                                            <div className="w-px h-6 bg-zinc-200" />
+                                            <div className="flex items-center gap-2 group text-zinc-500">
+                                                <MapPin size={16} />
+                                                <span className="font-bold">{profile?.location || '지역 미설정'}</span>
+                                            </div>
+                                            <div className="w-px h-6 bg-zinc-200" />
+                                            <div className="flex flex-wrap gap-1">
+                                                {(profile?.skills || []).slice(0, 4).map((s: any) => (
+                                                    <span key={s.id} className="px-2 py-0.5 bg-zinc-100 text-zinc-600 rounded text-[10px] font-bold">#{s.name}</span>
+                                                ))}
+                                                {(profile?.skills || []).length > 4 && <span className="px-2 py-0.5 bg-zinc-100 text-zinc-600 rounded text-[10px] font-bold">+{profile.skills.length - 4}</span>}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </div>
+
+                    {/* 편집 모드 폼 (하단으로 아코디언처럼 펼쳐짐) */}
+                    <AnimatePresence>
+                        {isEditingProfile && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden border-t border-zinc-100 pt-8 relative z-10 w-full space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2 md:col-span-1">
+                                        <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">활동 지역 / Location</label>
+                                        <select value={editProfileData.location} onChange={e => setEditProfileData({ ...editProfileData, location: e.target.value })} className="w-full bg-zinc-50 p-4 rounded-xl border border-zinc-200 outline-none focus:border-[#7A4FFF] text-sm font-bold">
+                                            <option value="">선택 안함</option>
+                                            <option value="서울">서울</option><option value="경기">경기</option><option value="인천">인천</option>
+                                            <option value="부산">부산</option><option value="대구">대구</option><option value="원격">원격 (Remote)</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">희망 시급 (원) / Hourly Rate</label>
+                                        <input 
+                                            type="text" 
+                                            value={editProfileData.hourlyRate === '' ? '' : Number(editProfileData.hourlyRate).toLocaleString()} 
+                                            onChange={e => {
+                                                const rawValue = e.target.value.replace(/[^\d]/g, '');
+                                                setEditProfileData({ ...editProfileData, hourlyRate: rawValue ? parseInt(rawValue, 10) : '' });
+                                            }} 
+                                            className="w-full bg-zinc-50 p-4 rounded-xl border border-zinc-200 outline-none focus:border-[#7A4FFF] text-sm font-bold" 
+                                            placeholder="예: 50,000"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2 md:col-span-2">
+                                        <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">작업 방식 / Work Style</label>
+                                        <select value={editProfileData.workStyle} onChange={e => setEditProfileData({ ...editProfileData, workStyle: e.target.value })} className="w-full bg-zinc-50 p-4 rounded-xl border border-zinc-200 outline-none focus:border-[#7A4FFF] text-sm font-bold">
+                                            <option value="ONLINE">온라인 (ONLINE)</option>
+                                            <option value="OFFLINE">오프라인 (OFFLINE)</option>
+                                            <option value="HYBRID">하이브리드 (HYBRID)</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-2 md:col-span-2">
+                                        <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">소개글 / Introduction</label>
+                                        <textarea rows={4} value={editProfileData.introduction} onChange={e => setEditProfileData({ ...editProfileData, introduction: e.target.value })} className="w-full bg-zinc-50 p-4 rounded-xl border border-zinc-200 outline-none focus:border-[#7A4FFF] text-sm font-bold transition-colors resize-none" placeholder="자신의 강점을 어필해주세요." />
+                                    </div>
+                                </div>
+
+                                {/* 스킬 선택 폼 */}
+                                <div className="border-t border-zinc-100 pt-8">
+                                    <h3 className="text-[10px] font-black font-mono tracking-widest uppercase text-zinc-400 mb-4">보유 기술 (Skills)</h3>
+                                    <div className="flex flex-wrap gap-2 mb-6">
+                                        {mySkillIds.length === 0 ? (
+                                            <div className="text-zinc-400 font-mono text-xs">선택된 스킬이 없습니다.</div>
+                                        ) : (
+                                            <AnimatePresence>
+                                                {mySkillIds.map(skillId => {
+                                                    const skillObj = allGlobalSkills.find(s => s.id === skillId);
+                                                    return (
+                                                        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} key={skillId}
+                                                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-[#7A4FFF]/40 text-[#7A4FFF]"
+                                                        >
+                                                            <span>#</span> {skillObj ? skillObj.name : `Skill(${skillId})`}
+                                                            <button onClick={() => toggleSkill(skillId)} className="ml-1 text-zinc-300 hover:text-red-500 transition-colors">
+                                                                <X size={12} />
+                                                            </button>
+                                                        </motion.div>
+                                                    )
+                                                })}
+                                            </AnimatePresence>
+                                        )}
+                                    </div>
+
+                                    <div className="p-6 bg-zinc-50 rounded-2xl border border-zinc-200">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <p className="text-xs text-zinc-500 font-bold">인기 태그 둘러보기</p>
+                                            <input className="px-4 py-2 rounded-xl bg-white border border-zinc-200 outline-none text-xs font-bold focus:border-[#FF7D00]" placeholder="태그 검새..." value={skillSearchQuery} onChange={e => setSkillSearchQuery(e.target.value)} />
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto no-scrollbar">
+                                            {allGlobalSkills
+                                                .filter(s => s.name.toLowerCase().includes(skillSearchQuery.toLowerCase()))
+                                                .map(skill => {
+                                                    const isSelected = mySkillIds.includes(skill.id);
+                                                    return (
+                                                        <button key={skill.id} onClick={() => toggleSkill(skill.id)} className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all ${isSelected ? 'bg-[#FF7D00]/10 border-[#FF7D00]/30 text-[#FF7D00]' : 'bg-white border-zinc-200 text-zinc-500 hover:border-[#7A4FFF] hover:text-[#7A4FFF]'}`}>
+                                                            {isSelected ? '✓ ' : '+ '} {skill.name}
+                                                        </button>
+                                                    );
+                                                })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* 탭 네비게이션 */}
+                <div className="flex overflow-x-auto no-scrollbar gap-2 mb-8 bg-white p-2 rounded-2xl border border-zinc-200 shadow-sm relative z-20">
+                    {TABS.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black transition-all whitespace-nowrap font-mono uppercase tracking-widest ${activeTab === tab.id
+                                ? 'bg-zinc-900 text-white shadow-lg'
+                                : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900'
+                                }`}
+                        >
+                            <tab.icon size={14} className={activeTab === tab.id ? 'text-[#7A4FFF]' : ''} />
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* 탭 본문 영역 */}
+                <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="bg-white rounded-[2rem] p-8 md:p-10 border border-zinc-200 shadow-sm min-h-[400px] mb-20 relative"
+                >
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center h-64 gap-4">
+                            <div className="w-8 h-8 border-4 border-[#7A4FFF]/20 border-t-[#7A4FFF] rounded-full animate-spin" />
+                        </div>
+                    ) : (
+                        <>
+                            {/* [TAB 1] Portfolio (Pinterest Style) */}
+                            {activeTab === 'portfolio' && (
+                                <div className="space-y-6">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <div>
+                                            <h2 className="text-xl font-black tracking-tighter">포트폴리오</h2>
+                                            <p className="text-[10px] text-zinc-400 font-mono uppercase mt-1">SHOWCASE_YOUR_MISSIONS</p>
+                                        </div>
+                                        <button onClick={() => setIsPortfolioModalOpen(true)} className="h-10 px-5 bg-[#7A4FFF] hover:bg-purple-600 shadow-md text-white rounded-xl text-[10px] font-black transition-colors font-mono tracking-widest uppercase flex items-center gap-2">
+                                            <Plus size={14} /> 새 작업물 등록
+                                        </button>
+                                    </div>
+
+                                    {portfolios.length === 0 ? (
+                                        <div className="text-center py-24 bg-zinc-50 rounded-[2rem] border border-dashed border-zinc-200">
+                                            <ImageIcon className="w-10 h-10 text-zinc-300 mx-auto mb-4" />
+                                            <h3 className="text-zinc-500 font-black text-sm mb-2">등록된 포트폴리오(작업물)가 없습니다.</h3>
+                                            <p className="text-zinc-400 text-xs font-mono">강점을 어필할 프로젝트 결과물을 등록하세요.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+                                            {portfolios.map(p => (
+                                                <div key={p.id} onClick={() => setSelectedPortfolio(p)} className="break-inside-avoid relative overflow-hidden rounded-2xl border border-zinc-200 bg-white group cursor-pointer hover:border-[#FF7D00] hover:shadow-xl transition-all inline-block w-full">
+                                                    {(p.thumbnailUrl || (p.portfolioImages && p.portfolioImages[0])) ? (
+                                                        <div className="w-full h-56 bg-zinc-100 overflow-hidden relative border-b border-zinc-100">
+                                                            <img src={p.thumbnailUrl || p.portfolioImages[0]} alt="thumb" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { e.currentTarget.src = "https://placehold.co/600x400?text=No+Image" }} />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-full h-32 bg-zinc-100 flex items-center justify-center text-zinc-300">No Image</div>
+                                                    )}
+
+                                                    <div className="p-6 bg-white">
+                                                        <h3 className="font-black text-lg mb-2 leading-tight text-zinc-900 group-hover:text-[#FF7D00] transition-colors">{p.title}</h3>
+                                                        <p className="text-xs text-zinc-500 line-clamp-3 leading-relaxed mb-4">{p.desc}</p>
+                                                        {p.skills && p.skills.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1.5 pt-4 border-t border-zinc-100">
+                                                                {p.skills.slice(0, 3).map((s: any) => (
+                                                                    <span key={s.id} className="px-2 py-1 bg-zinc-100 text-zinc-600 rounded text-[10px] font-bold">#{s.name}</span>
+                                                                ))}
+                                                                {p.skills.length > 3 && <span className="px-2 py-1 bg-zinc-100 text-zinc-600 rounded text-[10px] font-bold">+{p.skills.length - 3}</span>}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* [TAB 2] Reviews */}
+                            {activeTab === 'reviews' && (
+                                <div className="space-y-8">
+                                    <div className="bg-zinc-900 rounded-[2rem] p-8 text-white relative overflow-hidden shadow-lg">
+                                        <div className="absolute right-0 top-0 opacity-10">
+                                            <Star size={200} />
+                                        </div>
+                                        <h3 className="text-[10px] font-mono tracking-widest uppercase text-zinc-400 mb-2">Total_Performance_Score</h3>
+                                        <div className="flex items-end gap-4 mb-2">
+                                            <span className="text-5xl font-black">{profile?.averageRating?.toFixed(1) || '0.0'}</span>
+                                            <div className="flex pb-2 text-[#FF7D00]">
+                                                {[...Array(5)].map((_, idx) => (
+                                                    <Star key={idx} size={20} fill={idx < Math.floor(profile?.averageRating || 0) ? "currentColor" : "none"} />
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-zinc-400 font-mono tracking-widest uppercase">Based on <strong className="text-white">{profile?.reviewCount || 0}</strong> completed missions</p>
+
+                                        <div className="flex gap-6 mt-8 pt-6 border-t border-zinc-800">
+                                            <div className="flex-1"><p className="text-[10px] text-zinc-500 font-bold mb-1">작업 품질</p>
+                                                <div className="h-1.5 bg-zinc-800 rounded-full"><div className="h-full bg-[#7A4FFF] rounded-full" style={{ width: `${(profile?.averageRating || 0) / 5 * 100}%` }}></div></div>
+                                            </div>
+                                            <div className="flex-1"><p className="text-[10px] text-zinc-500 font-bold mb-1">일정 준수</p>
+                                                <div className="h-1.5 bg-zinc-800 rounded-full"><div className="h-full bg-[#FF7D00] rounded-full" style={{ width: `${Math.min(100, ((profile?.averageRating || 0) / 5) * 110)}%` }}></div></div>
+                                            </div>
+                                            <div className="flex-1"><p className="text-[10px] text-zinc-500 font-bold mb-1">의사 소통</p>
+                                                <div className="h-1.5 bg-zinc-800 rounded-full"><div className="h-full bg-[#34d399] rounded-full" style={{ width: `${Math.max(10, ((profile?.averageRating || 0) / 5) * 90)}%` }}></div></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="font-black text-sm text-zinc-900 mb-4 flex items-center gap-2">최근 리뷰 <span className="px-2 py-0.5 bg-zinc-100 text-zinc-500 rounded-full text-[10px]">{reviews.length}</span></h3>
+                                        {reviews.length === 0 ? (
+                                            <div className="text-center py-16 bg-zinc-50 rounded-[1.5rem] border border-dashed border-zinc-200">
+                                                <p className="text-zinc-400 text-xs font-mono font-bold tracking-widest uppercase">No_Feedback_Yet</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                {reviews.map((r, i) => (
+                                                    <div key={r.id || i} className="p-6 border border-zinc-100 bg-zinc-50 rounded-2xl hover:bg-white hover:border-zinc-200 transition-colors shadow-sm">
+                                                        <div className="flex justify-between items-start mb-3">
+                                                            <div className="flex items-center gap-1 text-[#FF7D00]">
+                                                                {[...Array(5)].map((_, idx) => (
+                                                                    <Star key={idx} size={14} fill={idx < Math.floor(r.averageScore) ? "currentColor" : "none"} strokeWidth={1.5} />
+                                                                ))}
+                                                                <span className="font-black text-sm text-zinc-900 ml-2">{r.averageScore}</span>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-sm text-zinc-600 leading-relaxed font-medium">{r.comment}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* [TAB 3] Grade */}
+                            {activeTab === 'grade' && (
+                                <div className="py-10 space-y-12">
+                                    <div className="flex flex-col items-center justify-center text-center">
+                                        <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-zinc-900 to-zinc-700 flex items-center justify-center text-[#FF7D00] shadow-2xl relative mb-6">
+                                            <Award size={50} className="relative z-10" />
+                                            <div className="absolute inset-0 border-[3px] border-[#FF7D00]/20 rounded-full animate-ping" />
+                                        </div>
+                                        <p className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase mb-2">등급 정보 / SECURITY_CLEARANCE</p>
+                                        <h2 className="text-4xl font-black text-zinc-900 tracking-tighter mb-4">
+                                            {profile?.gradeName || 'CLASS-D (일반)'}
+                                        </h2>
+                                        <p className="text-xs text-zinc-500 max-w-sm mx-auto font-medium">최고의 퍼포먼스를 보여주고 다음 등급으로 인증하여 클래스를 업그레이드 하세요.</p>
+                                    </div>
+
+                                    {/* 진척도 그래프 */}
+                                    <div className="w-full bg-zinc-50 p-8 rounded-3xl border border-zinc-100 mb-4 max-w-2xl mx-auto">
+                                        <div className="flex justify-between items-center mb-6 border-b border-zinc-200 pb-4">
+                                            <h3 className="text-xs font-black font-mono tracking-widest uppercase text-zinc-900 flex items-center gap-2">
+                                                <Activity size={14} className="text-[#7A4FFF]" /> NEXT_LEVEL_REQUIREMENTS
+                                            </h3>
+                                            <span className="text-[10px] font-bold text-[#FF7D00] bg-[#FF7D00]/10 px-2 py-1 rounded">목표: 일반 - 인증프리랜서</span>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-end">
+                                                    <span className="text-xs font-bold text-zinc-500">완료한 프로젝트 (3건 이상)</span>
+                                                    <span className="font-black text-sm text-zinc-900">{profile?.completedProjects || 0} / 3</span>
+                                                </div>
+                                                <div className="w-full h-2.5 bg-zinc-200 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-[#7A4FFF]" style={{ width: `${Math.min(100, ((profile?.completedProjects || 0) / 3) * 100)}%` }} />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-end">
+                                                    <span className="text-xs font-bold text-zinc-500">평균 평점 (4.0 이상)</span>
+                                                    <span className="font-black text-sm text-zinc-900">{profile?.averageRating?.toFixed(1) || '0.0'} / 4.0</span>
+                                                </div>
+                                                <div className="w-full h-2.5 bg-zinc-200 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-[#FF7D00]" style={{ width: `${Math.min(100, ((profile?.averageRating || 0) / 4) * 100)}%` }} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </motion.div>
+            </main>
+
+            {/* ====== 포트폴리오 스킬 등록 모달 ====== */}
+            <AnimatePresence>
+                {isPortfolioModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl relative">
+                            <button onClick={() => setIsPortfolioModalOpen(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-zinc-900 transition-colors bg-zinc-100 p-2 rounded-full"><X size={20} /></button>
+
+                            <div className="p-8 md:p-10">
+                                <h2 className="text-2xl font-black tracking-tight mb-2">포트폴리오 등록</h2>
+                                <p className="text-xs text-zinc-500 mb-8 font-mono tracking-widest uppercase border-b border-zinc-100 pb-6">UPLOAD_NEW_RECORD</p>
+
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black font-mono uppercase text-zinc-400">제목 / Title *</label>
+                                        <input type="text" value={portfolioForm.title} onChange={e => setPortfolioForm({ ...portfolioForm, title: e.target.value })} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-bold focus:border-[#7A4FFF] outline-none" placeholder="프로젝트 제목을 입력하세요." />
+                                    </div>
+
+                                    {/* 숨김 File Input 처리 */}
+                                    <input type="file" accept="image/*" className="hidden" ref={thumbFileInputRef} onChange={handleThumbUpload} />
+                                    <input type="file" accept="image/*" multiple className="hidden" ref={bulkFileInputRef} onChange={handleBulkImageUpload} />
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* 썸네일 업로드 구역 */}
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black font-mono uppercase text-zinc-400 flex justify-between">
+                                                썸네일 (대표 이미지) {isThumbUploading && <Loader2 size={12} className="animate-spin text-[#7A4FFF]" />}
+                                            </label>
+                                            <div
+                                                onClick={() => !isThumbUploading && thumbFileInputRef.current?.click()}
+                                                className={`h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all relative ${portfolioForm.thumbnailUrl ? 'border-[#7A4FFF] bg-purple-50' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100'}`}
+                                            >
+                                                {portfolioForm.thumbnailUrl ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img src={portfolioForm.thumbnailUrl} alt="thumb" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <>
+                                                        <ImageIcon className="text-zinc-300 mb-2" size={24} />
+                                                        <span className="text-[10px] font-bold text-zinc-400">썸네일 업로드</span>
+                                                    </>
+                                                )}
+                                                {isThumbUploading && <div className="absolute inset-0 bg-white/50 backdrop-blur-sm" />}
+                                            </div>
+                                        </div>
+
+                                        {/* 다중 이미지 업로드 구역 */}
+                                        <div className="space-y-2 flex flex-col">
+                                            <label className="text-[10px] font-black font-mono uppercase text-zinc-400 flex justify-between">
+                                                상세 이미지 (최대 10장) {isBulkUploading && <Loader2 size={12} className="animate-spin text-[#7A4FFF]" />}
+                                            </label>
+                                            <div
+                                                onClick={() => !isBulkUploading && bulkFileInputRef.current?.click()}
+                                                className="h-32 border-2 border-dashed border-zinc-200 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all"
+                                            >
+                                                <Upload className="text-zinc-300 mb-2" size={24} />
+                                                <span className="text-[10px] font-bold text-zinc-400">다중 이미지 업로드</span>
+                                                <span className="text-[9px] text-zinc-400 mt-1">({portfolioForm.portfolioImages.length}/10)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 다중 업로드된 이미지 프리뷰 구역 (가로 스크롤) */}
+                                    {portfolioForm.portfolioImages.length > 0 && (
+                                        <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
+                                            {portfolioForm.portfolioImages.map((imgUrl, idx) => (
+                                                <div key={idx} className="w-16 h-16 rounded-lg relative flex-shrink-0 group shadow-sm border border-zinc-100 overflow-hidden">
+                                                    <img src={imgUrl} alt="preview" className="w-full h-full object-cover" />
+                                                    <button
+                                                        onClick={() => removePortfolioImage(idx)}
+                                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        <X size={10} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black font-mono uppercase text-zinc-400">상세 설명 / Description *</label>
+                                        <textarea rows={5} value={portfolioForm.desc} onChange={e => setPortfolioForm({ ...portfolioForm, desc: e.target.value })} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium focus:border-[#7A4FFF] outline-none resize-none" placeholder="수행한 역할과 성과를 상세히 적어주세요." />
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-4 mt-8">
+                                    <button onClick={() => setIsPortfolioModalOpen(false)} className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-black rounded-xl text-sm transition-colors">취소</button>
+                                    <button onClick={handleSavePortfolio} className="flex-1 py-4 bg-zinc-900 hover:bg-black text-white font-black rounded-xl text-sm transition-colors shadow-xl">등록하기</button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ====== 포트폴리오 상세보기 모달 ====== */}
+            <AnimatePresence>
+                {selectedPortfolio && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md">
+                        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} className="bg-white rounded-3xl w-full max-w-4xl max-h-[95vh] overflow-y-auto no-scrollbar shadow-2xl relative flex flex-col md:flex-row">
+                            <button onClick={() => setSelectedPortfolio(null)} className="absolute top-4 right-4 text-white hover:text-white transition-colors bg-black/40 backdrop-blur p-2 rounded-full z-50"><X size={20} /></button>
+
+                            {/* 좌측: 이미지 갤러리 */}
+                            <div className="w-full md:w-[50%] bg-zinc-900 min-h-[300px] flex flex-col border-b md:border-b-0 md:border-r border-zinc-800">
+                                <div className="w-full aspect-video md:flex-1 relative flex items-center justify-center bg-black">
+                                    <img src={selectedPortfolio.portfolioImages?.[0] || selectedPortfolio.thumbnailUrl || "https://placehold.co/600x400?text=No+Image"} alt="main_portfolio" className="w-full h-full object-contain" />
+                                </div>
+                                {selectedPortfolio.portfolioImages && selectedPortfolio.portfolioImages.length > 1 && (
+                                    <div className="flex gap-2 p-4 overflow-x-auto no-scrollbar bg-zinc-900 border-t border-zinc-800">
+                                        {selectedPortfolio.portfolioImages.map((img: string, idx: number) => (
+                                            <div key={idx} className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 border-transparent hover:border-[#FF7D00] transition-colors cursor-pointer">
+                                                <img src={img} alt="sub_portfolio" className="w-full h-full object-cover" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 우측: 상세 정보 */}
+                            <div className="w-full md:w-[50%] p-8 md:p-10 flex flex-col">
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h2 className="text-2xl font-black text-zinc-900 tracking-tight leading-tight">{selectedPortfolio.title}</h2>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 text-xs font-mono text-zinc-400 mb-8 pb-6 border-b border-zinc-100">
+                                        <div className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(selectedPortfolio.createdAt).toLocaleDateString()}</div>
+                                        <div className="flex items-center gap-1.5"><ImageIcon size={14} /> {selectedPortfolio.portfolioImages?.length || 0} Images</div>
+                                    </div>
+
+                                    <div className="mb-8">
+                                        <h3 className="text-[10px] font-black font-mono uppercase text-zinc-400 tracking-widest mb-3">Description</h3>
+                                        <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-wrap">{selectedPortfolio.desc}</p>
+                                    </div>
+
+                                    {selectedPortfolio.skills && selectedPortfolio.skills.length > 0 && (
+                                        <div className="mb-8">
+                                            <h3 className="text-[10px] font-black font-mono uppercase text-zinc-400 tracking-widest mb-3">Used Skills</h3>
+                                            <div className="flex flex-wrap gap-2">
+                                                {selectedPortfolio.skills.map((s: any) => (
+                                                    <span key={s.id} className="px-3 py-1.5 bg-[#7A4FFF]/5 text-[#7A4FFF] border border-[#7A4FFF]/20 rounded-lg text-xs font-bold">
+                                                        #{s.name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="mt-8 pt-6 border-t border-zinc-100 flex justify-end">
+                                    <button onClick={() => handleDeletePortfolio(selectedPortfolio.id)} className="px-5 py-3 text-red-500 hover:bg-red-50 rounded-xl text-xs font-black font-mono flex items-center gap-2 transition-colors">
+                                        <Trash2 size={16} /> Delete Portfolio
+                                    </button>
+                                </div>
+                            </div>
+
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
