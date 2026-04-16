@@ -38,5 +38,4 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
             "WHERE a.id = :applicationId")
     Optional<ProjectApplication> findByIdWithProjectAndClient(@Param("applicationId") Long applicationId);
 
-    // (CLI-05) 작업 영역
 }

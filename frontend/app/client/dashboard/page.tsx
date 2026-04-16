@@ -113,7 +113,7 @@ export default function ClientDashboard() {
                     </button>
                     {/* [수정] 봇 리뷰 반영: onClick 핸들러 추가하여 알림창 띄우기 */}
                     <button
-                        onClick={() => alert("시스템 설계 중입니다. 다음 업데이트를 기다려주세요.")}
+                        onClick={() => router.push("/client/projects/new")}
                         className="px-6 py-2.5 bg-[#FF7D00] text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition shadow-md shadow-orange-100 uppercase font-mono"
                     >
                         Register_Project
