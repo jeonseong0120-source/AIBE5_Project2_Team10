@@ -18,8 +18,8 @@ backend/build/
 backend/bin/
 backend/mysql_data/
 # 🚨 실제 비밀번호가 담긴 파일 차단
-backend/.env
-backend/.env.example
+backend/.env*
+!backend/.env.example
 backend/src/main/resources/application.yml
 
 ### Frontend (Next.js) ###
