@@ -8,7 +8,6 @@ import lombok.*;
 @Table(name = "project_skills",
         uniqueConstraints = @UniqueConstraint(columnNames = {"project_id", "skill_id"}))  // 추가
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProjectSkill {
 

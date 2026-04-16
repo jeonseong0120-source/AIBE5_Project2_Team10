@@ -136,7 +136,6 @@ public class Project extends BaseTimeEntity {
         if (newProjectSkills != null) {
             for (ProjectSkill ps : newProjectSkills) {
                 this.projectSkills.add(ps);
-                ps.setProject(this);
                 // 양방향 연관관계 편의 로직 (생략 가능하지만 안전을 위해)
             }
         }
