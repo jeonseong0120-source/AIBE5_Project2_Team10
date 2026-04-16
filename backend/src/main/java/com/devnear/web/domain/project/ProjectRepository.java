@@ -2,10 +2,12 @@ package com.devnear.web.domain.project;
 
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.enums.ProjectStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -20,6 +22,10 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
            "LEFT JOIN FETCH ps.skill " +
            "WHERE p.id = :projectId")
     Optional<Project> findByIdWithClientProfile(@Param("projectId") Long projectId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Project p where p.id = :projectId")
+    Optional<Project> findByIdForUpdate(@Param("projectId") Long projectId);
 
     @Override
     @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "projectSkills", "projectSkills.skill"})

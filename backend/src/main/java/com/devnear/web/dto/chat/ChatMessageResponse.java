@@ -17,6 +17,7 @@ public class ChatMessageResponse {
     private String senderNickname;
     private String content;
     private boolean read;
+    private boolean systemMessage;
     private LocalDateTime createdAt;
 
     // 엔티티를 응답 DTO로 바꾸는 정적 메서드
@@ -29,6 +30,7 @@ public class ChatMessageResponse {
                 .senderNickname(message.getSender().getNickname())
                 .content(message.getContent())
                 .read(message.isRead())
+                .systemMessage(message.isSystemMessage())
                 .createdAt(message.getCreatedAt())
                 .build();
     }
