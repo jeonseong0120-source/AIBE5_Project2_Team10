@@ -17,6 +17,7 @@ import com.devnear.web.dto.proposal.SentProposalResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,7 +71,11 @@ public class ProposalService {
                 .offeredPrice(request.getOfferedPrice())
                 .build();
 
-        return proposalRepository.save(proposal).getId();
+        try {
+            return proposalRepository.save(proposal).getId();
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("해당 프리랜서에게 이미 역제안을 보냈습니다. (ALREADY_PROPOSED)");
+        }
     }
 
     /**
@@ -127,6 +132,7 @@ public class ProposalService {
 
         try {
             proposal.updateStatus(newStatus);
+            proposalRepository.flush(); // 강제 플러시로 트랜잭션 종료 전 버전 체크 즉시 수행
         } catch (ObjectOptimisticLockingFailureException e) {
             // 동시 요청으로 version 충돌 발생 → 409 CONFLICT로 전파
             throw new IllegalStateException("동시 요청으로 인해 처리에 실패했습니다. 다시 시도해주세요.");
