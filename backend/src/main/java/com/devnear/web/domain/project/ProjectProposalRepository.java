@@ -5,6 +5,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
 
 public interface ProjectProposalRepository extends JpaRepository<ProjectProposal, Long> {
 
@@ -30,4 +36,25 @@ public interface ProjectProposalRepository extends JpaRepository<ProjectProposal
             "freelancerProfile.user"
     })
     Page<ProjectProposal> findByFreelancerProfile_IdOrderByCreatedAtDesc(Long freelancerProfileId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {
+            "project",
+            "project.clientProfile",
+            "project.clientProfile.user",
+            "freelancerProfile",
+            "freelancerProfile.user"
+    })
+    @Query("select p from ProjectProposal p where p.id = :id")
+    Optional<ProjectProposal> findDetailedById(@Param("id") Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = {
+            "project",
+            "project.clientProfile",
+            "project.clientProfile.user",
+            "freelancerProfile",
+            "freelancerProfile.user"
+    })
+    @Query("select p from ProjectProposal p where p.id = :id")
+    Optional<ProjectProposal> findDetailedByIdForUpdate(@Param("id") Long id);
 }

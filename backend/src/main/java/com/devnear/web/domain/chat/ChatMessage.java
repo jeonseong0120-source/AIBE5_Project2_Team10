@@ -39,12 +39,17 @@ public class ChatMessage extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean isRead;
 
+    /** 제안 수락/거절 등 서버가 넣는 안내 메시지 여부 */
+    @Column(name = "system_message", nullable = false)
+    private boolean systemMessage;
+
     @Builder
-    public ChatMessage(ChatRoom chatRoom, User sender, String content) {
+    public ChatMessage(ChatRoom chatRoom, User sender, String content, Boolean systemMessage) {
         this.chatRoom = chatRoom;
         this.sender = sender;
         this.content = content;
         this.isRead = false; // 메시지 생성 시 처음엔 안 읽은 상태
+        this.systemMessage = Boolean.TRUE.equals(systemMessage);
     }
 
     // 읽음 처리 메서드
