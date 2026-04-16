@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProject, type CreateProjectBody } from "@/app/lib/projectApi";
 import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
@@ -32,6 +32,7 @@ export default function ProjectRegisterForm() {
     const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim() ?? "";
 
     const showAddressBlock = offline;
+    const submitLockRef = useRef(false);
 
     const handleOfflineChange = (next: boolean) => {
         setOffline(next);
@@ -44,6 +45,7 @@ export default function ProjectRegisterForm() {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        if (submitLockRef.current) return;
         setError(null);
 
         if (!online && !offline) {
@@ -97,10 +99,15 @@ export default function ProjectRegisterForm() {
                 setError("오프라인 모집 시 위도·경도를 숫자로 입력해 주세요.");
                 return;
             }
+            if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                setError("위도는 -90~90, 경도는 -180~180 범위로 입력해 주세요.");
+                return;
+            }
             payload.latitude = lat;
             payload.longitude = lng;
         }
 
+        submitLockRef.current = true;
         setSubmitting(true);
         try {
             const projectId = await createProject(payload);
@@ -115,6 +122,7 @@ export default function ProjectRegisterForm() {
                     : undefined;
             setError(msg ?? "등록에 실패했습니다. 입력값을 확인하거나 다시 시도해 주세요.");
         } finally {
+            submitLockRef.current = false;
             setSubmitting(false);
         }
     };
