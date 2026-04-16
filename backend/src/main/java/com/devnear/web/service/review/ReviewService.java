@@ -20,6 +20,7 @@ import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.devnear.web.service.freelancer.FreelancerGradeService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -35,6 +36,7 @@ public class ReviewService {
     private final ClientProfileRepository clientProfileRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final ProjectRepository projectRepository;
+    private final FreelancerGradeService freelancerGradeService;
 
     @Transactional
     public Long createFreelancerReview(User user, FreelancerReviewCreateRequest request) {
@@ -83,9 +85,10 @@ public class ReviewService {
                 .comment(request.getComment())
                 .build();
 
-        // 저장 후 평점 재계산
+        // 저장 후 평점 및 등급 재계산
         freelancerReviewRepository.save(review);
         updateFreelancerRating(freelancer);
+        freelancerGradeService.refreshGrade(freelancer);
 
         return review.getId();
     }
