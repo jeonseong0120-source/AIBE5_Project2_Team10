@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import api from "@/app/lib/axios";
 
 type SkillItem = {
@@ -16,6 +16,8 @@ type Props = {
 };
 
 export default function SkillTagSelector({ selectedSkillIds, onChangeAction, initialSkillNames = [] }: Props) {
+    const onChangeRef = useRef(onChangeAction);
+    onChangeRef.current = onChangeAction;
     const [allSkills, setAllSkills] = useState<SkillItem[]>([]);
     const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(false);
@@ -47,9 +49,9 @@ export default function SkillTagSelector({ selectedSkillIds, onChangeAction, ini
         if (!matched.length) return;
         const merged = Array.from(new Set([...selectedSet, ...matched]));
         if (merged.length !== selectedSkillIds.length) {
-            onChangeAction(merged);
+            onChangeRef.current(merged);
         }
-    }, [allSkills, initialSkillNames, onChangeAction, selectedSkillIds]);
+    }, [allSkills, initialSkillNames, selectedSkillIds]);
 
     const filteredSkills = useMemo(() => {
         const q = query.trim().toLowerCase();

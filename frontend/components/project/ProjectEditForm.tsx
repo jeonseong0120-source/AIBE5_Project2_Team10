@@ -52,7 +52,7 @@ export default function ProjectEditForm({ projectId, initialData }: Props) {
     const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim() ?? "";
     const showAddressBlock = offline;
 
-    const submitLabel = useMemo(() => "수정하기", []);
+    const submitLabel = "수정하기";
 
     const handleOfflineChange = (next: boolean) => {
         setOffline(next);

@@ -65,6 +65,12 @@ export default function ClientProjectEditPage() {
                 }
                 setReady(true);
 
+            } catch {
+                router.replace("/login");
+                return;
+            }
+
+            try {
                 const projectRes = await api.get<ProjectDetailResponse>(`/v1/projects/${id}`);
                 setInitialData(toInitialForm(projectRes.data));
             } catch {
