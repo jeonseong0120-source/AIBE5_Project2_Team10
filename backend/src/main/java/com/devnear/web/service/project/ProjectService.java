@@ -3,6 +3,7 @@ package com.devnear.web.service.project;
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.enums.ProjectStatus;
+import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
 import com.devnear.web.domain.project.ProjectSearchCond;
@@ -14,12 +15,14 @@ import com.devnear.web.dto.project.ProjectRequest;
 import com.devnear.web.dto.project.ProjectResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.service.freelancer.FreelancerGradeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +41,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final ClientProfileRepository clientProfileRepository;
     private final SkillRepository skillRepository;
+    private final FreelancerGradeService freelancerGradeService;
 
     @Transactional
     public Long createProject(User user, ProjectRequest request) {
@@ -229,6 +233,15 @@ public class ProjectService {
     @Transactional
     public void completeProject(User user, Long projectId) {
         Project project = findProjectAndValidateOwner(user, projectId);
+
+        // 프로젝트 상태 완료 처리
         project.complete();
+
+        // 연결된 프리랜서가 있으면 완료 프로젝트 수 증가 + 등급 재계산
+        FreelancerProfile freelancerProfile = project.getFreelancerProfile();
+        if (freelancerProfile != null) {
+            freelancerProfile.increaseCompletedProjects();
+            freelancerGradeService.refreshGrade(freelancerProfile);
+        }
     }
 }
