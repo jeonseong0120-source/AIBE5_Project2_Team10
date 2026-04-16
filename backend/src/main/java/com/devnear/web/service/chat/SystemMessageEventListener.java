@@ -14,6 +14,11 @@ public class SystemMessageEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleSystemMessageCreated(SystemMessageCreatedEvent event) {
-        messagingTemplate.convertAndSend("/sub/chat/rooms/" + event.roomId(), event.response());
+        try {
+            messagingTemplate.convertAndSend("/sub/chat/rooms/" + event.roomId(), event.response());
+        } catch (RuntimeException ex) {
+            log.error("Failed to broadcast system message. roomId={}", event.roomId(), ex);
+        }
+
     }
 }
