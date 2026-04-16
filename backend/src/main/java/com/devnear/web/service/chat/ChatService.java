@@ -164,10 +164,10 @@ public class ChatService {
 
         // 해당 유저가 참여자가 아니라면 접근 금지
         boolean isParticipant =
-                               room.getUser1().getId().equals(me.getId()) ||
-                                       room.getUser2().getId().equals(me.getId());
-                if (!isParticipant){
-                    throw new ChatAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
+                room.getUser1().getId().equals(me.getId()) ||
+                        room.getUser2().getId().equals(me.getId());
+        if (!isParticipant){
+            throw new ChatAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
         }
 
         return room;
