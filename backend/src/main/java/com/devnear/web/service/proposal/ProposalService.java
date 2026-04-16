@@ -17,6 +17,7 @@ import com.devnear.web.dto.proposal.SentProposalResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -124,6 +125,11 @@ public class ProposalService {
             throw new IllegalStateException("이미 처리된 역제안입니다.");
         }
 
-        proposal.updateStatus(newStatus);
+        try {
+            proposal.updateStatus(newStatus);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            // 동시 요청으로 version 충돌 발생 → 409 CONFLICT로 전파
+            throw new IllegalStateException("동시 요청으로 인해 처리에 실패했습니다. 다시 시도해주세요.");
+        }
     }
 }

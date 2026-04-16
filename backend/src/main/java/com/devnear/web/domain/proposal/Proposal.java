@@ -33,6 +33,13 @@ public class Proposal {
     @Column(name = "proposal_id")
     private Long id;
 
+    /**
+     * JPA 낙관적 락(Optimistic Lock) 버전 필드.
+     * 동시에 두 명이 같은 제안을 수락/거절할 때 충돌을 감지합니다.
+     */
+    @Version
+    private Long version;
+
     // 어떤 프로젝트에 대한 역제안인지
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)

@@ -88,8 +88,11 @@ public class ProposalController {
         try {
             proposalService.respondToProposal(user, proposalId, request);
             return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException | IllegalStateException e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (IllegalStateException e) {
+            // 이미 처리된 역제안에 대한 중복 응답 시도 → 409 CONFLICT
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
 }

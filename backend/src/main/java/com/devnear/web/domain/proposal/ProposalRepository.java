@@ -1,7 +1,8 @@
 package com.devnear.web.domain.proposal;
 
-import com.devnear.web.domain.enums.ProposalStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -31,7 +32,8 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
            "ORDER BY p.createdAt DESC")
     List<Proposal> findReceivedProposalsByFreelancerId(@Param("freelancerId") Long freelancerId);
 
-    // 단건 조회 (상태 변경용) - 권한 검증을 위해 프리랜서 정보 포함
+    // 단건 조회 (상태 변경용) - 동시 수락/거절 방지를 위해 비관적 쓰기 락 적용
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Proposal p " +
            "JOIN FETCH p.freelancerProfile " +
            "JOIN FETCH p.project " +
