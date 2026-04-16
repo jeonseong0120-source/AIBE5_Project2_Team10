@@ -139,6 +139,9 @@ class ProjectProposalServiceIntegrationTest {
 
         ProjectProposal updated = projectProposalRepository.findById(proposalId).orElseThrow();
         assertThat(updated.getStatus()).isEqualTo(ProjectProposalStatus.ACCEPTED);
+        Project updatedProject = projectRepository.findById(project.getId()).orElseThrow();
+        assertThat(updatedProject.getFreelancerProfile()).isNotNull();
+        assertThat(updatedProject.getFreelancerProfile().getId()).isEqualTo(updated.getFreelancerProfile().getId());
 
         ChatRoom room = findRoomBetweenClientAndFreelancer();
         PageRequest pageable = PageRequest.of(0, 20);

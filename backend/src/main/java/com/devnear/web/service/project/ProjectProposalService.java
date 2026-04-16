@@ -101,8 +101,9 @@ public class ProjectProposalService {
     @Transactional
     public void acceptProposal(User user, Long proposalId) {
         requireFreelancerRole(user);
-        ProjectProposal proposal = loadProposalOwnedByFreelancer(proposalId, user);
+        ProjectProposal proposal = loadProposalOwnedByFreelancerForUpdate(proposalId, user);
         proposal.accept();
+        proposal.getProject().assignFreelancer(proposal.getFreelancerProfile());
         sendDecisionSystemMessage(proposal, SYSTEM_MSG_ACCEPTED);
     }
 
@@ -112,7 +113,7 @@ public class ProjectProposalService {
     @Transactional
     public void rejectProposal(User user, Long proposalId) {
         requireFreelancerRole(user);
-        ProjectProposal proposal = loadProposalOwnedByFreelancer(proposalId, user);
+        ProjectProposal proposal = loadProposalOwnedByFreelancerForUpdate(proposalId, user);
         proposal.reject();
         sendDecisionSystemMessage(proposal, SYSTEM_MSG_REJECTED);
     }
@@ -154,6 +155,15 @@ public class ProjectProposalService {
 
     private ProjectProposal loadProposalOwnedByFreelancer(Long proposalId, User freelancerUser) {
         ProjectProposal proposal = projectProposalRepository.findDetailedById(proposalId)
+                .orElseThrow(() -> new ResourceNotFoundException("제안을 찾을 수 없습니다. ID: " + proposalId));
+        if (!proposal.getFreelancerProfile().getUser().getId().equals(freelancerUser.getId())) {
+            throw new ProjectAccessDeniedException("해당 제안을 처리할 권한이 없습니다.");
+        }
+        return proposal;
+    }
+
+    private ProjectProposal loadProposalOwnedByFreelancerForUpdate(Long proposalId, User freelancerUser) {
+        ProjectProposal proposal = projectProposalRepository.findDetailedByIdForUpdate(proposalId)
                 .orElseThrow(() -> new ResourceNotFoundException("제안을 찾을 수 없습니다. ID: " + proposalId));
         if (!proposal.getFreelancerProfile().getUser().getId().equals(freelancerUser.getId())) {
             throw new ProjectAccessDeniedException("해당 제안을 처리할 권한이 없습니다.");

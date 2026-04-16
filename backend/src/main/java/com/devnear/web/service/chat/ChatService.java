@@ -17,7 +17,7 @@ import com.devnear.web.exception.ChatAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +33,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 채팅방 생성
     @Transactional
@@ -128,7 +128,7 @@ public class ChatService {
         );
 
         ChatMessageResponse response = ChatMessageResponse.from(message);
-        messagingTemplate.convertAndSend("/sub/chat/rooms/" + room.getId(), response);
+        eventPublisher.publishEvent(new SystemMessageCreatedEvent(room.getId(), response));
         return response;
     }
 
