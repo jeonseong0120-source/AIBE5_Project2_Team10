@@ -130,6 +130,7 @@ export default function ProjectRegisterForm() {
                 <input
                     required
                     type="date"
+                    min={tomorrowISODate()}
                     className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
                     value={deadline}
                     onChange={(e) => setDeadline(e.target.value)}
