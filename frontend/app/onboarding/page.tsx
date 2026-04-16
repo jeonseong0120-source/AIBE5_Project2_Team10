@@ -102,7 +102,15 @@ export default function OnboardingPage() {
             }
 
             alert("권한 설정 완료! 정식 회원이 되신 것을 환영합니다.");
-            router.replace("/client/dashboard");
+
+            // 🔍 [수정] 역할에 따른 리다이렉트 경로 설정
+            if (role === "FREELANCER") {
+                // 프리랜서 전용 메인 페이지로 이동
+                router.replace("/freelancer/main");
+            } else {
+                // 클라이언트나 BOTH(둘 다)인 경우 대시보드로 이동
+                router.replace("/client/dashboard");
+            }
 
         } catch (err: any) {
             console.error("온보딩 에러:", err);
