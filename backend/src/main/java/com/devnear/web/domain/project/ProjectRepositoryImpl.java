@@ -30,7 +30,8 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                         locationContains(cond.getLocation()),
                         statusEq(cond.getStatus()),
                         isOnline(cond.getOnline()),
-                        isOffline(cond.getOffline())
+                        isOffline(cond.getOffline()),
+                        project.status.eq(ProjectStatus.OPEN) // 탐색 페이지 노출 로직 (OPEN만 노출)
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -46,7 +47,8 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                         locationContains(cond.getLocation()),
                         statusEq(cond.getStatus()),
                         isOnline(cond.getOnline()),
-                        isOffline(cond.getOffline())
+                        isOffline(cond.getOffline()),
+                        project.status.eq(ProjectStatus.OPEN) // 탐색 페이지 노출 로직
                 );
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -72,7 +74,6 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
     private BooleanExpression isOnline(Boolean online) {
         return online != null ? project.online.eq(online) : null;
     }
-
 
     private BooleanExpression isOffline(Boolean offline) {
         return offline != null ? project.offline.eq(offline) : null;

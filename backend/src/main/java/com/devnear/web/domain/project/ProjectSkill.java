@@ -2,10 +2,7 @@ package com.devnear.web.domain.project;
 
 import com.devnear.web.domain.skill.Skill;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "project_skills",
