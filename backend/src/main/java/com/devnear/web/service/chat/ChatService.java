@@ -71,7 +71,7 @@ public class ChatService {
 
         if (room == null) {
             try {
-                room = chatRoomRepository.save(
+                room = chatRoomRepository.saveAndFlush(
                         ChatRoom.builder()
                                 .project(project)
                                 .user1(first)
