@@ -89,12 +89,15 @@ public class FreelancerProfile extends BaseTimeEntity {
     }
     // 완료 프로젝트 수 갱신
     public void updateCompletedProjects(Integer completedProjects) {
+        if (completedProjects == null || completedProjects < 0) {
+            throw new IllegalArgumentException("completedProjects must be >= 0");
+        }
         this.completedProjects = completedProjects;
     }
 
     // 완료 프로젝트 수 1 증가
     public void increaseCompletedProjects() {
-        if (this.completedProjects == null) {
+        if (this.completedProjects == null || this.completedProjects < 0) {
             this.completedProjects = 0;
         }
         this.completedProjects++;
