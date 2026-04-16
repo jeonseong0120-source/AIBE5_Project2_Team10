@@ -267,16 +267,8 @@ export default function FreelancerMyPage() {
         const files = e.target.files;
         if (!files || files.length === 0) return;
 
-        const existingCount = portfolioForm.portfolioImages.length;
-        const remaining = 10 - existingCount;
-
-        if (remaining <= 0) {
-            alert("이미 10장의 이미지가 모두 등록되어 있습니다.");
-            return;
-        }
-
-        if (files.length > remaining) {
-            alert(`현재 ${remaining}장까지 더 업로드할 수 있습니다. (선택한 파일: ${files.length}장)`);
+        if (files.length > 10) {
+            alert("최대 10장까지 업로드할 수 있습니다.");
             return;
         }
 
@@ -289,7 +281,7 @@ export default function FreelancerMyPage() {
             // 기존 이미지 + 새로 업로드된 이미지
             setPortfolioForm({
                 ...portfolioForm,
-                portfolioImages: [...portfolioForm.portfolioImages, ...data.imageUrls]
+                portfolioImages: [...portfolioForm.portfolioImages, ...data.imageUrls].slice(0, 10)
             });
         } catch (error: any) {
             const errorMsg = error.response?.data?.message || error.message || '알 수 없는 오류';
@@ -313,18 +305,13 @@ export default function FreelancerMyPage() {
             return;
         }
 
-        if (portfolioForm.skills.length === 0) {
-            alert("최소 1개 이상의 스킬을 태그해야 포트폴리오를 등록할 수 있습니다.");
-            return;
-        }
-
         try {
             const requestBody = {
                 title: portfolioForm.title,
                 desc: portfolioForm.desc,
                 thumbnailUrl: portfolioForm.thumbnailUrl || null,
                 portfolioImages: portfolioForm.portfolioImages.length > 0 ? portfolioForm.portfolioImages : ["https://placehold.co/600x400?text=No+Image"],
-                skills: portfolioForm.skills
+                skills: portfolioForm.skills.length > 0 ? portfolioForm.skills : [1]
             };
             await api.post('/portfolios', requestBody);
             alert('포트폴리오가 등록되었습니다.');
@@ -560,7 +547,7 @@ export default function FreelancerMyPage() {
                                     <div className="p-6 bg-zinc-50 rounded-2xl border border-zinc-200">
                                         <div className="flex justify-between items-center mb-4">
                                             <p className="text-xs text-zinc-500 font-bold">인기 태그 둘러보기</p>
-                                            <input className="px-4 py-2 rounded-xl bg-white border border-zinc-200 outline-none text-xs font-bold focus:border-[#FF7D00]" placeholder="태그 검색..." value={skillSearchQuery} onChange={e => setSkillSearchQuery(e.target.value)} />
+                                            <input className="px-4 py-2 rounded-xl bg-white border border-zinc-200 outline-none text-xs font-bold focus:border-[#FF7D00]" placeholder="태그 검새..." value={skillSearchQuery} onChange={e => setSkillSearchQuery(e.target.value)} />
                                         </div>
                                         <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto no-scrollbar">
                                             {allGlobalSkills
