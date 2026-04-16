@@ -16,4 +16,7 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
             "LEFT JOIN FETCH p.portfolioImages " +
             "WHERE p.user.id = :userId")
     List<Portfolio> findByUserIdWithSkills(@Param("userId") Long userId);
+
+    // 특정 유저가 등록한 포트폴리오 개수 조회(등급산정용)
+    long countByUser_Id(Long userId);
 }

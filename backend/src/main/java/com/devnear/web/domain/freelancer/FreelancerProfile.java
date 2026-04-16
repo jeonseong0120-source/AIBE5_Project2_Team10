@@ -87,6 +87,18 @@ public class FreelancerProfile extends BaseTimeEntity {
         // [추가] 500 NPE 에러 방어: Builder로 생성 시 컬렉션이 null이 되지 않도록 빈 리스트로 명시적 초기화
         this.freelancerSkills = new ArrayList<>();
     }
+    // 완료 프로젝트 수 갱신
+    public void updateCompletedProjects(Integer completedProjects) {
+        this.completedProjects = completedProjects;
+    }
+
+    // 완료 프로젝트 수 1 증가
+    public void increaseCompletedProjects() {
+        if (this.completedProjects == null) {
+            this.completedProjects = 0;
+        }
+        this.completedProjects++;
+    }
 
     // [비즈니스 로직] 기본 프로필 데이터 일괄 수정
     public void updateProfile(String profileImageUrl, String introduction, String location, Double latitude,
