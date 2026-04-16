@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>Chat Test</title>
+</head>
+<body>
+<h2>채팅 테스트</h2>
+
+<div>
+    <label>JWT 토큰</label><br />
+    <textarea id="token" rows="4" cols="100" placeholder="accessToken 붙여넣기"></textarea>
+</div>
+
+<br />
+
+<div>
+    <label>Room ID</label><br />
+    <input type="number" id="roomId" value="1" />
+</div>
+
+<br />
+
+<button onclick="connectWebSocket()">연결</button>
+<button onclick="disconnectWebSocket()">연결 해제</button>
+
+<hr />
+
+<div>
+    <label>보낼 메시지</label><br />
+    <input type="text" id="messageInput" size="60" placeholder="메시지 입력" />
+    <button onclick="sendMessage()">보내기</button>
+</div>
+
+<hr />
+
+<h3>로그</h3>
+<pre id="log" style="background:#f4f4f4; padding:12px; height:300px; overflow:auto;"></pre>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.1.1/bundles/stomp.umd.min.js"></script>
+<script>
+    let client = null;
+
+    function addLog(message) {
+        const log = document.getElementById("log");
+        log.textContent += message + "\n";
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function connectWebSocket() {
+        const token = document.getElementById("token").value.trim();
+        const roomId = document.getElementById("roomId").value.trim();
+
+        addLog("[START] connectWebSocket 호출됨");
+        addLog("[TOKEN LEN] " + token.length);
+        addLog("[ROOM ID] " + roomId);
+
+        client = new StompJs.Client({
+            webSocketFactory: () => {
+                addLog("[FACTORY] SockJS 생성");
+                return new SockJS("http://localhost:8080/ws-chat");
+            },
+            reconnectDelay: 5000,
+            connectHeaders: {
+                Authorization: `Bearer ${token}`
+            },
+            debug: function (str) {
+                addLog("[DEBUG] " + str);
+            },
+            onConnect: function () {
+                addLog("[SUCCESS] 웹소켓 연결 성공");
+                client.subscribe(`/sub/chat/rooms/${roomId}`, function (message) {
+                    addLog("[수신] " + message.body);
+                });
+                addLog(`[SUBSCRIBE] /sub/chat/rooms/${roomId}`);
+            },
+            onStompError: function (frame) {
+                addLog("[STOMP ERROR] " + (frame.headers["message"] || ""));
+                addLog(frame.body || "");
+            },
+            onWebSocketError: function (error) {
+                addLog("[WS ERROR] " + JSON.stringify(error));
+                console.error(error);
+            },
+            onWebSocketClose: function (event) {
+                addLog("[WS CLOSE] code=" + event.code + ", reason=" + event.reason);
+            }
+        });
+
+        client.activate();
+    }
+
+    function sendMessage() {
+        addLog("[CLICK] 보내기 버튼 눌림");
+
+        const roomId = document.getElementById("roomId").value.trim();
+        const content = document.getElementById("messageInput").value.trim();
+
+        addLog("[STATE] client exists = " + !!client);
+        addLog("[STATE] client.connected = " + (client ? client.connected : "no client"));
+        addLog("[STATE] roomId = " + roomId);
+        addLog("[STATE] content = " + content);
+
+        if (!client || !client.connected) {
+            alert("먼저 연결하세요.");
+            addLog("[BLOCK] 아직 연결 안 됨");
+            return;
+        }
+
+        if (!content) {
+            alert("메시지를 입력하세요.");
+            addLog("[BLOCK] 메시지 비어 있음");
+            return;
+        }
+
+        const body = {
+            roomId: Number(roomId),
+            content: content
+        };
+
+        addLog("[PUBLISH] /pub/chat/send");
+        addLog("[BODY] " + JSON.stringify(body));
+
+        client.publish({
+            destination: "/pub/chat/send",
+            body: JSON.stringify(body)
+        });
+
+        addLog("[송신] " + JSON.stringify(body));
+        document.getElementById("messageInput").value = "";
+    }
+
+    function disconnectWebSocket() {
+        if (client) {
+            client.deactivate();
+            addLog("웹소켓 연결 해제");
+        }
+    }
+</script>
+</body>
+</html>

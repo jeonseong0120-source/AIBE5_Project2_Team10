@@ -2,6 +2,7 @@ package com.devnear.global.exception;
 
 import com.devnear.web.exception.DuplicateProfileException;
 import com.devnear.web.exception.ProjectAccessDeniedException;
+import com.devnear.web.exception.ChatAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ProjectAccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleProjectAccessDenied(
             ProjectAccessDeniedException e, HttpServletRequest request) {
+        return buildResponse(HttpStatus.FORBIDDEN, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(ChatAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleChatAccessDenied(
+            ChatAccessDeniedException e, HttpServletRequest request) {
         return buildResponse(HttpStatus.FORBIDDEN, e.getMessage(), request);
     }
 
