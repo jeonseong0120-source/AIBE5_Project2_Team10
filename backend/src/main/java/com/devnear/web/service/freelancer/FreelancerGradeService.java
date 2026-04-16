@@ -37,10 +37,10 @@ public class FreelancerGradeService {
 
         long activeMonths = 0;
         if (freelancerProfile.getCreatedAt() != null) {
-            activeMonths = ChronoUnit.MONTHS.between(
+            activeMonths = Math.max(0, ChronoUnit.MONTHS.between(
                     freelancerProfile.getCreatedAt().toLocalDate(),
                     LocalDate.now()
-            );
+            ));
         }
 
         if (completedProjects >= 10
