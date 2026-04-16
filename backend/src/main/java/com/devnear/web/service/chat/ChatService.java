@@ -50,6 +50,16 @@ public class ChatService {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("프로젝트를 찾을 수 없습니다."));
 
+        // 프로젝트 참여자 여부 검사: me와 target 모두 프로젝트의 클라이언트 또는 프리랜서여야 함
+        boolean meIsParticipant = (project.getClientProfile() != null && project.getClientProfile().getUser().getId().equals(me.getId()))
+                || (project.getFreelancerProfile() != null && project.getFreelancerProfile().getUser().getId().equals(me.getId()));
+        boolean targetIsParticipant = (project.getClientProfile() != null && project.getClientProfile().getUser().getId().equals(target.getId()))
+                || (project.getFreelancerProfile() != null && project.getFreelancerProfile().getUser().getId().equals(target.getId()));
+
+        if (!meIsParticipant || !targetIsParticipant) {
+            throw new ChatAccessDeniedException("프로젝트 참여자만 채팅을 생성할 수 있습니다.");
+        }
+
         // user1, user2 순서를 고정해야 unique 제약조건이 제대로 동작함
         // 예: (1, 7)과 (7, 1)을 같은 채팅방으로 보기 위해 정렬
         User first = me.getId() < target.getId() ? me : target;
