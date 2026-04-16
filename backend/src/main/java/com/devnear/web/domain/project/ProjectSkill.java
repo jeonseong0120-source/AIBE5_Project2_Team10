@@ -2,15 +2,13 @@ package com.devnear.web.domain.project;
 
 import com.devnear.web.domain.skill.Skill;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "project_skills",
         uniqueConstraints = @UniqueConstraint(columnNames = {"project_id", "skill_id"}))  // 추가
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProjectSkill {
 

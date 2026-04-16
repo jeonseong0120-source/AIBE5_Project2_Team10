@@ -6,8 +6,8 @@ import api from '../../lib/axios';
 import { Briefcase, User, Settings, LogOut, ChevronRight, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-import ProfileEditModal from '@/components/mypage/page';
-import CompanyEditModal from '@/components/mypage/CompanyEditModal';
+import ProfileEditModal from '@/components/client_mypage/page';
+import CompanyEditModal from '@/components/client_mypage/CompanyEditModal';
 
 interface UserProfile {
     name: string;
