@@ -4,14 +4,13 @@ import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.chat.ChatMessageResponse;
 import com.devnear.web.dto.chat.ChatMessageSendRequest;
 import com.devnear.web.service.chat.ChatService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
-import jakarta.validation.Valid;
-import org.springframework.messaging.handler.annotation.Payload;
-
 
 @Controller
 @RequiredArgsConstructor
@@ -22,13 +21,18 @@ public class ChatSocketController {
 
     @MessageMapping("/chat/send")
     public void sendMessage(@Valid @Payload ChatMessageSendRequest request, Authentication authentication) {
-        // 웹소켓 인증 객체에서 현재 로그인 유저 꺼내기
-        User user = (User) authentication.getPrincipal();
+        if (authentication == null) {
+            throw new IllegalArgumentException("웹소켓 인증 정보가 없습니다.");
+        }
 
-        // 메시지 저장
+        Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof User user)) {
+            throw new IllegalArgumentException("principal 타입이 User가 아닙니다: " + principal.getClass().getName());
+        }
+
         ChatMessageResponse response = chatService.saveMessage(user, request);
 
-        // 같은 채팅방을 구독 중인 사용자들에게 실시간 전송
         messagingTemplate.convertAndSend(
                 "/sub/chat/rooms/" + request.getRoomId(),
                 response

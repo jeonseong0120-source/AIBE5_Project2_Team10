@@ -17,7 +17,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final StompHandler stompHandler;
 
-    @Value("${websocket.allowedOrigins:http://localhost,http://localhost:3000}")
+    @Value("${websocket.allowedOrigins:http://localhost,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5500,http://127.0.0.1:5500}")
     private String websocketAllowedOrigins;
 
     @Override
