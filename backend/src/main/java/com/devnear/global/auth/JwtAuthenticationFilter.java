@@ -30,6 +30,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        String uri = request.getRequestURI();
+
+        //  웹소켓 핸드셰이크는 필터 통과
+        if (uri.equals("/ws-chat") || uri.startsWith("/ws-chat/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         String token = resolveToken(request);
 
         try {
@@ -83,5 +90,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return bearerToken.substring(7).trim();
         }
         return null;
+
     }
 }
