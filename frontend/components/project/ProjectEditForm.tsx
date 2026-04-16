@@ -1,10 +1,28 @@
-"use client";
+﻿"use client";
 
-import { FormEvent, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createProject, type CreateProjectBody } from "@/app/lib/projectApi";
+import { FormEvent, useMemo, useState } from "react";
 import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
 import SkillTagSelector from "@/components/project/SkillTagSelector";
+import { type CreateProjectBody, updateProject } from "@/app/lib/projectApi";
+import { useRouter } from "next/navigation";
+
+export type ProjectEditInitialData = {
+    projectName: string;
+    budget: number;
+    deadline: string;
+    detail: string;
+    online: boolean;
+    offline: boolean;
+    location: string;
+    latitude: string;
+    longitude: string;
+    skillNames: string[];
+};
+
+type Props = {
+    projectId: string;
+    initialData: ProjectEditInitialData;
+};
 
 function tomorrowISODate(): string {
     const d = new Date();
@@ -15,25 +33,26 @@ function tomorrowISODate(): string {
     return `${yyyy}-${mm}-${dd}`;
 }
 
-export default function ProjectRegisterForm() {
+export default function ProjectEditForm({ projectId, initialData }: Props) {
     const router = useRouter();
-    const [projectName, setProjectName] = useState("");
-    const [budget, setBudget] = useState("");
-    const [deadline, setDeadline] = useState(tomorrowISODate());
-    const [detail, setDetail] = useState("");
-    const [online, setOnline] = useState(true);
-    const [offline, setOffline] = useState(false);
-    const [location, setLocation] = useState("");
-    const [latitude, setLatitude] = useState("");
-    const [longitude, setLongitude] = useState("");
+    const [projectName, setProjectName] = useState(initialData.projectName);
+    const [budget, setBudget] = useState(String(initialData.budget));
+    const [deadline, setDeadline] = useState(initialData.deadline);
+    const [detail, setDetail] = useState(initialData.detail);
+    const [online, setOnline] = useState(initialData.online);
+    const [offline, setOffline] = useState(initialData.offline);
+    const [location, setLocation] = useState(initialData.location);
+    const [latitude, setLatitude] = useState(initialData.latitude);
+    const [longitude, setLongitude] = useState(initialData.longitude);
     const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([]);
     const [submitting, setSubmitting] = useState(false);
+    const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim() ?? "";
-
     const showAddressBlock = offline;
-    const submitLockRef = useRef(false);
+
+    const submitLabel = useMemo(() => "수정하기", []);
 
     const handleOfflineChange = (next: boolean) => {
         setOffline(next);
@@ -46,7 +65,8 @@ export default function ProjectRegisterForm() {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        if (submitLockRef.current) return;
+        if (submitting) return;
+        setMessage(null);
         setError(null);
 
         if (!online && !offline) {
@@ -103,10 +123,10 @@ export default function ProjectRegisterForm() {
             payload.longitude = lng;
         }
 
-        submitLockRef.current = true;
         setSubmitting(true);
         try {
-            const projectId = await createProject(payload);
+            await updateProject(projectId, payload);
+            setMessage("프로젝트가 수정되었습니다.");
             router.push(`/client/projects/${projectId}`);
         } catch (err: unknown) {
             const msg =
@@ -116,17 +136,21 @@ export default function ProjectRegisterForm() {
                           return r.response?.data?.message;
                       })()
                     : undefined;
-            setError(msg ?? "등록에 실패했습니다. 입력값을 확인하거나 다시 시도해 주세요.");
+            setError(msg ?? "수정에 실패했습니다. 입력값을 확인하거나 다시 시도해 주세요.");
         } finally {
-            submitLockRef.current = false;
             setSubmitting(false);
         }
     };
 
     return (
         <form onSubmit={handleSubmit} className="mx-auto max-w-xl space-y-5 rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-            <h1 className="text-xl font-black text-zinc-900">프로젝트 등록</h1>
+            <h1 className="text-xl font-black text-zinc-900">프로젝트 수정</h1>
 
+            {message && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status">
+                    {message}
+                </div>
+            )}
             {error && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
                     {error}
@@ -161,7 +185,6 @@ export default function ProjectRegisterForm() {
                 <input
                     required
                     type="date"
-                    min={tomorrowISODate()}
                     className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
                     value={deadline}
                     onChange={(e) => setDeadline(e.target.value)}
@@ -187,9 +210,6 @@ export default function ProjectRegisterForm() {
                     <input type="checkbox" checked={offline} onChange={(e) => handleOfflineChange(e.target.checked)} />
                     오프라인(상주·출근 등)
                 </label>
-                <p className="text-xs text-zinc-500">
-                    오프라인을 선택하면 주소·좌표 입력란이 나타납니다. 서버 검증상 오프라인일 때 장소 정보가 필수입니다.
-                </p>
             </fieldset>
 
             {showAddressBlock && (
@@ -207,12 +227,6 @@ export default function ProjectRegisterForm() {
                         />
                     ) : (
                         <>
-                            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                                카카오맵을 쓰려면 <code className="font-mono">frontend/.env.local</code> 에{" "}
-                                <code className="font-mono">NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY</code> 를 넣고 개발 서버를
-                                다시 띄워 주세요. 샘플은 <code className="font-mono">frontend/kakao.env.sample</code> 을
-                                참고하면 됩니다.
-                            </p>
                             <label className="block text-sm font-bold text-zinc-700">
                                 주소
                                 <input
@@ -221,7 +235,6 @@ export default function ProjectRegisterForm() {
                                     value={location}
                                     onChange={(e) => setLocation(e.target.value)}
                                     maxLength={500}
-                                    placeholder="예: 서울특별시 강남구 ..."
                                 />
                             </label>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -234,7 +247,6 @@ export default function ProjectRegisterForm() {
                                         className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
                                         value={latitude}
                                         onChange={(e) => setLatitude(e.target.value)}
-                                        placeholder="예: 37.5"
                                     />
                                 </label>
                                 <label className="block text-sm font-bold text-zinc-700">
@@ -246,7 +258,6 @@ export default function ProjectRegisterForm() {
                                         className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
                                         value={longitude}
                                         onChange={(e) => setLongitude(e.target.value)}
-                                        placeholder="예: 127.0"
                                     />
                                 </label>
                             </div>
@@ -257,7 +268,11 @@ export default function ProjectRegisterForm() {
 
             <div className="space-y-2">
                 <p className="text-sm font-bold text-zinc-700">기술 스택</p>
-                <SkillTagSelector selectedSkillIds={selectedSkillIds} onChangeAction={setSelectedSkillIds} />
+                <SkillTagSelector
+                    selectedSkillIds={selectedSkillIds}
+                    onChangeAction={setSelectedSkillIds}
+                    initialSkillNames={initialData.skillNames}
+                />
             </div>
 
             <button
@@ -265,7 +280,7 @@ export default function ProjectRegisterForm() {
                 disabled={submitting}
                 className="w-full rounded-xl bg-[#FF7D00] py-3 text-sm font-black uppercase tracking-widest text-white shadow-md shadow-orange-100 transition hover:brightness-110 disabled:opacity-60"
             >
-                {submitting ? "등록 중…" : "등록하기"}
+                {submitting ? "수정 중…" : submitLabel}
             </button>
         </form>
     );

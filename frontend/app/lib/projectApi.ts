@@ -31,3 +31,8 @@ export async function createProject(body: CreateProjectBody): Promise<number> {
     }
     return data;
 }
+
+/** PUT /api/projects/{projectId} — 프로젝트 공고 수정 */
+export async function updateProject(projectId: number | string, body: CreateProjectBody): Promise<void> {
+    await api.put(`/projects/${projectId}`, body);
+}
