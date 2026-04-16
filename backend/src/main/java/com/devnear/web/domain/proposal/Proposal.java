@@ -40,6 +40,10 @@ public class Proposal {
     @Version
     private Long version;
 
+    public void setVersion(Long version) {
+        this.version = version;
+    }
+
     // 어떤 프로젝트에 대한 역제안인지
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)

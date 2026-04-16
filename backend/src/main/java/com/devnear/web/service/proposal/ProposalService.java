@@ -16,14 +16,17 @@ import com.devnear.web.dto.proposal.ReceivedProposalResponse;
 import com.devnear.web.dto.proposal.SentProposalResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.exception.ResourceConflictException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.OptimisticLockException;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -118,8 +121,13 @@ public class ProposalService {
     @Transactional
     public void respondToProposal(User user, Long proposalId, ProposalStatusUpdateRequest request) {
         ProposalStatus newStatus;
+        if (request == null || request.getStatus() == null || request.getStatus().isBlank()) {
+            throw new IllegalArgumentException("유효하지 않은 상태값입니다. ACCEPTED 또는 REJECTED만 가능합니다.");
+        }
+
         try {
-            newStatus = ProposalStatus.valueOf(request.getStatus().toUpperCase());
+            String normalizedStatus = request.getStatus().trim().toUpperCase(Locale.ROOT);
+            newStatus = ProposalStatus.valueOf(normalizedStatus);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("유효하지 않은 상태값입니다. ACCEPTED 또는 REJECTED만 가능합니다.");
         }
@@ -149,9 +157,9 @@ public class ProposalService {
         try {
             proposal.updateStatus(newStatus);
             proposalRepository.flush(); // 강제 플러시로 트랜잭션 종료 전 버전 체크 즉시 수행
-        } catch (ObjectOptimisticLockingFailureException e) {
-            // 동시 요청으로 version 충돌 발생 → 409 CONFLICT로 전파
-            throw new IllegalStateException("동시 요청으로 인해 처리에 실패했습니다. 다시 시도해주세요.");
+        } catch (ObjectOptimisticLockingFailureException | OptimisticLockException e) {
+            // 동시 요청으로 version 충돌 발생
+            throw new ResourceConflictException("동시 요청으로 인해 처리에 실패했습니다. 다시 시도해주세요.");
         }
     }
 }
