@@ -74,7 +74,16 @@ public class ProposalService {
         try {
             return proposalRepository.save(proposal).getId();
         } catch (DataIntegrityViolationException e) {
-            throw new IllegalArgumentException("해당 프리랜서에게 이미 역제안을 보냈습니다. (ALREADY_PROPOSED)");
+            if (e.getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
+                org.hibernate.exception.ConstraintViolationException hibernateException =
+                        (org.hibernate.exception.ConstraintViolationException) e.getCause();
+                String constraintName = hibernateException.getConstraintName();
+                if (constraintName != null && constraintName.toUpperCase().contains("UK_PROPOSAL")) {
+                    throw new IllegalArgumentException("해당 프리랜서에게 이미 역제안을 보냈습니다. (ALREADY_PROPOSED)");
+                }
+            }
+            // UK_PROPOSAL 제약조건 위반이 아니라면 원본 예외 던지기
+            throw e;
         }
     }
 
