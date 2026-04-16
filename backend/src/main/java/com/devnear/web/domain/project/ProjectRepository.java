@@ -32,15 +32,18 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
     Page<Project> findAllByClientProfileAndStatus(ClientProfile clientProfile, ProjectStatus status, Pageable pageable);
 
     // [수정] 봇 리뷰 반영: countQuery 명시 및 메모리 페이징 방지용 DISTINCT 활용
-    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user"})
+    // + 추가: 모집 중(OPEN)인 프로젝트만 노출되도록 필터링 추가
+    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "projectSkills", "projectSkills.skill"})
     @Query(value = "SELECT DISTINCT p FROM Project p " +
-           "WHERE (:keyword IS NULL OR p.projectName LIKE %:keyword% OR p.clientProfile.companyName LIKE %:keyword%) " +
+           "WHERE p.status = 'OPEN' " +
+           "AND (:keyword IS NULL OR p.projectName LIKE %:keyword% OR p.clientProfile.companyName LIKE %:keyword%) " +
            "AND (:location IS NULL OR p.location LIKE %:location%) " +
            "AND (:skill IS NULL OR EXISTS (SELECT 1 FROM ProjectSkill ps JOIN ps.skill s WHERE ps.project = p AND s.name LIKE %:skill%)) " +
            "AND (:online IS NULL OR p.online = :online) " +
            "AND (:offline IS NULL OR p.offline = :offline)",
            countQuery = "SELECT COUNT(DISTINCT p) FROM Project p " +
-           "WHERE (:keyword IS NULL OR p.projectName LIKE %:keyword% OR p.clientProfile.companyName LIKE %:keyword%) " +
+           "WHERE p.status = 'OPEN' " +
+           "AND (:keyword IS NULL OR p.projectName LIKE %:keyword% OR p.clientProfile.companyName LIKE %:keyword%) " +
            "AND (:location IS NULL OR p.location LIKE %:location%) " +
            "AND (:skill IS NULL OR EXISTS (SELECT 1 FROM ProjectSkill ps JOIN ps.skill s WHERE ps.project = p AND s.name LIKE %:skill%)) " +
            "AND (:online IS NULL OR p.online = :online) " +
