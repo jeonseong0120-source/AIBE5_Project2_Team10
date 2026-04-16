@@ -8,7 +8,10 @@ import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
 function tomorrowISODate(): string {
     const d = new Date();
     d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
 }
 
 export default function ProjectRegisterForm() {
@@ -43,14 +46,38 @@ export default function ProjectRegisterForm() {
         e.preventDefault();
         setError(null);
 
+        if (!online && !offline) {
+            setError("근무 방식은 온라인/오프라인 중 하나 이상 선택해 주세요.");
+            return;
+        }
+
         const skillNames = skillsRaw
             .split(/[,，]/)
             .map((s) => s.trim())
             .filter(Boolean);
 
+        const trimmedProjectName = projectName.trim();
+        const budgetValue = Number(budget);
+        if (!trimmedProjectName) {
+            setError("프로젝트명을 입력해 주세요.");
+            return;
+        }
+        if (!Number.isFinite(budgetValue) || budgetValue < 1) {
+            setError("예산은 1원 이상의 숫자로 입력해 주세요.");
+            return;
+        }
+        if (!deadline || deadline < tomorrowISODate()) {
+            setError("모집 마감일은 오늘 이후여야 합니다.");
+            return;
+        }
+        if (!detail.trim()) {
+            setError("상세 설명을 입력해 주세요.");
+            return;
+        }
+
         const payload: CreateProjectBody = {
-            projectName: projectName.trim(),
-            budget: Number(budget),
+            projectName: trimmedProjectName,
+            budget: budgetValue,
             deadline,
             detail: detail.trim() || undefined,
             online,
