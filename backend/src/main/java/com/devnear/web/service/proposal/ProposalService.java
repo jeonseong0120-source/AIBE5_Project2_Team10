@@ -72,7 +72,7 @@ public class ProposalService {
                 .build();
 
         try {
-            return proposalRepository.save(proposal).getId();
+            return proposalRepository.saveAndFlush(proposal).getId();
         } catch (DataIntegrityViolationException e) {
             if (e.getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
                 org.hibernate.exception.ConstraintViolationException hibernateException =
