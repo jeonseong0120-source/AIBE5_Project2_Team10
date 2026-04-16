@@ -27,6 +27,9 @@ public class FreelancerGradeService {
     }
 
     public FreelancerGrade calculateGrade(FreelancerProfile freelancerProfile) {
+        if (freelancerProfile == null || freelancerProfile.getUser() == null || freelancerProfile.getUser().getId() == null) {
+            throw new IllegalArgumentException("freelancerProfile.user.id is required");
+        }
         int completedProjects = safeInt(freelancerProfile.getCompletedProjects());
         double averageRating = safeDouble(freelancerProfile.getAverageRating());
         int reviewCount = safeInt(freelancerProfile.getReviewCount());
