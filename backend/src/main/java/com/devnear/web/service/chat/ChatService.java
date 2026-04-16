@@ -17,6 +17,7 @@ import com.devnear.web.exception.ChatAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // 채팅방 생성
     @Transactional
@@ -60,12 +62,80 @@ public class ChatService {
             throw new ChatAccessDeniedException("프로젝트 참여자만 채팅을 생성할 수 있습니다.");
         }
 
-        // user1, user2 순서를 고정해야 unique 제약조건이 제대로 동작함
-        // 예: (1, 7)과 (7, 1)을 같은 채팅방으로 보기 위해 정렬
-        User first = me.getId() < target.getId() ? me : target;
-        User second = me.getId() < target.getId() ? target : me;
+        ChatRoom room = resolveOrCreateChatRoom(project, me, target);
+        return ChatRoomResponse.from(room, me);
+    }
 
-        // 이미 같은 프로젝트 + 같은 두 유저 조합의 채팅방이 있으면 기존 방 반환
+    /**
+     * 프로젝트 등록 클라이언트와 지정 프리랜서 간 채팅방을 조회하거나 생성합니다.
+     * 제안(Proposal) 문의 등, 아직 프로젝트에 프리랜서가 배정되지 않은 경우에도 사용합니다.
+     */
+    @Transactional
+    public ChatRoom resolveOrCreateChatRoomForClientAndFreelancer(
+            Project project,
+            User clientUser,
+            User freelancerUser
+    ) {
+        validateProjectClientAndPair(project, clientUser, freelancerUser);
+        return resolveOrCreateChatRoom(project, clientUser, freelancerUser);
+    }
+
+    /**
+     * {@link #resolveOrCreateChatRoomForClientAndFreelancer(Project, User, User)} 와 동일하되,
+     * 호출자(actingUser) 기준 {@link ChatRoomResponse} 로 반환합니다.
+     */
+    @Transactional
+    public ChatRoomResponse getOrCreateRoomForProjectClientAndFreelancer(
+            User actingUser,
+            Project project,
+            User clientUser,
+            User freelancerUser
+    ) {
+        ChatRoom room = resolveOrCreateChatRoomForClientAndFreelancer(project, clientUser, freelancerUser);
+        return ChatRoomResponse.from(room, actingUser);
+    }
+
+    private static void validateProjectClientAndPair(Project project, User clientUser, User freelancerUser) {
+        if (project.getClientProfile() == null) {
+            throw new ResourceNotFoundException("프로젝트에 클라이언트 정보가 없습니다.");
+        }
+        if (!project.getClientProfile().getUser().getId().equals(clientUser.getId())) {
+            throw new ChatAccessDeniedException("해당 프로젝트의 클라이언트만 이 채팅방에 참여할 수 있습니다.");
+        }
+        if (clientUser.getId().equals(freelancerUser.getId())) {
+            throw new IllegalArgumentException("동일한 사용자 간에는 채팅방을 만들 수 없습니다.");
+        }
+    }
+
+    /**
+     * 시스템 안내 메시지를 저장하고, 구독 중인 클라이언트에 웹소켓으로 전달합니다.
+     *
+     * @param technicalSender 감사 추적용 발신자(프론트에서는 {@code systemMessage}로 구분 표시)
+     */
+    @Transactional
+    public ChatMessageResponse saveSystemMessageAndBroadcast(ChatRoom room, User technicalSender, String content) {
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("시스템 메시지 내용은 비어 있을 수 없습니다.");
+        }
+
+        ChatMessage message = chatMessageRepository.save(
+                ChatMessage.builder()
+                        .chatRoom(room)
+                        .sender(technicalSender)
+                        .content(content.trim())
+                        .systemMessage(true)
+                        .build()
+        );
+
+        ChatMessageResponse response = ChatMessageResponse.from(message);
+        messagingTemplate.convertAndSend("/sub/chat/rooms/" + room.getId(), response);
+        return response;
+    }
+
+    private ChatRoom resolveOrCreateChatRoom(Project project, User userA, User userB) {
+        User first = userA.getId() < userB.getId() ? userA : userB;
+        User second = userA.getId() < userB.getId() ? userB : userA;
+
         ChatRoom room = chatRoomRepository.findByProjectAndUser1AndUser2(project, first, second)
                 .orElse(null);
 
@@ -83,8 +153,7 @@ public class ChatService {
                         .orElseThrow(() -> e);
             }
         }
-
-        return ChatRoomResponse.from(room, me);
+        return room;
     }
 
     // 내 채팅방 목록 조회

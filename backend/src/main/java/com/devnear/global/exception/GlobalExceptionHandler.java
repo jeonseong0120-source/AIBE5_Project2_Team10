@@ -24,6 +24,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalStateException(
+            IllegalStateException e, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request);
+    }
+
     @ExceptionHandler(DuplicateProfileException.class)  // 추가
     public ResponseEntity<ErrorResponse> handleDuplicate(
             DuplicateProfileException e, HttpServletRequest request) {
