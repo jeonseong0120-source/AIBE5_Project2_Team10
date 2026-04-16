@@ -23,6 +23,14 @@ export default function KakaoLocationPicker({ javascriptKey, value, onChangeActi
     const mapRef = useRef<KakaoMap | null>(null);
     const markerRef = useRef<KakaoMarker | null>(null);
     const dragHandlerRef = useRef<(() => void) | null>(null);
+    const mountedRef = useRef(true);
+
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
 
     const [sdkError, setSdkError] = useState<string | null>(null);
     const [searching, setSearching] = useState(false);
@@ -42,15 +50,17 @@ export default function KakaoLocationPicker({ javascriptKey, value, onChangeActi
         (lat: number, lng: number) => {
             const kakao = window.kakao;
             if (!kakao?.maps) return;
+            applyLatLng(lat, lng);
             const geocoder = new kakao.maps.services.Geocoder();
             geocoder.coord2Address(lng, lat, (result, status) => {
                 if (status !== kakao.maps.services.Status.OK || !result?.length) return;
                 const name =
                     result[0].road_address?.address_name ?? result[0].address?.address_name ?? value.address;
-                onChangeAction({ address: name, latitude: String(lat), longitude: String(lng) });
+                    applyLatLng(lat, lng, name);
             });
         },
-        [onChangeAction, value.address],
+        [applyLatLng, value.address],
+
     );
 
     /** 지도·마커 최초 생성 */
@@ -91,6 +101,7 @@ export default function KakaoLocationPicker({ javascriptKey, value, onChangeActi
                 setTimeout(() => map.relayout(), 200);
             })
             .catch((e: unknown) => {
+                if (!mountedRef.current) return;
                 setSdkError(e instanceof Error ? e.message : "카카오맵을 불러오지 못했습니다.");
             });
 
@@ -142,6 +153,7 @@ export default function KakaoLocationPicker({ javascriptKey, value, onChangeActi
         setSdkError(null);
         const geocoder = new kakao.maps.services.Geocoder();
         geocoder.addressSearch(q, (result, status) => {
+            if (!mountedRef.current) return;
             setSearching(false);
             if (status !== kakao.maps.services.Status.OK || !result?.length) {
                 setSdkError("검색 결과가 없습니다. 주소를 조정해 보세요.");

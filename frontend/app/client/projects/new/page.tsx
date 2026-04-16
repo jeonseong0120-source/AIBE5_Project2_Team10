@@ -19,6 +19,10 @@ export default function ClientProjectNewPage() {
             try {
                 const res = await api.get("/v1/users/me");
                 const role = res.data.role as string;
+                if (role === "GUEST" || role === "ROLE_GUEST") {
+                        router.replace("/onboarding");
+                        return;
+                }
                 if (role === "FREELANCER" || role === "ROLE_FREELANCER") {
                     router.replace("/");
                     return;
