@@ -18,6 +18,7 @@ import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -127,8 +128,14 @@ public class ProposalService {
             throw new IllegalArgumentException("제안 상태는 ACCEPTED 또는 REJECTED만 가능합니다.");
         }
 
-        Proposal proposal = proposalRepository.findByIdWithFreelancer(proposalId)
-                .orElseThrow(() -> new ResourceNotFoundException("역제안을 찾을 수 없습니다. id=" + proposalId));
+        Proposal proposal;
+        try {
+            proposal = proposalRepository.findByIdWithFreelancer(proposalId)
+                    .orElseThrow(() -> new ResourceNotFoundException("역제안을 찾을 수 없습니다. id=" + proposalId));
+        } catch (PessimisticLockingFailureException e) {
+            // 비관적 락 획득 실패 (다른 트랜잭션이 이미 쓰고 있는 중)
+            throw new IllegalStateException("동시 요청으로 인해 처리에 실패했습니다. 다시 시도해주세요.");
+        }
 
         // 본인에게 온 제안인지 확인
         if (!proposal.getFreelancerProfile().getUser().getId().equals(user.getId())) {
