@@ -11,12 +11,15 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.devnear.web.exception.ResourceConflictException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
@@ -24,7 +27,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request);
     }
 
-    @ExceptionHandler(DuplicateProfileException.class)  // 추가
+    @ExceptionHandler(DuplicateProfileException.class) // 추가
     public ResponseEntity<ErrorResponse> handleDuplicate(
             DuplicateProfileException e, HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, e.getMessage(), request);
@@ -48,7 +51,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, e.getMessage(), request);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException .class)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(
             MethodArgumentNotValidException e, HttpServletRequest request) {
         String message = e.getBindingResult().getFieldErrors().stream()
@@ -60,6 +63,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception e, HttpServletRequest request) {
+        log.error("Unhandled exception in handleGlobalException", e);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.", request);
     }
 
