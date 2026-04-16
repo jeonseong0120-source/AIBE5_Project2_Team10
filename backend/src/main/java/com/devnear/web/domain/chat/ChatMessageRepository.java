@@ -1,6 +1,8 @@
 package com.devnear.web.domain.chat;
 
 import com.devnear.web.domain.user.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,9 +13,13 @@ import java.util.Optional;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
-    // 특정 채팅방의 전체 메시지를 오래된 순서부터 조회
+    // 특정 채팅방의 전체 메시지를 오래된 순서부터 조회 (불필요한 대용량 조회용, 가능하면 페이지 사용)
     @EntityGraph(attributePaths = {"sender"})
     List<ChatMessage> findAllByChatRoomOrderByCreatedAtAsc(ChatRoom chatRoom);
+
+    // Pageable variant for bounded queries
+    @EntityGraph(attributePaths = {"sender"})
+    Page<ChatMessage> findByChatRoomOrderByCreatedAtAsc(ChatRoom chatRoom, Pageable pageable);
 
     // 마지막 메시지 1개 조회
     // 채팅방 목록에서 미리보기용으로 사용

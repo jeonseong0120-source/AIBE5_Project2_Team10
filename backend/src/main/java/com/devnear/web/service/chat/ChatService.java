@@ -133,11 +133,16 @@ public class ChatService {
     }
 
     // 특정 채팅방의 메시지 전체 조회
-    public List<ChatMessageResponse> getMessages(User me, Long roomId) {
+    public List<ChatMessageResponse> getMessages(User me, Long roomId, int page, int size) {
         ChatRoom room = getValidatedRoom(me, roomId);
 
-        return chatMessageRepository.findAllByChatRoomOrderByCreatedAtAsc(room)
-                .stream()
+        // 페이지 요청: 생성일 기준 오름차순 (오래된 메시지부터)
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                org.springframework.data.domain.Sort.by("createdAt").ascending());
+
+        org.springframework.data.domain.Page<ChatMessage> messages = chatMessageRepository.findByChatRoomOrderByCreatedAtAsc(room, pageable);
+
+        return messages.getContent().stream()
                 .map(ChatMessageResponse::from)
                 .toList();
     }

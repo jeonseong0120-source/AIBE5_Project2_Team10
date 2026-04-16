@@ -51,9 +51,11 @@ public class ChatController {
     @GetMapping("/rooms/{roomId}/messages")
     public ResponseEntity<List<ChatMessageResponse>> getMessages(
             @AuthenticationPrincipal User user,
-            @PathVariable Long roomId
+            @PathVariable Long roomId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
     ) {
-        return ResponseEntity.ok(chatService.getMessages(user, roomId));
+        return ResponseEntity.ok(chatService.getMessages(user, roomId, page, size));
     }
 
     // 특정 채팅방 읽음 처리 API
