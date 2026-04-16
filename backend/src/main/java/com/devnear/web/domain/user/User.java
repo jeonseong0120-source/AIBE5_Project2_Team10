@@ -23,7 +23,7 @@ import java.util.List;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_provider_id",
-                        columnNames = {"provider", "provider_id"} // provider와 provider_id의 쌍은 유일해야 함
+                        columnNames = {"provider", "provider_id"}
                 )
         }
 )
@@ -39,14 +39,12 @@ public class User extends BaseTimeEntity implements UserDetails {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    // [보고] 소셜 로그인은 비번이 없으므로 nullable = true
     @Column(nullable = true)
     private String password;
 
     @Column(nullable = false, length = 50)
     private String name;
 
-    // [수정] 항상 임시 닉네임을 생성해서 넣어주므로 nullable = false
     @Column(nullable = false, unique = true, length = 50)
     private String nickname;
 
@@ -64,18 +62,15 @@ public class User extends BaseTimeEntity implements UserDetails {
     @Column(nullable = false, length = 20)
     private UserStatus status;
 
-    // ================= [보고] 소셜 로그인 전용 필드 =================
     @Column(length = 20)
     private String provider;
 
     @Column(name = "provider_id", length = 100)
     private String providerId;
 
-    // [수정] 리뷰 피드백 반영: @OneToOne의 기본 로딩은 Eager(즉시 로딩)이므로 N+1 및 성능 이슈 방지를 위해 LAZY로 강제 지정
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private ClientProfile clientProfile;
 
-    // [수정] 리뷰 피드백 반영: 동일하게 성능 이슈 방지를 위해 LAZY 로딩 적용
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private FreelancerProfile freelancerProfile;
 
@@ -95,9 +90,6 @@ public class User extends BaseTimeEntity implements UserDetails {
         this.status = UserStatus.ACTIVE;
     }
 
-    /**
-     * [보고] 소셜 로그인 정보 업데이트 및 계정 연동을 위한 메서드.
-     */
     public User update(String name, String profileImageUrl, String provider, String providerId) {
         this.name = name;
         this.profileImageUrl = profileImageUrl;
@@ -106,19 +98,18 @@ public class User extends BaseTimeEntity implements UserDetails {
         return this;
     }
 
-    /**
-     * [추가] 온보딩 완료 시 닉네임과 역할을 업데이트합니다.
-     */
     public void onboard(String nickname, Role role) {
         this.nickname = nickname;
         this.role = role;
     }
 
-    /**
-     * [추가] Cloudinary 프로필 이미지 업로드 후 URL을 갱신합니다.
-     */
     public void updateProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
+    }
+
+    // 🔍 [추가] 닉네임 수정을 위한 세터 메서드
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     // ================= UserDetails 필수 구현 메서드 =================
@@ -143,8 +134,7 @@ public class User extends BaseTimeEntity implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { 
-        // [수정] "화이트리스트" 방식으로 허용되는 상태만 명시함
-        return this.status == UserStatus.ACTIVE || this.status == UserStatus.INACTIVE; 
+    public boolean isEnabled() {
+        return this.status == UserStatus.ACTIVE || this.status == UserStatus.INACTIVE;
     }
 }

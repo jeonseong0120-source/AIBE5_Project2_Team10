@@ -16,6 +16,11 @@ public class ClientProfileRequest {
     @Size(max = 100, message = "업체명은 100자 이내여야 합니다.")
     private String companyName;
 
+    // 🔍 [추가] 닉네임을 프론트에서 받아올 수 있도록 필드 추가
+    @NotBlank(message = "닉네임은 필수입니다.")
+    @Size(max = 50, message = "닉네임은 50자 이내여야 합니다.")
+    private String nickname;
+
     @NotBlank(message = "사업자번호는 필수입니다.")
     @Size(max = 12, message = "사업자번호는 12자 이내여야 합니다.")
     @Pattern(regexp = "^\\d{3}-\\d{2}-\\d{5}$", message = "사업자번호 형식이 올바르지 않습니다. (예: 000-00-00000)")

@@ -5,7 +5,7 @@ import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.client.ClientProfileRequest;
-import com.devnear.web.dto.client.ClientProfileResponse; // 추가
+import com.devnear.web.dto.client.ClientProfileResponse;
 import com.devnear.web.exception.DuplicateProfileException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ClientService {
 
     private final ClientProfileRepository clientProfileRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public Long registerProfile(User user, ClientProfileRequest request) {
@@ -27,6 +28,10 @@ public class ClientService {
         }
         if (clientProfileRepository.existsByBn(request.getBn())) {
             throw new DuplicateProfileException("이미 등록된 사업자 번호입니다.");
+        }
+
+        if (request.getNickname() != null && userRepository.existsByNickname(request.getNickname())) {
+            throw new DuplicateProfileException("이미 사용 중인 닉네임입니다.");
         }
 
         try {
@@ -44,10 +49,24 @@ public class ClientService {
 
     @Transactional
     public void updateProfile(User user, ClientProfileRequest request) {
-        ClientProfile profile = findProfileByUser(user);
+        User managedUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+
+        ClientProfile profile = findProfileByUser(managedUser);
+
         if (clientProfileRepository.existsByBnAndIdNot(request.getBn(), profile.getId())){
             throw new DuplicateProfileException("이미 등록된 사업자 번호입니다.");
         }
+
+        // [AI 리뷰 반영] 닉네임 변경 시, 현재 내 닉네임과 다른 경우에만 중복 검사를 수행
+        if (request.getNickname() != null && !request.getNickname().equals(managedUser.getNickname())) {
+            if (userRepository.existsByNickname(request.getNickname())) {
+                throw new DuplicateProfileException("이미 사용 중인 닉네임입니다.");
+            }
+            // 중복이 아닐 경우에만 닉네임 업데이트
+            managedUser.setNickname(request.getNickname());
+        }
+
         profile.update(request);
     }
 
@@ -61,9 +80,3 @@ public class ClientService {
                 .orElseThrow(() -> new ResourceNotFoundException("클라이언트 프로필을 찾을 수 없습니다."));
     }
 }
-
-//    @Transactional
-//    public void updateLogo(String email, String logoUrl) {
-//        ClientProfile profile = findProfileByEmail(email);
-//        profile.updateLogo(logoUrl);
-//    }
