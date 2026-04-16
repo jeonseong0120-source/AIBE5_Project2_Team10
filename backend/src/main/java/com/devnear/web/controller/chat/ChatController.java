@@ -47,14 +47,17 @@ public class ChatController {
     }
 
     // 특정 채팅방 메시지 조회 API
-    @Operation(summary = "채팅 메시지 조회")
-    @GetMapping("/rooms/{roomId}/messages")
+    `@Operation`(summary = "채팅 메시지 조회")
+    `@GetMapping`("/rooms/{roomId}/messages")
     public ResponseEntity<List<ChatMessageResponse>> getMessages(
-            @AuthenticationPrincipal User user,
-            @PathVariable Long roomId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size
+            `@AuthenticationPrincipal` User user,
+            `@PathVariable` Long roomId,
+            `@RequestParam`(defaultValue = "0") int page,
+            `@RequestParam`(defaultValue = "50") int size
     ) {
+        if (page < 0) page = 0;
+        if (size < 1) size = 1;
+        if (size > 100) size = 100; // Cap maximum page size
         return ResponseEntity.ok(chatService.getMessages(user, roomId, page, size));
     }
 
