@@ -12,7 +12,8 @@ import {
     Clock,
     Briefcase,
     ChevronRight,
-    Sparkles // 프리미엄 느낌을 위한 아이콘 추가
+    Sparkles,
+    X // 모달 닫기 아이콘 추가
 } from 'lucide-react';
 
 interface ProjectDetail {
@@ -40,20 +41,59 @@ export default function ProjectDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // --- 🔍 마스터, 여기 기능용 상태만 추가했습니다 ---
+    const [isApplied, setIsApplied] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [bidPrice, setBidPrice] = useState('');
+    const [message, setMessage] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
     useEffect(() => {
         const fetchProjectDetail = async () => {
             if (!id) return;
             try {
                 const response = await api.get(`/v1/projects/${id}`);
                 setProject(response.data);
+                setBidPrice(String(response.data.budget)); // 초기 제안가를 예산으로 설정
+
+                // 🔍 마스터, 로그인이 되어 있다면 지원 여부를 체크합니다.
+                const token = localStorage.getItem("accessToken");
+                if (token) {
+                    const myApps = await api.get('/applications/me');
+                    const already = myApps.data.some((app: any) => app.projectId === Number(id));
+                    setIsApplied(already);
+                }
             } catch (err: any) {
-                setError("프로젝트 정보를 불러오는데 실패했습니다.");
+                // 401 에러(권한 없음)는 무시하고 진행 (비로그인 유저 배려)
+                if (err.response?.status !== 401) {
+                    setError("프로젝트 정보를 불러오는데 실패했습니다.");
+                }
             } finally {
                 setLoading(false);
             }
         };
         fetchProjectDetail();
     }, [id]);
+
+    // --- 🔍 실제 지원하기를 서버에 전송하는 함수 ---
+    const handleApplySubmit = async () => {
+        if (!bidPrice || !message) return alert("금액과 메시지를 입력해 주세요.");
+        setSubmitting(true);
+        try {
+            await api.post('/applications', {
+                projectId: Number(id),
+                bidPrice: Number(bidPrice),
+                message: message.trim()
+            });
+            alert("지원이 완료되었습니다!");
+            setIsApplied(true);
+            setIsModalOpen(false);
+        } catch (err) {
+            alert("지원 중 오류가 발생했습니다. 권한을 확인하세요.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     const formatBudget = (amount: number) => {
         return new Intl.NumberFormat('ko-KR', {
@@ -191,14 +231,60 @@ export default function ProjectDetailPage() {
                     </div>
                 </section>
 
-                {/* 5. 하단 액션 바 */}
+                {/* 5. 하단 액션 바 (🔍 마스터, 여기에 클릭 이벤트를 걸었습니다) */}
                 <div className="sticky bottom-8 flex justify-center w-full px-4">
-                    <button className="w-full max-w-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-black py-6 rounded-2xl transition-all shadow-2xl shadow-violet-200 hover:scale-[1.03] active:scale-[0.97] flex items-center justify-center gap-3 group">
-                        이 프로젝트에 지금 지원하기
-                        <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                    <button
+                        onClick={() => !isApplied && setIsModalOpen(true)}
+                        disabled={isApplied}
+                        className={`w-full max-w-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-black py-6 rounded-2xl transition-all shadow-2xl shadow-violet-200 hover:scale-[1.03] active:scale-[0.97] flex items-center justify-center gap-3 group ${isApplied ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        {isApplied ? "이미 지원한 프로젝트입니다" : "이 프로젝트에 지금 지원하기"}
+                        {!isApplied && <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />}
                     </button>
                 </div>
             </main>
+
+            {/* --- 🔍 지원하기 입력 모달 (디자인 맞춰서 새로 추가) --- */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}></div>
+                    <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl border border-violet-50">
+                        <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
+                            <X size={24} />
+                        </button>
+                        <h2 className="text-3xl font-black text-slate-900 mb-2">프로젝트 지원</h2>
+                        <p className="text-slate-500 mb-8 font-medium">매칭 확률을 높일 제안을 입력하세요.</p>
+
+                        <div className="space-y-6">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">제안 금액 (₩)</label>
+                                <input
+                                    type="number"
+                                    className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-900 focus:ring-2 focus:ring-violet-500 outline-none transition-all"
+                                    value={bidPrice}
+                                    onChange={(e) => setBidPrice(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">지원 메시지</label>
+                                <textarea
+                                    className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium text-slate-700 h-40 focus:ring-2 focus:ring-violet-500 outline-none transition-all resize-none"
+                                    placeholder="백엔드 실무 경험을 바탕으로 기여하겠습니다."
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                />
+                            </div>
+                            <button
+                                onClick={handleApplySubmit}
+                                disabled={submitting}
+                                className="w-full bg-violet-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-violet-100 hover:bg-violet-700 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {submitting ? "제출 중..." : "지원서 제출하기"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

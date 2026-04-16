@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createProject, type CreateProjectBody } from "@/app/lib/projectApi";
 import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
 import SkillTagSelector from "@/components/project/SkillTagSelector";
+import { DollarSign, MapPin, ArrowLeft } from "lucide-react"; // 🔍 ArrowLeft 아이콘 추가
 
 function tomorrowISODate(): string {
     const d = new Date();
@@ -29,19 +30,20 @@ export default function ProjectRegisterForm() {
     const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
     const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim() ?? "";
-
-    const showAddressBlock = offline;
     const submitLockRef = useRef(false);
+
+    useEffect(() => {
+        const move = (e: MouseEvent) => setCursor({ x: e.clientX, y: e.clientY });
+        window.addEventListener("mousemove", move);
+        return () => window.removeEventListener("mousemove", move);
+    }, []);
 
     const handleOfflineChange = (next: boolean) => {
         setOffline(next);
-        if (!next) {
-            setLocation("");
-            setLatitude("");
-            setLongitude("");
-        }
+        if (!next) { setLocation(""); setLatitude(""); setLongitude(""); }
     };
 
     const handleSubmit = async (e: FormEvent) => {
@@ -49,33 +51,12 @@ export default function ProjectRegisterForm() {
         if (submitLockRef.current) return;
         setError(null);
 
-        if (!online && !offline) {
-            setError("근무 방식은 온라인/오프라인 중 하나 이상 선택해 주세요.");
-            return;
-        }
-
-        const trimmedProjectName = projectName.trim();
-        const budgetValue = Number(budget);
-        if (!trimmedProjectName) {
-            setError("프로젝트명을 입력해 주세요.");
-            return;
-        }
-        if (!Number.isFinite(budgetValue) || budgetValue < 1) {
-            setError("예산은 1원 이상의 숫자로 입력해 주세요.");
-            return;
-        }
-        if (!deadline || deadline < tomorrowISODate()) {
-            setError("모집 마감일은 오늘 이후여야 합니다.");
-            return;
-        }
-        if (!detail.trim()) {
-            setError("상세 설명을 입력해 주세요.");
-            return;
-        }
+        if (!online && !offline) return setError("근무 방식은 하나 이상 선택해 주세요.");
+        if (Number(budget) < 1) return setError("예산은 1원 이상이어야 합니다.");
 
         const payload: CreateProjectBody = {
-            projectName: trimmedProjectName,
-            budget: budgetValue,
+            projectName: projectName.trim(),
+            budget: Number(budget),
             deadline,
             detail: detail.trim() || undefined,
             online,
@@ -85,22 +66,9 @@ export default function ProjectRegisterForm() {
 
         if (offline) {
             payload.location = location.trim();
-            const lat = latitude.trim() === "" ? NaN : Number(latitude);
-            const lng = longitude.trim() === "" ? NaN : Number(longitude);
-            if (!payload.location) {
-                setError("오프라인 모집 시 주소(장소)를 입력해 주세요.");
-                return;
-            }
-            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-                setError("오프라인 모집 시 위도·경도를 숫자로 입력해 주세요.");
-                return;
-            }
-            if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-                setError("위도는 -90~90, 경도는 -180~180 범위로 입력해 주세요.");
-                return;
-            }
-            payload.latitude = lat;
-            payload.longitude = lng;
+            payload.latitude = Number(latitude);
+            payload.longitude = Number(longitude);
+            if (!payload.location || isNaN(payload.latitude)) return setError("오프라인 정보를 정확히 입력해 주세요.");
         }
 
         submitLockRef.current = true;
@@ -108,165 +76,102 @@ export default function ProjectRegisterForm() {
         try {
             const projectId = await createProject(payload);
             router.push(`/client/projects/${projectId}`);
-        } catch (err: unknown) {
-            const msg =
-                err && typeof err === "object" && "response" in err
-                    ? (() => {
-                          const r = err as { response?: { data?: { message?: string } } };
-                          return r.response?.data?.message;
-                      })()
-                    : undefined;
-            setError(msg ?? "등록에 실패했습니다. 입력값을 확인하거나 다시 시도해 주세요.");
-        } finally {
+        } catch (err: any) {
+            setError(err.response?.data?.message || "등록에 실패했습니다.");
             submitLockRef.current = false;
+        } finally {
             setSubmitting(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="mx-auto max-w-xl space-y-5 rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-            <h1 className="text-xl font-black text-zinc-900">프로젝트 등록</h1>
+        <div className="min-h-screen bg-zinc-50 relative overflow-hidden font-sans pb-20">
+            {/* 🔥 커서 글로우 */}
+            <div className="pointer-events-none fixed z-0 w-[400px] h-[400px] rounded-full bg-[#FF7D00]/10 blur-[120px] transition-all duration-300"
+                 style={{ left: cursor.x - 200, top: cursor.y - 200 }} />
 
-            {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
-                    {error}
-                </div>
-            )}
-
-            <label className="block text-sm font-bold text-zinc-700">
-                프로젝트명
-                <input
-                    required
-                    className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    maxLength={100}
-                />
-            </label>
-
-            <label className="block text-sm font-bold text-zinc-700">
-                예산 (원)
-                <input
-                    required
-                    type="number"
-                    min={1}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                />
-            </label>
-
-            <label className="block text-sm font-bold text-zinc-700">
-                모집 마감일
-                <input
-                    required
-                    type="date"
-                    min={tomorrowISODate()}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                />
-            </label>
-
-            <label className="block text-sm font-bold text-zinc-700">
-                상세 설명
-                <textarea
-                    className="mt-1 min-h-[120px] w-full rounded-lg border border-zinc-200 px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
-                    value={detail}
-                    onChange={(e) => setDetail(e.target.value)}
-                />
-            </label>
-
-            <fieldset className="space-y-2 rounded-lg border border-zinc-100 bg-zinc-50 p-4">
-                <legend className="text-sm font-bold text-zinc-700">근무 방식</legend>
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-                    <input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)} />
-                    온라인(원격)
-                </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-zinc-800">
-                    <input type="checkbox" checked={offline} onChange={(e) => handleOfflineChange(e.target.checked)} />
-                    오프라인(상주·출근 등)
-                </label>
-                <p className="text-xs text-zinc-500">
-                    오프라인을 선택하면 주소·좌표 입력란이 나타납니다. 서버 검증상 오프라인일 때 장소 정보가 필수입니다.
-                </p>
-            </fieldset>
-
-            {showAddressBlock && (
-                <div className="space-y-4 rounded-xl border border-[#FF7D00]/30 bg-orange-50/40 p-4 transition-opacity">
-                    <p className="text-sm font-bold text-zinc-800">오프라인 장소</p>
-                    {kakaoJavascriptKey ? (
-                        <KakaoLocationPicker
-                            javascriptKey={kakaoJavascriptKey}
-                            value={{ address: location, latitude, longitude }}
-                            onChangeAction={(v) => {
-                                setLocation(v.address);
-                                setLatitude(v.latitude);
-                                setLongitude(v.longitude);
-                            }}
-                        />
-                    ) : (
-                        <>
-                            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                                카카오맵을 쓰려면 <code className="font-mono">frontend/.env.local</code> 에{" "}
-                                <code className="font-mono">NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY</code> 를 넣고 개발 서버를
-                                다시 띄워 주세요. 샘플은 <code className="font-mono">frontend/kakao.env.sample</code> 을
-                                참고하면 됩니다.
-                            </p>
-                            <label className="block text-sm font-bold text-zinc-700">
-                                주소
-                                <input
-                                    required={offline}
-                                    className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
-                                    value={location}
-                                    onChange={(e) => setLocation(e.target.value)}
-                                    maxLength={500}
-                                    placeholder="예: 서울특별시 강남구 ..."
-                                />
-                            </label>
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <label className="block text-sm font-bold text-zinc-700">
-                                    위도
-                                    <input
-                                        required={offline}
-                                        type="text"
-                                        inputMode="decimal"
-                                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
-                                        value={latitude}
-                                        onChange={(e) => setLatitude(e.target.value)}
-                                        placeholder="예: 37.5"
-                                    />
-                                </label>
-                                <label className="block text-sm font-bold text-zinc-700">
-                                    경도
-                                    <input
-                                        required={offline}
-                                        type="text"
-                                        inputMode="decimal"
-                                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
-                                        value={longitude}
-                                        onChange={(e) => setLongitude(e.target.value)}
-                                        placeholder="예: 127.0"
-                                    />
-                                </label>
+            {/* 헤더 섹션 (뒤로가기 버튼 추가) */}
+            <section className="relative pt-16 pb-12 px-8 bg-white border-b border-zinc-200 overflow-hidden mb-10">
+                <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+                <div className="max-w-xl mx-auto relative z-10">
+                    <div className="flex items-center gap-4 mb-4">
+                        {/* 🔍 뒤로가기 버튼 */}
+                        <button
+                            onClick={() => router.back()}
+                            className="p-2.5 bg-zinc-50 border border-zinc-100 rounded-xl text-zinc-400 hover:text-[#FF7D00] hover:border-[#FF7D00]/30 hover:bg-orange-50 transition-all group"
+                        >
+                            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+                        </button>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="w-6 h-[2px] bg-[#FF7D00]"></span>
+                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono">Mission_Creator</span>
                             </div>
-                        </>
-                    )}
+                            <h1 className="text-4xl font-black tracking-tight">프로젝트 등록</h1>
+                        </div>
+                    </div>
                 </div>
-            )}
+            </section>
 
-            <div className="space-y-2">
-                <p className="text-sm font-bold text-zinc-700">기술 스택</p>
-                <SkillTagSelector selectedSkillIds={selectedSkillIds} onChangeAction={setSelectedSkillIds} />
-            </div>
+            <form onSubmit={handleSubmit} className="mx-auto max-w-xl bg-white p-10 rounded-[2.5rem] shadow-xl border border-zinc-100 space-y-8 relative z-10">
+                {error && <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-bold animate-shake">{error}</div>}
 
-            <button
-                type="submit"
-                disabled={submitting}
-                className="w-full rounded-xl bg-[#FF7D00] py-3 text-sm font-black uppercase tracking-widest text-white shadow-md shadow-orange-100 transition hover:brightness-110 disabled:opacity-60"
-            >
-                {submitting ? "등록 중…" : "등록하기"}
-            </button>
-        </form>
+                <div className="space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Project_Title</label>
+                        <input required className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold focus:ring-2 focus:ring-[#FF7D00] outline-none transition-all"
+                               value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="프로젝트명을 입력하세요" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Budget (₩)</label>
+                            <div className="relative">
+                                <input type="number" required className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]"
+                                       value={budget} onChange={(e) => setBudget(e.target.value)} />
+                                <DollarSign className="absolute right-4 top-1/2 -translate-y-1/2 text-[#FF7D00]" size={16} />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Deadline</label>
+                            <input type="date" required className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]"
+                                   value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Description</label>
+                        <textarea className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl min-h-[150px] outline-none focus:ring-2 focus:ring-[#FF7D00] text-sm font-medium"
+                                  value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="상세 내용을 입력하세요" />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Work_Style</label>
+                        <div className="p-5 bg-zinc-50 rounded-2xl border border-zinc-100 flex gap-8">
+                            <label className="flex items-center gap-3 font-bold text-xs cursor-pointer"><input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)} className="w-4 h-4 accent-[#FF7D00]" />온라인</label>
+                            <label className="flex items-center gap-3 font-bold text-xs cursor-pointer"><input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} className="w-4 h-4 accent-[#FF7D00]" />오프라인</label>
+                        </div>
+                    </div>
+
+                    {offline && (
+                        <div className="p-6 bg-orange-50/50 rounded-2xl border border-orange-100 space-y-4 transition-all">
+                            <div className="flex items-center gap-2"><MapPin size={14} className="text-[#FF7D00]" /><span className="text-[10px] font-black text-[#FF7D00] uppercase font-mono">Location_Setting</span></div>
+                            <KakaoLocationPicker javascriptKey={kakaoJavascriptKey} value={{ address: location, latitude, longitude }}
+                                                 onChangeAction={(v) => { setLocation(v.address); setLatitude(v.latitude); setLongitude(v.longitude); }} />
+                        </div>
+                    )}
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Requirement</label>
+                        <SkillTagSelector selectedSkillIds={selectedSkillIds} onChangeAction={setSelectedSkillIds} />
+                    </div>
+                </div>
+
+                <button type="submit" disabled={submitting}
+                        className="w-full py-5 bg-zinc-950 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all shadow-xl shadow-zinc-200 active:scale-95 disabled:bg-zinc-200">
+                    {submitting ? "Processing..." : "프로젝트 등록하기"}
+                </button>
+            </form>
+        </div>
     );
 }
