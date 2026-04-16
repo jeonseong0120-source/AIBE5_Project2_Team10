@@ -21,7 +21,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
@@ -31,9 +34,10 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
-    //웹소켓 테스트 연결을 위한 수정.
     @Value("${app.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5500,http://127.0.0.1:5500}")
     private List<String> allowedOrigins;
+    @Value("${app.cors.allow-lan-origin-pattern:false}")
+    private boolean allowLanOriginPattern;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -116,7 +120,19 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(allowedOrigins);
+        // setAllowedOrigins 와 setAllowedOriginPatterns 는 상호 배타라, 패턴으로 통합한다.
+        Set<String> patterns = new LinkedHashSet<>();
+        patterns.add("http://localhost:*");
+        patterns.add("http://127.0.0.1:*");
+        if (allowLanOriginPattern) {
+            patterns.add("http://192.168.*:*");
+        }
+        for (String origin : allowedOrigins) {
+            if (origin != null && !origin.isBlank()) {
+                patterns.add(origin.trim());
+            }
+        }
+        config.setAllowedOriginPatterns(new ArrayList<>(patterns));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));

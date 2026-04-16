@@ -33,7 +33,7 @@ export default function Home() {
 
         // [수정] 메인 페이지에서도 CLIENT나 BOTH 권한이면 즉시 대시보드로 이동시킵니다!
         if (currentRole === "CLIENT" || currentRole === "BOTH" || currentRole === "ROLE_CLIENT" || currentRole === "ROLE_BOTH") {
-          router.replace("/dashboard");
+          router.replace("/client/dashboard");
           return;
         }
 
