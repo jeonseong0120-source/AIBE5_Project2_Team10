@@ -13,9 +13,11 @@ public interface ClientProfileRepository extends JpaRepository<ClientProfile, Lo
 
     Optional<ClientProfile> findByUser(User user);
 
+    Optional<ClientProfile> findByUser_Id(Long userId);
+
     boolean existsByUser(User user);
 
     boolean existsByBn(String bn);
 
     boolean existsByBnAndIdNot(String bn, Long id);
-}
+}
