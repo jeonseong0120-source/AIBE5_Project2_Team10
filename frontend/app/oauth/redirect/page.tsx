@@ -31,7 +31,7 @@ export default function OAuthRedirect() {
                             router.replace("/onboarding");
                         } else if (role === "CLIENT" || role === "BOTH" || role === "ROLE_CLIENT" || role === "ROLE_BOTH") {
                             // [요청 반영] 클라이언트나 겸업 유저는 바로 대시보드로 꽂아줍니다!
-                            router.replace("/dashboard");
+                            router.replace("/client/dashboard");
                         } else {
                             // 프리랜서는 메인 페이지나 프로젝트 목록으로 이동
                             router.replace("/");

@@ -207,6 +207,13 @@ export default function ClientDashboardPage() {
                     <button onClick={() => router.push('/client/mypage')} className="text-xs font-bold hover:text-[#FF7D00] transition">
                         MY PAGE
                     </button>
+                    {/* [수정] 봇 리뷰 반영: onClick 핸들러 추가하여 알림창 띄우기 */}
+                    <button
+                        onClick={() => router.push("/client/projects/new")}
+                        className="px-6 py-2.5 bg-[#FF7D00] text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition shadow-md shadow-orange-100 uppercase font-mono"
+                    >
+                        Register_Project
+                    </button>
                 </div>
             </nav>
 

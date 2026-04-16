@@ -1,8 +1,8 @@
 package com.devnear.web.domain.client;
 
 import com.devnear.web.domain.common.BaseTimeEntity;
-import com.devnear.web.domain.enums.ClientGrade;        // 추가
-import com.devnear.web.domain.enums.VerificationStatus; // 추가
+import com.devnear.web.domain.enums.ClientGrade;
+import com.devnear.web.domain.enums.VerificationStatus;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.client.ClientProfileRequest;
 import jakarta.persistence.*;
@@ -97,8 +97,6 @@ public class ClientProfile extends BaseTimeEntity {
         this.phoneNum = request.getPhoneNum();
     }
 
-    // 리뷰가 등록되거나 수정되었을 때,
-    // 클라이언트의 평균 평점을 갱신하기 위한 메서드
     public void updateRating(BigDecimal rating) {
         this.rating = rating;
     }

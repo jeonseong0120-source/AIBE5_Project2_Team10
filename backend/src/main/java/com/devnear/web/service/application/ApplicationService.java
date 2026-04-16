@@ -140,8 +140,7 @@ public class ApplicationService {
                 .count();
 
         double rate = (matched * 100.0) / projectSkillIds.size();
-        // DB 저장 시 소수점 2자리로 정규화
+
         return BigDecimal.valueOf(rate).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
-    // (CLI-05) 작업 영역
 }

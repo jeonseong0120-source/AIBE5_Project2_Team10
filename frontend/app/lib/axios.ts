@@ -1,42 +1,53 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
-// 1. Axios 인스턴스 생성 (타입 지정으로 any 탈출)
-const api: AxiosInstance = axios.create({
-    baseURL: "http://localhost:8080/api",
-});
+/**
+ * API 베이스 URL.
+ * - `NEXT_PUBLIC_API_BASE_URL` 이 있으면 최우선 (배포용 등).
+ * - 브라우저에서 `localhost` / `127.0.0.1` 이면 **127.0.0.1:8080** 으로 고정해 IPv6(::1)만 바인딩된 백엔드와의 불일치를 줄임.
+ * - 그 외(예: `192.168.x.x` 로 접속)에는 **현재 호스트의 8080** 으로 요청해 같은 PC/폰에서 백엔드에 닿게 함.
+ */
+export function resolveApiBaseUrl(): string {
+    const fromEnv = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+    if (fromEnv) {
+        return fromEnv.replace(/\/+$/, "");
+    }
+    if (typeof window !== "undefined") {
+        const { protocol, hostname } = window.location;
+        if (hostname === "localhost" || hostname === "127.0.0.1") {
+            return `${protocol}//127.0.0.1:8080/api`;
+        }
+        return `${protocol}//${hostname}:8080/api`;
+    }
+    return "http://127.0.0.1:8080/api";
+}
 
-// 2. 요청(Request) 인터셉터 설정
+const api: AxiosInstance = axios.create();
+
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        // 브라우저 환경에서만 localStorage에 접근 (Next.js SSR 방어)
+        config.baseURL = resolveApiBaseUrl();
         if (typeof window !== "undefined") {
             const token = localStorage.getItem("accessToken");
             if (token) {
-                // 규격에 맞게 Authorization 헤더 추가
                 config.headers.Authorization = `Bearer ${token}`;
             }
         }
         return config;
     },
-    (error: unknown) => {
-        // 에러 타입을 unknown 또는 Error로 지정하여 TS7006 방지
-        return Promise.reject(error);
-    }
+    (error: unknown) => Promise.reject(error),
 );
-// 3. 응답(Response) 인터셉터 추가
+
 api.interceptors.response.use(
-    (response) => response, // 성공하면 그대로 통과
+    (response) => response,
     (error) => {
-        // [보고] 401 에러(인증 만료/실패)가 나면 토큰을 비우고 로그인으로 배송
         if (error.response && error.response.status === 401) {
             console.log("세션이 만료되었습니다. 다시 로그인해주세요.");
             if (typeof window !== "undefined") {
                 localStorage.removeItem("accessToken");
-                // 필요한 경우 여기서 window.location.href = "/login" 등으로 강제 이동
             }
         }
         return Promise.reject(error);
-    }
+    },
 );
 
 export default api;

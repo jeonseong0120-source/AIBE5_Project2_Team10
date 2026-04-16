@@ -1,0 +1,197 @@
+@baseUrl = http://localhost:8080
+
+### =========================
+### 0. 회원가입 - 사용자 A (클라이언트 예정)
+### =========================
+POST {{baseUrl}}/api/auth/signup
+Content-Type: application/json
+
+{
+  "email": "client1@test.com",
+  "password": "1234",
+  "name": "Client One",
+  "nickname": "client1"
+}
+
+### =========================
+### 1. 회원가입 - 사용자 B (프리랜서 예정)
+### =========================
+POST {{baseUrl}}/api/auth/signup
+Content-Type: application/json
+
+{
+  "email": "freelancer1@test.com",
+  "password": "1234",
+  "name": "Freelancer One",
+  "nickname": "freelancer1"
+}
+
+### =========================
+### 2. 로그인 - 사용자 A
+### 응답의 accessToken 복사해서 clientToken에 넣기
+### =========================
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "client1@test.com",
+  "password": "1234"
+}
+
+###
+@clientToken =eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJjbGllbnQxQHRlc3QuY29tIiwidXNlcklkIjoxLCJyb2xlIjoiQ0xJRU5UIiwiaWF0IjoxNzc2MjQwOTk0LCJleHAiOjE3NzYyNDQ1OTR9.nJq7dSLy9rlwCdpyTJ01vWVBkZk_aUKEklAQpQThLsHrwzKCh8IOFOPI6JFd_t2P
+
+### =========================
+### 3. 로그인 - 사용자 B
+### 응답의 accessToken 복사해서 freelancerToken에 넣기
+### =========================
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "freelancer1@test.com",
+  "password": "1234"
+}
+
+###
+@freelancerToken = eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJmcmVlbGFuY2VyMUB0ZXN0LmNvbSIsInVzZXJJZCI6Miwicm9sZSI6IkZSRUVMQU5DRVIiLCJpYXQiOjE3NzYyMzgyNTcsImV4cCI6MTc3NjI0MTg1N30.Uk0Fbl9mA-Vo7wDKraKOPmXRN8I-VCzSyaNIapwdd1ZpBFc4551wIaSgc9Z6ICkE
+
+### =========================
+### 4. 사용자 A 온보딩 (CLIENT 권한)
+### =========================
+POST {{baseUrl}}/api/users/onboarding
+Content-Type: application/json
+Authorization: Bearer {{clientToken}}
+
+{
+  "nickname": "client1",
+  "role": "CLIENT",
+  "clientProfile": {
+    "companyName": "DevNear Client Co",
+    "bn": "123-45-67890",
+    "representativeName": "홍길동",
+    "introduction": "채팅 테스트용 클라이언트",
+    "homepageUrl": "https://example.com",
+    "phoneNum": "010-1234-5678"
+  }
+}
+
+### 온보딩 후 새 토큰이 오면 아래에 다시 붙여넣기
+@clientRoleToken = eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJjbGllbnQxQHRlc3QuY29tIiwidXNlcklkIjoxLCJyb2xlIjoiQ0xJRU5UIiwiaWF0IjoxNzc2MjM2Mzc0LCJleHAiOjE3NzYzMjI3NzR9.8DSi7Zg_mdt586yg3LeYsb-JOmebFwRzNf4NkO2EWlURuUE46JE8khdBS48RBPbUbN9aaTzqpa7AwkKmUsb15g
+
+### =========================
+### 5. 사용자 B 온보딩 전 기본 스킬 조회
+### 스킬 ID 확인용
+### =========================
+GET {{baseUrl}}/api/skills/default
+
+### =========================
+### 6. 사용자 B 온보딩 (FREELANCER 권한)
+### skillIds는 위 조회 결과의 실제 ID로 수정
+### =========================
+POST {{baseUrl}}/api/users/onboarding
+Content-Type: application/json
+Authorization: Bearer {{freelancerToken}}
+
+{
+  "nickname": "freelancer1",
+  "role": "FREELANCER",
+  "freelancerProfile": {
+    "profileImageUrl": "https://example.com/profile.png",
+    "introduction": "채팅 테스트용 프리랜서",
+    "location": "서울 강남구",
+    "latitude": 37.4979,
+    "longitude": 127.0276,
+    "hourlyRate": 30000,
+    "workStyle": "HYBRID",
+    "isActive": true,
+    "skillIds": [1]
+  }
+}
+
+### 온보딩 후 새 토큰이 오면 아래에 다시 붙여넣기
+@freelancerRoleToken = eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJmcmVlbGFuY2VyMUB0ZXN0LmNvbSIsInVzZXJJZCI6Miwicm9sZSI6IkZSRUVMQU5DRVIiLCJpYXQiOjE3NzYyMzc1NDMsImV4cCI6MTc3NjMyMzk0M30.piiU3GwzkiW4vBJbfW9TSbngYRgj13F-t3Hf30V2c_kvVhNekm93ql7e8RYFaxBG6zGrtuPw6p9pDOB9rUgPuw
+
+### =========================
+### 7. 사용자 A 내 정보 조회
+### userId 확인용
+### =========================
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{clientRoleToken}}
+
+### =========================
+### 8. 사용자 B 내 정보 조회
+### userId 확인용
+### =========================
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{freelancerRoleToken}}
+
+### =========================
+### 9. 프로젝트 생성 - 사용자 A
+### 응답의 projectId 확인
+### =========================
+POST {{baseUrl}}/api/projects
+Content-Type: application/json
+Authorization: Bearer {{clientRoleToken}}
+
+{
+  "projectName": "채팅 테스트 프로젝트",
+  "budget": 100000,
+  "deadline": "2026-12-31",
+  "detail": "1:1 채팅 테스트용 프로젝트",
+  "online": true,
+  "offline": false,
+  "skillIds": [1]
+}
+
+### =========================
+### 10. 채팅방 생성
+### projectId, targetUserId는 실제 값으로 수정
+### targetUserId는 사용자 B의 users.user_id 값
+### =========================
+POST {{baseUrl}}/api/chat/rooms
+Content-Type: application/json
+Authorization: Bearer {{clientRoleToken}}
+
+{
+  "projectId": 1,
+  "targetUserId": 2
+}
+
+### =========================
+### 11. 내 채팅방 목록 조회 - 사용자 A
+### =========================
+GET {{baseUrl}}/api/chat/rooms
+Authorization: Bearer {{clientRoleToken}}
+
+### =========================
+### 12. 내 채팅방 목록 조회 - 사용자 B
+### =========================
+GET {{baseUrl}}/api/chat/rooms
+Authorization: Bearer {{freelancerRoleToken}}
+
+### =========================
+### 13. 특정 채팅방 메시지 조회
+### roomId는 실제 생성된 값으로 수정
+### =========================
+GET {{baseUrl}}/api/chat/rooms/1/messages
+Authorization: Bearer {{clientRoleToken}}
+
+### =========================
+### 14. 읽음 처리
+### =========================
+PATCH {{baseUrl}}/api/chat/rooms/1/read
+Authorization: Bearer {{freelancerRoleToken}}
+
+### =========================
+### 15. WebSocket/STOMP 수동 테스트 정보
+### endpoint: ws://localhost:8080/ws-chat
+### connect header: Authorization: Bearer {clientRoleToken}
+### subscribe: /sub/chat/rooms/1
+### publish: /pub/chat/send
+### body:
+### {"roomId":1,"content":"안녕하세요"}
+### =========================
+
+GET http://localhost:8080/api/users/me
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJjbGllbnQxQHRlc3QuY29tIiwidXNlcklkIjoxLCJyb2xlIjoiQ0xJRU5UIiwiaWF0IjoxNzc2MjQwOTk0LCJleHAiOjE3NzYyNDQ1OTR9.nJq7dSLy9rlwCdpyTJ01vWVBkZk_aUKEklAQpQThLsHrwzKCh8IOFOPI6JFd_t2P

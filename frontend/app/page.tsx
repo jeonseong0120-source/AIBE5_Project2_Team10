@@ -29,10 +29,9 @@ export default function Home() {
           return;
         }
 
-        // 2. [지시 반영] 클라이언트 권한이면 메인페이지로 즉시 이동!
-        const isClient = ["CLIENT", "BOTH", "ROLE_CLIENT", "ROLE_BOTH"].includes(currentRole);
-        if (isClient) {
-          router.replace("/client/mainpage");
+        // [수정] 메인 페이지에서도 CLIENT나 BOTH 권한이면 즉시 대시보드로 이동시킵니다!
+        if (currentRole === "CLIENT" || currentRole === "BOTH" || currentRole === "ROLE_CLIENT" || currentRole === "ROLE_BOTH") {
+          router.replace("/client/dashboard");
           return;
         }
 
