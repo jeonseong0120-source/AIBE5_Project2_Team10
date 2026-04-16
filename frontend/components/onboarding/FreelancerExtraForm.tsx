@@ -18,7 +18,6 @@ interface FreelancerExtraFormProps {
 }
 
 export default function FreelancerExtraForm({ freelancerData, setFreelancerData }: FreelancerExtraFormProps) {
-    // [수정] 백엔드 DTO(SkillResponse)의 필드명인 skillId를 정확히 명시
     const [availableSkills, setAvailableSkills] = useState<{skillId: number, name: string, category: string}[]>([]);
 
     useEffect(() => {
@@ -38,6 +37,23 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
             ? freelancerData.skillIds.filter(id => id !== skillId)
             : [...freelancerData.skillIds, skillId];
         setFreelancerData({ ...freelancerData, skillIds: newSkills });
+    };
+
+    // 🔍 [추가] 숫자 포맷팅 함수 (1000 -> 1,000)
+    const formatNumber = (num: number) => {
+        return num.toLocaleString("ko-KR");
+    };
+
+    // 🔍 [추가] 입력값 변경 핸들러
+    const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // 숫자 이외의 문자 제거
+        const value = e.target.value.replace(/[^0-9]/g, "");
+        const numValue = value ? parseInt(value) : 0;
+
+        setFreelancerData({
+            ...freelancerData,
+            hourlyRate: numValue
+        });
     };
 
     return (
@@ -78,22 +94,25 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                             className="w-full p-3 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-2 focus:ring-[#7A4FFF] outline-none transition-all text-sm"
                         />
                     </div>
-                    {/* 희망 시급 */}
+
+                    {/* 🔍 [수정] 희망 시급: 직접 입력 및 콤마 포맷팅 적용 */}
                     <div className="space-y-1">
                         <label htmlFor="hourly-rate-input" className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Hourly Rate (₩) *</label>
-                        <input
-                            id="hourly-rate-input"
-                            type="number"
-                            min="0"
-                            value={freelancerData.hourlyRate}
-                            onChange={(e) => setFreelancerData({ ...freelancerData, hourlyRate: Number(e.target.value) })}
-                            placeholder="0"
-                            className="w-full p-3 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-2 focus:ring-[#7A4FFF] outline-none transition-all text-sm"
-                        />
+                        <div className="relative">
+                            <input
+                                id="hourly-rate-input"
+                                type="text" // 콤마 표시를 위해 text로 변경
+                                value={formatNumber(freelancerData.hourlyRate)}
+                                onChange={handlePriceChange}
+                                placeholder="0"
+                                className="w-full p-3 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-2 focus:ring-[#7A4FFF] outline-none transition-all text-sm font-bold pr-8 text-right"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">원</span>
+                        </div>
                     </div>
                 </div>
 
-                {/* 작업 방식 (WorkStyle Enum) */}
+                {/* 작업 방식 */}
                 <div className="space-y-1">
                     <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Work Style</label>
                     <div className="flex gap-2">
@@ -114,7 +133,7 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                     </div>
                 </div>
 
-                {/* 기술 스택 선택 (DTO: skillIds) */}
+                {/* 기술 스택 선택 */}
                 <div className="space-y-2">
                     <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest">Tech Stacks * (Min 1)</label>
                     <div className="flex flex-wrap gap-2">

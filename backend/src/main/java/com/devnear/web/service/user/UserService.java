@@ -68,7 +68,7 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
 
-        // [보고] 리뷰 반영: NPE(NullPointerException) 방지를 위해 Objects.equals()로 안전하게 닉네임 변경 여부를 체크함
+        // [보고] 팀원 에러 픽스: 소셜 로그인 시 이미 부여된 닉네임(user.getNickname())과 입력한 닉네임이 다를 때만 중복 검사
         if (!Objects.equals(user.getNickname(), request.getNickname()) &&
                 userRepository.existsByNickname(request.getNickname())) {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
@@ -154,4 +154,3 @@ public class UserService {
         // @Transactional + Dirty Checking으로 별도 save() 불필요
     }
 }
-

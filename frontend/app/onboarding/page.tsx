@@ -38,6 +38,10 @@ export default function OnboardingPage() {
                     router.push("/");
                     return;
                 }
+                // [AI 추가] 기존에 유저 이름이나 닉네임이 있다면 세팅해줌
+                if (res.data.nickname || res.data.name) {
+                    setNickname(res.data.nickname || res.data.name);
+                }
                 setLoading(false);
             } catch (err) {
                 console.error("인증 실패", err);
@@ -77,8 +81,12 @@ export default function OnboardingPage() {
                 role: role,
             };
 
+            // [AI 리뷰 반영] ClientProfileRequest DTO에 닉네임이 필수이므로 동일하게 복사해서 넘김
             if (role === "CLIENT" || role === "BOTH") {
-                onboardingPayload.clientProfile = clientData;
+                onboardingPayload.clientProfile = {
+                    ...clientData,
+                    nickname: nickname.trim(),
+                };
             }
 
             if (role === "FREELANCER" || role === "BOTH") {
@@ -93,12 +101,21 @@ export default function OnboardingPage() {
                 api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
             }
 
-            alert("기지 설정 완료! 정식 요원이 되신 것을 환영합니다.");
-            router.replace("/");
+            alert("권한 설정 완료! 정식 회원이 되신 것을 환영합니다.");
+            router.replace("/client/dashboard");
 
         } catch (err: any) {
             console.error("온보딩 에러:", err);
-            alert(err.response?.data?.message || "설정 중 오류가 발생했습니다.");
+            // 400 Bad Request 등의 상세 에러 메시지 표출
+            let errorMessage = "설정 중 오류가 발생했습니다.";
+            if (err.response?.data) {
+                if (typeof err.response.data === 'string') {
+                    errorMessage = err.response.data;
+                } else if (err.response.data.message) {
+                    errorMessage = err.response.data.message;
+                }
+            }
+            alert(`수정 실패: ${errorMessage}`);
         } finally {
             setLoading(false);
         }
