@@ -103,7 +103,9 @@ public class ProjectProposalService {
         requireFreelancerRole(user);
         ProjectProposal proposal = loadProposalOwnedByFreelancerForUpdate(proposalId, user);
         proposal.accept();
-        proposal.getProject().assignFreelancer(proposal.getFreelancerProfile());
+        Project lockedProject = projectRepository.findByIdForUpdate(proposal.getProject().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("프로젝트를 찾을 수 없습니다. ID: " + proposal.getProject().getId()));
+        lockedProject.assignFreelancer(proposal.getFreelancerProfile());
         sendDecisionSystemMessage(proposal, SYSTEM_MSG_ACCEPTED);
     }
 
@@ -125,7 +127,7 @@ public class ProjectProposalService {
     @Transactional
     public Long inquireChatRoom(User user, Long proposalId) {
         requireFreelancerRole(user);
-        ProjectProposal proposal = loadProposalOwnedByFreelancer(proposalId, user);
+        ProjectProposal proposal = loadProposalOwnedByFreelancerForUpdate(proposalId, user);
         if (proposal.getStatus() == ProjectProposalStatus.CANCELLED) {
             throw new IllegalStateException("취소된 제안에는 문의할 수 없습니다.");
         }
