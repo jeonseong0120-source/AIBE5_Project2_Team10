@@ -8,6 +8,7 @@ import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.freelancer.FreelancerProfileRequest;
 import com.devnear.web.dto.freelancer.FreelancerProfileResponse;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ public class FreelancerService {
 
     private final FreelancerProfileRepository profileRepository;
     private final SkillRepository skillRepository;
+    private final EntityManager entityManager;
 
     // [조회] 내 프로필 상세 데이터 조회
     public FreelancerProfileResponse getMyProfile(User user) {
@@ -39,8 +41,9 @@ public class FreelancerService {
     // [수정] 내 프로필 등록 및 정보 일괄 업데이트
     @Transactional
     public FreelancerProfileResponse updateMyProfile(User user, FreelancerProfileRequest request) {
-        // 1. 기존 프로필 조회 (존재하지 않으면 신규 껍데기 생성)
-        FreelancerProfile profile = profileRepository.findByUser_Id(user.getId())
+        // 1. 기존 프로필 조회 - 스킬 컬렉션을 Fetch Join으로 함께 로드해야
+        //    orphanRemoval(clear) + insert 순서가 올바르게 동작합니다.
+        FreelancerProfile profile = profileRepository.findByUserIdWithSkills(user.getId())
                 .orElseGet(() -> FreelancerProfile.builder()
                         .user(user)
                         .isActive(true)
@@ -79,7 +82,10 @@ public class FreelancerService {
                             .build())
                     .collect(Collectors.toList());
 
-            // 컬렉션 교체 (JPA orphanRemoval 자동 동작)
+            // 기존 스킬 제거 후 flush → DB에서 DELETE 먼저 실행
+            // 그 다음 새 스킬 추가 → INSERT 실행 (UK 중복 방지)
+            profile.getFreelancerSkills().clear();
+            entityManager.flush();
             profile.updateSkills(newFreelancerSkills);
         }
 

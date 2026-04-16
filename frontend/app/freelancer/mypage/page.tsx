@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -118,7 +118,7 @@ export default function FreelancerMyPage() {
                     isActive: data.isActive !== false,
                     skills: data.skills || []
                 });
-                setMySkillIds((data.skills || []).map((s: any) => s.id));
+                setMySkillIds((data.skills || []).map((s: any) => s.skillId || s.id));
             }
         } catch (error) {
             console.error("프로필 로드 실패", error);
@@ -360,10 +360,10 @@ export default function FreelancerMyPage() {
                 </div>
             </nav>
 
-            <main className="max-w-6xl mx-auto px-6 mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <main className="max-w-7xl mx-auto px-6 mt-10 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start">
 
                 {/* ===== 왼쪽 사이드바 ===== */}
-                <aside className="lg:col-span-1 space-y-4">
+                <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
 
                     {/* 프로필 이미지 + 이름 + 상태 */}
                     <div className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm flex flex-col items-center text-center gap-4">
@@ -438,9 +438,12 @@ export default function FreelancerMyPage() {
                             )}
                             {(profile?.skills || []).length > 0 && (
                                 <div className="flex flex-wrap gap-1 pt-2 border-t border-zinc-100">
-                                    {(profile.skills).map((s: any) => (
-                                        <span key={s.id} className="px-2 py-0.5 bg-zinc-100 text-zinc-600 rounded text-[10px] font-bold">#{s.name}</span>
-                                    ))}
+                                    {(profile.skills).map((s: any, idx: number) => {
+                                        const sId = s.skillId || s.id;
+                                        return (
+                                            <span key={`skill-${sId || idx}-${idx}`} className="px-2 py-0.5 bg-zinc-100 text-zinc-600 rounded text-[10px] font-bold">#{s.name}</span>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
@@ -495,10 +498,10 @@ export default function FreelancerMyPage() {
                                     {mySkillIds.length === 0 ? (
                                         <span className="text-zinc-400 font-mono text-xs">선택된 스킬이 없습니다.</span>
                                     ) : (
-                                        mySkillIds.map(skillId => {
-                                            const skillObj = allGlobalSkills.find(s => s.id === skillId);
+                                        mySkillIds.map((skillId, idx) => {
+                                            const skillObj = allGlobalSkills.find(s => (s.skillId || s.id) === skillId);
                                             return (
-                                                <span key={skillId} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-white border border-[#7A4FFF]/40 text-[#7A4FFF]">
+                                                <span key={`my-skill-${skillId || idx}-${idx}`} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-white border border-[#7A4FFF]/40 text-[#7A4FFF]">
                                                     #{skillObj ? skillObj.name : skillId}
                                                     <button onClick={() => toggleSkill(skillId)} className="text-zinc-300 hover:text-red-500 transition-colors"><X size={10} /></button>
                                                 </span>
@@ -510,10 +513,11 @@ export default function FreelancerMyPage() {
                                 <div className="flex flex-wrap gap-1 max-h-[150px] overflow-y-auto no-scrollbar">
                                     {allGlobalSkills
                                         .filter(s => s.name.toLowerCase().includes(skillSearchQuery.toLowerCase()))
-                                        .map(skill => {
-                                            const isSelected = mySkillIds.includes(skill.id);
+                                        .map((skill, idx) => {
+                                            const sId = skill.skillId || skill.id;
+                                            const isSelected = mySkillIds.includes(sId);
                                             return (
-                                                <button key={skill.id} onClick={() => toggleSkill(skill.id)} className={`px-2 py-1 rounded-lg text-xs font-bold border transition-all ${isSelected ? 'bg-[#FF7D00]/10 border-[#FF7D00]/30 text-[#FF7D00]' : 'bg-white border-zinc-200 text-zinc-500 hover:border-[#7A4FFF] hover:text-[#7A4FFF]'}`}>
+                                                <button key={`global-skill-${sId || idx}-${idx}`} onClick={() => toggleSkill(sId)} className={`px-2 py-1 rounded-lg text-xs font-bold border transition-all ${isSelected ? 'bg-[#FF7D00]/10 border-[#FF7D00]/30 text-[#FF7D00]' : 'bg-white border-zinc-200 text-zinc-500 hover:border-[#7A4FFF] hover:text-[#7A4FFF]'}`}>
                                                     {isSelected ? '✓ ' : '+ '}{skill.name}
                                                 </button>
                                             );
@@ -551,7 +555,7 @@ export default function FreelancerMyPage() {
                                 <button onClick={handleProfileAndSkillUpdate} className="w-full py-3 bg-[#7A4FFF] hover:bg-purple-600 text-white rounded-xl text-sm font-black flex items-center justify-center gap-2">
                                     <Save size={16} /> 수정 완료
                                 </button>
-                                <button onClick={() => { setIsEditingProfile(false); setMySkillIds((profile?.skills || []).map((s: any) => s.id)); setValidationError(''); }} className="w-full py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-xl text-sm font-black">
+                                <button onClick={() => { setIsEditingProfile(false); setMySkillIds((profile?.skills || []).map((s: any) => s.skillId || s.id)); setValidationError(''); }} className="w-full py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-xl text-sm font-black">
                                     취소
                                 </button>
                             </div>
@@ -560,7 +564,7 @@ export default function FreelancerMyPage() {
                 </aside>
 
                 {/* ===== 오른쪽 메인 컨텐츠 ===== */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="space-y-6 min-w-0">
 
                     {/* 탭 네비게이션 */}
                     <div className="flex gap-2 bg-white p-2 rounded-2xl border border-zinc-200 shadow-sm">
@@ -585,7 +589,7 @@ export default function FreelancerMyPage() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="bg-white rounded-2xl p-6 md:p-8 border border-zinc-200 shadow-sm min-h-[400px]"
+                        className="bg-white rounded-2xl p-6 md:p-8 border border-zinc-200 shadow-sm min-h-[500px]"
                     >
                         {loading ? (
                             <div className="flex flex-col items-center justify-center h-64 gap-4">
@@ -613,25 +617,29 @@ export default function FreelancerMyPage() {
                                                 <p className="text-zinc-400 text-xs font-mono">강점을 어필할 프로젝트 결과물을 등록하세요.</p>
                                             </div>
                                         ) : (
-                                            <div className="columns-1 md:columns-2 gap-6 space-y-6">
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                                 {portfolios.map(p => (
-                                                    <div key={p.id} onClick={() => setSelectedPortfolio(p)} className="break-inside-avoid relative overflow-hidden rounded-2xl border border-zinc-200 bg-white group cursor-pointer hover:border-[#FF7D00] hover:shadow-xl transition-all inline-block w-full">
-                                                        {(p.thumbnailUrl || (p.portfolioImages && p.portfolioImages[0])) ? (
-                                                            <div className="w-full h-48 bg-zinc-100 overflow-hidden relative border-b border-zinc-100">
-                                                                <img src={p.thumbnailUrl || p.portfolioImages[0]} alt="thumb" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { e.currentTarget.src = "https://placehold.co/600x400?text=No+Image" }} />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="w-full h-28 bg-zinc-100 flex items-center justify-center text-zinc-300">No Image</div>
-                                                        )}
-                                                        <div className="p-5 bg-white">
-                                                            <h3 className="font-black text-base mb-1 leading-tight text-zinc-900 group-hover:text-[#FF7D00] transition-colors">{p.title}</h3>
-                                                            <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed mb-3">{p.desc}</p>
+                                                    <div key={p.id} onClick={() => setSelectedPortfolio(p)} className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white group cursor-pointer hover:border-[#FF7D00] hover:shadow-xl transition-all flex flex-col">
+                                                        <div className="w-full aspect-[4/3] bg-zinc-100 overflow-hidden relative border-b border-zinc-100">
+                                                            <img
+                                                                src={p.thumbnailUrl || p.portfolioImages?.[0] || "https://placehold.co/400x300?text=No+Image"}
+                                                                alt="thumb"
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                                onError={(e) => { e.currentTarget.src = "https://placehold.co/400x300?text=No+Image" }}
+                                                            />
+                                                        </div>
+                                                        <div className="p-4 flex flex-col flex-1 bg-white">
+                                                            <h3 className="font-black text-sm mb-1 leading-tight text-zinc-900 group-hover:text-[#FF7D00] transition-colors line-clamp-1">{p.title}</h3>
+                                                            <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed mb-2 flex-1">{p.desc}</p>
                                                             {p.skills && p.skills.length > 0 && (
-                                                                <div className="flex flex-wrap gap-1 pt-3 border-t border-zinc-100">
-                                                                    {p.skills.slice(0, 3).map((s: any) => (
-                                                                        <span key={s.id} className="px-2 py-0.5 bg-zinc-100 text-zinc-600 rounded text-[10px] font-bold">#{s.name}</span>
-                                                                    ))}
-                                                                    {p.skills.length > 3 && <span className="px-2 py-0.5 bg-zinc-100 text-zinc-600 rounded text-[10px] font-bold">+{p.skills.length - 3}</span>}
+                                                                <div className="flex flex-wrap gap-1 pt-2 border-t border-zinc-100">
+                                                                    {p.skills.slice(0, 2).map((s: any, idx: number) => {
+                                                                        const sId = s.skillId || s.id;
+                                                                        return (
+                                                                            <span key={`p-skill-${sId || idx}-${idx}`} className="px-2 py-0.5 bg-zinc-100 text-zinc-600 rounded text-[10px] font-bold">#{s.name}</span>
+                                                                        );
+                                                                    })}
+                                                                    {p.skills.length > 2 && <span className="px-2 py-0.5 bg-zinc-100 text-zinc-600 rounded text-[10px] font-bold">+{p.skills.length - 2}</span>}
                                                                 </div>
                                                             )}
                                                         </div>

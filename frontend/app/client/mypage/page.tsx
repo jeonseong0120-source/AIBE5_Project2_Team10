@@ -147,7 +147,31 @@ export default function ClientMyPage() {
         );
     }
 
-    const activeCount = Array.isArray(projects) ? projects.filter(p => p.status === '진행 중' || p.status === '모집 중').length : 0;
+    const isActiveProject = (status?: string) =>
+        status === 'OPEN' || status === 'IN_PROGRESS' || status === '모집 중' || status === '진행 중';
+
+    const getProjectStatusUi = (status?: string) => {
+        switch (status) {
+            case 'OPEN':
+            case '모집중':
+            case '모집 중':
+                return { label: '모집 중', classes: 'bg-[#FF7D00]/10 text-[#FF7D00]' };
+            case 'IN_PROGRESS':
+            case '진행중':
+            case '진행 중':
+                return { label: '진행 중', classes: 'bg-orange-50 text-[#FF7D00]' };
+            case 'COMPLETED':
+            case '완료':
+                return { label: '완료', classes: 'bg-zinc-100 text-zinc-500' };
+            case 'CLOSED':
+            case '마감':
+                return { label: '마감', classes: 'bg-zinc-100 text-zinc-500' };
+            default:
+                return { label: status || '상태 없음', classes: 'bg-zinc-100 text-zinc-500' };
+        }
+    };
+
+    const activeCount = Array.isArray(projects) ? projects.filter(p => isActiveProject(p.status)).length : 0;
     const totalCount = Array.isArray(projects) ? projects.length : 0;
 
     return (
@@ -168,10 +192,10 @@ export default function ClientMyPage() {
                 </div>
             </nav>
 
-            <main className="max-w-6xl mx-auto px-6 mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <main className="max-w-7xl mx-auto px-6 mt-10 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start">
 
                 {/* ===== 왼쪽 사이드바 ===== */}
-                <aside className="lg:col-span-1 space-y-4">
+                <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
 
                     {/* 프로필 카드 */}
                     <div className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm flex flex-col items-center text-center gap-4">
@@ -347,7 +371,7 @@ export default function ClientMyPage() {
                 </aside>
 
                 {/* ===== 오른쪽 메인 컨텐츠 ===== */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="space-y-6 min-w-0">
 
                     {/* 헤더 */}
                     <div className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm flex items-center justify-between">
@@ -387,12 +411,8 @@ export default function ClientMyPage() {
                                     >
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
-                                                <span className={`inline-block px-3 py-1 text-[10px] font-black tracking-widest rounded-lg mb-3 font-mono uppercase ${
-                                                    project.status === "모집 중" ? "bg-[#FF7D00]/10 text-[#FF7D00]" :
-                                                    project.status === "진행 중" ? "bg-orange-50 text-[#FF7D00]" :
-                                                    "bg-zinc-100 text-zinc-500"
-                                                }`}>
-                                                    {project.status || '상태 없음'}
+                                                <span className={`inline-block px-3 py-1 text-[10px] font-black tracking-widest rounded-lg mb-3 font-mono uppercase ${getProjectStatusUi(project.status).classes}`}>
+                                                    {getProjectStatusUi(project.status).label}
                                                 </span>
                                                 <h3 className="text-lg font-bold group-hover:text-[#FF7D00] transition-colors">
                                                     {project.projectName || '프로젝트 이름이 없습니다.'}
