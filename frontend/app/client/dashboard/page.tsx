@@ -157,7 +157,7 @@ export default function ClientDashboardPage() {
         setSelectedProjectForApplicant(project);
         setIsApplicantModalOpen(true);
         try {
-            const { data } = await api.get(`/projects/${project.projectId}/applications`);
+            const { data } = await api.get(`/v1/projects/${project.projectId}/applications`);
             setApplicants(data);
         } catch (err) {
             console.error("지원자 목록 로드 실패", err);
@@ -169,10 +169,10 @@ export default function ClientDashboardPage() {
     const handleApplicationStatus = async (applicationId: number, status: 'ACCEPTED' | 'REJECTED') => {
         if (!confirm(`해당 지원자를 ${status === 'ACCEPTED' ? '수락' : '거절'} 하시겠습니까?`)) return;
         try {
-            await api.patch(`/applications/${applicationId}/status`, { status });
+            await api.patch(`/v1/applications/${applicationId}/status`, { status });
             alert('지원 상태가 업데이트 되었습니다.');
             if (selectedProjectForApplicant) {
-                const { data } = await api.get(`/projects/${selectedProjectForApplicant.projectId}/applications`);
+                const { data } = await api.get(`/v1/projects/${selectedProjectForApplicant.projectId}/applications`);
                 setApplicants(data);
             }
         } catch (err) {
