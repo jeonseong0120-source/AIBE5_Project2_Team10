@@ -91,16 +91,36 @@ public class ChatService {
     public List<ChatRoomListResponse> getMyRooms(User me) {
         List<ChatRoom> rooms = chatRoomRepository.findAllByUser1OrUser2OrderByUpdatedAtDesc(me, me);
 
+        if (rooms.isEmpty()) {
+            return List.of();
+        }
+
+        // 채팅방 id 목록
+        List<Long> roomIds = rooms.stream().map(ChatRoom::getId).toList();
+
+        // Bulk 조회: 마지막 메시지들
+        List<ChatMessage> lastMessages = chatMessageRepository.findLastMessagesForChatRooms(roomIds);
+        // Map roomId -> ChatMessage
+        java.util.Map<Long, ChatMessage> lastMessageMap = new java.util.HashMap<>();
+        for (ChatMessage m : lastMessages) {
+            if (m.getChatRoom() != null && m.getChatRoom().getId() != null) {
+                lastMessageMap.put(m.getChatRoom().getId(), m);
+            }
+        }
+
+        // Bulk 조회: 읽지 않은 개수
+        List<Object[]> unreadCounts = chatMessageRepository.countUnreadByChatRoomIn(roomIds, me.getId());
+        java.util.Map<Long, Long> unreadCountMap = new java.util.HashMap<>();
+        for (Object[] row : unreadCounts) {
+            Number roomIdNum = (Number) row[0];
+            Number cntNum = (Number) row[1];
+            unreadCountMap.put(roomIdNum.longValue(), cntNum.longValue());
+        }
+
         return rooms.stream()
                 .map(room -> {
-                    // 각 채팅방의 마지막 메시지 조회
-                    ChatMessage lastMessage = chatMessageRepository
-                            .findTopByChatRoomOrderByCreatedAtDesc(room)
-                            .orElse(null);
-
-                    // 안 읽은 메시지 개수 조회
-                    long unreadCount = chatMessageRepository
-                            .countByChatRoomAndSenderNotAndIsReadFalse(room, me);
+                    ChatMessage lastMessage = lastMessageMap.get(room.getId());
+                    long unreadCount = unreadCountMap.getOrDefault(room.getId(), 0L);
 
                     return ChatRoomListResponse.of(room, me, lastMessage, unreadCount);
                 })

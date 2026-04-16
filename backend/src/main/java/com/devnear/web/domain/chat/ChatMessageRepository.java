@@ -3,6 +3,8 @@ package com.devnear.web.domain.chat;
 import com.devnear.web.domain.user.User;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,4 +24,18 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     // 내가 받은 메시지 중 아직 안 읽은 메시지들 조회
     List<ChatMessage> findByChatRoomAndSenderNotAndIsReadFalse(ChatRoom chatRoom, User user);
+
+    // Bulk: 가장 최근 메시지들을 여러 채팅방에 대해 한 번에 조회 (네이티브 쿼리)
+    @Query(value = "SELECT m.* FROM chat_messages m " +
+            "JOIN (SELECT chat_room_id, MAX(created_at) AS last_at FROM chat_messages WHERE chat_room_id IN :roomIds GROUP BY chat_room_id) lm " +
+            "ON m.chat_room_id = lm.chat_room_id AND m.created_at = lm.last_at",
+            nativeQuery = true)
+    List<ChatMessage> findLastMessagesForChatRooms(@Param("roomIds") List<Long> roomIds);
+
+    // Bulk: 채팅방별 읽지 않은 메시지 개수 (sender != :meId)
+    @Query(value = "SELECT chat_room_id AS room_id, COUNT(*) AS cnt FROM chat_messages " +
+            "WHERE chat_room_id IN :roomIds AND is_read = false AND sender_id <> :meId " +
+            "GROUP BY chat_room_id",
+            nativeQuery = true)
+    List<Object[]> countUnreadByChatRoomIn(@Param("roomIds") List<Long> roomIds, @Param("meId") Long meId);
 }
