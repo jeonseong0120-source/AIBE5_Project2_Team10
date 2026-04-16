@@ -49,4 +49,18 @@ public class ProjectProposal extends BaseTimeEntity {
         }
         this.status = ProjectProposalStatus.CANCELLED;
     }
+
+    public void accept() {
+        if (this.status != ProjectProposalStatus.PENDING) {
+            throw new IllegalStateException("대기 중인 제안만 수락할 수 있습니다.");
+        }
+        this.status = ProjectProposalStatus.ACCEPTED;
+    }
+
+    public void reject() {
+        if (this.status != ProjectProposalStatus.PENDING) {
+            throw new IllegalStateException("대기 중인 제안만 거절할 수 있습니다.");
+        }
+        this.status = ProjectProposalStatus.REJECTED;
+    }
 }

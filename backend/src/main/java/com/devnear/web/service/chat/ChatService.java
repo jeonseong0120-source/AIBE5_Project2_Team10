@@ -4,6 +4,7 @@ import com.devnear.web.domain.chat.ChatMessage;
 import com.devnear.web.domain.chat.ChatMessageRepository;
 import com.devnear.web.domain.chat.ChatRoom;
 import com.devnear.web.domain.chat.ChatRoomRepository;
+import com.devnear.web.domain.enums.NotificationType;
 import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
 import com.devnear.web.domain.user.User;
@@ -15,6 +16,7 @@ import com.devnear.web.dto.chat.ChatRoomListResponse;
 import com.devnear.web.dto.chat.ChatRoomResponse;
 import com.devnear.web.exception.ChatAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+    private final NotificationService notificationService;
 
     // 채팅방 생성
     @Transactional
@@ -65,6 +68,7 @@ public class ChatService {
         User first = me.getId() < target.getId() ? me : target;
         User second = me.getId() < target.getId() ? target : me;
 
+        boolean created = false;
         // 이미 같은 프로젝트 + 같은 두 유저 조합의 채팅방이 있으면 기존 방 반환
         ChatRoom room = chatRoomRepository.findByProjectAndUser1AndUser2(project, first, second)
                 .orElse(null);
@@ -78,10 +82,21 @@ public class ChatService {
                                 .user2(second)
                                 .build()
                 );
+                created = true;
             } catch (DataIntegrityViolationException e) {
                 room = chatRoomRepository.findByProjectAndUser1AndUser2(project, first, second)
                         .orElseThrow(() -> e);
             }
+        }
+
+        if (created) {
+            notificationService.notifyUser(
+                    target.getId(),
+                    NotificationType.CHAT_ROOM_CREATED,
+                    "새 문의 채팅방",
+                    me.getNickname() + " 님이 '" + project.getProjectName() + "' 문의 채팅방을 만들었습니다.",
+                    room.getId()
+            );
         }
 
         return ChatRoomResponse.from(room, me);
