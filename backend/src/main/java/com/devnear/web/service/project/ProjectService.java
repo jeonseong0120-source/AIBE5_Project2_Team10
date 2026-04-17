@@ -16,13 +16,13 @@ import com.devnear.web.dto.project.ProjectResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import com.devnear.web.service.freelancer.FreelancerGradeService;
+import jakarta.persistence.EntityManager; // 🔍 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,6 +42,7 @@ public class ProjectService {
     private final ClientProfileRepository clientProfileRepository;
     private final SkillRepository skillRepository;
     private final FreelancerGradeService freelancerGradeService;
+    private final EntityManager em; // 🔍 직접 플러시를 위해 주입
 
     @Transactional
     public Long createProject(User user, ProjectRequest request) {
@@ -58,11 +59,6 @@ public class ProjectService {
             mapSkillsToProject(project, skills);
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("새 프로젝트 등록 - ID: {}, 작성자: {}, 오프라인: {}, 주소: {}",
-                    project.getId(), user.getEmail(), request.isOffline(), maskAddress(request.getLocation()));
-        }
-
         return project.getId();
     }
 
@@ -74,11 +70,20 @@ public class ProjectService {
             log.debug("프로젝트 수정 시도 - ID: {}, 사용자: {}", projectId, user.getEmail());
         }
 
+        // 1. 기본 정보 업데이트
         project.update(request);
 
+        // 2. 기술 스택 업데이트 로직 개선
         if (request.hasSkillPayload()) {
             List<Skill> skills = resolveSkills(request);
-            project.updateSkills(Collections.emptyList());
+
+            // 🔍 [지리는 해결책]
+            // JPA는 변경 사항을 모았다가 나중에 한 번에 쏘는데, 보통 INSERT를 DELETE보다 먼저 실행함.
+            // 그래서 Duplicate Entry 에러가 발생함.
+            // 이를 해결하기 위해 기존 리스트를 비우고 강제로 flush()를 호출해 DELETE를 즉시 실행함.
+            project.getProjectSkills().clear();
+            em.flush(); // 🔥 여기서 즉시 DELETE SQL 실행!
+
             if (!skills.isEmpty()) {
                 mapSkillsToProject(project, skills);
             }
@@ -93,8 +98,11 @@ public class ProjectService {
                         .build())
                 .collect(Collectors.toList());
 
+        // 이미 updateProject에서 clear()와 flush()를 했으므로 바로 addAll() 느낌으로 작동
         project.updateSkills(projectSkills);
     }
+
+    // --- 이하 기존 로직 보존 ---
 
     private List<Skill> resolveSkills(ProjectRequest request) {
         Set<Skill> resolvedSkills = new LinkedHashSet<>();
@@ -151,17 +159,13 @@ public class ProjectService {
     public void deleteProject(User user, Long projectId) {
         Project project = findProjectAndValidateOwner(user, projectId);
         projectRepository.delete(project);
-
-        log.info("프로젝트 삭제 완료 - ID: {}, 삭제자: {}", projectId, user.getEmail());
     }
 
     @Transactional(readOnly = true)
     public Page<ProjectResponse> getProjectList(Pageable pageable) {
-        return projectRepository.findAll(pageable)
-                .map(ProjectResponse::from);
+        return projectRepository.findAll(pageable).map(ProjectResponse::from);
     }
 
-    // [수정] 프론트엔드 리뷰 반영: activeTab(온/오프라인) 추가
     @Transactional(readOnly = true)
     public Page<ProjectResponse> searchProjects(String keyword, String location, String skill, Boolean online, Boolean offline, Pageable pageable) {
         String safeKeyword = (keyword != null && keyword.trim().isEmpty()) ? null : keyword;
@@ -190,12 +194,6 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("해당 프로젝트 공고를 찾을 수 없습니다. ID: " + projectId));
 
         return ProjectResponse.from(project);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<ProjectResponse> searchProjects(ProjectSearchCond cond, Pageable pageable) {
-        return projectRepository.search(cond, pageable)
-                .map(ProjectResponse::from);
     }
 
     private ClientProfile findClientProfileByUser(User user) {
@@ -233,11 +231,8 @@ public class ProjectService {
     @Transactional
     public void completeProject(User user, Long projectId) {
         Project project = findProjectAndValidateOwner(user, projectId);
-
-        // 프로젝트 상태 완료 처리
         project.complete();
 
-        // 연결된 프리랜서가 있으면 완료 프로젝트 수 증가 + 등급 재계산
         FreelancerProfile freelancerProfile = project.getFreelancerProfile();
         if (freelancerProfile != null) {
             freelancerProfile.increaseCompletedProjects();
