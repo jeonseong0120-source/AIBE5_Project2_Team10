@@ -40,7 +40,7 @@ public class Notification {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 20)
+    @Column(name = "type", nullable = false, length = 50)
     private NotificationType notificationType;
 
     @Column(nullable = false, columnDefinition = "TEXT")

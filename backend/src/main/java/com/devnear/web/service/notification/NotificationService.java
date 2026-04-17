@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 
@@ -52,11 +54,13 @@ public class NotificationService {
     @Transactional
     public void notifyUser(Long userId, NotificationType type, String title, String message, Long resourceId) {
         if (userId == null) {
-            return;
+            throw new IllegalArgumentException("수신자 userId는 null일 수 없습니다.");
         }
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("수신자를 찾을 수 없습니다."));
         String content = title + "\n" + message;
         Notification saved = notificationRepository.save(Notification.builder()
-                .user(userRepository.getReferenceById(userId))
+                .user(targetUser)
                 .notificationType(type)
                 .content(content)
                 .read(false)
@@ -72,7 +76,12 @@ public class NotificationService {
                 saved.getUrl(),
                 at
         );
-        messagingTemplate.convertAndSend(USER_TOPIC_PREFIX + userId, payload);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                messagingTemplate.convertAndSend(USER_TOPIC_PREFIX + userId, payload);
+            }
+        });
     }
 
     private static String buildUrl(NotificationType type, Long resourceId) {
