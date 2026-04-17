@@ -2,7 +2,7 @@ package com.devnear.web.dto.notification;
 
 import com.devnear.web.domain.enums.NotificationType;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record NotificationPayload(
         Long notificationId,
@@ -11,7 +11,7 @@ public record NotificationPayload(
         String message,
         Long resourceId,
         String url,
-        LocalDateTime createdAt
+        Instant createdAt
 ) {
     public static NotificationPayload of(
             Long notificationId,
@@ -20,7 +20,7 @@ public record NotificationPayload(
             String message,
             Long resourceId,
             String url,
-            LocalDateTime createdAt
+            Instant createdAt
     ) {
         return new NotificationPayload(notificationId, type, title, message, resourceId, url, createdAt);
     }
