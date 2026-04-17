@@ -24,10 +24,14 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
      */
     @Query("SELECT p.user.id AS userId, " +
             "p.id AS portfolioId, " +
-            "COALESCE(p.thumbnailUrl, pi.imageUrl) AS previewUrl " +
+            "CASE WHEN p.thumbnailUrl IS NOT NULL AND TRIM(p.thumbnailUrl) <> '' " +
+            "THEN p.thumbnailUrl ELSE pi.imageUrl END AS previewUrl " +
             "FROM Portfolio p " +
-            "LEFT JOIN p.portfolioImages pi WITH pi.sortOrder = (" +
-            "  SELECT MIN(pi2.sortOrder) FROM PortfolioImage pi2 WHERE pi2.portfolio = p" +
+            "LEFT JOIN p.portfolioImages pi WITH pi.id = (" +
+            "  SELECT MIN(pi2.id) FROM PortfolioImage pi2 " +
+            "  WHERE pi2.portfolio = p AND pi2.sortOrder = (" +
+            "    SELECT MIN(pi3.sortOrder) FROM PortfolioImage pi3 WHERE pi3.portfolio = p" +
+            "  )" +
             ") " +
             "WHERE p.user.id IN :userIds " +
             "ORDER BY p.user.id ASC, p.id DESC")
