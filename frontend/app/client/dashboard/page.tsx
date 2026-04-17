@@ -29,7 +29,17 @@ export default function ClientDashboardPage() {
         const checkAccess = async () => {
             try {
                 const res = await api.get("/v1/users/me");
-                if (res.data.role.includes("GUEST")) return router.replace("/onboarding");
+                const roles = res.data.role || "";
+                
+                // [Fix] Coderabbit 리뷰 반영: BOTH 계정도 클라이언트 페이지에 접근 가능하도록 수정
+                if (!roles.includes("CLIENT") && !roles.includes("BOTH")) {
+                    alert("클라이언트 또는 BOTH 계정만 접근 가능합니다.");
+                    if (roles.includes("FREELANCER")) return router.replace("/");
+                    return router.replace("/onboarding");
+                }
+                
+                if (roles.includes("GUEST")) return router.replace("/onboarding");
+                
                 setAuthorized(true);
             } catch (err) {
                 router.replace("/login");
@@ -89,16 +99,11 @@ export default function ClientDashboardPage() {
         }
     };
 
-    // [수락/거절] 처리 시 API 오류 해결
     const handleApplicationStatus = async (applicationId: number, status: 'ACCEPTED' | 'REJECTED') => {
         try {
-            // [Fix] Coderabbit 리뷰 반영: 수락과 시작을 프론트에서 두 번 보내면 동기화 문제가 발생하므로
-            // 백엔드 설계에 맞게 `/applications/{applicationId}/status` API만 호출합니다.
-            // 필요하다면 백엔드에서 application 수락 시 프로젝트 상태를 IN_PROGRESS로 변경하도록 트랜잭션을 구성하는 것이 좋습니다.
             await api.patch(`/applications/${applicationId}/status`, { status });
             alert(`지원자가 ${status === 'ACCEPTED' ? '수락' : '거절'} 처리되었습니다.`);
             
-            // 목록 갱신
             if (selectedProjectForApplicant) {
                 handleViewApplicants(selectedProjectForApplicant);
             }
@@ -123,7 +128,7 @@ export default function ClientDashboardPage() {
                  style={{ left: cursor.x - 150, top: cursor.y - 150 }} />
 
             <nav className="w-full py-5 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/client/dashboard")}>
+                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
                     <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
                 <div className="flex gap-6 items-center relative z-10">
@@ -181,7 +186,6 @@ export default function ClientDashboardPage() {
                                     </div>
                                     <h3 className="text-2xl font-black text-zinc-900 group-hover:text-[#FF7D00] transition-colors mb-4 tracking-tight">{project.projectName}</h3>
                                     <div className="flex flex-wrap gap-6 text-xs font-bold text-zinc-400 font-mono uppercase">
-                                        {/* [Fix] Coderabbit 리뷰 반영: 방어적 접근법 추가하여 budget null 참조 방지 */}
                                         <span className="flex items-center gap-1"><DollarSign size={14} className="text-[#FF7D00]"/>{(project.budget || 0).toLocaleString()}원</span>
                                         <span className="flex items-center gap-1"><Calendar size={14} className="text-[#FF7D00]"/>{project.deadline} 마감</span>
                                     </div>

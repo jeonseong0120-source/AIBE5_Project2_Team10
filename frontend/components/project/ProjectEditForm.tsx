@@ -28,6 +28,7 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
     
     const [submitting, setSubmitting] = useState(false);
     const [isSkillsLoading, setIsSkillsLoading] = useState(true);
+    const [mappingSucceeded, setMappingSucceeded] = useState(false);
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
     const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim() ?? "";
@@ -45,6 +46,7 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                 if (initialData.skillIds && initialData.skillIds.length > 0) {
                     setSelectedSkillIds(initialData.skillIds);
                     setIsSkillsLoading(false);
+                    setMappingSucceeded(true);
                     return;
                 }
                 const res = await api.get("/v1/skills/default");
@@ -53,10 +55,19 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                     const matchedIds = allSkills
                         .filter((s: any) => initialData.skillNames.includes(s.name))
                         .map((s: any) => s.skillId);
-                    setSelectedSkillIds(matchedIds);
+                    
+                    if (matchedIds.length > 0) {
+                        setSelectedSkillIds(matchedIds);
+                        setMappingSucceeded(true);
+                    } else {
+                        setMappingSucceeded(false);
+                    }
+                } else {
+                    setMappingSucceeded(true); // 스킬 네임 자체가 없으면 매핑 성공(또는 필요없음) 처리
                 }
             } catch (err) {
                 console.error("기술 목록 동기화 실패:", err);
+                setMappingSucceeded(false);
             } finally {
                 setIsSkillsLoading(false);
             }
@@ -67,6 +78,14 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         
+        // [Fix] Coderabbit 리뷰 반영: 스킬 매핑 실패 또는 로딩 중일 때 제출 차단
+        if (isSkillsLoading) {
+            return alert("기술 목록을 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+        }
+        if (!mappingSucceeded) {
+            return alert("기존 프로젝트 기술 스택을 불러오는데 실패했습니다. 계속 진행하면 기술 스택이 초기화될 수 있습니다. 새로고침을 시도해 주세요.");
+        }
+
         // [Fix] Coderabbit 리뷰 반영: 온라인/오프라인 중 하나는 무조건 선택해야 함
         if (!online && !offline) {
             return alert("근무 방식은 온라인 또는 오프라인 중 하나 이상을 선택해야 합니다.");
