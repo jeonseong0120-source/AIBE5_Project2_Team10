@@ -43,6 +43,7 @@ export default function FreelancerMyPage() {
     const [validationError, setValidationError] = useState('');
 
     const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
+    const [portfolioSkillSearchQuery, setPortfolioSkillSearchQuery] = useState('');
     const [portfolioForm, setPortfolioForm] = useState<{ id?: number | null, title: string, desc: string, thumbnailUrl: string, portfolioImages: string[], skills: number[] }>({ title: '', desc: '', thumbnailUrl: '', portfolioImages: [], skills: [] });
     const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -299,6 +300,13 @@ export default function FreelancerMyPage() {
         setPortfolioForm(prev => ({
             ...prev,
             portfolioImages: prev.portfolioImages.filter((_, idx) => idx !== indexToRemove)
+        }));
+    };
+
+    const togglePortfolioSkill = (skillId: number) => {
+        setPortfolioForm(prev => ({
+            ...prev,
+            skills: prev.skills.includes(skillId) ? prev.skills.filter(id => id !== skillId) : [...prev.skills, skillId]
         }));
     };
 
@@ -894,6 +902,44 @@ export default function FreelancerMyPage() {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black font-mono uppercase text-zinc-400">상세 설명 / Description *</label>
                                         <textarea rows={5} value={portfolioForm.desc} onChange={e => setPortfolioForm({ ...portfolioForm, desc: e.target.value })} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium focus:border-[#7A4FFF] outline-none resize-none" placeholder="수행한 역할과 성과를 상세히 적어주세요." />
+                                    </div>
+
+                                    {/* 포트폴리오 스킬 선택 */}
+                                    <div className="space-y-3 border-t border-zinc-100 pt-6">
+                                        <label className="text-[10px] font-black font-mono uppercase text-zinc-400">사용 기술 / Tech Stack</label>
+                                        
+                                        <div className="flex flex-wrap gap-2 min-h-[40px] p-4 bg-zinc-50 rounded-xl border border-zinc-200">
+                                            {portfolioForm.skills.length === 0 ? (
+                                                <span className="text-zinc-400 font-mono text-xs my-auto">선택된 기술이 없습니다.</span>
+                                            ) : (
+                                                portfolioForm.skills.map((skillId, idx) => {
+                                                    const skillObj = allGlobalSkills.find(s => (s.skillId || s.id) === skillId);
+                                                    return (
+                                                        <span key={`port-skill-${skillId || idx}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[#7A4FFF]/10 border border-[#7A4FFF]/20 text-[#7A4FFF]">
+                                                            #{skillObj ? skillObj.name : skillId}
+                                                            <button onClick={() => togglePortfolioSkill(skillId)} className="text-[#7A4FFF]/60 hover:text-red-500 transition-colors ml-1"><X size={12} /></button>
+                                                        </span>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+
+                                        <div className="relative mt-2">
+                                            <input className="w-full px-4 py-3 rounded-xl bg-zinc-50 border border-zinc-200 outline-none text-sm font-bold focus:border-[#FF7D00] shadow-sm transition-all focus:ring-2 focus:ring-[#FF7D00]/10" placeholder="기술 검색하여 추가..." value={portfolioSkillSearchQuery} onChange={e => setPortfolioSkillSearchQuery(e.target.value)} />
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto no-scrollbar p-2 bg-zinc-50 rounded-xl border border-zinc-100 shadow-inner">
+                                            {allGlobalSkills
+                                                .filter(s => s.name.toLowerCase().includes(portfolioSkillSearchQuery.toLowerCase()))
+                                                .map((skill, idx) => {
+                                                    const sId = skill.skillId || skill.id;
+                                                    const isSelected = portfolioForm.skills.includes(sId);
+                                                    return (
+                                                        <button key={`global-port-skill-${sId || idx}`} onClick={() => togglePortfolioSkill(sId)} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${isSelected ? 'bg-[#FF7D00]/10 border-[#FF7D00]/30 text-[#FF7D00]' : 'bg-white border-zinc-200 text-zinc-500 hover:border-[#7A4FFF] hover:text-[#7A4FFF]'}`}>
+                                                            {isSelected ? '✓ ' : '+ '}{skill.name}
+                                                        </button>
+                                                    );
+                                                })}
+                                        </div>
                                     </div>
                                 </div>
 

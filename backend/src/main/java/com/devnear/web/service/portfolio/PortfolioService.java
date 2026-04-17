@@ -12,9 +12,10 @@ import com.devnear.web.dto.portfolio.PortfolioResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.service.freelancer.FreelancerGradeService;
 
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class PortfolioService {
 
+    private static final Logger log = LoggerFactory.getLogger(PortfolioService.class);
     private final PortfolioRepository portfolioRepository;
     private final SkillRepository skillRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
@@ -76,10 +78,13 @@ public class PortfolioService {
         // 4. 저장 후 생성된 ID 반환
         Long savedId = portfolioRepository.save(portfolio).getId();
 
-        // 등급 재계산
-        FreelancerProfile freelancerProfile = freelancerProfileRepository.findByUser_Id(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("현재 사용자에 대한 프리랜서 프로필을 찾을 수 없습니다."));
-        freelancerGradeService.refreshGrade(freelancerProfile);
+        // 등급 재계산 (백그라운드 최선 시도 후 포트폴리오 작업에 영향없음)
+        try {
+            freelancerProfileRepository.findByUser_Id(user.getId())
+                    .ifPresent(freelancerGradeService::refreshGrade);
+        } catch (Exception e) {
+            log.warn("[PortfolioService] 등급 재계산 실패 (userId={}) - 포트폴리오 등록은 정상 완료: {}", user.getId(), e.getMessage());
+        }
 
         return savedId;
     }
@@ -108,10 +113,13 @@ public class PortfolioService {
         // 3. 권한 문제없으면 삭제 실행 (Cascade 속성으로 인해 딸려있던 기술스택 데이터도 알아서 날아감)
         portfolioRepository.delete(portfolio);
 
-        // 등급 재계산
-        FreelancerProfile freelancerProfile = freelancerProfileRepository.findByUser_Id(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("현재 사용자에 대한 프리랜서 프로필을 찾을 수 없습니다."));
-        freelancerGradeService.refreshGrade(freelancerProfile);
+        // 등급 재계산 (백그라운드 최선 시도 후 포트폴리오 작업에 영향없음)
+        try {
+            freelancerProfileRepository.findByUser_Id(user.getId())
+                    .ifPresent(freelancerGradeService::refreshGrade);
+        } catch (Exception e) {
+            log.warn("[PortfolioService] 등급 재계산 실패 (userId={}) - 포트폴리오 삭제는 정상 완료: {}", user.getId(), e.getMessage());
+        }
     }
 
     // [수정] PUT /api/portfolios/{id}
@@ -161,9 +169,12 @@ public class PortfolioService {
                     .skill(skill)
                     .build());
         }
-        // 7. 등급 재계산
-        FreelancerProfile freelancerProfile = freelancerProfileRepository.findByUser_Id(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("현재 사용자에 대한 프리랜서 프로필을 찾을 수 없습니다."));
-        freelancerGradeService.refreshGrade(freelancerProfile);
+        // 7. 등급 재계산 (백그라운드 최선 시도 후 포트폴리오 작업에 영향없음)
+        try {
+            freelancerProfileRepository.findByUser_Id(user.getId())
+                    .ifPresent(freelancerGradeService::refreshGrade);
+        } catch (Exception e) {
+            log.warn("[PortfolioService] 등급 재계산 실패 (userId={}) - 포트폴리오 수정은 정상 완료: {}", user.getId(), e.getMessage());
+        }
     }
 }
