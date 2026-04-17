@@ -38,7 +38,7 @@ export default function ClientDashboardPage() {
                     return router.replace("/onboarding");
                 }
                 
-                if (roles.includes("GUEST")) return router.replace("/onboarding");
+                // [Fix] Coderabbit 리뷰 반영: GUEST 권한 체크 중복(Dead code) 제거
                 
                 setAuthorized(true);
             } catch (err) {
@@ -253,8 +253,9 @@ export default function ClientDashboardPage() {
                                                             <ChevronRight size={20} className="opacity-0 group-hover/profile:opacity-100 transition-all translate-x-[-4px] group-hover/profile:translate-x-0" />
                                                         </h4>
                                                         <div className="flex items-center gap-3 mt-1.5">
+                                                            {/* [Fix] Coderabbit 리뷰 반영: 백엔드에서 이미 퍼센트로 반환하므로 *100 제거 */}
                                                             <span className="text-sm font-black text-[#FF7D00] bg-white px-3 py-1 rounded border border-[#FF7D00]/20 uppercase">
-                                                                매칭률 {Math.round(app.matchingRate * 100)}%
+                                                                매칭률 {Math.round(app.matchingRate)}%
                                                             </span>
                                                             <span className="text-sm font-bold text-zinc-400">
                                                                 {app.status === 'PENDING' ? '검토 대기 중' : app.status === 'ACCEPTED' ? '수락됨' : '거절됨'}

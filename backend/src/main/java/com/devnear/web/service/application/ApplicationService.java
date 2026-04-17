@@ -118,6 +118,12 @@ public class ApplicationService {
         }
 
         application.updateStatus(newStatus);
+
+        // [Fix] Coderabbit 리뷰 반영: 지원자 수락 시 프로젝트 상태를 자동으로 '진행 중'으로 변경
+        if (newStatus == ApplicationStatus.ACCEPTED) {
+            Project project = application.getProject();
+            project.start(); // Project 엔티티의 상태 변경 메서드 호출
+        }
     }
 
     private Double calculateMatchingRate(Project project, FreelancerProfile freelancer) {
