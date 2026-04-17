@@ -271,8 +271,13 @@ export default function FreelancerMyPage() {
         const files = e.target.files;
         if (!files || files.length === 0) return;
 
-        if (files.length > 10) {
-            alert("최대 10장까지 업로드할 수 있습니다.");
+        const remainingSlots = 10 - portfolioForm.portfolioImages.length;
+        if (remainingSlots <= 0) {
+            alert("이미지는 최대 10장까지 등록할 수 있습니다.");
+            return;
+        }
+        if (files.length > remainingSlots) {
+            alert(`최대 ${remainingSlots}장만 더 업로드할 수 있습니다.`);
             return;
         }
 
@@ -310,9 +315,15 @@ export default function FreelancerMyPage() {
         }));
     };
 
+    const EMPTY_PORTFOLIO_FORM = { id: null as number | null | undefined, title: '', desc: '', thumbnailUrl: '', portfolioImages: [] as string[], skills: [] as number[] };
+
     const handleSavePortfolio = async () => {
         if (!portfolioForm.title || !portfolioForm.desc) {
             alert("제목과 내용을 입력해주세요.");
+            return;
+        }
+        if (portfolioForm.skills.length === 0) {
+            alert("사용 기술을 1개 이상 선택해주세요.");
             return;
         }
 
@@ -322,7 +333,7 @@ export default function FreelancerMyPage() {
                 desc: portfolioForm.desc,
                 thumbnailUrl: portfolioForm.thumbnailUrl || null,
                 portfolioImages: portfolioForm.portfolioImages.length > 0 ? portfolioForm.portfolioImages : ["https://placehold.co/600x400?text=No+Image"],
-                skills: portfolioForm.skills.length > 0 ? portfolioForm.skills : [1]
+                skills: portfolioForm.skills
             };
             
             if (portfolioForm.id) {
@@ -335,7 +346,8 @@ export default function FreelancerMyPage() {
             
             setIsPortfolioModalOpen(false);
             fetchPortfolios();
-            setPortfolioForm({ title: '', desc: '', thumbnailUrl: '', portfolioImages: [], skills: [] });
+            setPortfolioForm(EMPTY_PORTFOLIO_FORM);
+            setPortfolioSkillSearchQuery('');
         } catch (e) {
             alert('상세 정보를 확인해주세요.');
             console.error(e);
@@ -401,13 +413,15 @@ export default function FreelancerMyPage() {
                                 </div>
                             )}
                             {isEditingProfile && !isProfileUploading && (
-                                <div
+                                <button
+                                    type="button"
+                                    aria-label="프로필 이미지 변경"
                                     className="absolute inset-0 bg-black/60 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
                                     onClick={() => profileFileInputRef.current?.click()}
                                 >
                                     <Upload size={20} className="mb-1" />
                                     <span className="text-[9px] font-mono font-bold">CHANGE</span>
-                                </div>
+                                </button>
                             )}
                             <input type="file" ref={profileFileInputRef} className="hidden" accept="image/*" onChange={handleProfileImageUpload} />
                         </div>
@@ -689,7 +703,7 @@ export default function FreelancerMyPage() {
                                                 <h2 className="text-xl font-black tracking-tighter">포트폴리오</h2>
                                                 <p className="text-[10px] text-zinc-400 font-mono uppercase mt-1">SHOWCASE_YOUR_MISSIONS</p>
                                             </div>
-                                            <button onClick={() => setIsPortfolioModalOpen(true)} className="h-10 px-5 bg-[#7A4FFF] hover:bg-purple-600 shadow-md text-white rounded-xl text-[10px] font-black transition-colors font-mono tracking-widest uppercase flex items-center gap-2">
+                                            <button onClick={() => { setPortfolioForm({ id: null, title: '', desc: '', thumbnailUrl: '', portfolioImages: [], skills: [] }); setPortfolioSkillSearchQuery(''); setIsPortfolioModalOpen(true); }} className="h-10 px-5 bg-[#7A4FFF] hover:bg-purple-600 shadow-md text-white rounded-xl text-[10px] font-black transition-colors font-mono tracking-widest uppercase flex items-center gap-2">
                                                 <Plus size={14} /> 새 작업물 등록
                                             </button>
                                         </div>
@@ -703,7 +717,7 @@ export default function FreelancerMyPage() {
                                         ) : (
                                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                                 {portfolios.map(p => (
-                                                    <div key={p.id} onClick={() => setSelectedPortfolio(p)} className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white group cursor-pointer hover:border-[#FF7D00] hover:shadow-xl transition-all flex flex-col">
+                                                    <div key={p.id} onClick={() => { setActiveImageIndex(0); setSelectedPortfolio(p); }} className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white group cursor-pointer hover:border-[#FF7D00] hover:shadow-xl transition-all flex flex-col">
                                                         <div className="w-full aspect-[4/3] bg-zinc-100 overflow-hidden relative border-b border-zinc-100">
                                                             <img
                                                                 src={p.thumbnailUrl || p.portfolioImages?.[0] || "https://placehold.co/400x300?text=No+Image"}
@@ -841,7 +855,7 @@ export default function FreelancerMyPage() {
                 {isPortfolioModalOpen && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl relative">
-                            <button onClick={() => setIsPortfolioModalOpen(false)} className="absolute top-6 right-6 text-zinc-400 hover:text-zinc-900 transition-colors bg-zinc-100 p-2 rounded-full"><X size={20} /></button>
+                            <button onClick={() => { setIsPortfolioModalOpen(false); setPortfolioForm({ id: null, title: '', desc: '', thumbnailUrl: '', portfolioImages: [], skills: [] }); setPortfolioSkillSearchQuery(''); }} className="absolute top-6 right-6 text-zinc-400 hover:text-zinc-900 transition-colors bg-zinc-100 p-2 rounded-full" aria-label="Close modal"><X size={20} /></button>
 
                             <div className="p-8 md:p-10">
                                 <h2 className="text-2xl font-black tracking-tight mb-2">포트폴리오 등록</h2>
@@ -861,7 +875,7 @@ export default function FreelancerMyPage() {
                                             <label className="text-[10px] font-black font-mono uppercase text-zinc-400 flex justify-between">
                                                 썸네일 (대표 이미지) {isThumbUploading && <Loader2 size={12} className="animate-spin text-[#7A4FFF]" />}
                                             </label>
-                                            <div onClick={() => !isThumbUploading && thumbFileInputRef.current?.click()} className={`h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all relative ${portfolioForm.thumbnailUrl ? 'border-[#7A4FFF] bg-purple-50' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100'}`}>
+                                            <button type="button" aria-label="썸네일 이미지 업로드" onClick={() => !isThumbUploading && thumbFileInputRef.current?.click()} className={`h-32 w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all relative ${portfolioForm.thumbnailUrl ? 'border-[#7A4FFF] bg-purple-50' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100'}`}>
                                                 {portfolioForm.thumbnailUrl ? (
                                                     <img src={portfolioForm.thumbnailUrl} alt="thumb" className="w-full h-full object-cover" />
                                                 ) : (
@@ -871,18 +885,18 @@ export default function FreelancerMyPage() {
                                                     </>
                                                 )}
                                                 {isThumbUploading && <div className="absolute inset-0 bg-white/50 backdrop-blur-sm" />}
-                                            </div>
+                                            </button>
                                         </div>
 
                                         <div className="space-y-2 flex flex-col">
                                             <label className="text-[10px] font-black font-mono uppercase text-zinc-400 flex justify-between">
                                                 상세 이미지 (최대 10장) {isBulkUploading && <Loader2 size={12} className="animate-spin text-[#7A4FFF]" />}
                                             </label>
-                                            <div onClick={() => !isBulkUploading && bulkFileInputRef.current?.click()} className="h-32 border-2 border-dashed border-zinc-200 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all">
+                                            <button type="button" aria-label="상세 이미지 업로드" onClick={() => !isBulkUploading && bulkFileInputRef.current?.click()} className="h-32 w-full border-2 border-dashed border-zinc-200 bg-zinc-50 hover:bg-zinc-100 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all">
                                                 <Upload className="text-zinc-300 mb-2" size={24} />
                                                 <span className="text-[10px] font-bold text-zinc-400">다중 이미지 업로드</span>
                                                 <span className="text-[9px] text-zinc-400 mt-1">({portfolioForm.portfolioImages.length}/10)</span>
-                                            </div>
+                                            </button>
                                         </div>
                                     </div>
 
@@ -944,7 +958,7 @@ export default function FreelancerMyPage() {
                                 </div>
 
                                 <div className="flex gap-4 mt-8">
-                                    <button onClick={() => setIsPortfolioModalOpen(false)} className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-black rounded-xl text-sm transition-colors">취소</button>
+                                    <button onClick={() => { setIsPortfolioModalOpen(false); setPortfolioForm({ id: null, title: '', desc: '', thumbnailUrl: '', portfolioImages: [], skills: [] }); setPortfolioSkillSearchQuery(''); }} className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-black rounded-xl text-sm transition-colors">취소</button>
                                     <button onClick={handleSavePortfolio} className="flex-1 py-4 bg-zinc-900 hover:bg-black text-white font-black rounded-xl text-sm transition-colors shadow-xl">등록하기</button>
                                 </div>
                             </div>
