@@ -50,6 +50,17 @@ export default function ClientMyPage() {
             if (!token) { router.replace("/login"); return; }
             try {
                 const res = await api.get("/v1/users/me");
+                const roles = res.data.role || "";
+                
+                // [Fix] Coderabbit 리뷰 반영: BOTH 계정도 클라이언트 페이지에 접근 가능하도록 수정
+                if (!roles.includes("CLIENT") && !roles.includes("BOTH")) {
+                    alert("클라이언트 또는 BOTH 계정만 접근 가능합니다.");
+                    if (roles.includes("FREELANCER")) return router.replace("/");
+                    return router.replace("/onboarding");
+                }
+                
+                if (roles.includes("GUEST")) return router.replace("/onboarding");
+
                 setUser(res.data);
                 setAuthorized(true);
             } catch (err) { router.replace("/login"); }

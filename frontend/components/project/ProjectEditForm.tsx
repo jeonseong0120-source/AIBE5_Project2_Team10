@@ -28,7 +28,7 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
     
     const [submitting, setSubmitting] = useState(false);
     const [isSkillsLoading, setIsSkillsLoading] = useState(true);
-    const [mappingSucceeded, setMappingSucceeded] = useState(false);
+    const [mappingSucceeded, setMappingSucceeded] = useState(true); // 기본적으로는 true, 실패 시 false로 변경
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
     const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim() ?? "";
@@ -60,13 +60,17 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                         setSelectedSkillIds(matchedIds);
                         setMappingSucceeded(true);
                     } else {
+                        // API 호출은 성공했으나, 이름과 일치하는 스킬이 없는 경우
+                        // 기존에 선택된 ID를 유지하여 초기화 방지
                         setMappingSucceeded(false);
                     }
                 } else {
-                    setMappingSucceeded(true); // 스킬 네임 자체가 없으면 매핑 성공(또는 필요없음) 처리
+                    // skillNames 자체가 없으면 매핑 성공 처리 (할 게 없음)
+                    setMappingSucceeded(true);
                 }
             } catch (err) {
                 console.error("기술 목록 동기화 실패:", err);
+                // API 호출 실패 시 기존 선택된 ID 유지
                 setMappingSucceeded(false);
             } finally {
                 setIsSkillsLoading(false);

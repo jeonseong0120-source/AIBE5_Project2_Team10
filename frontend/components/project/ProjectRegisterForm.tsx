@@ -28,7 +28,14 @@ export default function ProjectRegisterForm() {
     const [location, setLocation] = useState("");
     const [latitude, setLatitude] = useState("");
     const [longitude, setLongitude] = useState("");
+    
+    // [Fix] Coderabbit 리뷰 반영: 빈 배열로 초기화
     const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([]);
+    
+    // [Fix] Coderabbit 리뷰 반영: isSkillsLoading 상태 추가
+    const [isSkillsLoading, setIsSkillsLoading] = useState(true);
+    const [mappingSucceeded, setMappingSucceeded] = useState(true); // 등록 폼이므로 초기값 true
+    
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
@@ -41,11 +48,21 @@ export default function ProjectRegisterForm() {
         window.addEventListener("mousemove", move);
         return () => window.removeEventListener("mousemove", move);
     }, []);
+    
+    // 등록폼에서는 초기 스킬 매핑이 필요없지만, SkillTagSelector 내부 로딩 상태를 연동하기 위한 더미 effect
+    useEffect(() => {
+        setIsSkillsLoading(false);
+    }, []);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (submitLockRef.current) return;
         setError(null);
+        
+        // [Fix] Coderabbit 리뷰 반영: 스킬 매핑 실패 또는 로딩 중일 때 제출 차단
+        if (isSkillsLoading) {
+            return setError("기술 목록을 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+        }
 
         // [Fix] Coderabbit 리뷰 반영: 온라인/오프라인 중 하나 이상 선택 필수 보장
         if (!online && !offline) return setError("근무 방식은 하나 이상 선택해 주세요.");
@@ -99,9 +116,9 @@ export default function ProjectRegisterForm() {
             <section className="relative pt-16 pb-12 px-8 bg-white border-b border-zinc-200 overflow-hidden mb-10">
                 <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
                 <div className="max-w-xl mx-auto relative z-10">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 mb-4">
+                        {/* 🔍 뒤로가기 버튼 */}
                         <button
-                            type="button"
                             onClick={() => router.back()}
                             className="p-2.5 bg-zinc-50 border border-zinc-100 rounded-xl text-zinc-400 hover:text-[#FF7D00] hover:border-[#FF7D00]/30 hover:bg-orange-50 transition-all group"
                         >
@@ -109,7 +126,7 @@ export default function ProjectRegisterForm() {
                         </button>
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <span className="w-8 h-[2px] bg-[#FF7D00]"></span>
+                                <span className="w-6 h-[2px] bg-[#FF7D00]"></span>
                                 <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono">Mission_Creator</span>
                             </div>
                             <h1 className="text-4xl font-black tracking-tight">프로젝트 등록</h1>
@@ -132,7 +149,7 @@ export default function ProjectRegisterForm() {
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Budget (₩)</label>
                             <div className="relative">
-                                <input type="number" required min="0" className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]"
+                                <input type="number" required min="1" className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]"
                                        value={budget} onChange={(e) => setBudget(e.target.value)} />
                                 <DollarSign className="absolute right-4 top-1/2 -translate-y-1/2 text-[#FF7D00]" size={16} />
                             </div>
@@ -185,9 +202,9 @@ export default function ProjectRegisterForm() {
                     </div>
                 </div>
 
-                <button type="submit" disabled={submitting}
+                <button type="submit" disabled={submitting || isSkillsLoading}
                         className="w-full py-5 bg-zinc-950 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all shadow-xl shadow-zinc-200 active:scale-95 disabled:bg-zinc-200">
-                    {submitting ? "Processing..." : "프로젝트 등록하기"}
+                    {submitting || isSkillsLoading ? "Processing..." : "프로젝트 등록하기"}
                 </button>
             </form>
         </div>

@@ -56,13 +56,21 @@ export default function ProjectDetailPage() {
                 setProject(response.data);
                 setBidPrice(String(response.data.budget)); // 초기 제안가를 예산으로 설정
 
-                // 🔍 마스터, 로그인이 되어 있다면 지원 여부를 체크합니다.
-                const token = localStorage.getItem("accessToken");
-                if (token) {
-                    const myApps = await api.get('/applications/me');
-                    const already = myApps.data.some((app: any) => app.projectId === Number(id));
-                    setIsApplied(already);
-                }
+                // [Fix] Coderabbit 리뷰 반영: 지원 여부 체크 중 API가 실패해도 전체 화면이 에러 처리되지 않도록 분리
+                const checkApplicationStatus = async () => {
+                    const token = localStorage.getItem("accessToken");
+                    if (!token) return;
+                    try {
+                        const myApps = await api.get('/applications/me');
+                        const already = myApps.data.some((app: any) => app.projectId === Number(id));
+                        setIsApplied(already);
+                    } catch (appErr) {
+                        console.error("지원 내역 확인 실패:", appErr);
+                        // 지원 내역 확인 실패 시 로깅만 하고 렌더링에 영향을 주지 않음
+                    }
+                };
+                
+                await checkApplicationStatus();
             } catch (err: any) {
                 // 401 에러(권한 없음)는 무시하고 진행 (비로그인 유저 배려)
                 if (err.response?.status !== 401) {
@@ -123,6 +131,10 @@ export default function ProjectDetailPage() {
         </div>
     );
 
+    // [Fix] Coderabbit 리뷰 반영: 모집 중(OPEN) 상태가 아니면 지원 비활성화
+    const isProjectOpen = project.status === 'OPEN';
+    const disableApplication = isApplied || !isProjectOpen;
+
     return (
         <div className="min-h-screen bg-[#F9F8FF] pb-20">
             {/* 상단 네비게이션 */}
@@ -140,7 +152,7 @@ export default function ProjectDetailPage() {
                 <section className="mb-10 text-center md:text-left">
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-4">
                         <span className="bg-violet-600 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-md shadow-violet-200">
-                            {project.status === 'OPEN' ? '모집 중' : project.status}
+                            {project.status === 'OPEN' ? '모집 중' : project.status === 'IN_PROGRESS' ? '진행 중' : '마감됨'}
                         </span>
                         <div className="flex items-center text-violet-500 text-sm font-semibold">
                             <Sparkles className="w-4 h-4 mr-1" />
@@ -234,12 +246,12 @@ export default function ProjectDetailPage() {
                 {/* 5. 하단 액션 바 (🔍 마스터, 여기에 클릭 이벤트를 걸었습니다) */}
                 <div className="sticky bottom-8 flex justify-center w-full px-4">
                     <button
-                        onClick={() => !isApplied && setIsModalOpen(true)}
-                        disabled={isApplied}
-                        className={`w-full max-w-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-black py-6 rounded-2xl transition-all shadow-2xl shadow-violet-200 hover:scale-[1.03] active:scale-[0.97] flex items-center justify-center gap-3 group ${isApplied ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={() => !disableApplication && setIsModalOpen(true)}
+                        disabled={disableApplication}
+                        className={`w-full max-w-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-black py-6 rounded-2xl transition-all shadow-2xl shadow-violet-200 hover:scale-[1.03] active:scale-[0.97] flex items-center justify-center gap-3 group ${disableApplication ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        {isApplied ? "이미 지원한 프로젝트입니다" : "이 프로젝트에 지금 지원하기"}
-                        {!isApplied && <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />}
+                        {isApplied ? "이미 지원한 프로젝트입니다" : !isProjectOpen ? "모집이 마감된 프로젝트입니다" : "이 프로젝트에 지금 지원하기"}
+                        {!disableApplication && <ChevronRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />}
                     </button>
                 </div>
             </main>
