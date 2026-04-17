@@ -4,6 +4,7 @@ import com.devnear.web.domain.chat.ChatMessage;
 import com.devnear.web.domain.chat.ChatMessageRepository;
 import com.devnear.web.domain.chat.ChatRoom;
 import com.devnear.web.domain.chat.ChatRoomRepository;
+import com.devnear.web.domain.enums.NotificationType;
 import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
 import com.devnear.web.domain.user.User;
@@ -15,6 +16,7 @@ import com.devnear.web.dto.chat.ChatRoomListResponse;
 import com.devnear.web.dto.chat.ChatRoomResponse;
 import com.devnear.web.exception.ChatAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +36,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+    private final NotificationService notificationService;
     private final ApplicationEventPublisher eventPublisher;
 
     // 채팅방 생성
@@ -62,7 +66,17 @@ public class ChatService {
             throw new ChatAccessDeniedException("프로젝트 참여자만 채팅을 생성할 수 있습니다.");
         }
 
-        ChatRoom room = resolveOrCreateChatRoom(project, me, target);
+        AtomicBoolean createdNew = new AtomicBoolean(false);
+        ChatRoom room = resolveOrCreateChatRoom(project, me, target, createdNew);
+        if (createdNew.get()) {
+            notificationService.notifyUser(
+                    target.getId(),
+                    NotificationType.CHAT_ROOM_CREATED,
+                    "새 문의 채팅방",
+                    me.getNickname() + " 님이 '" + project.getProjectName() + "' 문의 채팅방을 만들었습니다.",
+                    room.getId()
+            );
+        }
         return ChatRoomResponse.from(room, me);
     }
 
@@ -77,7 +91,7 @@ public class ChatService {
             User freelancerUser
     ) {
         validateProjectClientAndPair(project, clientUser, freelancerUser);
-        return resolveOrCreateChatRoom(project, clientUser, freelancerUser);
+        return resolveOrCreateChatRoom(project, clientUser, freelancerUser, null);
     }
 
     /**
@@ -91,7 +105,19 @@ public class ChatService {
             User clientUser,
             User freelancerUser
     ) {
-        ChatRoom room = resolveOrCreateChatRoomForClientAndFreelancer(project, clientUser, freelancerUser);
+        validateProjectClientAndPair(project, clientUser, freelancerUser);
+        AtomicBoolean createdNew = new AtomicBoolean(false);
+        ChatRoom room = resolveOrCreateChatRoom(project, clientUser, freelancerUser, createdNew);
+        if (createdNew.get()) {
+            User recipient = actingUser.getId().equals(clientUser.getId()) ? freelancerUser : clientUser;
+            notificationService.notifyUser(
+                    recipient.getId(),
+                    NotificationType.CHAT_ROOM_CREATED,
+                    "새 문의 채팅방",
+                    actingUser.getNickname() + " 님이 '" + project.getProjectName() + "' 문의 채팅방을 만들었습니다.",
+                    room.getId()
+            );
+        }
         return ChatRoomResponse.from(room, actingUser);
     }
 
@@ -132,7 +158,12 @@ public class ChatService {
         return response;
     }
 
-    private ChatRoom resolveOrCreateChatRoom(Project project, User userA, User userB) {
+    private ChatRoom resolveOrCreateChatRoom(
+            Project project,
+            User userA,
+            User userB,
+            AtomicBoolean createdFlag
+    ) {
         User first = userA.getId() < userB.getId() ? userA : userB;
         User second = userA.getId() < userB.getId() ? userB : userA;
 
@@ -148,6 +179,9 @@ public class ChatService {
                                 .user2(second)
                                 .build()
                 );
+                if (createdFlag != null) {
+                    createdFlag.set(true);
+                }
             } catch (DataIntegrityViolationException e) {
                 room = chatRoomRepository.findByProjectAndUser1AndUser2(project, first, second)
                         .orElseThrow(() -> e);

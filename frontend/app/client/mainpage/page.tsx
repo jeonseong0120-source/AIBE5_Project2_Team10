@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import FreelancerCard from '@/components/freelancer/FreelancerCard';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
 import api from '../../lib/axios';
+import { NotificationBell } from '@/components/notifications/NotificationProvider';
 import { Search, MapPin, SlidersHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -104,13 +105,14 @@ export default function ClientDashboard() {
                     <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
 
-                <div className="flex gap-6 items-center">
+                <div className="flex gap-4 items-center md:gap-6">
                     <button
                         onClick={() => router.push('/client/mypage')} // <-- 딱 여기만 '/profile'에서 변경했습니다!
                         className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono"
                     >
                         MY_PROFILE
                     </button>
+                    <NotificationBell />
                     {/* [수정] 봇 리뷰 반영: onClick 핸들러 추가하여 알림창 띄우기 */}
                     <button
                         onClick={() => router.push("/client/projects/new")}

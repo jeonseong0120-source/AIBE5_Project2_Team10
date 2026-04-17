@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "../../lib/axios";
+import { notifyAuthChanged } from "../../lib/authEvents";
 
 export default function OAuthRedirect() {
     const router = useRouter();
@@ -20,6 +21,7 @@ export default function OAuthRedirect() {
                 if (token) {
                     // 3. 브라우저의 로컬 스토리지에 저장
                     localStorage.setItem("accessToken", token);
+                    notifyAuthChanged();
                     console.log("✅ 소셜 로그인 성공 토큰 저장 완료");
 
                     try {

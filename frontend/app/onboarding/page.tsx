@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "../lib/axios";
+import { notifyAuthChanged } from "../lib/authEvents";
 import { AnimatePresence, motion } from "framer-motion";
 import ClientExtraForm from "@/components/onboarding/ClientExtraForm";
 import FreelancerExtraForm from "@/components/onboarding/FreelancerExtraForm";
@@ -99,6 +100,7 @@ export default function OnboardingPage() {
             if (newToken) {
                 localStorage.setItem("accessToken", newToken);
                 api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+                notifyAuthChanged();
             }
 
             alert("권한 설정 완료! 정식 회원이 되신 것을 환영합니다.");
