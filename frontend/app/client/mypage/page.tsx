@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '@/app/lib/axios';
 import { Briefcase, User, Settings, LogOut, ChevronRight, Activity, DollarSign, Calendar, XCircle, ExternalLink, Heart, Send, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { notifyAuthChanged } from '../../lib/authEvents';
+import { NotificationBell } from '@/components/notifications/NotificationProvider';
+import api from '../../lib/axios';
 
 import ProfileEditModal from '@/components/client_mypage/page';
 import CompanyEditModal from '@/components/client_mypage/CompanyEditModal';
@@ -92,6 +94,21 @@ export default function ClientMyPage() {
                 <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/client/dashboard")}>
                     <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
+
+                <div className="flex gap-4 items-center md:gap-6">
+                    <button
+                        onClick={() => router.push('/client/dashboard')}
+                        className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono"
+                    >
+                        DASHBOARD
+                    </button>
+                    <NotificationBell />
+                    <button
+                        onClick={() => alert("시스템 설계 중입니다. 다음 업데이트를 기다려주세요.")}
+                        className="px-6 py-2.5 bg-[#FF7D00] text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition shadow-md shadow-orange-100 uppercase font-mono"
+                    >
+                        Register_Project
+                    </button>
                 <div className="flex gap-6 items-center">
                     <button onClick={() => router.push('/client/dashboard')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">DASHBOARD</button>
                     <button onClick={() => router.push("/client/projects/new")} className="px-6 py-2.5 bg-[#FF7D00] text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition shadow-md shadow-orange-100 font-mono">NEW_PROJECT</button>
@@ -145,6 +162,31 @@ export default function ClientMyPage() {
                             <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-zinc-200 mb-4 group-hover:text-[#FF7D00] transition-colors">
                                 <Sparkles size={28} />
                             </div>
+                            <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#FF7D00]" />
+                        </button>
+
+                        <button
+                            onClick={() => setIsCompanyModalOpen(true)}
+                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-xl transition group"
+                        >
+                            <div className="flex items-center gap-3 font-bold text-sm text-zinc-700 group-hover:text-[#FF7D00]">
+                                <Settings className="w-5 h-5 text-zinc-400 group-hover:text-[#FF7D00]" />
+                                기업 정보 수정
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-[#FF7D00]" />
+                        </button>
+                        <hr className="my-1 border-zinc-100" />
+                        <button className="w-full flex items-center justify-between p-4 hover:bg-red-50 rounded-xl transition group"
+                                onClick={() => {
+                                    localStorage.removeItem("accessToken");
+                                    notifyAuthChanged();
+                                    router.push("/login");
+                                }}>
+                            <div className="flex items-center gap-3 font-bold text-sm text-red-500">
+                                <LogOut className="w-5 h-5 text-red-400" />
+                                로그아웃
+                            </div>
+                        </button>
                             <p className="text-sm font-bold text-zinc-500 mb-1">준비 중인 프리미엄 기능</p>
                             <p className="text-[11px] font-medium text-zinc-400 leading-relaxed">
                                 원하는 인재를 직접 스카우트하세요.<br/>제안 내역과 피드백을 이곳에서 관리할 수 있습니다.

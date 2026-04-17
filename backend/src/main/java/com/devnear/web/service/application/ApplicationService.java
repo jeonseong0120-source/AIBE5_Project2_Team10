@@ -2,6 +2,7 @@ package com.devnear.web.service.application;
 
 import com.devnear.web.domain.application.ProjectApplication;
 import com.devnear.web.domain.application.ProjectApplicationRepository;
+import com.devnear.web.domain.enums.NotificationType;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.project.Project;
@@ -14,6 +15,7 @@ import com.devnear.web.dto.application.ApplicationStatusUpdateRequest;
 import com.devnear.web.dto.application.MyApplicationResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,7 @@ public class ApplicationService {
     private final ProjectApplicationRepository applicationRepository;
     private final ProjectRepository projectRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
+    private final NotificationService notificationService;
 
     /**
      * [FRE-04] 프리랜서가 특정 프로젝트에 지원서를 제출합니다.
@@ -68,7 +71,17 @@ public class ApplicationService {
                 .matchingRate(matchingRate)
                 .build();
 
-        return applicationRepository.save(application).getId();
+        Long applicationId = applicationRepository.save(application).getId();
+
+        notificationService.notifyUser(
+                project.getClientProfile().getUser().getId(),
+                NotificationType.PROJECT_APPLICATION_SUBMITTED,
+                "새 공고 지원",
+                freelancer.getUser().getNickname() + " 님이 '" + project.getProjectName() + "' 공고에 지원했습니다.",
+                applicationId
+        );
+
+        return applicationId;
     }
 
     /**
@@ -118,6 +131,25 @@ public class ApplicationService {
         }
 
         application.updateStatus(newStatus);
+
+        Long freelancerUserId = application.getFreelancerProfile().getUser().getId();
+        if (newStatus == ApplicationStatus.ACCEPTED) {
+            notificationService.notifyUser(
+                    freelancerUserId,
+                    NotificationType.PROJECT_APPLICATION_ACCEPTED,
+                    "공고 지원 수락",
+                    "'" + application.getProject().getProjectName() + "' 공고 지원이 수락되었습니다.",
+                    application.getId()
+            );
+        } else {
+            notificationService.notifyUser(
+                    freelancerUserId,
+                    NotificationType.PROJECT_APPLICATION_REJECTED,
+                    "공고 지원 거절",
+                    "'" + application.getProject().getProjectName() + "' 공고 지원이 거절되었습니다.",
+                    application.getId()
+            );
+        }
 
         // [Fix] Coderabbit 리뷰 반영: 지원자 수락 시 프로젝트 상태를 자동으로 '진행 중'으로 변경
         if (newStatus == ApplicationStatus.ACCEPTED) {

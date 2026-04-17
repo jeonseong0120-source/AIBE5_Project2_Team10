@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
+import { NotificationBell } from '@/components/notifications/NotificationProvider';
+import { User, Users, CheckCircle, XCircle, Edit, Trash2, Calendar, DollarSign, Activity } from 'lucide-react';
 import { User, Users, CheckCircle, XCircle, Edit, Trash2, Calendar, DollarSign, Activity, ChevronRight, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -131,9 +133,14 @@ export default function ClientDashboardPage() {
                 <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
                     <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
-                <div className="flex gap-6 items-center relative z-10">
-                    <button onClick={() => router.push('/client/mypage')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">MY_PAGE</button>
-                    <button onClick={() => router.push("/client/projects/new")} className="px-6 py-2.5 bg-[#FF7D00] text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition shadow-md shadow-orange-100 uppercase font-mono">Register_Project</button>
+                <div className="flex gap-4 items-center relative z-10 md:gap-6">
+                    <button onClick={() => router.push('/client/mypage')} className="text-xs font-black text-zinc-500 hover:text-zinc-950 tracking-widest transition uppercase font-mono">
+                        MY_PAGE
+                    </button>
+                    <NotificationBell />
+                    <button onClick={() => router.push("/client/projects/new")} className="px-6 py-2.5 bg-[#FF7D00] text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition shadow-lg shadow-orange-100 uppercase font-mono">
+                        Register_Project
+                    </button>
                 </div>
             </nav>
 
