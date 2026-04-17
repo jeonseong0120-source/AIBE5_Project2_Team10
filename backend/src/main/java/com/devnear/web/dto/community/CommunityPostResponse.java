@@ -1,6 +1,7 @@
 package com.devnear.web.dto.community;
 
 import com.devnear.web.domain.community.CommunityPost;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ public class CommunityPostResponse {
     private final int viewCount;
     private final int likeCount;
     private final int commentCount;
+    @JsonProperty("isLiked")
     private final boolean isLiked;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
