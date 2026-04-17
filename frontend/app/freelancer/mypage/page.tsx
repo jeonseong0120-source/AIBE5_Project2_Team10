@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User as UserIcon, Briefcase, Star, Award, Inbox } from 'lucide-react';
+import { User as UserIcon, Briefcase, Star, Award } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
@@ -13,14 +13,12 @@ import MypageProfileTab from '@/components/freelancer_mypage/MypageProfileTab';
 import MypagePortfolioTab from '@/components/freelancer_mypage/MypagePortfolioTab';
 import MypageReviewTab from '@/components/freelancer_mypage/MypageReviewTab';
 import MypageGradeTab from '@/components/freelancer_mypage/MypageGradeTab';
-import MypageProposalTab from '@/components/freelancer_mypage/MypageProposalTab';
 import PortfolioFormModal from '@/components/freelancer_mypage/PortfolioFormModal';
 import PortfolioDetailModal from '@/components/freelancer_mypage/PortfolioDetailModal';
 
 const TABS = [
     { id: 'profile', label: 'MY PROFILE', icon: UserIcon },
     { id: 'portfolio', label: 'PORTFOLIO', icon: Briefcase },
-    { id: 'proposals', label: 'PROPOSALS', icon: Inbox },
     { id: 'reviews', label: 'REVIEWS', icon: Star },
     { id: 'grade', label: 'RANK', icon: Award },
 ];
@@ -46,7 +44,6 @@ export default function FreelancerMyPage() {
     const [profile, setProfile] = useState<any>(null);
     const [portfolios, setPortfolios] = useState<any[]>([]);
     const [reviews, setReviews] = useState<any[]>([]);
-    const [receivedProposals, setReceivedProposals] = useState<any[]>([]);
     const [userId, setUserId] = useState<number | null>(null);
     const [allGlobalSkills, setAllGlobalSkills] = useState<any[]>([]);
 
@@ -66,8 +63,6 @@ export default function FreelancerMyPage() {
     const [isProfileUploading, setIsProfileUploading] = useState(false);
     const [isThumbUploading, setIsThumbUploading] = useState(false);
     const [isBulkUploading, setIsBulkUploading] = useState(false);
-    const [proposalStatusLoadingById, setProposalStatusLoadingById] = useState<Record<number, boolean>>({});
-    const [proposalInquireLoadingById, setProposalInquireLoadingById] = useState<Record<number, boolean>>({});
 
     // 숨김 파일 입력용 ref
     const profileFileInputRef = useRef<HTMLInputElement>(null);
@@ -99,7 +94,7 @@ export default function FreelancerMyPage() {
                 setUserId(userRes.data.user_id || userRes.data.id);
                 setAuthorized(true);
 
-                await Promise.all([fetchProfile(), fetchGlobalSkills(), fetchReceivedProposals(false)]);
+                await Promise.all([fetchProfile(), fetchGlobalSkills()]);
             } catch (err) {
                 console.error("접근 권한 확인 실패", err);
                 router.replace("/login");
@@ -111,7 +106,6 @@ export default function FreelancerMyPage() {
     useEffect(() => {
         if (!authorized) return;
         if (activeTab === 'portfolio' && portfolios.length === 0) fetchPortfolios();
-        if (activeTab === 'proposals') fetchReceivedProposals(false);
         if (activeTab === 'reviews' && reviews.length === 0 && profile?.id) fetchReviews(profile.id);
     }, [activeTab, authorized, profile?.id, portfolios.length, reviews.length]);
 
@@ -169,48 +163,6 @@ export default function FreelancerMyPage() {
             console.error("리뷰 로드 실패", error);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const fetchReceivedProposals = async (showLoading = true) => {
-        if (showLoading) setLoading(true);
-        try {
-            const { data } = await api.get('/v1/proposals/received');
-            setReceivedProposals(data || []);
-        } catch (error) {
-            console.error('받은 제안 로드 실패', error);
-            alert('받은 제안 목록을 불러오지 못했습니다.');
-        } finally {
-            if (showLoading) setLoading(false);
-        }
-    };
-
-    const handleProposalResponse = async (proposalId: number, status: 'ACCEPTED' | 'REJECTED') => {
-        setProposalStatusLoadingById(prev => ({ ...prev, [proposalId]: true }));
-        try {
-            await api.patch(`/v1/proposals/${proposalId}/status`, { status });
-            alert(status === 'ACCEPTED' ? '제안을 수락했습니다.' : '제안을 거절했습니다.');
-            fetchReceivedProposals(false);
-        } catch (error: any) {
-            if (error?.response?.status === 409) {
-                alert('이미 처리된 제안입니다.');
-            } else {
-                alert('제안 처리 중 오류가 발생했습니다.');
-            }
-        } finally {
-            setProposalStatusLoadingById(prev => ({ ...prev, [proposalId]: false }));
-        }
-    };
-
-    const handleProposalInquire = async (proposalId: number) => {
-        setProposalInquireLoadingById(prev => ({ ...prev, [proposalId]: true }));
-        try {
-            const { data } = await api.post(`/v1/proposals/${proposalId}/inquire`);
-            alert(`문의 채팅방이 연결되었습니다. (ROOM #${data?.chatRoomId ?? '-'})`);
-        } catch (error) {
-            alert('문의하기 연결에 실패했습니다.');
-        } finally {
-            setProposalInquireLoadingById(prev => ({ ...prev, [proposalId]: false }));
         }
     };
 
@@ -463,15 +415,6 @@ export default function FreelancerMyPage() {
                                 )}
                                 {activeTab === 'reviews' && (
                                     <MypageReviewTab reviews={reviews} profile={profile} />
-                                )}
-                                {activeTab === 'proposals' && (
-                                    <MypageProposalTab
-                                        proposals={receivedProposals}
-                                        statusLoadingById={proposalStatusLoadingById}
-                                        inquireLoadingById={proposalInquireLoadingById}
-                                        onRespond={handleProposalResponse}
-                                        onInquire={handleProposalInquire}
-                                    />
                                 )}
                                 {activeTab === 'grade' && (
                                     <MypageGradeTab profile={profile} />

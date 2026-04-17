@@ -2,11 +2,7 @@
 
 import { Send, Inbox, Star } from 'lucide-react';
 
-interface MypageStatsProps {
-    receivedProposalCount?: number;
-}
-
-export default function MypageStats({ receivedProposalCount = 0 }: MypageStatsProps) {
+export default function MypageStats() {
     return (
         <div className="bg-white p-6 md:p-8 rounded-2xl border border-zinc-200 shadow-sm mb-6">
             <div className="flex flex-col md:flex-row justify-between w-full h-full gap-6 md:gap-0 md:divide-x divide-zinc-100">
@@ -28,7 +24,7 @@ export default function MypageStats({ receivedProposalCount = 0 }: MypageStatsPr
                     </div>
                     <div className="flex flex-col text-left">
                         <span className="text-[13px] font-bold text-zinc-500 mb-1">받은 제안</span>
-                        <span className="text-2xl font-black text-zinc-900 leading-none font-mono">{receivedProposalCount}</span>
+                        <span className="text-2xl font-black text-zinc-900 leading-none font-mono">0</span>
                     </div>
                 </div>
                 
