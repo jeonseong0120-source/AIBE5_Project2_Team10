@@ -189,9 +189,9 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                         if (prev.some((x) => x.notificationId === row.notificationId)) {
                             return prev;
                         }
+                        setUnreadCount((c) => c + 1);
                         return [row, ...prev];
                     });
-                    setUnreadCount((c) => c + 1);
                 });
             },
             onStompError: (frame) => {

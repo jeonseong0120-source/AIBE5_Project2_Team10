@@ -8,7 +8,6 @@ import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.notification.NotificationInboxResponse;
 import com.devnear.web.dto.notification.NotificationPayload;
 import com.devnear.web.dto.notification.NotificationResponse;
-import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,8 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import java.util.Objects;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -41,11 +42,9 @@ public class NotificationService {
 
     @Transactional
     public void markNotificationRead(User user, Long notificationId) {
-        Notification notification = notificationRepository.findById(notificationId)
+        Notification notification = notificationRepository
+                .findByIdAndUser_Id(notificationId, user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("알림을 찾을 수 없습니다."));
-        if (!notification.getUser().getId().equals(user.getId())) {
-            throw new ProjectAccessDeniedException("해당 알림에 접근할 수 없습니다.");
-        }
         if (!notification.isRead()) {
             notification.markRead();
         }
@@ -56,6 +55,10 @@ public class NotificationService {
         if (userId == null) {
             throw new IllegalArgumentException("수신자 userId는 null일 수 없습니다.");
         }
+
+        Objects.requireNonNull(type, "알림 타입은 null일 수 없습니다.");
+        Objects.requireNonNull(title, "알림 제목은 null일 수 없습니다.");
+        Objects.requireNonNull(message, "알림 메시지는 null일 수 없습니다.");
         User targetUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("수신자를 찾을 수 없습니다."));
         String content = title + "\n" + message;
@@ -66,7 +69,9 @@ public class NotificationService {
                 .read(false)
                 .url(buildUrl(type, resourceId))
                 .build());
-        LocalDateTime at = saved.getCreatedAt() != null ? saved.getCreatedAt() : LocalDateTime.now();
+        Instant at = saved.getCreatedAt() != null
+                ? saved.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()
+                : Instant.now();
         NotificationPayload payload = NotificationPayload.of(
                 saved.getId(),
                 type,
