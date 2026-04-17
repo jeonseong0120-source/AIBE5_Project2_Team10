@@ -129,9 +129,10 @@ public class PortfolioService {
         // 3. 포트폴리오 기본 정보 업데이트
         portfolio.update(request.getTitle(), request.getDesc(), request.getThumbnailUrl());
 
-        // 4. 기존 관련 데이터 비우기 (orphanRemoval = true)
+        // 4. 기존 관련 데이터 비우기 (orphanRemoval = true) 및 삭제 즉시 쿼리 발생 (flush)
         portfolio.getPortfolioImages().clear();
         portfolio.getPortfolioSkills().clear();
+        portfolioRepository.flush(); // 기존 스킬 데이터 선 삭제 보장 (Unique 제약조건 충돌 방지)
 
         // 5. 다중 이미지 재연결 (순서 보장)
         int order = 0;
