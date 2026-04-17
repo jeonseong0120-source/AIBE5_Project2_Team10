@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User as UserIcon, Code2, Briefcase, Star, Award, Settings, Save, MapPin, Activity, Plus, Trash2, X, Clock, Image as ImageIcon, Upload, Loader2, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
+import { NotificationBell } from '@/components/notifications/NotificationProvider';
 
 const TABS = [
     { id: 'portfolio', label: 'PORTFOLIO', icon: Briefcase },
@@ -360,13 +361,14 @@ export default function FreelancerMyPage() {
                 <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
                     <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
-                <div className="flex gap-6 items-center">
+                <div className="flex gap-4 items-center md:gap-6">
                     <button onClick={() => router.push('/freelancer/dashboard')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
                         DASHBOARD
                     </button>
                     <button onClick={() => router.push('/freelancer/explore')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
                         EXPLORE
                     </button>
+                    <NotificationBell />
                     <div className="w-8 h-8 rounded-full bg-[#7A4FFF] border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-white font-bold text-xs">
                         {profile?.userName ? profile.userName.charAt(0) : 'U'}
                     </div>

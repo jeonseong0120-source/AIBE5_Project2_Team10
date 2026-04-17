@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "../lib/axios";
+import { notifyAuthChanged } from "../lib/authEvents";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -19,6 +20,7 @@ export default function LoginPage() {
             const { accessToken } = res.data;
             if (accessToken) {
                 localStorage.setItem("accessToken", accessToken);
+                notifyAuthChanged();
                 router.push("/");
             }
         } catch (err: any) {

@@ -5,6 +5,7 @@ import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.enums.ProjectProposalStatus;
 import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.enums.Role;
+import com.devnear.web.domain.enums.NotificationType;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.project.Project;
@@ -18,6 +19,7 @@ import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceConflictException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import com.devnear.web.service.chat.ChatService;
+import com.devnear.web.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +38,7 @@ public class ProjectProposalService {
     private final ProjectRepository projectRepository;
     private final ClientProfileRepository clientProfileRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
+    private final NotificationService notificationService;
     private final ChatService chatService;
 
     /**
@@ -74,7 +77,17 @@ public class ProjectProposalService {
                 .freelancerProfile(freelancer)
                 .message(message)
                 .build();
-        return projectProposalRepository.save(proposal).getId();
+        Long proposalId = projectProposalRepository.save(proposal).getId();
+
+        notificationService.notifyUser(
+                freelancer.getUser().getId(),
+                NotificationType.PROJECT_PROPOSAL_SENT,
+                "포지션 제안 도착",
+                project.getClientProfile().getCompanyName() + "에서 '" + project.getProjectName() + "' 포지션 제안을 보냈습니다.",
+                proposalId
+        );
+
+        return proposalId;
     }
 
     /** 클라이언트가 보낸 제안 목록 */
@@ -107,6 +120,14 @@ public class ProjectProposalService {
                 .orElseThrow(() -> new ResourceNotFoundException("프로젝트를 찾을 수 없습니다. ID: " + proposal.getProject().getId()));
         lockedProject.assignFreelancer(proposal.getFreelancerProfile());
         sendDecisionSystemMessage(proposal, SYSTEM_MSG_ACCEPTED);
+
+        notificationService.notifyUser(
+                proposal.getProject().getClientProfile().getUser().getId(),
+                NotificationType.PROJECT_PROPOSAL_ACCEPTED,
+                "포지션 제안 수락",
+                proposal.getFreelancerProfile().getUser().getNickname() + " 님이 포지션 제안을 수락했습니다.",
+                proposal.getId()
+        );
     }
 
     /**
@@ -118,6 +139,14 @@ public class ProjectProposalService {
         ProjectProposal proposal = loadProposalOwnedByFreelancerForUpdate(proposalId, user);
         proposal.reject();
         sendDecisionSystemMessage(proposal, SYSTEM_MSG_REJECTED);
+
+        notificationService.notifyUser(
+                proposal.getProject().getClientProfile().getUser().getId(),
+                NotificationType.PROJECT_PROPOSAL_REJECTED,
+                "포지션 제안 거절",
+                proposal.getFreelancerProfile().getUser().getNickname() + " 님이 포지션 제안을 거절했습니다.",
+                proposal.getId()
+        );
     }
 
     /**
@@ -153,15 +182,6 @@ public class ProjectProposalService {
                 freelancerUser
         );
         chatService.saveSystemMessageAndBroadcast(room, freelancerUser, content);
-    }
-
-    private ProjectProposal loadProposalOwnedByFreelancer(Long proposalId, User freelancerUser) {
-        ProjectProposal proposal = projectProposalRepository.findDetailedById(proposalId)
-                .orElseThrow(() -> new ResourceNotFoundException("제안을 찾을 수 없습니다. ID: " + proposalId));
-        if (!proposal.getFreelancerProfile().getUser().getId().equals(freelancerUser.getId())) {
-            throw new ProjectAccessDeniedException("해당 제안을 처리할 권한이 없습니다.");
-        }
-        return proposal;
     }
 
     private ProjectProposal loadProposalOwnedByFreelancerForUpdate(Long proposalId, User freelancerUser) {
