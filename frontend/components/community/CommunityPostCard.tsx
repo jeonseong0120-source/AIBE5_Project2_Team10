@@ -18,9 +18,11 @@ export default function CommunityPostCard({
     };
 
     return (
-        <div
+        <button
+            type="button"
             onClick={() => onClick(post.id)}
-            className="cursor-pointer rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-[#FF7D00]/40"
+            className="w-full cursor-pointer rounded-3xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[`#FF7D00`]/40"
+            aria-label={`게시글 ${post.title} 상세 보기`}
         >
             <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="line-clamp-1 text-xl font-black tracking-tight text-zinc-900">
