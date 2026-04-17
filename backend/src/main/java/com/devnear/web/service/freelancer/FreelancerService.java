@@ -81,12 +81,12 @@ public class FreelancerService {
 
             // 컬렉션 스왑 시 고유 제약 조건(Unique Constraint) 위반을 막기 위해:
             // 1. 기존 컬렉션을 통째로 지우고 Flush (DELETE 쿼리 강제 실행)
-            profile.getFreelancerSkills().clear();
+            profile.updateSkills(null);
             profileRepository.saveAndFlush(profile);
 
             // 2. 새 컬렉션을 채우고 다시 반영 (INSERT 쿼리 실행)
-            profile.getFreelancerSkills().addAll(newFreelancerSkills);
-            profileRepository.saveAndFlush(profile);
+            profile.updateSkills(newFreelancerSkills);
+            return FreelancerProfileResponse.from(profileRepository.saveAndFlush(profile));
         }
 
         return FreelancerProfileResponse.from(profileRepository.save(profile));
