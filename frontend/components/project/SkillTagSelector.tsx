@@ -23,6 +23,10 @@ export default function SkillTagSelector({ selectedSkillIds, onChangeAction, ini
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // [Fix] Coderabbit 리뷰 반영: SkillTagSelector 내에서 name -> id 변환을 독립적으로 처리하지 않도록
+    // ProjectEditForm 쪽 로직과 충돌하는 useEffect를 수정/제거했습니다.
+    // 기존의 이중 동기화(상위 컴포넌트 & 하위 컴포넌트 양쪽에서 API 호출 후 매핑)가
+    // 스킬 목록을 덮어쓰거나 무한 루프를 유발하는 원인이 되었습니다.
     useEffect(() => {
         const fetchSkills = async () => {
             setLoading(true);
@@ -39,19 +43,9 @@ export default function SkillTagSelector({ selectedSkillIds, onChangeAction, ini
         void fetchSkills();
     }, []);
 
-    useEffect(() => {
-        if (!allSkills.length || !initialSkillNames.length) return;
-        const selectedSet = new Set(selectedSkillIds);
-        const normalized = new Set(initialSkillNames.map((s) => s.trim().toLowerCase()).filter(Boolean));
-        const matched = allSkills
-            .filter((s) => normalized.has(s.name.trim().toLowerCase()))
-            .map((s) => s.skillId);
-        if (!matched.length) return;
-        const merged = Array.from(new Set([...selectedSet, ...matched]));
-        if (merged.length !== selectedSkillIds.length) {
-            onChangeRef.current(merged);
-        }
-    }, [allSkills, initialSkillNames, selectedSkillIds]);
+    // 하위 컴포넌트(SkillTagSelector)에서는 단순히 "선택된 ID"와 "전체 스킬 목록"만 가지고 
+    // 필터링하여 보여주는 역할만 수행하도록 name 매핑 로직을 제거했습니다. 
+    // 이름 -> ID 매핑은 상위(ProjectEditForm)에서만 1번 수행합니다.
 
     const filteredSkills = useMemo(() => {
         const q = query.trim().toLowerCase();
