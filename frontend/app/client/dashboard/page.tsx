@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
-import { User, Users, CheckCircle, XCircle, Edit, Trash2, Calendar, DollarSign, Activity } from 'lucide-react';
 import { User, Users, CheckCircle, XCircle, Edit, Trash2, Calendar, DollarSign, Activity, ChevronRight, Briefcase } from 'lucide-react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ClientDashboardPage() {
