@@ -95,8 +95,8 @@ export default function FreelancerMyPage() {
     useEffect(() => {
         if (!authorized) return;
         if (activeTab === 'portfolio' && portfolios.length === 0) fetchPortfolios();
-        if (activeTab === 'reviews' && reviews.length === 0 && userId) fetchReviews(userId);
-    }, [activeTab, authorized, userId]);
+        if (activeTab === 'reviews' && reviews.length === 0 && profile?.id) fetchReviews(profile.id);
+    }, [activeTab, authorized, profile?.id, portfolios.length, reviews.length]);
 
     const fetchGlobalSkills = async () => {
         try {
@@ -749,32 +749,55 @@ export default function FreelancerMyPage() {
                                 )}
 
                                 {/* [TAB 2] Reviews */}
-                                {activeTab === 'reviews' && (
-                                    <div className="space-y-8">
-                                        <div className="bg-zinc-900 rounded-2xl p-8 text-white relative overflow-hidden shadow-lg">
-                                            <div className="absolute right-0 top-0 opacity-10"><Star size={200} /></div>
-                                            <h3 className="text-[10px] font-mono tracking-widest uppercase text-zinc-400 mb-2">Total_Performance_Score</h3>
-                                            <div className="flex items-end gap-4 mb-2">
-                                                <span className="text-5xl font-black">{profile?.averageRating?.toFixed(1) || '0.0'}</span>
-                                                <div className="flex pb-2 text-[#FF7D00]">
-                                                    {[...Array(5)].map((_, idx) => (
-                                                        <Star key={idx} size={20} fill={idx < Math.floor(profile?.averageRating || 0) ? "currentColor" : "none"} />
-                                                    ))}
+                                {activeTab === 'reviews' && (() => {
+                                    // 리뷰 상세 점수 평균 계산
+                                    const aggr = reviews.length > 0
+                                        ? reviews.reduce(
+                                            (acc, r) => ({
+                                                workQuality: acc.workQuality + (Number(r.workQuality) || 0),
+                                                deadline: acc.deadline + (Number(r.deadline) || 0),
+                                                communication: acc.communication + (Number(r.communication) || 0),
+                                                expertise: acc.expertise + (Number(r.expertise) || 0),
+                                            }),
+                                            { workQuality: 0, deadline: 0, communication: 0, expertise: 0 }
+                                        )
+                                        : { workQuality: 0, deadline: 0, communication: 0, expertise: 0 };
+                                    
+                                    const count = reviews.length || 1; // 0으로 나누기 방지
+                                    const avgWorkQuality = reviews.length > 0 ? (aggr.workQuality / count) : 0;
+                                    const avgDeadline = reviews.length > 0 ? (aggr.deadline / count) : 0;
+                                    const avgCommunication = reviews.length > 0 ? (aggr.communication / count) : 0;
+                                    const avgExpertise = reviews.length > 0 ? (aggr.expertise / count) : 0;
+
+                                    return (
+                                        <div className="space-y-8">
+                                            <div className="bg-zinc-900 rounded-2xl p-8 text-white relative overflow-hidden shadow-lg">
+                                                <div className="absolute right-0 top-0 opacity-10"><Star size={200} /></div>
+                                                <h3 className="text-[10px] font-mono tracking-widest uppercase text-zinc-400 mb-2">Total_Performance_Score</h3>
+                                                <div className="flex items-end gap-4 mb-2">
+                                                    <span className="text-5xl font-black">{profile?.averageRating?.toFixed(1) || '0.0'}</span>
+                                                    <div className="flex pb-2 text-[#FF7D00]">
+                                                        {[...Array(5)].map((_, idx) => (
+                                                            <Star key={idx} size={20} fill={idx < Math.floor(profile?.averageRating || 0) ? "currentColor" : "none"} />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-zinc-400 font-mono tracking-widest uppercase">Based on <strong className="text-white">{profile?.reviewCount || 0}</strong> completed missions</p>
+                                                <div className="flex gap-4 mt-8 pt-6 border-t border-zinc-800 flex-wrap">
+                                                    <div className="flex-1 min-w-[70px]"><p className="text-[10px] text-zinc-500 font-bold mb-1 line-clamp-1">작업 품질</p>
+                                                        <div className="h-1.5 bg-zinc-800 rounded-full"><div className="h-full bg-[#7A4FFF] rounded-full transition-all duration-1000" style={{ width: `${(avgWorkQuality / 5) * 100}%` }}></div></div>
+                                                    </div>
+                                                    <div className="flex-1 min-w-[70px]"><p className="text-[10px] text-zinc-500 font-bold mb-1 line-clamp-1">일정 준수</p>
+                                                        <div className="h-1.5 bg-zinc-800 rounded-full"><div className="h-full bg-[#FF7D00] rounded-full transition-all duration-1000" style={{ width: `${(avgDeadline / 5) * 100}%` }}></div></div>
+                                                    </div>
+                                                    <div className="flex-1 min-w-[70px]"><p className="text-[10px] text-zinc-500 font-bold mb-1 line-clamp-1">의사 소통</p>
+                                                        <div className="h-1.5 bg-zinc-800 rounded-full"><div className="h-full bg-[#34d399] rounded-full transition-all duration-1000" style={{ width: `${(avgCommunication / 5) * 100}%` }}></div></div>
+                                                    </div>
+                                                    <div className="flex-1 min-w-[70px]"><p className="text-[10px] text-zinc-500 font-bold mb-1 line-clamp-1">전문성</p>
+                                                        <div className="h-1.5 bg-zinc-800 rounded-full"><div className="h-full bg-[#ec4899] rounded-full transition-all duration-1000" style={{ width: `${(avgExpertise / 5) * 100}%` }}></div></div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <p className="text-xs text-zinc-400 font-mono tracking-widest uppercase">Based on <strong className="text-white">{profile?.reviewCount || 0}</strong> completed missions</p>
-                                            <div className="flex gap-6 mt-8 pt-6 border-t border-zinc-800">
-                                                <div className="flex-1"><p className="text-[10px] text-zinc-500 font-bold mb-1">작업 품질</p>
-                                                    <div className="h-1.5 bg-zinc-800 rounded-full"><div className="h-full bg-[#7A4FFF] rounded-full" style={{ width: `${(profile?.averageRating || 0) / 5 * 100}%` }}></div></div>
-                                                </div>
-                                                <div className="flex-1"><p className="text-[10px] text-zinc-500 font-bold mb-1">일정 준수</p>
-                                                    <div className="h-1.5 bg-zinc-800 rounded-full"><div className="h-full bg-[#FF7D00] rounded-full" style={{ width: `${Math.min(100, ((profile?.averageRating || 0) / 5) * 110)}%` }}></div></div>
-                                                </div>
-                                                <div className="flex-1"><p className="text-[10px] text-zinc-500 font-bold mb-1">의사 소통</p>
-                                                    <div className="h-1.5 bg-zinc-800 rounded-full"><div className="h-full bg-[#34d399] rounded-full" style={{ width: `${Math.max(10, ((profile?.averageRating || 0) / 5) * 90)}%` }}></div></div>
-                                                </div>
-                                            </div>
-                                        </div>
 
                                         <div>
                                             <h3 className="font-black text-sm text-zinc-900 mb-4 flex items-center gap-2">최근 리뷰 <span className="px-2 py-0.5 bg-zinc-100 text-zinc-500 rounded-full text-[10px]">{reviews.length}</span></h3>
@@ -798,53 +821,67 @@ export default function FreelancerMyPage() {
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
-                                )}
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* [TAB 3] Grade */}
-                                {activeTab === 'grade' && (
-                                    <div className="py-10 space-y-12">
-                                        <div className="flex flex-col items-center justify-center text-center">
-                                            <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-zinc-900 to-zinc-700 flex items-center justify-center text-[#FF7D00] shadow-2xl relative mb-6">
-                                                <Award size={44} className="relative z-10" />
-                                                <div className="absolute inset-0 border-[3px] border-[#FF7D00]/20 rounded-full animate-ping" />
+                                {activeTab === 'grade' && (() => {
+                                    const grade = profile?.gradeName || '일반';
+                                    const isTopTalent = grade.includes('TOP Talent');
+                                    const isAuthFreelancer = grade.includes('인증 프리랜서');
+                                    const displayGrade = isTopTalent ? 'TOP Talent' : (isAuthFreelancer ? '인증 프리랜서' : '일반');
+                                    
+                                    const nextGoal = isTopTalent ? '최고 등급 달성' : (isAuthFreelancer ? '목표: 인증프리랜서 → TOP Talent' : '목표: 일반 → 인증프리랜서');
+                                    const targetProjects = isAuthFreelancer || isTopTalent ? 10 : 3;
+                                    const targetRating = isAuthFreelancer || isTopTalent ? 4.5 : 4.0;
+                                    const pCompleted = profile?.completedProjects || 0;
+                                    const pRating = profile?.averageRating || 0;
+
+                                    return (
+                                        <div className="py-10 space-y-12">
+                                            <div className="flex flex-col items-center justify-center text-center">
+                                                <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-zinc-900 to-zinc-700 flex items-center justify-center text-[#FF7D00] shadow-2xl relative mb-6">
+                                                    <Award size={44} className="relative z-10" />
+                                                    <div className="absolute inset-0 border-[3px] border-[#FF7D00]/20 rounded-full animate-ping" />
+                                                </div>
+                                                <p className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase mb-2">등급 정보 / SECURITY_CLEARANCE</p>
+                                                <h2 className="text-3xl font-black text-zinc-900 tracking-tighter mb-4">
+                                                    {displayGrade}
+                                                </h2>
+                                                <p className="text-xs text-zinc-500 max-w-sm mx-auto font-medium">최고의 퍼포먼스를 보여주고 다음 등급으로 인증하여 클래스를 업그레이드 하세요.</p>
                                             </div>
-                                            <p className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase mb-2">등급 정보 / SECURITY_CLEARANCE</p>
-                                            <h2 className="text-3xl font-black text-zinc-900 tracking-tighter mb-4">
-                                                {profile?.gradeName || 'CLASS-D (일반)'}
-                                            </h2>
-                                            <p className="text-xs text-zinc-500 max-w-sm mx-auto font-medium">최고의 퍼포먼스를 보여주고 다음 등급으로 인증하여 클래스를 업그레이드 하세요.</p>
-                                        </div>
-                                        <div className="w-full bg-zinc-50 p-8 rounded-2xl border border-zinc-100">
-                                            <div className="flex justify-between items-center mb-6 border-b border-zinc-200 pb-4">
-                                                <h3 className="text-xs font-black font-mono tracking-widest uppercase text-zinc-900 flex items-center gap-2">
-                                                    <Activity size={14} className="text-[#7A4FFF]" /> NEXT_LEVEL_REQUIREMENTS
-                                                </h3>
-                                                <span className="text-[10px] font-bold text-[#FF7D00] bg-[#FF7D00]/10 px-2 py-1 rounded">목표: 일반 → 인증프리랜서</span>
-                                            </div>
-                                            <div className="space-y-6">
-                                                <div className="space-y-2">
-                                                    <div className="flex justify-between items-end">
-                                                        <span className="text-xs font-bold text-zinc-500">완료한 프로젝트 (3건 이상)</span>
-                                                        <span className="font-black text-sm text-zinc-900">{profile?.completedProjects || 0} / 3</span>
+                                            <div className="w-full bg-zinc-50 p-8 rounded-2xl border border-zinc-100">
+                                                <div className="flex justify-between items-center mb-6 border-b border-zinc-200 pb-4">
+                                                    <h3 className="text-xs font-black font-mono tracking-widest uppercase text-zinc-900 flex items-center gap-2">
+                                                        <Activity size={14} className="text-[#7A4FFF]" /> NEXT_LEVEL_REQUIREMENTS
+                                                    </h3>
+                                                    <span className="text-[10px] font-bold text-[#FF7D00] bg-[#FF7D00]/10 px-2 py-1 rounded">{nextGoal}</span>
+                                                </div>
+                                                <div className="space-y-6">
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between items-end">
+                                                            <span className="text-xs font-bold text-zinc-500">완료한 프로젝트 ({targetProjects}건 이상)</span>
+                                                            <span className="font-black text-sm text-zinc-900">{pCompleted} / {targetProjects}</span>
+                                                        </div>
+                                                        <div className="w-full h-2.5 bg-zinc-200 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-[#7A4FFF]" style={{ width: `${Math.min(100, (pCompleted / targetProjects) * 100)}%` }} />
+                                                        </div>
                                                     </div>
-                                                    <div className="w-full h-2.5 bg-zinc-200 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-[#7A4FFF]" style={{ width: `${Math.min(100, ((profile?.completedProjects || 0) / 3) * 100)}%` }} />
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between items-end">
+                                                            <span className="text-xs font-bold text-zinc-500">평균 평점 ({targetRating.toFixed(1)} 이상)</span>
+                                                            <span className="font-black text-sm text-zinc-900">{pRating.toFixed(1)} / {targetRating.toFixed(1)}</span>
+                                                        </div>
+                                                        <div className="w-full h-2.5 bg-zinc-200 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-[#FF7D00]" style={{ width: `${Math.min(100, (pRating / targetRating) * 100)}%` }} />
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <div className="flex justify-between items-end">
-                                                        <span className="text-xs font-bold text-zinc-500">평균 평점 (4.0 이상)</span>
-                                                        <span className="font-black text-sm text-zinc-900">{profile?.averageRating?.toFixed(1) || '0.0'} / 4.0</span>
-                                                    </div>
-                                                    <div className="w-full h-2.5 bg-zinc-200 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-[#FF7D00]" style={{ width: `${Math.min(100, ((profile?.averageRating || 0) / 4) * 100)}%` }} />
-                                                    </div>
-                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    );
+                                })()}
                             </>
                         )}
                     </motion.div>
