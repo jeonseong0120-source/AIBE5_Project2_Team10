@@ -55,6 +55,6 @@ export default function CommunityPostCard({
                     {post.commentCount}
         </span>
             </div>
-        </div>
+        </button>
     );
 }
