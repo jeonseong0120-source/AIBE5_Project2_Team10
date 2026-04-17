@@ -2,6 +2,8 @@ package com.devnear.web.service.proposal;
 
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.client.ClientProfileRepository;
+import com.devnear.web.domain.enums.NotificationType;
+import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.enums.ProposalStatus;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
@@ -17,6 +19,8 @@ import com.devnear.web.dto.proposal.SentProposalResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import com.devnear.web.exception.ResourceConflictException;
+import com.devnear.web.service.chat.ChatService;
+import com.devnear.web.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -38,6 +42,8 @@ public class ProposalService {
     private final ProjectRepository projectRepository;
     private final ClientProfileRepository clientProfileRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
+    private final ChatService chatService;
+    private final NotificationService notificationService;
 
     /**
      * [CLI] 클라이언트가 특정 프리랜서에게 역제안을 전송합니다.
@@ -76,7 +82,15 @@ public class ProposalService {
                 .build();
 
         try {
-            return proposalRepository.saveAndFlush(proposal).getId();
+            Long proposalId = proposalRepository.saveAndFlush(proposal).getId();
+            notificationService.notifyUser(
+                    freelancerProfile.getUser().getId(),
+                    NotificationType.PROJECT_PROPOSAL_SENT,
+                    "새 역제안 도착",
+                    clientProfile.getUser().getNickname() + " 님이 '" + project.getProjectName() + "' 역제안을 보냈습니다.",
+                    proposalId
+            );
+            return proposalId;
         } catch (DataIntegrityViolationException e) {
             if (e.getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
                 org.hibernate.exception.ConstraintViolationException hibernateException =
@@ -156,10 +170,59 @@ public class ProposalService {
 
         try {
             proposal.updateStatus(newStatus);
+            if (newStatus == ProposalStatus.ACCEPTED) {
+                // 역제안 수락 시 해당 프로젝트를 진행 중으로 전환하고 담당 프리랜서를 매칭한다.
+                proposal.getProject().assignFreelancer(proposal.getFreelancerProfile());
+                if (proposal.getProject().getStatus() == ProjectStatus.OPEN) {
+                    proposal.getProject().start();
+                }
+            }
             proposalRepository.flush(); // 강제 플러시로 트랜잭션 종료 전 버전 체크 즉시 수행
+            Long clientUserId = proposal.getClientProfile().getUser().getId();
+            if (newStatus == ProposalStatus.ACCEPTED) {
+                notificationService.notifyUser(
+                        clientUserId,
+                        NotificationType.PROJECT_PROPOSAL_ACCEPTED,
+                        "역제안 수락",
+                        "'" + proposal.getProject().getProjectName() + "' 역제안이 수락되었습니다.",
+                        proposal.getId()
+                );
+            } else {
+                notificationService.notifyUser(
+                        clientUserId,
+                        NotificationType.PROJECT_PROPOSAL_REJECTED,
+                        "역제안 거절",
+                        "'" + proposal.getProject().getProjectName() + "' 역제안이 거절되었습니다.",
+                        proposal.getId()
+                );
+            }
         } catch (ObjectOptimisticLockingFailureException | OptimisticLockException e) {
             // 동시 요청으로 version 충돌 발생
             throw new ResourceConflictException("동시 요청으로 인해 처리에 실패했습니다. 다시 시도해주세요.");
         }
+    }
+
+    /**
+     * [FRE] 받은 역제안 기준으로 문의 채팅방을 조회/생성하고 ID를 반환합니다.
+     */
+    @Transactional
+    public Long inquireChatRoom(User user, Long proposalId) {
+        Proposal proposal = proposalRepository.findByIdWithFreelancer(proposalId)
+                .orElseThrow(() -> new ResourceNotFoundException("역제안을 찾을 수 없습니다. id=" + proposalId));
+
+        if (!proposal.getFreelancerProfile().getUser().getId().equals(user.getId())) {
+            throw new ProjectAccessDeniedException("해당 역제안에 대한 권한이 없습니다.");
+        }
+
+        User clientUser = proposal.getClientProfile().getUser();
+        User freelancerUser = proposal.getFreelancerProfile().getUser();
+        Project project = proposal.getProject();
+
+        return chatService.getOrCreateRoomForProjectClientAndFreelancer(
+                user,
+                project,
+                clientUser,
+                freelancerUser
+        ).getRoomId();
     }
 }

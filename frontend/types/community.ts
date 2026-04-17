@@ -3,6 +3,7 @@ export interface CommunityPost {
     title: string;
     content: string;
     authorId: number;
+    authorNickname?: string;
     viewCount: number;
     likeCount: number;
     commentCount: number;
@@ -22,6 +23,7 @@ export interface CommunityComment {
     id: number;
     postId: number;
     authorId: number;
+    authorNickname?: string;
     content: string;
     createdAt: string;
     updatedAt: string;
