@@ -39,8 +39,8 @@ public class FreelancerService {
     // [수정] 내 프로필 등록 및 정보 일괄 업데이트
     @Transactional
     public FreelancerProfileResponse updateMyProfile(User user, FreelancerProfileRequest request) {
-        // 1. 기존 프로필 조회 (존재하지 않으면 신규 껍데기 생성)
-        FreelancerProfile profile = profileRepository.findByUser_Id(user.getId())
+        // 1. 기존 프로필 조회 (존재하지 않으면 신규 껍데기 생성) - 수정 시 스킬 컬렉션 Fetch Join 적용
+        FreelancerProfile profile = profileRepository.findByUserIdWithSkills(user.getId())
                 .orElseGet(() -> FreelancerProfile.builder()
                         .user(user)
                         .isActive(true)
@@ -79,8 +79,14 @@ public class FreelancerService {
                             .build())
                     .collect(Collectors.toList());
 
-            // 컬렉션 교체 (JPA orphanRemoval 자동 동작)
+            // 컬렉션 스왑 시 고유 제약 조건(Unique Constraint) 위반을 막기 위해:
+            // 1. 기존 컬렉션을 통째로 지우고 Flush (DELETE 쿼리 강제 실행)
+            profile.updateSkills(null);
+            profileRepository.saveAndFlush(profile);
+
+            // 2. 새 컬렉션을 채우고 다시 반영 (INSERT 쿼리 실행)
             profile.updateSkills(newFreelancerSkills);
+            return FreelancerProfileResponse.from(profileRepository.saveAndFlush(profile));
         }
 
         return FreelancerProfileResponse.from(profileRepository.save(profile));

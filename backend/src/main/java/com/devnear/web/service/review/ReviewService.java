@@ -154,7 +154,14 @@ public class ReviewService {
                 .map(review -> new ReviewResponse(
                         review.getId(),
                         review.getAverageScore(),
-                        review.getComment()
+                        review.getComment(),
+                        review.getWorkQuality(),
+                        review.getDeadline(),
+                        review.getCommunication(),
+                        review.getExpertise(),
+                        null,
+                        null,
+                        null
                 ))
                 .toList();
     }
@@ -167,7 +174,14 @@ public class ReviewService {
                 .map(review -> new ReviewResponse(
                         review.getId(),
                         review.getAverageScore(),
-                        review.getComment()
+                        review.getComment(),
+                        null,
+                        null,
+                        review.getCommunication(),
+                        null,
+                        review.getRequirementClarity(),
+                        review.getPaymentReliability(),
+                        review.getWorkAttitude()
                 ))
                 .toList();
     }
