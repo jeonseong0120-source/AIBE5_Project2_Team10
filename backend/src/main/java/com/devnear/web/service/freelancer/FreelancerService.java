@@ -3,6 +3,9 @@ package com.devnear.web.service.freelancer;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.freelancer.FreelancerSkill;
+import com.devnear.web.domain.portfolio.Portfolio;
+import com.devnear.web.domain.portfolio.PortfolioImage;
+import com.devnear.web.domain.portfolio.PortfolioRepository;
 import com.devnear.web.domain.skill.Skill;
 import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
@@ -12,8 +15,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,8 +28,11 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class FreelancerService {
 
+    private static final int MAX_PORTFOLIO_PREVIEW_IMAGES = 20;
+
     private final FreelancerProfileRepository profileRepository;
     private final SkillRepository skillRepository;
+    private final PortfolioRepository portfolioRepository;
 
     // [조회] 내 프로필 상세 데이터 조회
     public FreelancerProfileResponse getMyProfile(User user) {
@@ -102,9 +112,56 @@ public class FreelancerService {
         }
         profiles.sort(comparator);
 
-        return profiles.stream()
-                .map(FreelancerProfileResponse::from)
+        List<Long> userIds = profiles.stream()
+                .map(p -> p.getUser().getId())
+                .distinct()
                 .collect(Collectors.toList());
+        Map<Long, List<String>> portfolioUrlsByUserId = loadPortfolioPreviewUrlsByUserId(userIds);
+
+        return profiles.stream()
+                .map(p -> FreelancerProfileResponse.from(
+                        p,
+                        portfolioUrlsByUserId.getOrDefault(p.getUser().getId(), List.of())))
+                .collect(Collectors.toList());
+    }
+
+    private Map<Long, List<String>> loadPortfolioPreviewUrlsByUserId(Collection<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Map.of();
+        }
+        List<Portfolio> portfolios = portfolioRepository.findAllByUser_IdInWithImages(userIds);
+        Map<Long, List<Portfolio>> byUser = portfolios.stream()
+                .collect(Collectors.groupingBy(p -> p.getUser().getId()));
+
+        Map<Long, List<String>> result = new HashMap<>();
+        for (Map.Entry<Long, List<Portfolio>> e : byUser.entrySet()) {
+            List<Portfolio> ordered = e.getValue().stream()
+                    .sorted(Comparator.comparing(Portfolio::getId).reversed())
+                    .collect(Collectors.toList());
+            List<String> urls = new ArrayList<>();
+            for (Portfolio port : ordered) {
+                if (urls.size() >= MAX_PORTFOLIO_PREVIEW_IMAGES) {
+                    break;
+                }
+                if (port.getPortfolioImages() != null && !port.getPortfolioImages().isEmpty()) {
+                    List<PortfolioImage> images = port.getPortfolioImages().stream()
+                            .sorted(Comparator.comparing(PortfolioImage::getSortOrder))
+                            .collect(Collectors.toList());
+                    for (PortfolioImage im : images) {
+                        if (urls.size() >= MAX_PORTFOLIO_PREVIEW_IMAGES) {
+                            break;
+                        }
+                        if (im.getImageUrl() != null && !im.getImageUrl().isBlank()) {
+                            urls.add(im.getImageUrl());
+                        }
+                    }
+                } else if (port.getThumbnailUrl() != null && !port.getThumbnailUrl().isBlank()) {
+                    urls.add(port.getThumbnailUrl());
+                }
+            }
+            result.put(e.getKey(), urls);
+        }
+        return result;
     }
 
     // [조회] 타인 프로필 상세 조회

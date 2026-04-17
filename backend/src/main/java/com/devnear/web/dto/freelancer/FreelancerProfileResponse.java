@@ -6,6 +6,7 @@ import com.devnear.web.dto.skill.SkillResponse;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,6 +17,7 @@ public class FreelancerProfileResponse {
     private Long profileId;
     private String userName;
     private String profileImageUrl;
+    private List<String> portfolioImageUrls;
     private String introduction;
     private String location;
     private Double latitude;
@@ -30,6 +32,10 @@ public class FreelancerProfileResponse {
     private List<SkillResponse> skills;
 
     public static FreelancerProfileResponse from(FreelancerProfile profile) {
+        return from(profile, Collections.emptyList());
+    }
+
+    public static FreelancerProfileResponse from(FreelancerProfile profile, List<String> portfolioImageUrls) {
         String gradeName = (profile.getGrade() != null) ? profile.getGrade().getName() : null;
         
         List<SkillResponse> skillResponses = profile.getFreelancerSkills().stream()
@@ -41,6 +47,7 @@ public class FreelancerProfileResponse {
                 .userName(profile.getUser().getName())
                 // User 테이블 프사가 아닌 Profile 테이블 전용 프사 우선 반환 (없으면 본계정 프사)
                 .profileImageUrl(profile.getProfileImageUrl() != null ? profile.getProfileImageUrl() : profile.getUser().getProfileImageUrl())
+                .portfolioImageUrls(portfolioImageUrls != null ? portfolioImageUrls : Collections.emptyList())
                 .introduction(profile.getIntroduction())
                 .location(profile.getLocation())
                 .latitude(profile.getLatitude())

@@ -14,6 +14,8 @@ export interface FreelancerProfile {
     id: number;
     nickname: string;
     profileImageUrl?: string;
+    /** 포트폴리오에서 모은 미리보기 이미지 URL (목록 API 등) */
+    portfolioImageUrls?: string[];
     introduction: string;
     location: string;
     hourlyRate: number;
@@ -28,6 +30,7 @@ export interface ApiFreelancerDto {
     profileId: number;
     userName: string;
     profileImageUrl?: string;
+    portfolioImageUrls?: string[];
     introduction: string;
     location: string;
     hourlyRate: number;
@@ -43,6 +46,7 @@ export function mapFreelancerDtoToProfile(dto: ApiFreelancerDto): FreelancerProf
         id: dto.profileId,
         nickname: dto.userName,
         profileImageUrl: dto.profileImageUrl,
+        portfolioImageUrls: dto.portfolioImageUrls ?? [],
         introduction: dto.introduction,
         location: dto.location,
         hourlyRate: dto.hourlyRate,
