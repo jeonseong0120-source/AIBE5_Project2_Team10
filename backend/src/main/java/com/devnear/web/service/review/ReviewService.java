@@ -20,6 +20,7 @@ import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.devnear.web.service.freelancer.FreelancerGradeService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -35,6 +36,7 @@ public class ReviewService {
     private final ClientProfileRepository clientProfileRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final ProjectRepository projectRepository;
+    private final FreelancerGradeService freelancerGradeService;
 
     @Transactional
     public Long createFreelancerReview(User user, FreelancerReviewCreateRequest request) {
@@ -83,9 +85,9 @@ public class ReviewService {
                 .comment(request.getComment())
                 .build();
 
-        // 저장 후 평점 재계산
+        // 저장 후 평점 및 등급 재계산 (동시성 보호를 위해 잠금된 프로필을 사용하여 재계산)
         freelancerReviewRepository.save(review);
-        updateFreelancerRating(freelancer);
+        recomputeFreelancerAggregates(freelancer.getId());
 
         return review.getId();
     }
@@ -187,6 +189,34 @@ public class ReviewService {
 
         freelancer.updateAverageRating(average.doubleValue());
         freelancer.updateReviewCount(reviews.size());
+    }
+
+    /**
+     * Recompute aggregates with pessimistic lock to avoid lost updates when multiple reviews are created concurrently.
+     */
+    @Transactional
+    public void recomputeFreelancerAggregates(Long freelancerId) {
+        // obtain PESSIMISTIC_WRITE lock on freelancer profile
+        FreelancerProfile locked = freelancerProfileRepository.findByIdForUpdate(freelancerId)
+                .orElseThrow(() -> new ResourceNotFoundException("프리랜서 프로필이 없습니다."));
+
+        List<FreelancerReview> reviews = freelancerReviewRepository.findByFreelancer(locked);
+
+        if (reviews.isEmpty()) {
+            locked.updateAverageRating(0.0);
+            locked.updateReviewCount(0);
+        } else {
+            BigDecimal average = reviews.stream()
+                    .map(FreelancerReview::getAverageScore)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .divide(BigDecimal.valueOf(reviews.size()), 2, RoundingMode.HALF_UP);
+
+            locked.updateAverageRating(average.doubleValue());
+            locked.updateReviewCount(reviews.size());
+        }
+
+        // Refresh grade using the locked, managed entity so grade calculation uses latest persisted aggregates
+        freelancerGradeService.refreshGrade(locked);
     }
 
     @Transactional

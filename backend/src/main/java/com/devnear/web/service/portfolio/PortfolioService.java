@@ -14,6 +14,9 @@ import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.devnear.web.domain.freelancer.FreelancerProfile;
+import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
+import com.devnear.web.service.freelancer.FreelancerGradeService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +28,8 @@ public class PortfolioService {
 
     private final PortfolioRepository portfolioRepository;
     private final SkillRepository skillRepository;
+    private final FreelancerProfileRepository freelancerProfileRepository;
+    private final FreelancerGradeService freelancerGradeService;
 
     // [등록] POST /api/portfolios
     @Transactional
@@ -69,7 +74,14 @@ public class PortfolioService {
         }
 
         // 4. 저장 후 생성된 ID 반환
-        return portfolioRepository.save(portfolio).getId();
+        Long savedId = portfolioRepository.save(portfolio).getId();
+
+        // 등급 재계산
+        FreelancerProfile freelancerProfile = freelancerProfileRepository.findByUser_Id(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("현재 사용자에 대한 프리랜서 프로필을 찾을 수 없습니다."));
+        freelancerGradeService.refreshGrade(freelancerProfile);
+
+        return savedId;
     }
 
     // [조회] GET /api/portfolios (특정 유저의 목록 반환)
@@ -95,6 +107,11 @@ public class PortfolioService {
 
         // 3. 권한 문제없으면 삭제 실행 (Cascade 속성으로 인해 딸려있던 기술스택 데이터도 알아서 날아감)
         portfolioRepository.delete(portfolio);
+
+        // 등급 재계산
+        FreelancerProfile freelancerProfile = freelancerProfileRepository.findByUser_Id(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("현재 사용자에 대한 프리랜서 프로필을 찾을 수 없습니다."));
+        freelancerGradeService.refreshGrade(freelancerProfile);
     }
 
     // [수정] PUT /api/portfolios/{id}
@@ -143,5 +160,9 @@ public class PortfolioService {
                     .skill(skill)
                     .build());
         }
+        // 7. 등급 재계산
+        FreelancerProfile freelancerProfile = freelancerProfileRepository.findByUser_Id(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("현재 사용자에 대한 프리랜서 프로필을 찾을 수 없습니다."));
+        freelancerGradeService.refreshGrade(freelancerProfile);
     }
 }

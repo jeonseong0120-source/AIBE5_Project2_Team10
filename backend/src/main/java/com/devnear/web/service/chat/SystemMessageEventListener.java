@@ -1,6 +1,7 @@
 package com.devnear.web.service.chat;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -19,6 +20,5 @@ public class SystemMessageEventListener {
         } catch (RuntimeException ex) {
             log.error("Failed to broadcast system message. roomId={}", event.roomId(), ex);
         }
-
     }
 }
