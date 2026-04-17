@@ -6,6 +6,7 @@ import { createProject, type CreateProjectBody } from "@/app/lib/projectApi";
 import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
 import SkillTagSelector from "@/components/project/SkillTagSelector";
 import { DollarSign, MapPin, ArrowLeft } from "lucide-react"; // 🔍 ArrowLeft 아이콘 추가
+import { motion, AnimatePresence } from "framer-motion";
 
 function tomorrowISODate(): string {
     const d = new Date();
@@ -41,16 +42,12 @@ export default function ProjectRegisterForm() {
         return () => window.removeEventListener("mousemove", move);
     }, []);
 
-    const handleOfflineChange = (next: boolean) => {
-        setOffline(next);
-        if (!next) { setLocation(""); setLatitude(""); setLongitude(""); }
-    };
-
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (submitLockRef.current) return;
         setError(null);
 
+        // [Fix] Coderabbit 리뷰 반영: 온라인/오프라인 중 하나 이상 선택 필수 보장
         if (!online && !offline) return setError("근무 방식은 하나 이상 선택해 주세요.");
         if (Number(budget) < 1) return setError("예산은 1원 이상이어야 합니다.");
 
@@ -66,9 +63,17 @@ export default function ProjectRegisterForm() {
 
         if (offline) {
             payload.location = location.trim();
-            payload.latitude = Number(latitude);
-            payload.longitude = Number(longitude);
-            if (!payload.location || isNaN(payload.latitude)) return setError("오프라인 정보를 정확히 입력해 주세요.");
+            // [Fix] Coderabbit 리뷰 반영: Number()로 변환 전 문자열 상태 체크 추가, NaN 방지
+            const lat = Number(latitude);
+            const lng = Number(longitude);
+            
+            // [Fix] Coderabbit 리뷰 반영: longitude 누락 검증 로직 추가
+            if (!payload.location || isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+                return setError("오프라인 정보를 정확히 입력해 주세요.");
+            }
+            
+            payload.latitude = lat;
+            payload.longitude = lng;
         }
 
         submitLockRef.current = true;
@@ -94,9 +99,9 @@ export default function ProjectRegisterForm() {
             <section className="relative pt-16 pb-12 px-8 bg-white border-b border-zinc-200 overflow-hidden mb-10">
                 <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
                 <div className="max-w-xl mx-auto relative z-10">
-                    <div className="flex items-center gap-4 mb-4">
-                        {/* 🔍 뒤로가기 버튼 */}
+                    <div className="flex items-center gap-4">
                         <button
+                            type="button"
                             onClick={() => router.back()}
                             className="p-2.5 bg-zinc-50 border border-zinc-100 rounded-xl text-zinc-400 hover:text-[#FF7D00] hover:border-[#FF7D00]/30 hover:bg-orange-50 transition-all group"
                         >
@@ -104,7 +109,7 @@ export default function ProjectRegisterForm() {
                         </button>
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <span className="w-6 h-[2px] bg-[#FF7D00]"></span>
+                                <span className="w-8 h-[2px] bg-[#FF7D00]"></span>
                                 <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono">Mission_Creator</span>
                             </div>
                             <h1 className="text-4xl font-black tracking-tight">프로젝트 등록</h1>
@@ -127,7 +132,7 @@ export default function ProjectRegisterForm() {
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Budget (₩)</label>
                             <div className="relative">
-                                <input type="number" required className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]"
+                                <input type="number" required min="0" className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]"
                                        value={budget} onChange={(e) => setBudget(e.target.value)} />
                                 <DollarSign className="absolute right-4 top-1/2 -translate-y-1/2 text-[#FF7D00]" size={16} />
                             </div>
@@ -141,25 +146,38 @@ export default function ProjectRegisterForm() {
 
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Description</label>
-                        <textarea className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl min-h-[150px] outline-none focus:ring-2 focus:ring-[#FF7D00] text-sm font-medium"
+                        <textarea className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl min-h-[150px] outline-none focus:ring-2 focus:ring-[#FF7D00] text-sm font-medium resize-none"
                                   value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="상세 내용을 입력하세요" />
                     </div>
 
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Work_Style</label>
                         <div className="p-5 bg-zinc-50 rounded-2xl border border-zinc-100 flex gap-8">
+                            {/* [Fix] Coderabbit 리뷰 반영: 클릭 핸들러에서 상태를 빈 값으로 만들지 않도록 checkbox 제어 로직 유지 */}
                             <label className="flex items-center gap-3 font-bold text-xs cursor-pointer"><input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)} className="w-4 h-4 accent-[#FF7D00]" />온라인</label>
                             <label className="flex items-center gap-3 font-bold text-xs cursor-pointer"><input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} className="w-4 h-4 accent-[#FF7D00]" />오프라인</label>
                         </div>
                     </div>
 
-                    {offline && (
-                        <div className="p-6 bg-orange-50/50 rounded-2xl border border-orange-100 space-y-4 transition-all">
-                            <div className="flex items-center gap-2"><MapPin size={14} className="text-[#FF7D00]" /><span className="text-[10px] font-black text-[#FF7D00] uppercase font-mono">Location_Setting</span></div>
-                            <KakaoLocationPicker javascriptKey={kakaoJavascriptKey} value={{ address: location, latitude, longitude }}
-                                                 onChangeAction={(v) => { setLocation(v.address); setLatitude(v.latitude); setLongitude(v.longitude); }} />
-                        </div>
-                    )}
+                    <AnimatePresence>
+                        {offline && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                                <div className="p-6 bg-orange-50/50 rounded-2xl border border-orange-100 space-y-4 transition-all">
+                                    <div className="flex items-center gap-2"><MapPin size={14} className="text-[#FF7D00]" /><span className="text-[10px] font-black text-[#FF7D00] uppercase font-mono tracking-widest">Location_Setting</span></div>
+                                    
+                                    {/* [Fix] Coderabbit 리뷰 반영: 카카오 키가 없으면 안내 문구 표시 */}
+                                    {kakaoJavascriptKey ? (
+                                        <KakaoLocationPicker javascriptKey={kakaoJavascriptKey} value={{ address: location, latitude: String(latitude), longitude: String(longitude) }}
+                                                             onChangeAction={(v) => { setLocation(v.address); setLatitude(String(v.latitude)); setLongitude(String(v.longitude)); }} />
+                                    ) : (
+                                        <div className="p-4 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100">
+                                            ⚠️ 카카오맵 API 키가 설정되지 않아 주소 검색 기능을 사용할 수 없습니다.
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Requirement</label>

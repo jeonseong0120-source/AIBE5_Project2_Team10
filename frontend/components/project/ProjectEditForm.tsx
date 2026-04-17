@@ -3,25 +3,29 @@
 import { FormEvent, useState, useEffect } from "react";
 import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
 import SkillTagSelector from "@/components/project/SkillTagSelector";
-import { updateProject } from "@/app/lib/projectApi";
 import api from "@/app/lib/axios";
 import { useRouter } from "next/navigation";
-import { DollarSign, Calendar, MapPin, ArrowLeft } from "lucide-react"; // 🔍 ArrowLeft 추가
+import { DollarSign, Calendar, MapPin, ArrowLeft, Type, Activity, List } from "lucide-react"; // 추가 아이콘 임포트
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function ProjectEditForm({ projectId, initialData }: any) {
     const router = useRouter();
 
-    const [projectName, setProjectName] = useState(initialData.projectName);
-    const [budget, setBudget] = useState(String(initialData.budget));
-    const [deadline, setDeadline] = useState(initialData.deadline);
+    const [projectName, setProjectName] = useState(initialData.projectName || "");
+    const [budget, setBudget] = useState(String(initialData.budget || ""));
+    const [deadline, setDeadline] = useState(initialData.deadline || "");
     const [detail, setDetail] = useState(initialData.detail || "");
-    const [online, setOnline] = useState(initialData.online);
-    const [offline, setOffline] = useState(initialData.offline);
+    const [online, setOnline] = useState(initialData.online || false);
+    const [offline, setOffline] = useState(initialData.offline || false);
+    
     const [location, setLocation] = useState(initialData.location || "");
     const [latitude, setLatitude] = useState(String(initialData.latitude || ""));
     const [longitude, setLongitude] = useState(String(initialData.longitude || ""));
 
+    // [Fix] Coderabbit 리뷰 반영: initialData에 skillIds가 없을 수 있으므로 빈 배열로 초기화하고
+    // useEffect에서 skillNames를 기반으로 skillIds를 동기화합니다.
     const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>(initialData.skillIds || []);
+    
     const [submitting, setSubmitting] = useState(false);
     const [isSkillsLoading, setIsSkillsLoading] = useState(true);
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
@@ -34,6 +38,7 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
         return () => window.removeEventListener("mousemove", move);
     }, []);
 
+    // 스킬 이름 -> 스킬 ID 동기화
     useEffect(() => {
         const syncSkillIds = async () => {
             try {
@@ -61,7 +66,12 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        if (!online && !offline) return alert("근무 방식은 하나 이상 선택해야 합니다.");
+        
+        // [Fix] Coderabbit 리뷰 반영: 온라인/오프라인 중 하나는 무조건 선택해야 함
+        if (!online && !offline) {
+            return alert("근무 방식은 온라인 또는 오프라인 중 하나 이상을 선택해야 합니다.");
+        }
+        
         if (Number(budget) <= 0) return alert("예산은 1원 이상이어야 합니다.");
 
         setSubmitting(true);
@@ -74,17 +84,39 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                 online,
                 offline,
                 skillIds: selectedSkillIds,
+                // 백엔드 에러 방지를 위해 빈 배열이라도 추가
+                skillNames: []
             };
+
             if (offline) {
+                // [Fix] Coderabbit 리뷰 반영: 오프라인 선택 시 좌표 데이터 검증 (NaN 방지)
+                const lat = Number(latitude);
+                const lng = Number(longitude);
+                
+                if (!location.trim() || isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+                    setSubmitting(false);
+                    return alert("오프라인 근무를 위한 주소(좌표) 정보를 정확히 입력해 주세요.");
+                }
+                
                 payload.location = location;
-                payload.latitude = Number(latitude);
-                payload.longitude = Number(longitude);
+                payload.latitude = lat;
+                payload.longitude = lng;
+            } else {
+                // 온라인 전용일 때는 null이나 기본값 전송
+                payload.location = null;
+                payload.latitude = null;
+                payload.longitude = null;
             }
-            await updateProject(projectId, payload);
+
+            // axios 인터셉터 설정(/api/v1)에 맞게 경로 지정
+            await api.put(`/v1/projects/${projectId}`, payload);
             alert("✅ 프로젝트 수정이 완료되었습니다.");
             router.push("/client/dashboard");
+            
         } catch (err: any) {
-            alert(`❌ 수정 실패: ${err.response?.data?.message || "서버 오류"}`);
+            console.error(err);
+            const serverMessage = err.response?.data?.message || err.response?.data || "서버 오류";
+            alert(`❌ 수정 실패: ${serverMessage}`);
         } finally {
             setSubmitting(false);
         }
@@ -101,7 +133,6 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                 <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
                 <div className="max-w-xl mx-auto relative z-10">
                     <div className="flex items-center gap-4">
-                        {/* 🔍 뒤로가기 버튼 */}
                         <button
                             type="button"
                             onClick={() => router.back()}
@@ -124,7 +155,9 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                 <div className="space-y-6">
                     {/* 프로젝트명 */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Project_Title</label>
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono flex items-center gap-2">
+                            <Type className="w-3.5 h-3.5 text-[#FF7D00]" /> Project_Title
+                        </label>
                         <input required className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold focus:ring-2 focus:ring-[#FF7D00] outline-none transition-all"
                                value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="프로젝트명을 입력하세요" />
                     </div>
@@ -132,48 +165,67 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                     {/* 예산 및 마감일 */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Budget (₩)</label>
-                            <div className="relative">
-                                <input type="number" className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]"
-                                       value={budget} onChange={(e) => setBudget(e.target.value)} />
-                                <DollarSign className="absolute right-4 top-1/2 -translate-y-1/2 text-[#FF7D00]" size={16} />
-                            </div>
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono flex items-center gap-2">
+                                <DollarSign className="w-3.5 h-3.5 text-[#FF7D00]" /> Budget (₩)
+                            </label>
+                            <input type="number" required min="0" className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]"
+                                   value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="예산 입력 (원)" />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Deadline</label>
-                            <div className="relative">
-                                <input type="date" className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]"
-                                       value={deadline} onChange={(e) => setDeadline(e.target.value)} />
-                            </div>
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono flex items-center gap-2">
+                                <Calendar className="w-3.5 h-3.5 text-[#FF7D00]" /> Deadline
+                            </label>
+                            <input type="date" required className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00] text-zinc-700"
+                                   value={deadline} onChange={(e) => setDeadline(e.target.value)} />
                         </div>
                     </div>
 
                     {/* 상세 설명 */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Description</label>
-                        <textarea className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl min-h-[150px] outline-none focus:ring-2 focus:ring-[#FF7D00] text-sm font-medium"
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono flex items-center gap-2">
+                            <Type className="w-3.5 h-3.5 text-[#FF7D00]" /> Description
+                        </label>
+                        <textarea required className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl min-h-[150px] outline-none focus:ring-2 focus:ring-[#FF7D00] text-sm font-medium resize-none leading-relaxed"
                                   value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="상세 내용을 입력하세요" />
                     </div>
 
                     {/* 근무 방식 */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Work_Style</label>
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono flex items-center gap-2">
+                            <Activity className="w-3.5 h-3.5 text-[#FF7D00]" /> Work_Style
+                        </label>
                         <div className="p-5 bg-zinc-50 rounded-2xl border border-zinc-100 flex gap-8">
                             <label className="flex items-center gap-3 font-bold text-xs cursor-pointer"><input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)} className="w-4 h-4 accent-[#FF7D00]" />온라인</label>
                             <label className="flex items-center gap-3 font-bold text-xs cursor-pointer"><input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} className="w-4 h-4 accent-[#FF7D00]" />오프라인</label>
                         </div>
                     </div>
 
-                    {offline && (
-                        <div className="p-6 bg-orange-50/50 rounded-2xl border border-orange-100 space-y-4">
-                            <div className="flex items-center gap-2"><MapPin size={14} className="text-[#FF7D00]" /><span className="text-[10px] font-black text-[#FF7D00] uppercase font-mono">Location</span></div>
-                            <KakaoLocationPicker javascriptKey={kakaoJavascriptKey} value={{ address: location, latitude, longitude }}
-                                                 onChangeAction={(v) => { setLocation(v.address); setLatitude(v.latitude); setLongitude(v.longitude); }} />
-                        </div>
-                    )}
+                    {/* 오프라인 주소 (카카오맵) */}
+                    <AnimatePresence>
+                        {offline && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                                <div className="p-6 bg-orange-50/50 rounded-2xl border border-orange-100 space-y-4">
+                                    <div className="flex items-center gap-2"><MapPin size={14} className="text-[#FF7D00]" /><span className="text-[10px] font-black text-[#FF7D00] uppercase font-mono tracking-widest">Location_Details</span></div>
+                                    
+                                    {/* [Fix] Coderabbit 리뷰 반영: 카카오 키가 없으면 안내 문구 표시 */}
+                                    {kakaoJavascriptKey ? (
+                                        <KakaoLocationPicker javascriptKey={kakaoJavascriptKey} value={{ address: location, latitude: Number(latitude), longitude: Number(longitude) }}
+                                                             onChangeAction={(v) => { setLocation(v.address); setLatitude(String(v.latitude)); setLongitude(String(v.longitude)); }} />
+                                    ) : (
+                                        <div className="p-4 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100">
+                                            ⚠️ 카카오맵 API 키가 설정되지 않아 주소 검색 기능을 사용할 수 없습니다.
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
+                    {/* 기술 스택 */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Tech_Stack</label>
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono flex items-center gap-2">
+                            <List className="w-3.5 h-3.5 text-[#FF7D00]" /> Tech_Stack
+                        </label>
                         <SkillTagSelector selectedSkillIds={selectedSkillIds} onChangeAction={setSelectedSkillIds} initialSkillNames={initialData.skillNames} />
                     </div>
                 </div>

@@ -89,16 +89,23 @@ export default function ClientDashboardPage() {
         }
     };
 
+    // [수락/거절] 처리 시 API 오류 해결
     const handleApplicationStatus = async (applicationId: number, status: 'ACCEPTED' | 'REJECTED') => {
         try {
+            // [Fix] Coderabbit 리뷰 반영: 수락과 시작을 프론트에서 두 번 보내면 동기화 문제가 발생하므로
+            // 백엔드 설계에 맞게 `/applications/{applicationId}/status` API만 호출합니다.
+            // 필요하다면 백엔드에서 application 수락 시 프로젝트 상태를 IN_PROGRESS로 변경하도록 트랜잭션을 구성하는 것이 좋습니다.
             await api.patch(`/applications/${applicationId}/status`, { status });
-            if (status === 'ACCEPTED' && selectedProjectForApplicant) {
-                await api.patch(`/v1/projects/${selectedProjectForApplicant.projectId}/start`);
+            alert(`지원자가 ${status === 'ACCEPTED' ? '수락' : '거절'} 처리되었습니다.`);
+            
+            // 목록 갱신
+            if (selectedProjectForApplicant) {
+                handleViewApplicants(selectedProjectForApplicant);
             }
-            if (selectedProjectForApplicant) handleViewApplicants(selectedProjectForApplicant);
             fetchMyProjects();
         } catch (err) {
-            alert('처리 중 오류가 발생했습니다.');
+            console.error(err);
+            alert('상태 처리 중 오류가 발생했습니다.');
         }
     };
 
@@ -174,7 +181,8 @@ export default function ClientDashboardPage() {
                                     </div>
                                     <h3 className="text-2xl font-black text-zinc-900 group-hover:text-[#FF7D00] transition-colors mb-4 tracking-tight">{project.projectName}</h3>
                                     <div className="flex flex-wrap gap-6 text-xs font-bold text-zinc-400 font-mono uppercase">
-                                        <span className="flex items-center gap-1"><DollarSign size={14} className="text-[#FF7D00]"/>{project.budget.toLocaleString()}원</span>
+                                        {/* [Fix] Coderabbit 리뷰 반영: 방어적 접근법 추가하여 budget null 참조 방지 */}
+                                        <span className="flex items-center gap-1"><DollarSign size={14} className="text-[#FF7D00]"/>{(project.budget || 0).toLocaleString()}원</span>
                                         <span className="flex items-center gap-1"><Calendar size={14} className="text-[#FF7D00]"/>{project.deadline} 마감</span>
                                     </div>
                                 </div>
@@ -199,14 +207,13 @@ export default function ClientDashboardPage() {
                 </div>
             </main>
 
-            {/* --- 🔍 지원자 목록 모달 (마스터 요청대로 영어 제거 + 폰트 확대) --- */}
+            {/* --- 지원자 목록 모달 --- */}
             <AnimatePresence>
                 {isApplicantModalOpen && selectedProjectForApplicant && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsApplicantModalOpen(false)} className="absolute inset-0 bg-zinc-950/60 backdrop-blur-md" />
                         <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }} className="relative bg-white rounded-3xl w-full max-w-2xl p-10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-zinc-100">
 
-                            {/* 모달 헤더 (한글화) */}
                             <div className="flex justify-between items-start mb-8">
                                 <div>
                                     <h2 className="text-3xl font-black text-zinc-900 tracking-tight">지원자 목록</h2>
@@ -215,7 +222,6 @@ export default function ClientDashboardPage() {
                                 <button onClick={() => setIsApplicantModalOpen(false)} className="text-zinc-300 hover:text-[#FF7D00] p-2 bg-zinc-50 rounded-full transition-colors"><XCircle size={32} /></button>
                             </div>
 
-                            {/* 지원자 리스트 */}
                             <div className="overflow-y-auto space-y-6 pr-2 custom-scrollbar">
                                 {applicants.length === 0 ? (
                                     <div className="py-24 text-center text-zinc-300 font-black border-2 border-dashed border-zinc-100 rounded-2xl text-xl">
@@ -238,13 +244,11 @@ export default function ClientDashboardPage() {
                                                         )}
                                                     </div>
                                                     <div>
-                                                        {/* 🔍 닉네임 크기 확대 */}
                                                         <h4 className="font-black text-2xl text-zinc-900 group-hover/profile:text-[#FF7D00] transition-colors flex items-center gap-2">
                                                             {app.freelancerNickname}
                                                             <ChevronRight size={20} className="opacity-0 group-hover/profile:opacity-100 transition-all translate-x-[-4px] group-hover/profile:translate-x-0" />
                                                         </h4>
                                                         <div className="flex items-center gap-3 mt-1.5">
-                                                            {/* 🔍 매칭률 정보 확대 */}
                                                             <span className="text-sm font-black text-[#FF7D00] bg-white px-3 py-1 rounded border border-[#FF7D00]/20 uppercase">
                                                                 매칭률 {Math.round(app.matchingRate * 100)}%
                                                             </span>
@@ -255,13 +259,11 @@ export default function ClientDashboardPage() {
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    {/* 🔍 제안가 크기 확대 */}
-                                                    <p className="text-2xl font-black text-zinc-900 italic">₩{app.bidPrice.toLocaleString()}</p>
+                                                    <p className="text-2xl font-black text-zinc-900 italic">₩{(app.bidPrice || 0).toLocaleString()}</p>
                                                     <p className="text-xs font-bold text-zinc-400 mt-1">{new Date(app.appliedAt).toLocaleDateString()} 지원</p>
                                                 </div>
                                             </div>
 
-                                            {/* 🔍 지원 메시지 폰트 확대 */}
                                             <div className="p-5 bg-white rounded-xl border border-zinc-100 text-lg font-medium text-zinc-600 leading-relaxed italic">
                                                 "{app.message || "지원 메시지가 없습니다."}"
                                             </div>
@@ -275,7 +277,6 @@ export default function ClientDashboardPage() {
                                                     ))}
                                                 </div>
 
-                                                {/* 🔍 버튼 한글화 + 크기 최적화 */}
                                                 {app.status === 'PENDING' ? (
                                                     <div className="flex gap-3">
                                                         <button
