@@ -39,4 +39,13 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
            "JOIN FETCH p.project " +
            "WHERE p.id = :proposalId")
     Optional<Proposal> findByIdWithFreelancer(@Param("proposalId") Long proposalId);
+
+    @Query("SELECT p FROM Proposal p " +
+           "JOIN FETCH p.project pr " +
+           "JOIN FETCH p.clientProfile cp " +
+           "JOIN FETCH cp.user " +
+           "JOIN FETCH p.freelancerProfile fp " +
+           "JOIN FETCH fp.user " +
+           "WHERE p.id = :proposalId")
+    Optional<Proposal> findByIdForInquiry(@Param("proposalId") Long proposalId);
 }

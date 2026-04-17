@@ -108,12 +108,13 @@ public class SecurityConfig {
                         // 2. 프로젝트 찜: 프리랜서 유저만 가능
                         .requestMatchers("/api/bookmarks/projects/**", "/api/v1/bookmarks/projects/**").hasAnyRole("FREELANCER", "BOTH")
 
-// [역제안] 전송 및 보낸 목록 조회: 클라이언트 전용
-//                      .requestMatchers(HttpMethod.POST, "/api/proposals", "/api/v1/proposals").hasAnyRole("CLIENT", "BOTH")
-//                      .requestMatchers(HttpMethod.GET, "/api/proposals/sent", "/api/v1/proposals/sent").hasAnyRole("CLIENT", "BOTH")
-// [역제안] 받은 목록 조회 및 수락/거절: 프리랜서 전용
-//                      .requestMatchers(HttpMethod.GET, "/api/proposals/received", "/api/v1/proposals/received").hasAnyRole("FREELANCER", "BOTH")
-//                   .requestMatchers(HttpMethod.PATCH, "/api/proposals/*/status", "/api/v1/proposals/*/status").hasAnyRole("FREELANCER", "BOTH")
+                        // [역제안] 전송/보낸 목록: 클라이언트
+                        .requestMatchers(HttpMethod.POST, "/api/proposals", "/api/v1/proposals").hasAnyRole("CLIENT", "BOTH")
+                        .requestMatchers(HttpMethod.GET, "/api/proposals/sent", "/api/v1/proposals/sent").hasAnyRole("CLIENT", "BOTH")
+                        // [역제안] 받은 목록/상태 변경/문의하기: 프리랜서
+                        .requestMatchers(HttpMethod.GET, "/api/proposals/received", "/api/v1/proposals/received").hasAnyRole("FREELANCER", "BOTH")
+                        .requestMatchers(HttpMethod.PATCH, "/api/proposals/*/status", "/api/v1/proposals/*/status").hasAnyRole("FREELANCER", "BOTH")
+                        .requestMatchers(HttpMethod.POST, "/api/proposals/*/inquire", "/api/v1/proposals/*/inquire").hasAnyRole("FREELANCER", "BOTH")
 
                         // 5. [나머지] 커뮤니티 글쓰기, 좋아요, 댓글 작성 등은 GUEST를 제외한 정식 유저만 가능!
                         .anyRequest().hasAnyRole("CLIENT", "FREELANCER", "BOTH")
