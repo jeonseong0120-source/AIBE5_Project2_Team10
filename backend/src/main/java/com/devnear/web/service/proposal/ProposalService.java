@@ -17,6 +17,7 @@ import com.devnear.web.dto.proposal.SentProposalResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import com.devnear.web.exception.ResourceConflictException;
+import com.devnear.web.service.chat.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -38,6 +39,7 @@ public class ProposalService {
     private final ProjectRepository projectRepository;
     private final ClientProfileRepository clientProfileRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
+    private final ChatService chatService;
 
     /**
      * [CLI] 클라이언트가 특정 프리랜서에게 역제안을 전송합니다.
@@ -161,5 +163,26 @@ public class ProposalService {
             // 동시 요청으로 version 충돌 발생
             throw new ResourceConflictException("동시 요청으로 인해 처리에 실패했습니다. 다시 시도해주세요.");
         }
+    }
+
+    /**
+     * [FRE] 프리랜서가 받은 역제안에서 문의하기를 눌렀을 때
+     * 클라이언트-프리랜서 채팅방을 조회/생성하고 roomId를 반환합니다.
+     */
+    @Transactional
+    public Long inquireChatRoom(User user, Long proposalId) {
+        Proposal proposal = proposalRepository.findByIdForInquiry(proposalId)
+                .orElseThrow(() -> new ResourceNotFoundException("역제안을 찾을 수 없습니다. id=" + proposalId));
+
+        if (!proposal.getFreelancerProfile().getUser().getId().equals(user.getId())) {
+            throw new ProjectAccessDeniedException("해당 역제안에 대한 권한이 없습니다.");
+        }
+
+        return chatService.getOrCreateRoomForProjectClientAndFreelancer(
+                user,
+                proposal.getProject(),
+                proposal.getClientProfile().getUser(),
+                proposal.getFreelancerProfile().getUser()
+        ).getRoomId();
     }
 }
