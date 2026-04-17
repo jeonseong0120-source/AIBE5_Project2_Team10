@@ -52,19 +52,25 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
         if (!profileId) return;
         setLoading(true);
         setFreelancer(null);
-
+        let cancelled = false;
         const fetchDetail = async () => {
             try {
                 const { data } = await api.get<ApiFreelancerDto>(`/v1/freelancers/${profileId}`);
-                setFreelancer(mapFreelancerDtoToProfile(data));
+                if (!cancelled) {
+                    setFreelancer(mapFreelancerDtoToProfile(data));
+                }
             } catch {
                 // quiet
             } finally {
-                setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         };
-
-        fetchDetail();
+        void fetchDetail();
+        return () => {
+            cancelled = true;
+        };
     }, [profileId]);
 
     useEffect(() => {

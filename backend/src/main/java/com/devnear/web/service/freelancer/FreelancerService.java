@@ -3,8 +3,6 @@ package com.devnear.web.service.freelancer;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.freelancer.FreelancerSkill;
-import com.devnear.web.domain.portfolio.Portfolio;
-import com.devnear.web.domain.portfolio.PortfolioImage;
 import com.devnear.web.domain.portfolio.PortfolioRepository;
 import com.devnear.web.domain.skill.Skill;
 import com.devnear.web.domain.skill.SkillRepository;
@@ -15,12 +13,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -139,44 +138,30 @@ public class FreelancerService {
         if (userIds == null || userIds.isEmpty()) {
             return Map.of();
         }
-        List<Portfolio> portfolios = portfolioRepository.findAllByUser_IdInWithImages(userIds);
-        Map<Long, List<Portfolio>> byUser = portfolios.stream()
-                .collect(Collectors.groupingBy(p -> p.getUser().getId()));
+        List<PortfolioRepository.PortfolioPreviewRow> rows = portfolioRepository.findPreviewRowsByUserIds(userIds);
 
         Map<Long, List<String>> result = new HashMap<>();
-        for (Map.Entry<Long, List<Portfolio>> e : byUser.entrySet()) {
-            List<Portfolio> ordered = e.getValue().stream()
-                    .sorted(Comparator.comparing(Portfolio::getId).reversed())
-                    .collect(Collectors.toList());
-            List<String> urls = new ArrayList<>();
-            for (Portfolio port : ordered) {
-                if (urls.size() >= MAX_PORTFOLIO_PREVIEW_IMAGES) {
-                    break;
-                }
-                String rep = representativePortfolioPreviewUrl(port);
-                if (rep != null && !rep.isBlank() && !urls.contains(rep)) {
-                    urls.add(rep);
-                }
-            }
-            result.put(e.getKey(), urls);
-        }
-        return result;
-    }
+        Map<Long, Set<String>> seenByUser = new HashMap<>();
 
-    /** 썸네일 우선, 없으면 정렬된 상세 이미지 중 첫 장 */
-    private String representativePortfolioPreviewUrl(Portfolio port) {
-        if (port.getThumbnailUrl() != null && !port.getThumbnailUrl().isBlank()) {
-            return port.getThumbnailUrl();
+        for (PortfolioRepository.PortfolioPreviewRow row : rows) {
+            Long userId = row.getUserId();
+            String url = row.getPreviewUrl();
+            if (userId == null || url == null || url.isBlank()) {
+                continue;
+            }
+
+            List<String> urls = result.computeIfAbsent(userId, k -> new java.util.ArrayList<>());
+            if (urls.size() >= MAX_PORTFOLIO_PREVIEW_IMAGES) {
+                continue;
+            }
+
+            Set<String> seen = seenByUser.computeIfAbsent(userId, k -> new HashSet<>());
+            if (seen.add(url)) {
+                urls.add(url);
+            }
         }
-        if (port.getPortfolioImages() == null || port.getPortfolioImages().isEmpty()) {
-            return null;
-        }
-        return port.getPortfolioImages().stream()
-                .sorted(Comparator.comparing(PortfolioImage::getSortOrder))
-                .map(PortfolioImage::getImageUrl)
-                .filter(u -> u != null && !u.isBlank())
-                .findFirst()
-                .orElse(null);
+
+        return result;
     }
 
     // [조회] 타인 프로필 상세 조회
