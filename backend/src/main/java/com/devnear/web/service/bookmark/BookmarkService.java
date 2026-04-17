@@ -2,14 +2,19 @@ package com.devnear.web.service.bookmark;
 
 import com.devnear.web.domain.bookmark.BookmarkFreelancer;
 import com.devnear.web.domain.bookmark.BookmarkFreelancerRepository;
+import com.devnear.web.domain.bookmark.BookmarkProject;
+import com.devnear.web.domain.bookmark.BookmarkProjectRepository;
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.portfolio.Portfolio;
 import com.devnear.web.domain.portfolio.PortfolioRepository;
+import com.devnear.web.domain.project.Project;
+import com.devnear.web.domain.project.ProjectRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.freelancer.FreelancerProfileResponse;
+import com.devnear.web.dto.project.ProjectResponse;
 import com.devnear.web.exception.DuplicateProfileException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +32,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class BookmarkService {
 
     private final BookmarkFreelancerRepository bookmarkFreelancerRepository;
-    // BookmarkPortfolioRepository 제거
+    private final BookmarkProjectRepository bookmarkProjectRepository;
     private final ClientProfileRepository clientProfileRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final PortfolioRepository portfolioRepository;
+    private final ProjectRepository projectRepository;
 
     // ── 프리랜서 찜 ──
 
@@ -66,6 +72,42 @@ public class BookmarkService {
         ClientProfile clientProfile = findClientProfileByUser(user);
         return bookmarkFreelancerRepository.findAllByClientProfile(clientProfile, pageable)
                 .map(bookmark -> FreelancerProfileResponse.from(bookmark.getFreelancerProfile()));
+    }
+
+    // ── 프로젝트 찜 ──
+
+    @Transactional
+    public void addProjectBookmark(User user, Long projectId) {
+        FreelancerProfile freelancerProfile = findFreelancerProfileByUser(user);
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("프로젝트를 찾을 수 없습니다."));
+        try {
+            bookmarkProjectRepository.save(BookmarkProject.builder()
+                    .freelancerProfile(freelancerProfile)
+                    .project(project)
+                    .build());
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateProfileException("이미 찜한 프로젝트입니다.");
+        }
+    }
+
+    @Transactional
+    public void removeProjectBookmark(User user, Long projectId) {
+        FreelancerProfile freelancerProfile = findFreelancerProfileByUser(user);
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("프로젝트를 찾을 수 없습니다."));
+
+        BookmarkProject bookmark = bookmarkProjectRepository
+                .findByFreelancerProfileAndProject(freelancerProfile, project)
+                .orElseThrow(() -> new ResourceNotFoundException("찜한 프로젝트가 아닙니다."));
+
+        bookmarkProjectRepository.delete(bookmark);
+    }
+
+    public Page<ProjectResponse> getBookmarkedProjects(User user, Pageable pageable) {
+        FreelancerProfile freelancerProfile = findFreelancerProfileByUser(user);
+        return bookmarkProjectRepository.findAllByFreelancerProfile(freelancerProfile, pageable)
+                .map(bookmark -> ProjectResponse.from(bookmark.getProject()));
     }
 
     // ── 포트폴리오 좋아요 (프리랜서 찜으로 처리) ──
@@ -105,5 +147,10 @@ public class BookmarkService {
     private ClientProfile findClientProfileByUser(User user) {
         return clientProfileRepository.findByUser(user)
                 .orElseThrow(() -> new ResourceNotFoundException("클라이언트 프로필이 등록되지 않았습니다."));
+    }
+
+    private FreelancerProfile findFreelancerProfileByUser(User user) {
+        return freelancerProfileRepository.findByUser_Id(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("프리랜서 프로필이 등록되지 않았습니다."));
     }
 }

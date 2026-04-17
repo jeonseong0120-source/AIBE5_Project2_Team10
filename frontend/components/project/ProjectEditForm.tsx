@@ -132,8 +132,10 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
     return (
         <div className="min-h-screen bg-zinc-50 relative overflow-hidden font-sans pb-20">
             {/* 커서 글로우 */}
-            <div className="pointer-events-none fixed z-0 w-[400px] h-[400px] rounded-full bg-[#FF7D00]/10 blur-[120px] transition-all duration-300"
-                 style={{ left: cursor.x - 200, top: cursor.y - 200 }} />
+            <div
+                className="pointer-events-none fixed left-0 top-0 z-0 h-[400px] w-[400px] rounded-full bg-[#FF7D00]/10 blur-[120px] will-change-transform"
+                style={{ transform: `translate(${cursor.x - 200}px, ${cursor.y - 200}px)` }}
+            />
 
             {/* 헤더 섹션 */}
             <section className="relative pt-16 pb-12 px-8 bg-white border-b border-zinc-200 overflow-hidden mb-10">

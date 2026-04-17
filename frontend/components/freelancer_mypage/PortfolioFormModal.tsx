@@ -1,23 +1,38 @@
 'use client';
 
-import { Dispatch, SetStateAction } from 'react';
+import type { ChangeEvent, Dispatch, RefObject, SetStateAction } from 'react';
 import { motion } from 'framer-motion';
 import { X, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
+
+type PortfolioFormState = {
+    id: number | null | undefined;
+    title: string;
+    desc: string;
+    thumbnailUrl: string;
+    portfolioImages: string[];
+    skills: number[];
+};
+
+type GlobalSkill = {
+    id?: number;
+    skillId?: number;
+    name: string;
+};
 
 interface PortfolioFormModalProps {
     isOpen: boolean;
     onClose: () => void;
-    portfolioForm: any;
-    setPortfolioForm: Dispatch<SetStateAction<any>>;
+    portfolioForm: PortfolioFormState;
+    setPortfolioForm: Dispatch<SetStateAction<PortfolioFormState>>;
     portfolioSkillSearchQuery: string;
     setPortfolioSkillSearchQuery: (val: string) => void;
-    allGlobalSkills: any[];
+    allGlobalSkills: GlobalSkill[];
     isThumbUploading: boolean;
     isBulkUploading: boolean;
-    thumbFileInputRef: React.RefObject<HTMLInputElement | null>;
-    bulkFileInputRef: React.RefObject<HTMLInputElement | null>;
-    handleThumbUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    handleBulkImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    thumbFileInputRef: RefObject<HTMLInputElement | null>;
+    bulkFileInputRef: RefObject<HTMLInputElement | null>;
+    handleThumbUpload: (e: ChangeEvent<HTMLInputElement>) => void;
+    handleBulkImageUpload: (e: ChangeEvent<HTMLInputElement>) => void;
     removePortfolioImage: (idx: number) => void;
     togglePortfolioSkill: (id: number) => void;
     handleSavePortfolio: () => void;
@@ -126,7 +141,7 @@ export default function PortfolioFormModal({
                                     <span className="text-zinc-400 font-mono text-xs my-auto">선택된 기술이 없습니다.</span>
                                 ) : (
                                     portfolioForm.skills.map((skillId: number, idx: number) => {
-                                        const skillObj = allGlobalSkills.find(s => (s.skillId || s.id) === skillId);
+                                        const skillObj = allGlobalSkills.find((s) => (s.skillId || s.id) === skillId);
                                         return (
                                             <span key={`port-skill-${skillId || idx}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[#7A4FFF]/10 border border-[#7A4FFF]/20 text-[#7A4FFF]">
                                                 #{skillObj ? skillObj.name : skillId}
@@ -142,9 +157,10 @@ export default function PortfolioFormModal({
                             </div>
                             <div className="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto no-scrollbar p-2 bg-zinc-50 rounded-xl border border-zinc-100 shadow-inner">
                                 {allGlobalSkills
-                                    .filter(s => s.name.toLowerCase().includes(portfolioSkillSearchQuery.toLowerCase()))
+                                    .filter((s) => s.name.toLowerCase().includes(portfolioSkillSearchQuery.toLowerCase()))
                                     .map((skill, idx) => {
                                         const sId = skill.skillId || skill.id;
+                                        if (sId == null) return null;
                                         const isSelected = portfolioForm.skills.includes(sId);
                                         return (
                                             <button key={`global-port-skill-${sId || idx}`} onClick={() => togglePortfolioSkill(sId)} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${isSelected ? 'bg-[#FF7D00]/10 border-[#FF7D00]/30 text-[#FF7D00]' : 'bg-white border-zinc-200 text-zinc-500 hover:border-[#7A4FFF] hover:text-[#7A4FFF]'}`}>

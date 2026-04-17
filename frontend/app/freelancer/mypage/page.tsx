@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { User as UserIcon, Briefcase, Star, Award } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
@@ -344,12 +344,19 @@ export default function FreelancerMyPage() {
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 font-sans">
             <nav className="w-full py-5 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
+                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/freelancer/explore")}>
                     <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
                 <div className="flex gap-4 items-center md:gap-6">
-                    <button onClick={() => router.push('/freelancer/dashboard')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">DASHBOARD</button>
-                    <button onClick={() => router.push('/freelancer/explore')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">EXPLORE</button>
+                    <button onClick={() => router.push('/freelancer/dashboard')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
+                        DASHBOARD
+                    </button>
+                    <button onClick={() => router.push('/freelancer/explore')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
+                        EXPLORE
+                    </button>
+                    <button onClick={() => router.push('/freelancer/mypage')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
+                        MY_PROFILE
+                    </button>
                     <NotificationBell />
                     <div className="w-8 h-8 rounded-full bg-[#7A4FFF] border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-white font-bold text-xs">
                         {profile?.userName ? profile.userName.charAt(0) : 'U'}
@@ -399,7 +406,7 @@ export default function FreelancerMyPage() {
                                     />
                                 )}
                                 {activeTab === 'portfolio' && (
-                                    <MypagePortfolioTab 
+                                    <MypagePortfolioTab
                                         portfolios={portfolios}
                                         setIsPortfolioModalOpen={setIsPortfolioModalOpen}
                                         setPortfolioForm={setPortfolioForm}
@@ -420,8 +427,7 @@ export default function FreelancerMyPage() {
                     </motion.div>
                 </div>
             </main>
-
-            <PortfolioFormModal 
+            <PortfolioFormModal
                 isOpen={isPortfolioModalOpen}
                 onClose={() => { setIsPortfolioModalOpen(false); setPortfolioForm(EMPTY_PORTFOLIO_FORM); setPortfolioSkillSearchQuery(''); }}
                 portfolioForm={portfolioForm}
@@ -440,7 +446,7 @@ export default function FreelancerMyPage() {
                 handleSavePortfolio={handleSavePortfolio}
             />
 
-            <PortfolioDetailModal 
+            <PortfolioDetailModal
                 selectedPortfolio={selectedPortfolio}
                 setSelectedPortfolio={setSelectedPortfolio}
                 activeImageIndex={activeImageIndex}

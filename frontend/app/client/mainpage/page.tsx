@@ -93,15 +93,12 @@ export default function ClientDashboard() {
 
             {/* 🔥 커서 글로우 */}
             <div
-                className="pointer-events-none fixed z-0 w-[300px] h-[300px] rounded-full bg-[#FF7D00]/20 blur-[120px] transition-all duration-200"
-                style={{
-                    left: cursor.x - 150,
-                    top: cursor.y - 150
-                }}
+                className="pointer-events-none fixed left-0 top-0 z-0 h-[300px] w-[300px] rounded-full bg-[#FF7D00]/20 blur-[120px] will-change-transform"
+                style={{ transform: `translate(${cursor.x - 150}px, ${cursor.y - 150}px)` }}
             />
             {/* NAV */}
             <nav className="w-full py-5 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
+                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/client/mainpage")}>
                     <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
 
@@ -229,9 +226,9 @@ export default function ClientDashboard() {
                         <p className="text-zinc-400 font-black font-mono text-xs tracking-widest uppercase">Fetching_Experts...</p>
                     </div>
                 ) : freelancers.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                         {freelancers.map((item, idx) => (
-                            <div key={item.id || idx} className="transition-transform duration-300 hover:scale-[1.02]">
+                            <div key={item.id || idx}>
                                 <FreelancerCard data={item} />
                             </div>
                         ))}

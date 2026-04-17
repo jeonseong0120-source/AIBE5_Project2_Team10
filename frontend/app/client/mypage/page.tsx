@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Briefcase, User, Settings, LogOut, ChevronRight, Calendar, XCircle, ExternalLink, Heart, Send, Sparkles } from 'lucide-react';
+import { User, Settings, LogOut, ChevronRight, Calendar, XCircle, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notifyAuthChanged, logout } from '../../lib/authEvents';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
@@ -10,7 +10,6 @@ import api from '../../lib/axios';
 
 import ProfileEditModal from '@/components/client_mypage/page';
 import CompanyEditModal from '@/components/client_mypage/CompanyEditModal';
-import BookmarkedFreelancers from '@/components/client_mypage/BookmarkedFreelancers';
 
 interface UserProfile {
     name: string;
@@ -85,12 +84,14 @@ export default function ClientMyPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative overflow-hidden font-sans">
-            <div className="pointer-events-none fixed z-0 w-[400px] h-[400px] rounded-full bg-[#FF7D00]/15 blur-[150px] transition-all duration-300"
-                 style={{ left: cursor.x - 200, top: cursor.y - 200 }} />
+            <div
+                className="pointer-events-none fixed left-0 top-0 z-0 h-[400px] w-[400px] rounded-full bg-[#FF7D00]/15 blur-[150px] will-change-transform"
+                style={{ transform: `translate(${cursor.x - 200}px, ${cursor.y - 200}px)` }}
+            />
 
             {/* 네비게이션 */}
             <nav className="w-full py-6 px-10 bg-white/80 backdrop-blur-2xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/client/dashboard")}>
+                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/client/mainpage")}>
                     <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
                 <div className="flex gap-6 items-center">
@@ -121,27 +122,7 @@ export default function ClientMyPage() {
                 </div>
             </section>
 
-            <main className="max-w-6xl mx-auto px-10 py-16 relative z-10 space-y-16">
-                {/* 프리랜서 관리 섹션 */}
-                <section className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    <div className="space-y-6">
-                        <h3 className="text-sm font-black uppercase font-mono tracking-[0.2em] text-zinc-400 flex items-center gap-2">
-                            <Heart className="w-4 h-4 text-[#FF7D00]" fill="#FF7D00" /> Bookmarked_Talents
-                        </h3>
-                        <BookmarkedFreelancers />
-                    </div>
-                    <div className="space-y-6">
-                        <h3 className="text-sm font-black uppercase font-mono tracking-[0.2em] text-zinc-400 flex items-center gap-2">
-                            <Send className="w-4 h-4 text-[#FF7D00]" /> Sent_Proposals_History
-                        </h3>
-                        <div className="bg-zinc-100/50 rounded-[2.5rem] border border-zinc-200 border-dashed p-10 flex flex-col items-center justify-center text-center">
-                            <Sparkles size={28} className="text-zinc-200 mb-4" />
-                            <p className="text-sm font-bold text-zinc-500 mb-1">준비 중인 프리미엄 기능</p>
-                            <p className="text-[11px] font-medium text-zinc-400 leading-relaxed">제안 내역과 피드백을 이곳에서 관리할 수 있습니다.</p>
-                        </div>
-                    </div>
-                </section>
-
+            <main className="max-w-6xl mx-auto px-10 py-16 relative z-10">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pt-8 border-t border-zinc-100">
                     {/* 설정 메뉴 */}
                     <div className="lg:col-span-1 space-y-6">
@@ -163,10 +144,10 @@ export default function ClientMyPage() {
                         </div>
                     </div>
 
-                    {/* 프로젝트 목록 */}
+                    {/* 프로젝트 목록 요약 */}
                     <div className="lg:col-span-2 space-y-6">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-sm font-black uppercase font-mono tracking-[0.2em] text-zinc-400">My_Projects_List</h2>
+                            <h2 className="text-sm font-black uppercase font-mono tracking-[0.2em] text-zinc-400">Project_Snapshot</h2>
                             <span className="px-3 py-1 bg-zinc-950 text-white text-[10px] font-black rounded-lg font-mono">CNT_{projects.length}</span>
                         </div>
                         {loading ? (
@@ -196,8 +177,40 @@ export default function ClientMyPage() {
                 </div>
             </main>
 
-            {/* 프로젝트 상세 모달 (AnimatePresence 등 생략/유지) */}
-            {/* ... (이전 코드의 모달 부분 유지) */}
+            {/* 프로젝트 상세 모달 */}
+            <AnimatePresence>
+                {selectedProjectForView && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedProjectForView(null)} className="absolute inset-0 bg-zinc-950/70 backdrop-blur-md" />
+                        <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-white rounded-[3.5rem] w-full max-w-xl p-12 shadow-2xl border border-orange-100 overflow-hidden">
+                            <div className="flex justify-between items-start mb-10 relative z-10">
+                                <div><span className="text-[10px] font-black text-[#FF7D00] uppercase tracking-[0.4em] font-mono block mb-2">Project_Briefing</span><h2 className="text-3xl font-black text-zinc-900 tracking-tighter leading-tight">{selectedProjectForView.projectName}</h2></div>
+                                <button onClick={() => setSelectedProjectForView(null)} className="text-zinc-300 hover:text-[#FF7D00] transition-colors p-2 bg-zinc-50 rounded-full"><XCircle size={28} /></button>
+                            </div>
+                            <div className="space-y-8 relative z-10">
+                                <div className="grid grid-cols-2 gap-5">
+                                    <div className="p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100">
+                                        <p className="text-[10px] font-black text-zinc-400 uppercase mb-2 font-mono tracking-widest">Target_Budget</p>
+                                        <p className="text-xl font-black text-zinc-900">₩{selectedProjectForView.budget?.toLocaleString() || '0'}</p>
+                                    </div>
+                                    <div className="p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100">
+                                        <p className="text-[10px] font-black text-zinc-400 uppercase mb-2 font-mono tracking-widest">Current_Status</p>
+                                        <p className="text-xl font-black text-[#FF7D00]">{selectedProjectForView.status}</p>
+                                    </div>
+                                </div>
+                                <div className="p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-100">
+                                    <p className="text-[10px] font-black text-zinc-400 uppercase mb-3 font-mono tracking-widest">Mission_Statement</p>
+                                    <p className="text-sm font-medium text-zinc-600 leading-relaxed italic">"{selectedProjectForView.detail || "제공된 상세 내용이 없습니다."}"</p>
+                                </div>
+                                <div className="flex gap-4 pt-4">
+                                    <button onClick={() => setSelectedProjectForView(null)} className="flex-1 py-5 bg-zinc-100 text-zinc-500 rounded-2xl font-black text-xs uppercase tracking-widest font-mono hover:bg-zinc-200 transition-all">Close</button>
+                                    <button onClick={() => router.push('/client/dashboard')} className="flex-1 py-5 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest font-mono hover:bg-[#FF7D00] shadow-xl flex items-center justify-center gap-3 transition-all">Manage_Now <ExternalLink size={16} /></button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             <ProfileEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSuccess={(newName) => setUser(prev => prev ? { ...prev, nickname: newName } : null)} />
             <CompanyEditModal isOpen={isCompanyModalOpen} onClose={() => setIsCompanyModalOpen(false)} onSuccess={() => {}} />
