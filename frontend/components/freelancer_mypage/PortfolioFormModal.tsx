@@ -63,7 +63,7 @@ export default function PortfolioFormModal({
                     <div className="space-y-6">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black font-mono uppercase text-zinc-400">제목 / Title *</label>
-                            <input type="text" value={portfolioForm.title} onChange={e => setPortfolioForm(prev => ({ ...prev, title: e.target.value }))} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-bold focus:border-[#7A4FFF] outline-none" placeholder="프로젝트 제목을 입력하세요." />
+                            <input type="text" value={portfolioForm.title} onChange={e => setPortfolioForm((prev: any) => ({ ...prev, title: e.target.value }))} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-bold focus:border-[#7A4FFF] outline-none" placeholder="프로젝트 제목을 입력하세요." />
                         </div>
 
                         <input type="file" accept="image/*" className="hidden" ref={thumbFileInputRef} onChange={handleThumbUpload} />
@@ -114,7 +114,7 @@ export default function PortfolioFormModal({
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black font-mono uppercase text-zinc-400">상세 설명 / Description *</label>
-                            <textarea rows={5} value={portfolioForm.desc} onChange={e => setPortfolioForm(prev => ({ ...prev, desc: e.target.value }))} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium focus:border-[#7A4FFF] outline-none resize-none" placeholder="수행한 역할과 성과를 상세히 적어주세요." />
+                            <textarea rows={5} value={portfolioForm.desc} onChange={e => setPortfolioForm((prev: any) => ({ ...prev, desc: e.target.value }))} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium focus:border-[#7A4FFF] outline-none resize-none" placeholder="수행한 역할과 성과를 상세히 적어주세요." />
                         </div>
 
                         {/* 포트폴리오 스킬 선택 */}

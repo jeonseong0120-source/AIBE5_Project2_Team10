@@ -7,9 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Briefcase, Grid3X3 } from 'lucide-react';
 import api from '@/app/lib/axios';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
-import PortfolioDetailModal, {
-    type PortfolioDetailShape,
-} from '@/components/portfolio/PortfolioDetailModal';
+import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
+import type { PortfolioDetailShape } from '@/components/portfolio/PortfolioDetailModal';
 
 export type FreelancerProfileDetailVariant = 'freelancer' | 'client';
 
