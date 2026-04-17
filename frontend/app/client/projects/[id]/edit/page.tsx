@@ -1,116 +1,58 @@
-﻿"use client";
+﻿// @/app/client/projects/[id]/edit/page.tsx
+
+"use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import api from "@/app/lib/axios";
-import ProjectEditForm, { type ProjectEditInitialData } from "@/components/project/ProjectEditForm";
-
-type ProjectDetailResponse = {
-    projectId: number;
-    projectName: string;
-    budget: number;
-    deadline: string;
-    detail: string;
-    online: boolean;
-    offline: boolean;
-    location?: string | null;
-    latitude?: number | null;
-    longitude?: number | null;
-    skills?: string[];
-};
-
-function toInitialForm(data: ProjectDetailResponse): ProjectEditInitialData {
-    return {
-        projectName: data.projectName,
-        budget: data.budget,
-        deadline: data.deadline,
-        detail: data.detail ?? "",
-        online: data.online,
-        offline: data.offline,
-        location: data.location ?? "",
-        latitude: data.latitude == null ? "" : String(data.latitude),
-        longitude: data.longitude == null ? "" : String(data.longitude),
-        skillNames: data.skills ?? [],
-    };
-}
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import ProjectEditForm from "@/components/project/ProjectEditForm";
 
 export default function ClientProjectEditPage() {
-    const router = useRouter();
     const params = useParams();
+    const router = useRouter();
     const id = params?.id as string;
-
-    const [ready, setReady] = useState(false);
+    const [initialData, setInitialData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [initialData, setInitialData] = useState<ProjectEditInitialData | null>(null);
 
     useEffect(() => {
-        const gateAndLoad = async () => {
-            const token = localStorage.getItem("accessToken");
-            if (!token) {
-                router.replace("/login");
-                return;
-            }
-
+        const fetchDetail = async () => {
+            if (!id) return;
             try {
-                const me = await api.get("/v1/users/me");
-                const role = me.data.role as string;
-                if (role === "GUEST" || role === "ROLE_GUEST") {
-                    router.replace("/onboarding");
-                    return;
-                }
-                if (role === "FREELANCER" || role === "ROLE_FREELANCER") {
-                    router.replace("/");
-                    return;
-                }
-                setReady(true);
+                const { data } = await api.get(`/v1/projects/${id}`);
 
-            } catch {
-                router.replace("/login");
-                return;
-            }
+                // 🔍 [수정] 백엔드의 'skills' 필드를 'skillNames'로 변환하여 전달
+                const mappedData = {
+                    ...data,
+                    skillNames: data.skills || [], // 이름 통일
+                };
 
-            try {
-                const projectRes = await api.get<ProjectDetailResponse>(`/v1/projects/${id}`);
-                setInitialData(toInitialForm(projectRes.data));
-            } catch {
-                setError("프로젝트 정보를 불러오지 못했습니다.");
-            } finally {
-                setLoading(false);
-            }
+                setInitialData(mappedData);
+            } catch (err) {
+                alert("데이터 로드 실패 (404/500)");
+                router.push("/client/dashboard");
+            } finally { setLoading(false); }
         };
-
-        if (id) {
-            void gateAndLoad();
-        }
+        fetchDetail();
     }, [id, router]);
 
-    if (!ready || loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-mono text-sm font-bold text-zinc-500">
-                LOADING…
-            </div>
-        );
-    }
-
-    if (error || !initialData) {
-        return (
-            <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-50 px-6">
-                <p className="text-center text-red-600">{error ?? "데이터가 없습니다."}</p>
-                <button
-                    type="button"
-                    onClick={() => router.push(`/client/projects/${id}`)}
-                    className="rounded-xl bg-zinc-900 px-5 py-2 text-sm font-bold text-white"
-                >
-                    상세로 돌아가기
-                </button>
-            </div>
-        );
-    }
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center font-black text-[#FF7D00] animate-pulse">
+            BOOTING_EDIT_SYSTEM...
+        </div>
+    );
+    if (!initialData) return null;
 
     return (
-        <div className="min-h-screen bg-zinc-50 py-12 px-4">
-            <ProjectEditForm projectId={id} initialData={initialData} />
+        <div className="min-h-screen bg-zinc-50/50">
+            <nav className="p-8">
+                <button onClick={() => router.back()} className="flex items-center gap-2 text-xs font-black text-zinc-400 hover:text-zinc-900 transition-colors uppercase tracking-[0.2em]">
+                    <ArrowLeft size={16} /> Back_to_Dash
+                </button>
+            </nav>
+            <main className="px-6 pb-20">
+                <ProjectEditForm projectId={id} initialData={initialData} />
+            </main>
         </div>
     );
 }
