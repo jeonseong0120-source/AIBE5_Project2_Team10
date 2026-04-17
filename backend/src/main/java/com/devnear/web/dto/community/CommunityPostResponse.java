@@ -14,10 +14,15 @@ public class CommunityPostResponse {
     private final int viewCount;
     private final int likeCount;
     private final int commentCount;
+    private final boolean isLiked;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
 
     public CommunityPostResponse(CommunityPost post) {
+        this(post, false);
+    }
+
+    public CommunityPostResponse(CommunityPost post, boolean isLiked) {
         this.id = post.getId();
         this.title = post.getTitle();
         this.content = post.getContent();
@@ -25,6 +30,7 @@ public class CommunityPostResponse {
         this.viewCount = post.getViewCount();
         this.likeCount = post.getLikeCount();
         this.commentCount = post.getCommentCount();
+        this.isLiked = isLiked;
         this.createdAt = post.getCreatedAt();
         this.updatedAt = post.getUpdatedAt();
     }
