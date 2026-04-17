@@ -46,7 +46,7 @@ public class FreelancerProfileResponse {
         return FreelancerProfileResponse.builder()
                 .profileId(profile.getId())
                 .userId(profile.getUser().getId())
-                .userName(profile.getUser().getName())
+                .userName(profile.getUser().getNickname())
                 // User 테이블 프사가 아닌 Profile 테이블 전용 프사 우선 반환 (없으면 본계정 프사)
                 .profileImageUrl(profile.getProfileImageUrl() != null ? profile.getProfileImageUrl() : profile.getUser().getProfileImageUrl())
                 .portfolioImageUrls(portfolioImageUrls != null ? portfolioImageUrls : Collections.emptyList())
