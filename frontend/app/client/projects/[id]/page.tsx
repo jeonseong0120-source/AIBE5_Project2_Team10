@@ -12,7 +12,8 @@ export default function ClientProjectIdPage() {
         const raw = params.id;
         const id = Array.isArray(raw) ? raw[0] : raw;
         if (id) {
-            router.replace(`/client/projects/${id}/edit`);
+            const safeId = encodeURIComponent(id);
+            router.replace(`/client/projects/${safeId}/edit`);
         }
     }, [params, router]);
 
