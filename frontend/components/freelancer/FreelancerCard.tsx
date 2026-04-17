@@ -1,81 +1,238 @@
 'use client';
 
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, MapPin, Star } from 'lucide-react';
 import { FreelancerProfile } from '@/types/freelancer';
+import api from '@/app/lib/axios';
+import PortfolioDetailModal, {
+    type PortfolioDetailShape,
+} from '@/components/portfolio/PortfolioDetailModal';
 
 interface Props {
     data: FreelancerProfile;
 }
 
 export default function FreelancerCard({ data }: Props) {
-    // [수정] 무한 루프 에러를 막기 위해 안전한 Fallback URL 상수화 및 브랜드 컬러 적용
-    const FALLBACK_IMAGE_URL = "https://ui-avatars.com/api/?name=Agent&background=F4F4F5&color=A1A1AA&size=150";
+    const FALLBACK_IMAGE_URL =
+        'https://ui-avatars.com/api/?name=Agent&background=F4F4F5&color=A1A1AA&size=150';
+
+    /** 목록 API: 포트폴리오별 대표 썸네일(또는 첫 상세 이미지) URL 배열 — 갤러리 전체가 아님 */
+    const slides = useMemo(() => {
+        const fromPortfolio = (data.portfolioImageUrls ?? []).filter(Boolean);
+        if (fromPortfolio.length > 0) return fromPortfolio;
+        return [data.profileImageUrl || FALLBACK_IMAGE_URL];
+    }, [data.portfolioImageUrls, data.profileImageUrl]);
+
+    const [slideIndex, setSlideIndex] = useState(0);
+
+    const [portfolioModal, setPortfolioModal] = useState<PortfolioDetailShape | null>(null);
+    const [portfolioModalImageIndex, setPortfolioModalImageIndex] = useState(0);
+    const [portfolioLoading, setPortfolioLoading] = useState(false);
+    const portfolioFetchLock = useRef(false);
+    const [portalReady, setPortalReady] = useState(false);
+
+    useEffect(() => {
+        setPortalReady(true);
+    }, []);
+
+    useEffect(() => {
+        setSlideIndex(0);
+    }, [data.id, slides.join('|')]);
+
+    const goPrev = useCallback(
+        (e: MouseEvent<HTMLButtonElement>) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setSlideIndex((i) => (i - 1 + slides.length) % slides.length);
+        },
+        [slides.length]
+    );
+
+    const goNext = useCallback(
+        (e: MouseEvent<HTMLButtonElement>) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setSlideIndex((i) => (i + 1) % slides.length);
+        },
+        [slides.length]
+    );
+
+    const openPortfolioDetail = useCallback(async () => {
+        if (portfolioFetchLock.current) return;
+        portfolioFetchLock.current = true;
+
+        const uid = data.userId;
+        if (uid == null) {
+            portfolioFetchLock.current = false;
+            alert('포트폴리오 정보를 불러올 수 없습니다.');
+            return;
+        }
+
+        const slideUrl = slides[slideIndex];
+        setPortfolioLoading(true);
+        try {
+            const { data: list } = await api.get<PortfolioDetailShape[]>('/portfolios', {
+                params: { userId: uid },
+            });
+            const portfolios = list || [];
+
+            if (portfolios.length === 0) {
+                const isOnlyProfile =
+                    slideUrl === (data.profileImageUrl || FALLBACK_IMAGE_URL) ||
+                    slideUrl === FALLBACK_IMAGE_URL;
+                if (isOnlyProfile) {
+                    alert('등록된 포트폴리오가 없습니다.');
+                    return;
+                }
+                alert('등록된 포트폴리오가 없습니다.');
+                return;
+            }
+
+            let chosen: PortfolioDetailShape = portfolios[0];
+            let initialIdx = 0;
+
+            for (const p of portfolios) {
+                if (p.thumbnailUrl && p.thumbnailUrl === slideUrl) {
+                    chosen = p;
+                    initialIdx = 0;
+                    break;
+                }
+                const imgs = p.portfolioImages ?? [];
+                const idx = imgs.indexOf(slideUrl);
+                if (idx >= 0) {
+                    chosen = p;
+                    initialIdx = idx;
+                    break;
+                }
+            }
+
+            setPortfolioModalImageIndex(initialIdx);
+            setPortfolioModal(chosen);
+        } catch {
+            alert('포트폴리오를 불러오지 못했습니다.');
+        } finally {
+            setPortfolioLoading(false);
+            portfolioFetchLock.current = false;
+        }
+    }, [data.userId, data.profileImageUrl, slides, slideIndex]);
+
+    const showArrows = slides.length > 1;
+    const currentSrc = slides[slideIndex] ?? FALLBACK_IMAGE_URL;
 
     return (
-        <Link href={`/freelancer/${data.id}`}>
+        <>
+        <div className="relative p-0.5">
             <motion.div
                 whileHover={{ y: -6 }}
-                className="group relative rounded-2xl border border-zinc-200 bg-white overflow-hidden transition-all duration-300 hover:shadow-xl cursor-pointer"
+                className="group relative overflow-hidden rounded-[1.25rem] border border-zinc-200/90 bg-white p-3 shadow-sm transition-shadow duration-300 hover:shadow-xl"
             >
-                {/* 상단 이미지 */}
-                <div className="h-36 bg-gradient-to-br from-zinc-100 to-zinc-200">
+                <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void openPortfolioDetail();
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            void openPortfolioDetail();
+                        }
+                    }}
+                    className="group/carousel relative block h-[11.7rem] w-full cursor-pointer overflow-hidden rounded-xl bg-gradient-to-br from-zinc-100 to-zinc-200 text-left outline-none ring-1 ring-zinc-200/60 focus-visible:ring-2 focus-visible:ring-[#7A4FFF] focus-visible:ring-offset-2 sm:h-[12.6rem] md:h-[13.5rem]"
+                    aria-label="포트폴리오 상세 보기"
+                >
                     <img
-                        src={data.profileImageUrl || FALLBACK_IMAGE_URL}
+                        src={currentSrc}
                         alt={data.nickname}
-                        onError={(e) => { 
-                            // [핵심] 이미지가 깨졌을 때 Fallback 이미지로 교체하되, 
-                            // 교체한 이미지마저 깨지면 무한루프에 빠지지 않도록 방어 코드 추가!
+                        onError={(e) => {
                             if (e.currentTarget.src !== FALLBACK_IMAGE_URL) {
-                                e.currentTarget.src = FALLBACK_IMAGE_URL; 
+                                e.currentTarget.src = FALLBACK_IMAGE_URL;
                             }
                         }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        className="pointer-events-none h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                     />
-                </div>
 
-                <div className="p-4">
-                    {/* 이름 + 평점 */}
-                    <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-bold text-zinc-900 tracking-tight">{data.nickname}</h3>
-
-                        <div className="flex items-center text-[#FF7D00] text-sm font-bold">
-                            <Star size={14} fill="currentColor" />
-                            <span className="ml-1 font-mono">{data.averageRating.toFixed(1)}</span>
+                    {portfolioLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-[2px]">
+                            <Loader2 className="h-8 w-8 animate-spin text-[#7A4FFF]" aria-hidden />
                         </div>
-                    </div>
+                    )}
 
-                    {/* 소개 */}
-                    <p className="text-xs text-zinc-500 line-clamp-2 mb-3">
-                        {data.introduction}
-                    </p>
-
-                    {/* 스킬 */}
-                    <div className="flex flex-wrap gap-1 mb-3">
-                        {data.skills.slice(0, 3).map((skill) => (
-                            <span
-                                key={skill.id}
-                                className="px-2 py-0.5 text-[10px] rounded-md bg-orange-50 text-[#FF7D00] border border-orange-100 font-semibold font-mono uppercase"
+                    {showArrows && (
+                        <>
+                            <button
+                                type="button"
+                                aria-label="이전 포트폴리오"
+                                onClick={goPrev}
+                                className="pointer-events-auto absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200/80 bg-white/95 text-zinc-800 shadow-md opacity-95 transition-opacity hover:bg-white hover:opacity-100"
                             >
-                                {skill.name}
-                            </span>
-                        ))}
-                    </div>
-
-                    {/* 하단 */}
-                    <div className="flex justify-between items-center pt-3 border-t border-zinc-100 text-xs text-zinc-500 font-mono font-bold">
-                        <div className="flex items-center">
-                            <MapPin size={12} className="mr-1 text-zinc-400"/>
-                            {data.location}
-                        </div>
-
-                        <div className="text-[#7A4FFF]">
-                            ₩{data.hourlyRate.toLocaleString()}
-                        </div>
-                    </div>
+                                <ChevronLeft size={20} strokeWidth={2.5} />
+                            </button>
+                            <button
+                                type="button"
+                                aria-label="다음 포트폴리오"
+                                onClick={goNext}
+                                className="pointer-events-auto absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200/80 bg-white/95 text-zinc-800 shadow-md opacity-95 transition-opacity hover:bg-white hover:opacity-100"
+                            >
+                                <ChevronRight size={20} strokeWidth={2.5} />
+                            </button>
+                        </>
+                    )}
                 </div>
+
+                <Link href={`/client/freelancers/${data.id}`} className="mt-1 block cursor-pointer">
+                    <div className="flex min-h-[12.5rem] flex-col px-2 pb-6 pt-5 sm:min-h-[13rem] md:min-h-[13.5rem]">
+                        <div className="mb-3 flex items-center justify-between">
+                            <h3 className="font-bold tracking-tight text-zinc-900">{data.nickname}</h3>
+
+                            <div className="flex items-center text-sm font-bold text-[#FF7D00]">
+                                <Star size={14} fill="currentColor" />
+                                <span className="ml-1 font-mono">{data.averageRating.toFixed(1)}</span>
+                            </div>
+                        </div>
+
+                        <p className="mb-4 line-clamp-3 text-xs leading-relaxed text-zinc-500">{data.introduction}</p>
+
+                        <div className="mb-4 flex flex-wrap gap-1.5">
+                            {data.skills.slice(0, 3).map((skill) => (
+                                <span
+                                    key={skill.id}
+                                    className="rounded-md border border-orange-100 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold font-mono uppercase text-[#FF7D00]"
+                                >
+                                    {skill.name}
+                                </span>
+                            ))}
+                        </div>
+
+                        <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-4 text-xs font-mono font-bold text-zinc-500">
+                            <div className="flex items-center">
+                                <MapPin size={12} className="mr-1 text-zinc-400" />
+                                {data.location}
+                            </div>
+
+                            <div className="text-[#7A4FFF]">₩{data.hourlyRate.toLocaleString()}</div>
+                        </div>
+                    </div>
+                </Link>
             </motion.div>
-        </Link>
+        </div>
+        {portalReady &&
+            portfolioModal != null &&
+            createPortal(
+                <PortfolioDetailModal
+                    portfolio={portfolioModal}
+                    initialImageIndex={portfolioModalImageIndex}
+                    onClose={() => setPortfolioModal(null)}
+                    readOnly
+                    fullProfileHref={`/client/freelancers/${data.id}`}
+                />,
+                document.body
+            )}
+        </>
     );
 }

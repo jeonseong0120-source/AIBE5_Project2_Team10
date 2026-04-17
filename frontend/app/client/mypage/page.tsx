@@ -84,12 +84,14 @@ export default function ClientMyPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative overflow-hidden font-sans">
-            <div className="pointer-events-none fixed z-0 w-[400px] h-[400px] rounded-full bg-[#FF7D00]/15 blur-[150px] transition-all duration-300"
-                 style={{ left: cursor.x - 200, top: cursor.y - 200 }} />
+            <div
+                className="pointer-events-none fixed left-0 top-0 z-0 h-[400px] w-[400px] rounded-full bg-[#FF7D00]/15 blur-[150px] will-change-transform"
+                style={{ transform: `translate(${cursor.x - 200}px, ${cursor.y - 200}px)` }}
+            />
 
             {/* 네비게이션 */}
             <nav className="w-full py-6 px-10 bg-white/80 backdrop-blur-2xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/client/dashboard")}>
+                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/client/mainpage")}>
                     <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
                 <div className="flex gap-6 items-center">

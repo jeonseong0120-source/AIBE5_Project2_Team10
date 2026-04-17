@@ -3,6 +3,7 @@ package com.devnear.web.service.freelancer;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.freelancer.FreelancerSkill;
+import com.devnear.web.domain.portfolio.PortfolioRepository;
 import com.devnear.web.domain.skill.Skill;
 import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
@@ -12,8 +13,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,8 +27,15 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class FreelancerService {
 
+    /**
+     * 클라이언트 목록 등: 포트폴리오마다 대표 1장(썸네일 우선)만 넣어 캐러셀에 쓰고,
+     * 한 프리랜서당 최대 이 개수만큼의 서로 다른 포트폴리오 미리보기 URL을 반환한다.
+     */
+    private static final int MAX_PORTFOLIO_PREVIEW_IMAGES = 10;
+
     private final FreelancerProfileRepository profileRepository;
     private final SkillRepository skillRepository;
+    private final PortfolioRepository portfolioRepository;
 
     // [조회] 내 프로필 상세 데이터 조회
     public FreelancerProfileResponse getMyProfile(User user) {
@@ -108,9 +121,47 @@ public class FreelancerService {
         }
         profiles.sort(comparator);
 
-        return profiles.stream()
-                .map(FreelancerProfileResponse::from)
+        List<Long> userIds = profiles.stream()
+                .map(p -> p.getUser().getId())
+                .distinct()
                 .collect(Collectors.toList());
+        Map<Long, List<String>> portfolioUrlsByUserId = loadPortfolioPreviewUrlsByUserId(userIds);
+
+        return profiles.stream()
+                .map(p -> FreelancerProfileResponse.from(
+                        p,
+                        portfolioUrlsByUserId.getOrDefault(p.getUser().getId(), List.of())))
+                .collect(Collectors.toList());
+    }
+
+    private Map<Long, List<String>> loadPortfolioPreviewUrlsByUserId(Collection<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Map.of();
+        }
+        List<PortfolioRepository.PortfolioPreviewRow> rows = portfolioRepository.findPreviewRowsByUserIds(userIds);
+
+        Map<Long, List<String>> result = new HashMap<>();
+        Map<Long, Set<String>> seenByUser = new HashMap<>();
+
+        for (PortfolioRepository.PortfolioPreviewRow row : rows) {
+            Long userId = row.getUserId();
+            String url = row.getPreviewUrl();
+            if (userId == null || url == null || url.isBlank()) {
+                continue;
+            }
+
+            List<String> urls = result.computeIfAbsent(userId, k -> new java.util.ArrayList<>());
+            if (urls.size() >= MAX_PORTFOLIO_PREVIEW_IMAGES) {
+                continue;
+            }
+
+            Set<String> seen = seenByUser.computeIfAbsent(userId, k -> new HashSet<>());
+            if (seen.add(url)) {
+                urls.add(url);
+            }
+        }
+
+        return result;
     }
 
     // [조회] 타인 프로필 상세 조회

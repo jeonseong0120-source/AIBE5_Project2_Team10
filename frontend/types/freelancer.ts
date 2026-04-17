@@ -12,8 +12,11 @@ export interface ApiSkill {
 // 2. 프론트엔드 내부에서 사용할 정제된 인터페이스
 export interface FreelancerProfile {
     id: number;
+    userId?: number;
     nickname: string;
     profileImageUrl?: string;
+    /** 포트폴리오에서 모은 미리보기 이미지 URL (목록 API 등) */
+    portfolioImageUrls?: string[];
     introduction: string;
     location: string;
     hourlyRate: number;
@@ -26,8 +29,10 @@ export interface FreelancerProfile {
 // 3. 백엔드 API 응답(DTO) 형태
 export interface ApiFreelancerDto {
     profileId: number;
+    userId?: number;
     userName: string;
     profileImageUrl?: string;
+    portfolioImageUrls?: string[];
     introduction: string;
     location: string;
     hourlyRate: number;
@@ -41,8 +46,10 @@ export interface ApiFreelancerDto {
 export function mapFreelancerDtoToProfile(dto: ApiFreelancerDto): FreelancerProfile {
     return {
         id: dto.profileId,
+        userId: dto.userId,
         nickname: dto.userName,
         profileImageUrl: dto.profileImageUrl,
+        portfolioImageUrls: dto.portfolioImageUrls ?? [],
         introduction: dto.introduction,
         location: dto.location,
         hourlyRate: dto.hourlyRate,

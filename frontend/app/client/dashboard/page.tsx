@@ -171,7 +171,7 @@ export default function ClientDashboardPage() {
             </div>
 
             <nav className="w-full py-6 px-10 bg-white/70 backdrop-blur-2xl border-b border-zinc-200/50 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer group" onClick={() => router.push("/")}>
+                <div className="font-black text-2xl tracking-tighter cursor-pointer group" onClick={() => router.push("/client/mainpage")}>
                     <span className="text-[#FF7D00] group-hover:drop-shadow-[0_0_8px_#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
                 <div className="flex gap-4 items-center relative z-10 md:gap-8">
