@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Briefcase, User, Settings, LogOut, ChevronRight, Calendar, XCircle, ExternalLink, Heart, Send, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { notifyAuthChanged } from '../../lib/authEvents';
+import { notifyAuthChanged, logout } from '../../lib/authEvents';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
 import api from '../../lib/axios';
 
@@ -157,7 +157,7 @@ export default function ClientMyPage() {
                             </button>
                             <div className="h-[1px] bg-zinc-50 my-2 mx-5"></div>
                             <button className="w-full flex items-center justify-between p-5 hover:bg-red-50 rounded-2xl transition group"
-                                    onClick={() => { localStorage.removeItem('accessToken'); notifyAuthChanged(); router.push('/login'); }}>
+                                    onClick={() => { logout(); router.push('/login'); }}>
                                 <div className="flex items-center gap-4 font-bold text-sm text-red-500"><LogOut className="w-5 h-5 text-red-400" />로그아웃</div>
                             </button>
                         </div>
