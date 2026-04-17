@@ -103,5 +103,4 @@ public class ApplicationController {
         return ResponseEntity.noContent().build();
     }
 
-    // (CLI-05) 작업 영역
 }

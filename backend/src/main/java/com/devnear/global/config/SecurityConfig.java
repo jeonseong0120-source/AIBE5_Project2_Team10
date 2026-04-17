@@ -103,13 +103,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/client/**", "/api/v1/client/**").hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers("/api/bookmarks/**", "/api/v1/bookmarks/**").hasAnyRole("CLIENT", "BOTH")
 
-                        // [역제안] 전송 및 보낸 목록 조회: 클라이언트 전용
-                        .requestMatchers(HttpMethod.POST, "/api/proposals", "/api/v1/proposals").hasAnyRole("CLIENT", "BOTH")
-                        .requestMatchers(HttpMethod.GET, "/api/proposals/sent", "/api/v1/proposals/sent").hasAnyRole("CLIENT", "BOTH")
-                        // [역제안] 받은 목록 조회 및 수락/거절: 프리랜서 전용
-                        .requestMatchers(HttpMethod.GET, "/api/proposals/received", "/api/v1/proposals/received").hasAnyRole("FREELANCER", "BOTH")
-                        .requestMatchers(HttpMethod.PATCH, "/api/proposals/*/status", "/api/v1/proposals/*/status").hasAnyRole("FREELANCER", "BOTH")
-
                         // 5. [나머지] 커뮤니티 글쓰기, 좋아요, 댓글 작성 등은 GUEST를 제외한 정식 유저만 가능!
                         .anyRequest().hasAnyRole("CLIENT", "FREELANCER", "BOTH")
                 )
@@ -140,7 +133,7 @@ public class SecurityConfig {
             }
         }
         config.setAllowedOriginPatterns(new ArrayList<>(patterns));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
 

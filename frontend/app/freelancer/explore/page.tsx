@@ -6,6 +6,7 @@ import { Search, MapPin, DollarSign, Cpu, ChevronDown, RotateCcw, BarChart3, Act
 import ProjectCard from "@/components/freelancer/ProjectCard";
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
+import { NotificationBell } from '@/components/notifications/NotificationProvider';
 
 export default function FreelancerExplorePage() {
     const router = useRouter();
@@ -144,10 +145,11 @@ export default function FreelancerExplorePage() {
                 <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
                     <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
-                <div className="flex gap-6 items-center">
+                <div className="flex gap-4 items-center md:gap-6">
                     <button onClick={() => router.push('/profile')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
                         MY_PROFILE
                     </button>
+                    <NotificationBell />
                     <div className="w-8 h-8 rounded-full bg-[#FF7D00] border-2 border-white shadow-sm overflow-hidden">
                         <img src="https://placehold.co/100x100" alt="profile" className="w-full h-full object-cover" />
                     </div>
