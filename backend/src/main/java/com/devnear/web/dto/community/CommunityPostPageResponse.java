@@ -12,6 +12,7 @@ public class CommunityPostPageResponse {
     private final long totalElements;
     private final int totalPages;
 
+
     public CommunityPostPageResponse(List<CommunityPostResponse> content,
                                      int page,
                                      int size,

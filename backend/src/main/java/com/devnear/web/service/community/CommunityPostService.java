@@ -58,10 +58,14 @@ public class CommunityPostService {
     }
 
     @Transactional
-    public CommunityPostResponse findById(Long postId) {
-        CommunityPost post = getPost(postId);
+    public CommunityPostResponse findById(Long postId, Long userId) {
         communityPostRepository.incrementViewCount(postId);
-        return new CommunityPostResponse(post);
+        CommunityPost post = getPost(postId);
+        boolean isLiked = false;
+        if (userId != null) {
+            isLiked = communityPostLikeRepository.existsByPostIdAndUserId(postId, userId);
+        }
+        return new CommunityPostResponse(post, isLiked);
     }
 
     @Transactional

@@ -41,8 +41,10 @@ public class CommunityPostController {
     }
 
     @GetMapping("/{postId}")
-    public ResponseEntity<CommunityPostResponse> findById(@PathVariable Long postId) {
-        return ResponseEntity.ok(communityPostService.findById(postId));
+    public ResponseEntity<CommunityPostResponse> findById(@PathVariable Long postId,
+                                                          @AuthenticationPrincipal User user) {
+        Long userId = (user != null) ? user.getId() : null;
+        return ResponseEntity.ok(communityPostService.findById(postId, userId));
     }
 
     @PutMapping("/{postId}")

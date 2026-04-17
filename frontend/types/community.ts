@@ -3,11 +3,14 @@ export interface CommunityPost {
     title: string;
     content: string;
     authorId: number;
+    authorNickname?: string;
     viewCount: number;
     likeCount: number;
     commentCount: number;
+    isLiked?: boolean;
     createdAt: string;
     updatedAt: string;
+
 }
 
 export interface CommunityPostPageResponse {

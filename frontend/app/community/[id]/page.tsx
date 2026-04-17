@@ -34,6 +34,7 @@ export default function CommunityDetailPage() {
         try {
             const data = await getCommunityPostDetail(postId);
             setPost(data);
+            setLiked(data.isLiked ?? false);
         } catch (error) {
             console.error("게시글 상세 조회 실패:", error);
             alert("게시글을 불러오지 못했습니다.");
