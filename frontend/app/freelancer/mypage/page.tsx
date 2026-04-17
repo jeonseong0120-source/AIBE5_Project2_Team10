@@ -212,8 +212,8 @@ export default function FreelancerMyPage() {
         try {
             const newStatus = !profile.isActive;
             await api.patch('/v1/freelancers/status', { isActive: newStatus });
-            setProfile({ ...profile, isActive: newStatus });
-            setEditProfileData({ ...editProfileData, isActive: newStatus });
+            setProfile((prev: any) => ({ ...prev, isActive: newStatus }));
+            setEditProfileData((prev: any) => ({ ...prev, isActive: newStatus }));
             alert(newStatus ? '활동중으로 변경되었습니다.' : '휴식중으로 변경되었습니다.');
         } catch (error) {
             alert('상태 변경 실패');
@@ -237,8 +237,8 @@ export default function FreelancerMyPage() {
         try {
             const { data } = await api.post('/images/profile', formData);
             const newImageUrl = data.imageUrl;
-            setProfile({ ...profile, profileImageUrl: newImageUrl });
-            setEditProfileData({ ...editProfileData, profileImageUrl: newImageUrl });
+            setProfile((prev: any) => ({ ...prev, profileImageUrl: newImageUrl }));
+            setEditProfileData((prev: any) => ({ ...prev, profileImageUrl: newImageUrl }));
             alert('프로필 이미지가 변경되었습니다.');
         } catch (error: any) {
             alert('프로필 업로드 실패');
@@ -256,7 +256,7 @@ export default function FreelancerMyPage() {
         formData.append('file', file);
         try {
             const { data } = await api.post('/images/portfolio', formData);
-            setPortfolioForm({ ...portfolioForm, thumbnailUrl: data.imageUrl });
+            setPortfolioForm(prev => ({ ...prev, thumbnailUrl: data.imageUrl }));
         } catch (error: any) {
             alert('썸네일 업로드 실패');
         } finally {
@@ -277,7 +277,7 @@ export default function FreelancerMyPage() {
         Array.from(files).forEach((file) => formData.append('files', file));
         try {
             const { data } = await api.post('/images/portfolios/bulk', formData);
-            setPortfolioForm({ ...portfolioForm, portfolioImages: [...portfolioForm.portfolioImages, ...data.imageUrls].slice(0, 10) });
+            setPortfolioForm(prev => ({ ...prev, portfolioImages: [...prev.portfolioImages, ...data.imageUrls].slice(0, 10) }));
         } catch (error: any) {
             alert('다중 이미지 업로드 실패');
         } finally {

@@ -2,6 +2,7 @@
 
 import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { logout } from '@/app/lib/authEvents';
 
 interface MypageSidebarProps {
     tabs: { id: string, label: string, icon: any }[];
@@ -36,7 +37,7 @@ export default function MypageSidebar({ tabs, activeTab, setActiveTab }: MypageS
             {/* 로그아웃 버튼 (하단으로 이동) */}
             <div className="bg-white rounded-2xl p-2 border border-zinc-200 shadow-sm mt-6">
                 <button 
-                    onClick={() => { localStorage.removeItem('accessToken'); router.push('/login'); }} 
+                    onClick={() => { logout(); router.push('/login'); }} 
                     className="w-full flex items-center gap-3 p-4 hover:bg-red-50 rounded-xl transition text-sm font-bold text-red-500"
                 >
                     <X size={16} />

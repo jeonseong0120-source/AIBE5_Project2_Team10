@@ -253,6 +253,17 @@ export default function MypageProfileTab({
                         <button 
                             onClick={() => { 
                                 setIsEditingProfile(false); 
+                                setEditProfileData({
+                                    profileImageUrl: profile?.profileImageUrl || '',
+                                    introduction: profile?.introduction || '',
+                                    location: profile?.location || '',
+                                    latitude: profile?.latitude || 37.5665,
+                                    longitude: profile?.longitude || 126.9780,
+                                    hourlyRate: profile?.hourlyRate || 0,
+                                    workStyle: profile?.workStyle || 'ONLINE',
+                                    isActive: profile?.isActive !== false,
+                                    skills: profile?.skills || []
+                                });
                                 setMySkillIds((profile?.skills || []).map((s: any) => s.skillId || s.id)); 
                                 setValidationError(''); 
                             }} 

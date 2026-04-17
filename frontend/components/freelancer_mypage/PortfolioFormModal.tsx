@@ -1,5 +1,6 @@
 'use client';
 
+import { Dispatch, SetStateAction } from 'react';
 import { motion } from 'framer-motion';
 import { X, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
 
@@ -7,7 +8,7 @@ interface PortfolioFormModalProps {
     isOpen: boolean;
     onClose: () => void;
     portfolioForm: any;
-    setPortfolioForm: (form: any) => void;
+    setPortfolioForm: Dispatch<SetStateAction<any>>;
     portfolioSkillSearchQuery: string;
     setPortfolioSkillSearchQuery: (val: string) => void;
     allGlobalSkills: any[];
@@ -44,17 +45,25 @@ export default function PortfolioFormModal({
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl relative">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl relative"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="portfolio-modal-title"
+            >
                 <button onClick={onClose} className="absolute top-6 right-6 text-zinc-400 hover:text-zinc-900 transition-colors bg-zinc-100 p-2 rounded-full" aria-label="Close modal"><X size={20} /></button>
 
                 <div className="p-8 md:p-10">
-                    <h2 className="text-2xl font-black tracking-tight mb-2">{portfolioForm.id ? '포트폴리오 수정' : '포트폴리오 등록'}</h2>
+                    <h2 id="portfolio-modal-title" className="text-2xl font-black tracking-tight mb-2">{portfolioForm.id ? '포트폴리오 수정' : '포트폴리오 등록'}</h2>
                     <p className="text-xs text-zinc-500 mb-8 font-mono tracking-widest uppercase border-b border-zinc-100 pb-6">{portfolioForm.id ? 'UPDATE_RECORD' : 'UPLOAD_NEW_RECORD'}</p>
 
                     <div className="space-y-6">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black font-mono uppercase text-zinc-400">제목 / Title *</label>
-                            <input type="text" value={portfolioForm.title} onChange={e => setPortfolioForm({ ...portfolioForm, title: e.target.value })} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-bold focus:border-[#7A4FFF] outline-none" placeholder="프로젝트 제목을 입력하세요." />
+                            <input type="text" value={portfolioForm.title} onChange={e => setPortfolioForm(prev => ({ ...prev, title: e.target.value }))} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-bold focus:border-[#7A4FFF] outline-none" placeholder="프로젝트 제목을 입력하세요." />
                         </div>
 
                         <input type="file" accept="image/*" className="hidden" ref={thumbFileInputRef} onChange={handleThumbUpload} />
@@ -95,7 +104,7 @@ export default function PortfolioFormModal({
                                 {portfolioForm.portfolioImages.map((imgUrl: string, idx: number) => (
                                     <div key={idx} className="w-16 h-16 rounded-lg relative flex-shrink-0 group shadow-sm border border-zinc-100 overflow-hidden">
                                         <img src={imgUrl} alt="preview" className="w-full h-full object-cover" />
-                                        <button onClick={() => removePortfolioImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onClick={() => removePortfolioImage(idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="이미지 삭제">
                                             <X size={10} />
                                         </button>
                                     </div>
@@ -105,13 +114,13 @@ export default function PortfolioFormModal({
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black font-mono uppercase text-zinc-400">상세 설명 / Description *</label>
-                            <textarea rows={5} value={portfolioForm.desc} onChange={e => setPortfolioForm({ ...portfolioForm, desc: e.target.value })} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium focus:border-[#7A4FFF] outline-none resize-none" placeholder="수행한 역할과 성과를 상세히 적어주세요." />
+                            <textarea rows={5} value={portfolioForm.desc} onChange={e => setPortfolioForm(prev => ({ ...prev, desc: e.target.value }))} className="w-full p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-sm font-medium focus:border-[#7A4FFF] outline-none resize-none" placeholder="수행한 역할과 성과를 상세히 적어주세요." />
                         </div>
 
                         {/* 포트폴리오 스킬 선택 */}
                         <div className="space-y-3 border-t border-zinc-100 pt-6">
                             <label className="text-[10px] font-black font-mono uppercase text-zinc-400">사용 기술 / Tech Stack</label>
-                            
+
                             <div className="flex flex-wrap gap-2 min-h-[40px] p-4 bg-zinc-50 rounded-xl border border-zinc-200">
                                 {portfolioForm.skills.length === 0 ? (
                                     <span className="text-zinc-400 font-mono text-xs my-auto">선택된 기술이 없습니다.</span>
@@ -121,7 +130,7 @@ export default function PortfolioFormModal({
                                         return (
                                             <span key={`port-skill-${skillId || idx}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[#7A4FFF]/10 border border-[#7A4FFF]/20 text-[#7A4FFF]">
                                                 #{skillObj ? skillObj.name : skillId}
-                                                <button onClick={() => togglePortfolioSkill(skillId)} className="text-[#7A4FFF]/60 hover:text-red-500 transition-colors ml-1"><X size={12} /></button>
+                                                <button onClick={() => togglePortfolioSkill(skillId)} className="text-[#7A4FFF]/60 hover:text-red-500 transition-colors ml-1" aria-label="스킬 삭제"><X size={12} /></button>
                                             </span>
                                         );
                                     })
