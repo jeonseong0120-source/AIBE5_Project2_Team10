@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/axios';
+import { notifyAuthChanged } from '../../lib/authEvents';
 import { Briefcase, User, Settings, LogOut, ChevronRight, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -212,8 +213,9 @@ export default function ClientMyPage() {
                         <hr className="my-1 border-zinc-100" />
                         <button className="w-full flex items-center justify-between p-4 hover:bg-red-50 rounded-xl transition group"
                                 onClick={() => {
-                                    localStorage.removeItem('accessToken');
-                                    router.push('/login');
+                                    localStorage.removeItem("accessToken");
+                                    notifyAuthChanged();
+                                    router.push("/login");
                                 }}>
                             <div className="flex items-center gap-3 font-bold text-sm text-red-500">
                                 <LogOut className="w-5 h-5 text-red-400" />
