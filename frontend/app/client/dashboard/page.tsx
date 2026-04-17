@@ -126,8 +126,10 @@ export default function ClientDashboardPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
-            <div className="pointer-events-none fixed z-0 w-[300px] h-[300px] rounded-full bg-[#FF7D00]/20 blur-[120px] transition-all duration-200"
-                 style={{ left: cursor.x - 150, top: cursor.y - 150 }} />
+            <div
+                className="pointer-events-none fixed left-0 top-0 z-0 h-[300px] w-[300px] rounded-full bg-[#FF7D00]/20 blur-[120px] will-change-transform"
+                style={{ transform: `translate(${cursor.x - 150}px, ${cursor.y - 150}px)` }}
+            />
 
             <nav className="w-full py-5 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
                 <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/client/mainpage")}>
@@ -245,7 +247,7 @@ export default function ClientDashboardPage() {
                                             <div className="flex justify-between items-center w-full">
                                                 <div
                                                     className="flex items-center gap-5 cursor-pointer group/profile"
-                                                    onClick={() => router.push(`/freelancer/${app.freelancerId}`)}
+                                                    onClick={() => router.push(`/client/freelancers/${app.freelancerId}`)}
                                                 >
                                                     <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-[#FF7D00] border border-zinc-200 shadow-sm flex-shrink-0 group-hover/profile:border-[#FF7D00] transition-all">
                                                         {app.freelancerProfileImageUrl ? (

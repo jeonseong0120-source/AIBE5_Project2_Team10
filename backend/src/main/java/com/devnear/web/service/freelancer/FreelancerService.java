@@ -28,7 +28,11 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class FreelancerService {
 
-    private static final int MAX_PORTFOLIO_PREVIEW_IMAGES = 20;
+    /**
+     * 클라이언트 목록 등: 포트폴리오마다 대표 1장(썸네일 우선)만 넣어 캐러셀에 쓰고,
+     * 한 프리랜서당 최대 이 개수만큼의 서로 다른 포트폴리오 미리보기 URL을 반환한다.
+     */
+    private static final int MAX_PORTFOLIO_PREVIEW_IMAGES = 10;
 
     private final FreelancerProfileRepository profileRepository;
     private final SkillRepository skillRepository;
@@ -143,25 +147,30 @@ public class FreelancerService {
                 if (urls.size() >= MAX_PORTFOLIO_PREVIEW_IMAGES) {
                     break;
                 }
-                if (port.getPortfolioImages() != null && !port.getPortfolioImages().isEmpty()) {
-                    List<PortfolioImage> images = port.getPortfolioImages().stream()
-                            .sorted(Comparator.comparing(PortfolioImage::getSortOrder))
-                            .collect(Collectors.toList());
-                    for (PortfolioImage im : images) {
-                        if (urls.size() >= MAX_PORTFOLIO_PREVIEW_IMAGES) {
-                            break;
-                        }
-                        if (im.getImageUrl() != null && !im.getImageUrl().isBlank()) {
-                            urls.add(im.getImageUrl());
-                        }
-                    }
-                } else if (port.getThumbnailUrl() != null && !port.getThumbnailUrl().isBlank()) {
-                    urls.add(port.getThumbnailUrl());
+                String rep = representativePortfolioPreviewUrl(port);
+                if (rep != null && !rep.isBlank() && !urls.contains(rep)) {
+                    urls.add(rep);
                 }
             }
             result.put(e.getKey(), urls);
         }
         return result;
+    }
+
+    /** 썸네일 우선, 없으면 정렬된 상세 이미지 중 첫 장 */
+    private String representativePortfolioPreviewUrl(Portfolio port) {
+        if (port.getThumbnailUrl() != null && !port.getThumbnailUrl().isBlank()) {
+            return port.getThumbnailUrl();
+        }
+        if (port.getPortfolioImages() == null || port.getPortfolioImages().isEmpty()) {
+            return null;
+        }
+        return port.getPortfolioImages().stream()
+                .sorted(Comparator.comparing(PortfolioImage::getSortOrder))
+                .map(PortfolioImage::getImageUrl)
+                .filter(u -> u != null && !u.isBlank())
+                .findFirst()
+                .orElse(null);
     }
 
     // [조회] 타인 프로필 상세 조회

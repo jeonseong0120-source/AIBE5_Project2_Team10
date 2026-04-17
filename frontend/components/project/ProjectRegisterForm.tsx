@@ -109,8 +109,10 @@ export default function ProjectRegisterForm() {
     return (
         <div className="min-h-screen bg-zinc-50 relative overflow-hidden font-sans pb-20">
             {/* 🔥 커서 글로우 */}
-            <div className="pointer-events-none fixed z-0 w-[400px] h-[400px] rounded-full bg-[#FF7D00]/10 blur-[120px] transition-all duration-300"
-                 style={{ left: cursor.x - 200, top: cursor.y - 200 }} />
+            <div
+                className="pointer-events-none fixed left-0 top-0 z-0 h-[400px] w-[400px] rounded-full bg-[#FF7D00]/10 blur-[120px] will-change-transform"
+                style={{ transform: `translate(${cursor.x - 200}px, ${cursor.y - 200}px)` }}
+            />
 
             {/* 헤더 섹션 (뒤로가기 버튼 추가) */}
             <section className="relative pt-16 pb-12 px-8 bg-white border-b border-zinc-200 overflow-hidden mb-10">
@@ -141,7 +143,7 @@ export default function ProjectRegisterForm() {
                 <div className="space-y-6">
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Project_Title</label>
-                        <input required className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-bold focus:ring-2 focus:ring-[#FF7D00] outline-none transition-all"
+                        <input required className="w-full rounded-2xl border border-zinc-100 bg-zinc-50 p-4 font-bold outline-none transition-[box-shadow,border-color] focus:ring-2 focus:ring-[#FF7D00]"
                                value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="프로젝트명을 입력하세요" />
                     </div>
 
