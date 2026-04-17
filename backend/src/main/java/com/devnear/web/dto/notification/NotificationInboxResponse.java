@@ -15,7 +15,7 @@ public record NotificationInboxResponse(
     public static NotificationInboxResponse of(long unreadCount, Page<NotificationResponse> page) {
         return new NotificationInboxResponse(
                 unreadCount,
-                page.getContent(),
+                List.copyOf(page.getContent()),
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),

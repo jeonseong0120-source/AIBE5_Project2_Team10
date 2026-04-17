@@ -45,6 +45,7 @@ api.interceptors.response.use(
             console.log("세션이 만료되었습니다. 다시 로그인해주세요.");
             if (typeof window !== "undefined") {
                 localStorage.removeItem("accessToken");
+                delete api.defaults.headers.common["Authorization"];
                 notifyAuthChanged();
             }
         }

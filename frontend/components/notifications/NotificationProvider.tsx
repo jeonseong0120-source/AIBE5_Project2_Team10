@@ -4,6 +4,7 @@ import api from "@/app/lib/axios";
 import { DEVNEAR_AUTH_CHANGED } from "@/app/lib/authEvents";
 import { resolveSockJsUrl } from "@/app/lib/wsUrl";
 import { Client, IMessage } from "@stomp/stompjs";
+import { isAxiosError } from "axios";
 import { Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -63,6 +64,9 @@ function parseWsBody(raw: string): InboxNotification | null {
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const [me, setMe] = useState<MeResponse | null>(null);
+    /** STOMP `connectHeaders`가 클로저에 고정되지 않도록, 토큰 변경 시 effect가 다시 돌게 합니다. */
+    const [accessToken, setAccessToken] = useState<string | null>(null);
+    const tokenRef = useRef<string | null>(null);
     const [items, setItems] = useState<InboxNotification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [open, setOpen] = useState(false);
@@ -70,8 +74,22 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const panelRef = useRef<HTMLDivElement | null>(null);
     const stompRef = useRef<Client | null>(null);
 
+    const disconnectStomp = useCallback(() => {
+        const c = stompRef.current;
+        if (c) {
+            void c.deactivate();
+            stompRef.current = null;
+        }
+    }, []);
+
+    const syncTokenFromStorage = useCallback(() => {
+        const t = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+        tokenRef.current = t;
+        setAccessToken(t);
+    }, []);
+
     const loadInbox = useCallback(async () => {
-        const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+        const token = tokenRef.current ?? localStorage.getItem("accessToken");
         if (!token) {
             return;
         }
@@ -90,8 +108,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }, []);
 
     const loadMe = useCallback(() => {
-        const token = localStorage.getItem("accessToken");
+        syncTokenFromStorage();
+        const token = tokenRef.current;
         if (!token) {
+            disconnectStomp();
             setMe(null);
             setItems([]);
             setUnreadCount(0);
@@ -104,13 +124,27 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             .catch(() => {
                 setMe(null);
             });
-    }, []);
+    }, [disconnectStomp, syncTokenFromStorage]);
+
+    const [toast, setToast] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!toast) {
+            return;
+        }
+        const t = window.setTimeout(() => setToast(null), 4500);
+        return () => window.clearTimeout(t);
+    }, [toast]);
 
     useEffect(() => {
         loadMe();
-        const onAuthChanged = () => loadMe();
+        const onAuthChanged = () => {
+            disconnectStomp();
+            loadMe();
+        };
         const onStorage = (e: StorageEvent) => {
             if (e.key === "accessToken" || e.key === null) {
+                disconnectStomp();
                 loadMe();
             }
         };
@@ -120,7 +154,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             window.removeEventListener(DEVNEAR_AUTH_CHANGED, onAuthChanged);
             window.removeEventListener("storage", onStorage);
         };
-    }, [loadMe]);
+    }, [disconnectStomp, loadMe]);
 
     useEffect(() => {
         if (!me || me.role === "GUEST") {
@@ -133,11 +167,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         if (!me || me.role === "GUEST") {
             return;
         }
-        const token = localStorage.getItem("accessToken");
+        const token = accessToken ?? tokenRef.current;
         if (!token) {
             return;
         }
 
+        const userId = me.id;
         const client = new Client({
             webSocketFactory: () => new SockJS(resolveSockJsUrl()) as unknown as WebSocket,
             connectHeaders: {
@@ -145,7 +180,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             },
             reconnectDelay: 5000,
             onConnect: () => {
-                client.subscribe(`/sub/notifications/users/${me.id}`, (message: IMessage) => {
+                client.subscribe(`/sub/notifications/users/${userId}`, (message: IMessage) => {
                     const row = parseWsBody(message.body);
                     if (!row) {
                         return;
@@ -167,9 +202,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         client.activate();
         return () => {
             void client.deactivate();
-            stompRef.current = null;
+            if (stompRef.current === client) {
+                stompRef.current = null;
+            }
         };
-    }, [me]);
+    }, [me, accessToken]);
 
     useEffect(() => {
         if (!open) {
@@ -202,7 +239,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                         x.notificationId === n.notificationId ? { ...x, read: true } : x,
                     ),
                 );
-            } catch {
+            } catch (err) {
+                let msg = "읽음 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+                if (isAxiosError(err)) {
+                    const data = err.response?.data as { message?: string } | undefined;
+                    if (data?.message && typeof data.message === "string") {
+                        msg = data.message;
+                    }
+                }
+                setToast(msg);
                 return;
             }
         }
@@ -216,6 +261,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     return (
         <>
+            {toast ? (
+                <div
+                    role="alert"
+                    className="pointer-events-none fixed bottom-6 left-1/2 z-[10000] max-w-[min(100vw-2rem,24rem)] -translate-x-1/2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-900 shadow-lg"
+                >
+                    {toast}
+                </div>
+            ) : null}
             {showBell ? (
                 <div className="pointer-events-none fixed right-4 top-4 z-[9999] flex flex-col items-end gap-2">
                     <div ref={panelRef} className="pointer-events-auto flex flex-col items-end gap-2">
