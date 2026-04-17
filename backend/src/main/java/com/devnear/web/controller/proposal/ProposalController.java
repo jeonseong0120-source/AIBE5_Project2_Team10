@@ -1,8 +1,8 @@
 package com.devnear.web.controller.proposal;
 
 import com.devnear.web.domain.user.User;
-import com.devnear.web.dto.proposal.ProposalRequest;
 import com.devnear.web.dto.proposal.ProposalInquiryResponse;
+import com.devnear.web.dto.proposal.ProposalRequest;
 import com.devnear.web.dto.proposal.ProposalStatusUpdateRequest;
 import com.devnear.web.dto.proposal.ReceivedProposalResponse;
 import com.devnear.web.dto.proposal.SentProposalResponse;
@@ -21,7 +21,7 @@ import java.util.Map;
 
 @Tag(name = "Proposal", description = "역제안(클라이언트→프리랜서 스카우트) API")
 @RestController
-@RequestMapping("/api/v1/proposals")
+@RequestMapping(value = {"/api/proposals", "/api/v1/proposals"})
 @RequiredArgsConstructor
 public class ProposalController {
 
@@ -97,14 +97,12 @@ public class ProposalController {
         }
     }
 
-    /**
-     * [FRE] 프리랜서가 받은 역제안 건으로 문의 채팅방을 조회/생성합니다.
-     */
-    @Operation(summary = "역제안 문의하기", description = "프리랜서가 받은 역제안 기준으로 클라이언트와의 채팅방을 조회하거나 생성합니다.")
+    @Operation(summary = "역제안 문의하기", description = "프리랜서가 받은 역제안 기준으로 채팅방을 조회하거나 생성합니다.")
     @PostMapping("/{proposalId}/inquire")
-    public ResponseEntity<ProposalInquiryResponse> inquireProposal(
+    public ResponseEntity<ProposalInquiryResponse> inquire(
             @AuthenticationPrincipal User user,
-            @PathVariable Long proposalId) {
+            @PathVariable Long proposalId
+    ) {
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         Long roomId = proposalService.inquireChatRoom(user, proposalId);

@@ -9,7 +9,6 @@ import { NotificationBell } from '@/components/notifications/NotificationProvide
 
 // New Components
 import MypageSidebar from '@/components/freelancer_mypage/MypageSidebar';
-import MypageStats from '@/components/freelancer_mypage/MypageStats';
 import MypageProfileTab from '@/components/freelancer_mypage/MypageProfileTab';
 import MypagePortfolioTab from '@/components/freelancer_mypage/MypagePortfolioTab';
 import MypageReviewTab from '@/components/freelancer_mypage/MypageReviewTab';
@@ -416,12 +415,6 @@ export default function FreelancerMyPage() {
                 <MypageSidebar tabs={TABS} activeTab={activeTab} setActiveTab={setActiveTab} />
 
                 <div className="space-y-6 min-w-0">
-                    <MypageStats
-                        receivedProposalCount={
-                            receivedProposals.filter((p) => p.status === 'PENDING').length
-                        }
-                    />
-
                     <motion.div
                         key={activeTab}
                         initial={{ opacity: 0, y: 10 }}
@@ -436,7 +429,7 @@ export default function FreelancerMyPage() {
                         ) : (
                             <>
                                 {activeTab === 'profile' && (
-                                    <MypageProfileTab 
+                                    <MypageProfileTab
                                         profile={profile}
                                         isEditingProfile={isEditingProfile}
                                         setIsEditingProfile={setIsEditingProfile}

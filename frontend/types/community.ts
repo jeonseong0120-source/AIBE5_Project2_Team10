@@ -7,8 +7,10 @@ export interface CommunityPost {
     viewCount: number;
     likeCount: number;
     commentCount: number;
+    isLiked?: boolean;
     createdAt: string;
     updatedAt: string;
+
 }
 
 export interface CommunityPostPageResponse {

@@ -203,26 +203,23 @@ public class ProposalService {
     }
 
     /**
-     * [FRE] 받은 역제안 기준으로 문의 채팅방을 조회/생성하고 ID를 반환합니다.
+     * [FRE] 프리랜서가 받은 역제안에서 문의하기를 눌렀을 때
+     * 클라이언트-프리랜서 채팅방을 조회/생성하고 roomId를 반환합니다.
      */
     @Transactional
     public Long inquireChatRoom(User user, Long proposalId) {
-        Proposal proposal = proposalRepository.findByIdWithFreelancer(proposalId)
+        Proposal proposal = proposalRepository.findByIdForInquiry(proposalId)
                 .orElseThrow(() -> new ResourceNotFoundException("역제안을 찾을 수 없습니다. id=" + proposalId));
 
         if (!proposal.getFreelancerProfile().getUser().getId().equals(user.getId())) {
             throw new ProjectAccessDeniedException("해당 역제안에 대한 권한이 없습니다.");
         }
 
-        User clientUser = proposal.getClientProfile().getUser();
-        User freelancerUser = proposal.getFreelancerProfile().getUser();
-        Project project = proposal.getProject();
-
         return chatService.getOrCreateRoomForProjectClientAndFreelancer(
                 user,
-                project,
-                clientUser,
-                freelancerUser
+                proposal.getProject(),
+                proposal.getClientProfile().getUser(),
+                proposal.getFreelancerProfile().getUser()
         ).getRoomId();
     }
 }
