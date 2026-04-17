@@ -101,7 +101,12 @@ public class SecurityConfig {
                                 "/api/projects/*/complete", "/api/v1/projects/*/complete"
                         ).hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers("/api/client/**", "/api/v1/client/**").hasAnyRole("CLIENT", "BOTH")
-                        .requestMatchers("/api/bookmarks/**", "/api/v1/bookmarks/**").hasAnyRole("CLIENT", "BOTH")
+                        // [찜/북마크] 권한 세분화
+                        // 1. 프리랜서 찜 & 포트폴리오 좋아요: 클라이언트 유저만 가능
+                        .requestMatchers("/api/bookmarks/freelancers/**", "/api/v1/bookmarks/freelancers/**").hasAnyRole("CLIENT", "BOTH")
+                        .requestMatchers("/api/bookmarks/portfolios/**", "/api/v1/bookmarks/portfolios/**").hasAnyRole("CLIENT", "BOTH")
+                        // 2. 프로젝트 찜: 프리랜서 유저만 가능
+                        .requestMatchers("/api/bookmarks/projects/**", "/api/v1/bookmarks/projects/**").hasAnyRole("FREELANCER", "BOTH")
 
 // [역제안] 전송 및 보낸 목록 조회: 클라이언트 전용
 //                      .requestMatchers(HttpMethod.POST, "/api/proposals", "/api/v1/proposals").hasAnyRole("CLIENT", "BOTH")
