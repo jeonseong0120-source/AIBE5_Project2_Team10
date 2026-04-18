@@ -56,9 +56,10 @@ export default function ProjectsTab({ user, projects, loading, setSelectedProjec
                                 initial={{ y: 20, opacity: 0 }} 
                                 animate={{ y: 0, opacity: 1 }} 
                                 transition={{ delay: idx * 0.05 }} 
-                                key={project.projectId || idx}
+                                key={project.projectId}
                                 onClick={() => setSelectedProjectForView(project)}
                                 onKeyDown={(e) => {
+                                    if (e.target !== e.currentTarget) return;
                                     if (e.key === 'Enter' || e.key === ' ') {
                                         e.preventDefault();
                                         setSelectedProjectForView(project);
