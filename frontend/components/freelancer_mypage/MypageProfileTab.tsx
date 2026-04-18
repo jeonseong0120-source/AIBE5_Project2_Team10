@@ -89,26 +89,26 @@ export default function MypageProfileTab({
                         {/* ⚡️ 고급 활동 상태 마스터 컨트롤 */}
                         <div className={`relative overflow-hidden rounded-[2.5rem] p-8 border transition-all duration-500 ${
                             profile?.isActive 
-                                ? 'bg-gradient-to-br from-green-50/50 to-emerald-50/30 border-green-100 shadow-lg shadow-green-100/20' 
+                                ? 'bg-gradient-to-br from-purple-50/50 to-indigo-50/30 border-purple-100 shadow-lg shadow-purple-100/20' 
                                 : 'bg-gradient-to-br from-zinc-50 to-zinc-100/50 border-zinc-200/60 shadow-inner'
                         }`}>
                             {/* Decorative Background Pattern */}
                             <div className="absolute top-0 right-0 w-64 h-64 opacity-[0.03] pointer-events-none transform translate-x-16 -translate-y-16">
-                                <Activity size={256} className={profile?.isActive ? 'text-green-600' : 'text-zinc-400'} />
+                                <Activity size={256} className={profile?.isActive ? 'text-purple-600' : 'text-zinc-400'} />
                             </div>
 
                             <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
                                 <div className="flex items-center gap-6 text-center md:text-left">
                                     <div className={`w-16 h-16 rounded-3xl flex items-center justify-center transition-all duration-500 ${
                                         profile?.isActive 
-                                            ? 'bg-white text-green-500 shadow-xl shadow-green-200/50 scale-110' 
+                                            ? 'bg-white text-purple-500 shadow-xl shadow-purple-200/50 scale-110' 
                                             : 'bg-zinc-200/50 text-zinc-400'
                                     }`}>
                                         <Activity size={32} className={profile?.isActive ? 'animate-pulse' : ''} />
                                     </div>
                                     <div>
                                         <h3 className="text-xl font-black text-zinc-900 tracking-tight flex items-center justify-center md:justify-start gap-2">
-                                            <span className={`w-2.5 h-2.5 rounded-full ${profile?.isActive ? 'bg-green-500' : 'bg-zinc-400'} animate-pulse`}></span>
+                                            <span className={`w-2.5 h-2.5 rounded-full ${profile?.isActive ? 'bg-purple-500' : 'bg-zinc-400'} animate-pulse`}></span>
                                             {profile?.isActive ? '현재 프로젝트 제안 받는 중' : '잠시 휴식 중입니다'}
                                         </h3>
                                         <p className="text-xs text-zinc-500 mt-1 font-medium leading-relaxed max-w-[280px]">
@@ -125,7 +125,7 @@ export default function MypageProfileTab({
                                         onClick={handleToggleStatus}
                                         className={`group relative inline-flex h-10 w-20 shrink-0 cursor-pointer items-center rounded-full border-4 border-transparent transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 ${
                                             profile?.isActive 
-                                                ? 'bg-green-500 focus:ring-green-500/20 shadow-lg shadow-green-500/40' 
+                                                ? 'bg-[#7A4FFF] focus:ring-purple-500/20 shadow-lg shadow-purple-500/40' 
                                                 : 'bg-zinc-300 focus:ring-zinc-300/20'
                                         }`}
                                         role="switch"
@@ -141,7 +141,7 @@ export default function MypageProfileTab({
                                             {isTogglingStatus ? (
                                                 <Loader2 size={16} className="text-zinc-400 animate-spin" />
                                             ) : profile?.isActive ? (
-                                                <CheckCircle2 size={16} className="text-green-500" />
+                                                <CheckCircle2 size={16} className="text-purple-500" />
                                             ) : (
                                                 <X size={16} className="text-zinc-400" />
                                             )}
