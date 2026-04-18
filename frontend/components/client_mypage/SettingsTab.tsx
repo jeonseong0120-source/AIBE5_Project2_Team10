@@ -127,7 +127,7 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                     <p className="text-[10px] text-zinc-400 font-mono uppercase mt-1 italic">Manage your identity and business profile</p>
                 </div>
                 {!isEditing && (
-                    <button 
+                    <button
                         onClick={() => setIsEditing(true)}
                         className="flex items-center gap-2 px-6 py-3 bg-zinc-950 text-white rounded-xl text-xs font-black tracking-widest hover:bg-[#FF7D00] transition-all shadow-xl shadow-zinc-200 uppercase font-mono"
                     >
@@ -156,7 +156,7 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                             </div>
                             <p className="text-xs text-zinc-400 font-medium uppercase font-mono tracking-widest italic">{originalData?.representativeName || 'REPRESENTATIVE_PENDING'}</p>
                         </div>
-                        
+
                         {/* 📊 미니 통계 바 */}
                         <div className="flex gap-4 p-2 bg-zinc-50 rounded-3xl border border-zinc-100">
                             <div className="px-6 py-4 bg-white rounded-2xl shadow-sm border border-zinc-100 text-center min-w-[100px]">
@@ -176,13 +176,13 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
 
                     {/* 소개글 요약 */}
                     <div className="md:col-span-2 bg-zinc-50 rounded-[2.5rem] p-10 border border-zinc-100 shadow-sm space-y-4">
-                         <div className="flex items-center justify-between border-b border-zinc-200/50 pb-4">
+                        <div className="flex items-center justify-between border-b border-zinc-200/50 pb-4">
                             <p className="text-[10px] font-black text-zinc-400 uppercase font-mono tracking-widest flex items-center gap-2"><FileText size={14} className="text-[#FF7D00]" /> Company_Introduction</p>
                             {originalData?.homepageUrl && (
                                 <a href={originalData.homepageUrl} target="_blank" rel="noreferrer" className="text-[10px] font-black text-[#7A4FFF] hover:underline flex items-center gap-1 font-mono uppercase tracking-widest"><Globe size={12} /> Website</a>
                             )}
-                         </div>
-                         <p className="text-sm text-zinc-600 leading-relaxed font-medium italic">"{originalData?.introduction || '회사 소개가 등록되지 않았습니다.'}"</p>
+                        </div>
+                        <p className="text-sm text-zinc-600 leading-relaxed font-medium italic">"{originalData?.introduction || '회사 소개가 등록되지 않았습니다.'}"</p>
                     </div>
 
                     {/* 개인 정보 요약 */}
@@ -252,7 +252,7 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                         </div>
                         <div className="text-center md:text-left">
                             <h3 className="text-xl font-black text-zinc-900 tracking-tighter mb-2">기업 로고 변경</h3>
-                            <p className="text-sm text-zinc-500 font-medium leading-relaxed">회사를 상징하는 로고를 업로드해주세요.<br/><span className="text-[#FF7D00]">DevNear</span> 활동 시 프로필 이미지로 사용됩니다.</p>
+                            <p className="text-sm text-zinc-500 font-medium leading-relaxed">회사를 상징하는 로고를 업로드해주세요.<br /><span className="text-[#FF7D00]">DevNear</span> 활동 시 프로필 이미지로 사용됩니다.</p>
                         </div>
                     </div>
 
@@ -262,19 +262,19 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                             <div className="flex items-center gap-3 pb-2 border-b-2 border-[#FF7D00]/20">
                                 <h3 className="text-sm font-black text-zinc-400 uppercase tracking-[0.2em] font-mono italic">Personal_Profile</h3>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-[11px] font-black text-zinc-400 uppercase font-mono mb-2 tracking-[0.2em] flex items-center gap-2">
                                         <User size={12} className="text-[#FF7D00]" /> Nickname *
                                     </label>
-                                    <input type="text" required value={formData.nickname} onChange={(e)=>setFormData({...formData, nickname: e.target.value})} className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm font-bold focus:border-[#FF7D00] outline-none transition-all shadow-inner" />
+                                    <input type="text" required value={formData.nickname} onChange={(e) => setFormData({ ...formData, nickname: e.target.value })} className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm font-bold focus:border-[#FF7D00] outline-none transition-all shadow-inner" />
                                 </div>
                                 <div>
                                     <label className="block text-[11px] font-black text-zinc-400 uppercase font-mono mb-2 tracking-[0.2em] flex items-center gap-2">
                                         <Phone size={12} className="text-[#FF7D00]" /> Phone_Number *
                                     </label>
-                                    <input type="tel" required value={formData.phoneNum} onChange={(e)=>setFormData({...formData, phoneNum: e.target.value})} className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm font-bold focus:border-[#FF7D00] outline-none transition-all shadow-inner" placeholder="010-0000-0000" />
+                                    <input type="tel" required value={formData.phoneNum} onChange={(e) => setFormData({ ...formData, phoneNum: e.target.value })} className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm font-bold focus:border-[#FF7D00] outline-none transition-all shadow-inner" placeholder="010-0000-0000" />
                                 </div>
                             </div>
                         </div>
@@ -284,33 +284,33 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                             <div className="flex items-center gap-3 pb-2 border-b-2 border-purple-200">
                                 <h3 className="text-sm font-black text-zinc-400 uppercase tracking-[0.2em] font-mono italic">Business_Identity</h3>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-[11px] font-black text-zinc-400 uppercase font-mono mb-2 tracking-[0.2em]">Representative</label>
-                                        <input type="text" value={formData.representativeName} onChange={(e)=>setFormData({...formData, representativeName: e.target.value})} className="w-full px-5 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-xs font-bold focus:border-[#7A4FFF] outline-none transition-all" />
+                                        <input type="text" value={formData.representativeName} onChange={(e) => setFormData({ ...formData, representativeName: e.target.value })} className="w-full px-5 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-xs font-bold focus:border-[#7A4FFF] outline-none transition-all" />
                                     </div>
                                     <div>
                                         <label className="block text-[11px] font-black text-zinc-400 uppercase font-mono mb-2 tracking-[0.2em]">Company_Name</label>
-                                        <input type="text" value={formData.companyName} onChange={(e)=>setFormData({...formData, companyName: e.target.value})} className="w-full px-5 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-xs font-bold focus:border-[#7A4FFF] outline-none transition-all" />
+                                        <input type="text" value={formData.companyName} onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} className="w-full px-5 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-xs font-bold focus:border-[#7A4FFF] outline-none transition-all" />
                                     </div>
                                 </div>
 
                                 <div className="p-6 bg-purple-50/50 rounded-[2rem] border border-purple-100">
                                     <label className="block text-[11px] font-black text-[#7A4FFF] uppercase font-mono mb-3 tracking-[0.2em] flex justify-between items-center">
                                         <span className="flex items-center gap-2"><Landmark size={12} /> Business_No</span>
-                                        {isBnVerified && <span className="text-green-600 flex items-center gap-1 font-black text-[9px] bg-white px-2 py-0.5 rounded-full border border-green-100 shadow-sm"><CheckCircle2 size={12}/> VERIFIED</span>}
+                                        {isBnVerified && <span className="text-green-600 flex items-center gap-1 font-black text-[9px] bg-white px-2 py-0.5 rounded-full border border-green-100 shadow-sm"><CheckCircle2 size={12} /> VERIFIED</span>}
                                     </label>
                                     <div className="flex gap-2">
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             placeholder="000-00-00000"
                                             value={formData.bn}
-                                            onChange={(e)=>{setFormData({...formData, bn: e.target.value}); setIsBnVerified(false);}}
+                                            onChange={(e) => { setFormData({ ...formData, bn: e.target.value }); setIsBnVerified(false); }}
                                             className={`flex-[3] px-5 py-3.5 bg-white border ${isBnVerified ? 'border-green-300' : 'border-zinc-200'} rounded-xl text-sm font-mono font-black tracking-widest focus:border-[#7A4FFF] outline-none shadow-inner`}
                                         />
-                                        <button 
+                                        <button
                                             type="button"
                                             onClick={handleBnCheck}
                                             className={`flex-1 min-w-[80px] py-3.5 rounded-xl text-[10px] font-black transition-all ${isBnVerified ? 'bg-green-500 text-white cursor-default' : 'bg-zinc-900 text-white hover:bg-[#7A4FFF]'}`}
@@ -324,7 +324,7 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                                     <label className="block text-[11px] font-black text-zinc-400 uppercase font-mono mb-2 tracking-[0.2em] flex items-center gap-2">
                                         <Globe size={12} className="text-[#7A4FFF]" /> Official_Website
                                     </label>
-                                    <input type="url" placeholder="https://..." value={formData.homepageUrl} onChange={(e)=>setFormData({...formData, homepageUrl: e.target.value})} className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm font-medium focus:border-[#7A4FFF] outline-none" />
+                                    <input type="url" placeholder="https://..." value={formData.homepageUrl} onChange={(e) => setFormData({ ...formData, homepageUrl: e.target.value })} className="w-full px-6 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl text-sm font-medium focus:border-[#7A4FFF] outline-none" />
                                 </div>
                             </div>
                         </div>
@@ -333,13 +333,13 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                             <label className="block text-[11px] font-black text-zinc-400 uppercase font-mono mb-2 tracking-[0.2em] flex items-center gap-2">
                                 <FileText size={12} className="text-[#FF7D00]" /> Company_Introduction
                             </label>
-                            <textarea rows={4} placeholder="회사 소개글을 입력하세요." value={formData.introduction} onChange={(e)=>setFormData({...formData, introduction: e.target.value})} className="w-full px-8 py-6 bg-zinc-50 border border-zinc-200 rounded-[2.5rem] text-sm font-medium focus:border-[#FF7D00] outline-none resize-none shadow-inner leading-relaxed" />
+                            <textarea rows={4} placeholder="회사 소개글을 입력하세요." value={formData.introduction} onChange={(e) => setFormData({ ...formData, introduction: e.target.value })} className="w-full px-8 py-6 bg-zinc-50 border border-zinc-200 rounded-[2.5rem] text-sm font-medium focus:border-[#FF7D00] outline-none resize-none shadow-inner leading-relaxed" />
                         </div>
                     </div>
 
                     <div className="flex gap-4 pt-10 border-t border-zinc-100">
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             onClick={() => {
                                 setIsEditing(false);
                                 setFormData(originalData);
@@ -349,12 +349,12 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                         >
                             <X size={16} /> Cancel_Changes
                         </button>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             disabled={isSubmitting || (!!formData.bn && !isBnVerified) || isLogoUploading}
                             className={`flex-[2] py-5 rounded-3xl text-white font-black text-xs uppercase tracking-widest font-mono shadow-xl transition-all flex items-center justify-center gap-2 ${isSubmitting || (!!formData.bn && !isBnVerified) || isLogoUploading ? 'bg-zinc-200 cursor-not-allowed shadow-none text-zinc-400' : 'bg-zinc-950 hover:bg-[#FF7D00] shadow-zinc-200 hover:-translate-y-1'}`}
                         >
-                            {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />} 
+                            {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
                             {isSubmitting ? 'UPDATING...' : 'Confirm_and_Save'}
                         </button>
                     </div>

@@ -59,13 +59,13 @@ export default function MypageProfileTab({
                     <div>
                         <h2 className="text-3xl font-black tracking-tighter text-zinc-900">{profile?.userName || '사용자'}</h2>
                         <p className="text-[10px] text-[#7A4FFF] font-mono font-black uppercase tracking-widest mt-1.5 flex items-center gap-2">
-                             <Activity size={12} /> {profile?.isActive ? 'ACTIVE_STATUS' : 'AWAY_STATUS'}
+                            <Activity size={12} /> {profile?.isActive ? 'ACTIVE_STATUS' : 'AWAY_STATUS'}
                         </p>
                     </div>
                 </div>
                 {!isEditingProfile && (
-                    <button 
-                        onClick={() => setIsEditingProfile(true)} 
+                    <button
+                        onClick={() => setIsEditingProfile(true)}
                         className="h-12 px-6 bg-zinc-950 hover:bg-[#7A4FFF] text-white shadow-xl shadow-zinc-200 rounded-2xl text-xs font-black transition-all font-mono tracking-widest uppercase flex items-center gap-2 group"
                     >
                         <Settings size={14} className="group-hover:rotate-90 transition-transform duration-500" /> 프로필 편집하기
@@ -82,7 +82,7 @@ export default function MypageProfileTab({
                             현재 {profile?.isActive ? '활동중' : '휴식중'}
                         </span>
                     </div>
-                    <button 
+                    <button
                         onClick={handleToggleStatus}
                         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#7A4FFF] focus:ring-offset-2 hover:opacity-80 shadow-sm ${profile?.isActive ? 'bg-[#7A4FFF]' : 'bg-zinc-300'}`}
                         role="switch"
@@ -121,7 +121,7 @@ export default function MypageProfileTab({
                     </div>
                     <div>
                         <h3 className="text-lg font-black text-zinc-900 tracking-tight">프로필 사진 변경</h3>
-                        <p className="text-xs text-zinc-500 mt-1 font-medium leading-relaxed">나를 잘 나타낼 수 있는 사진을 업로드해주세요.<br/>클라이언트에게 신뢰감을 줄 수 있습니다.</p>
+                        <p className="text-xs text-zinc-500 mt-1 font-medium leading-relaxed">나를 잘 나타낼 수 있는 사진을 업로드해주세요.<br />클라이언트에게 신뢰감을 줄 수 있습니다.</p>
                     </div>
                 </div>
             )}
@@ -132,15 +132,15 @@ export default function MypageProfileTab({
                         <p className="text-[10px] font-black font-mono uppercase text-[#7A4FFF] tracking-widest mb-2 border-b border-zinc-200/50 pb-3 flex items-center gap-2"><UserIcon size={14} /> 기본 정보</p>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="flex flex-col gap-2">
-                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1"><MapPin size={12}/> 지역</span>
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1"><MapPin size={12} /> 지역</span>
                                 <span className="font-black text-zinc-900 text-lg">{profile?.location || '미설정'}</span>
                             </div>
                             <div className="flex flex-col gap-2 border-t md:border-t-0 md:border-l border-zinc-200/50 pt-4 md:pt-0 md:pl-6">
-                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1"><Clock size={12}/> 희망 시급</span>
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1"><Clock size={12} /> 희망 시급</span>
                                 <span className="font-black text-zinc-900 text-lg">{profile?.hourlyRate ? `₩${profile.hourlyRate.toLocaleString()}` : '미설정'}</span>
                             </div>
                             <div className="flex flex-col gap-2 border-t md:border-t-0 md:border-l border-zinc-200/50 pt-4 md:pt-0 md:pl-6">
-                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1"><Activity size={12}/> 근무 방식</span>
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1"><Activity size={12} /> 근무 방식</span>
                                 <span className="font-black text-zinc-900 text-lg">{profile?.workStyle || '미설정'}</span>
                             </div>
                         </div>
@@ -175,9 +175,9 @@ export default function MypageProfileTab({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-3">
                                 <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">활동 지역</label>
-                                <select 
-                                    value={editProfileData.location} 
-                                    onChange={e => setEditProfileData({ ...editProfileData, location: e.target.value })} 
+                                <select
+                                    value={editProfileData.location}
+                                    onChange={e => setEditProfileData({ ...editProfileData, location: e.target.value })}
                                     className="w-full bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#7A4FFF] hover:border-[#7A4FFF]/50 text-sm font-black shadow-sm transition-all focus:ring-4 focus:ring-[#7A4FFF]/10"
                                 >
                                     <option value="">선택 안함</option>
@@ -202,9 +202,9 @@ export default function MypageProfileTab({
 
                             <div className="space-y-3 md:col-span-2">
                                 <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">작업 방식</label>
-                                <select 
-                                    value={editProfileData.workStyle} 
-                                    onChange={e => setEditProfileData({ ...editProfileData, workStyle: e.target.value })} 
+                                <select
+                                    value={editProfileData.workStyle}
+                                    onChange={e => setEditProfileData({ ...editProfileData, workStyle: e.target.value })}
                                     className="w-full bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#7A4FFF] hover:border-[#7A4FFF]/50 text-sm font-black shadow-sm transition-all focus:ring-4 focus:ring-[#7A4FFF]/10"
                                 >
                                     <option value="ONLINE">온라인 (ONLINE)</option>
@@ -215,19 +215,19 @@ export default function MypageProfileTab({
 
                             <div className="space-y-3 md:col-span-2">
                                 <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">소개글</label>
-                                <textarea 
-                                    rows={4} 
-                                    value={editProfileData.introduction} 
-                                    onChange={e => setEditProfileData({ ...editProfileData, introduction: e.target.value })} 
-                                    className="w-full bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#7A4FFF] hover:border-[#7A4FFF]/50 text-sm font-medium shadow-sm transition-all resize-none focus:ring-4 focus:ring-[#7A4FFF]/10 leading-relaxed" 
-                                    placeholder="자신의 강점을 어필해주세요." 
+                                <textarea
+                                    rows={4}
+                                    value={editProfileData.introduction}
+                                    onChange={e => setEditProfileData({ ...editProfileData, introduction: e.target.value })}
+                                    className="w-full bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#7A4FFF] hover:border-[#7A4FFF]/50 text-sm font-medium shadow-sm transition-all resize-none focus:ring-4 focus:ring-[#7A4FFF]/10 leading-relaxed"
+                                    placeholder="자신의 강점을 어필해주세요."
                                 />
                             </div>
 
                             {/* 스킬 편집 */}
                             <div className="space-y-4 md:col-span-2 border-t border-zinc-200/50 pt-8 mt-2">
                                 <p className="text-[10px] font-black font-mono uppercase text-[#7A4FFF] tracking-widest mb-4">보유 기술 편집</p>
-                                
+
                                 <div className="flex flex-wrap gap-2.5 min-h-[60px] p-5 bg-white rounded-2xl border border-zinc-200 shadow-inner">
                                     {mySkillIds.length === 0 ? (
                                         <span className="text-zinc-400 font-mono text-xs my-auto italic">선택된 스킬이 없습니다. 검색하여 추가하세요.</span>
@@ -265,9 +265,9 @@ export default function MypageProfileTab({
                     </div>
 
                     <div className="flex gap-4">
-                        <button 
-                            onClick={() => { 
-                                setIsEditingProfile(false); 
+                        <button
+                            onClick={() => {
+                                setIsEditingProfile(false);
                                 setEditProfileData({
                                     profileImageUrl: profile?.profileImageUrl || '',
                                     introduction: profile?.introduction || '',
@@ -279,15 +279,15 @@ export default function MypageProfileTab({
                                     isActive: profile?.isActive !== false,
                                     skills: profile?.skills || []
                                 });
-                                setMySkillIds((profile?.skills || []).map((s: any) => s.skillId || s.id)); 
-                                setValidationError(''); 
-                            }} 
+                                setMySkillIds((profile?.skills || []).map((s: any) => s.skillId || s.id));
+                                setValidationError('');
+                            }}
                             className="flex-[1] py-5 bg-zinc-200 hover:bg-zinc-300 text-zinc-700 rounded-[1.5rem] text-xs font-black transition-colors uppercase tracking-widest font-mono"
                         >
                             취소
                         </button>
-                        <button 
-                            onClick={handleProfileAndSkillUpdate} 
+                        <button
+                            onClick={handleProfileAndSkillUpdate}
                             className="flex-[2] py-5 bg-zinc-950 hover:bg-[#7A4FFF] text-white rounded-[1.5rem] text-xs font-black flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl hover:shadow-purple-200 hover:-translate-y-1 transition-all uppercase tracking-widest font-mono"
                         >
                             <Save size={16} /> 수정 완료

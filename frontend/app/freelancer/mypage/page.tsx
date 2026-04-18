@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User as UserIcon, Briefcase, Star, Award } from 'lucide-react';
+import { User as UserIcon, Briefcase, Star, Award, Bookmark } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
@@ -16,12 +16,14 @@ import MypageReviewTab from '@/components/freelancer_mypage/MypageReviewTab';
 import MypageGradeTab from '@/components/freelancer_mypage/MypageGradeTab';
 import PortfolioFormModal from '@/components/freelancer_mypage/PortfolioFormModal';
 import PortfolioDetailModal from '@/components/freelancer_mypage/PortfolioDetailModal';
+import MypageBookmarksTab from '@/components/freelancer_mypage/MypageBookmarksTab';
 
 const TABS = [
     { id: 'profile', label: 'MY PROFILE', icon: UserIcon },
     { id: 'portfolio', label: 'PORTFOLIO', icon: Briefcase },
     { id: 'reviews', label: 'REVIEWS', icon: Star },
     { id: 'grade', label: 'RANK', icon: Award },
+    { id: 'bookmarks', label: 'BOOKMARKS', icon: Bookmark },
 ];
 
 const LOCATION_COORDS: Record<string, { lat: number, lng: number }> = {
@@ -429,6 +431,9 @@ export default function FreelancerMyPage() {
                                 )}
                                 {activeTab === 'grade' && (
                                     <MypageGradeTab profile={profile} />
+                                )}
+                                {activeTab === 'bookmarks' && (
+                                    <MypageBookmarksTab />
                                 )}
                             </>
                         )}
