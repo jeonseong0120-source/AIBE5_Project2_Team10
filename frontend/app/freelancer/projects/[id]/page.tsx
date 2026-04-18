@@ -66,7 +66,8 @@ export default function ProjectDetailPage() {
                     const myApps = await api.get('/applications/me');
                     setIsApplied(myApps.data.some((app: any) => app.projectId === Number(id)));
 
-                    const myBookmarks = await api.get('/v1/bookmarks/projects');
+                    // 🎯 [CodeRabbit 리뷰 반영] size=1000을 추가하여 페이징 누락으로 인한 북마크 버튼 False-negative 방지
+                    const myBookmarks = await api.get('/v1/bookmarks/projects?size=1000');
                     const bookmarkList = myBookmarks.data.content || [];
                     setIsBookmarked(bookmarkList.some((b: any) => b.projectId === Number(id)));
                 }

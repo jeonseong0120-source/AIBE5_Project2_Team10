@@ -20,7 +20,7 @@ export default function FreelancerDashboardPage() {
     const [activeMainTab, setActiveMainTab] = useState<'APPLICATIONS' | 'RECEIVED_PROPOSALS' | 'BOOKMARKS'>('APPLICATIONS');
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
-    // 🎯 [추가] 정렬 상태 (최신순/과거순)
+    // 🎯 정렬 상태 (최신순/과거순)
     const [sortOrder, setSortOrder] = useState<'DESC' | 'ASC'>('DESC');
 
     // 🎯 1. 지원 내역 상태
@@ -87,11 +87,15 @@ export default function FreelancerDashboardPage() {
 
     // 🚀 4. 관심 프로젝트(북마크) API 호출
     const fetchBookmarks = useCallback(async (isLoadMore = false) => {
+        // 🎯 [CodeRabbit 리뷰 반영] Load More 시에도 즉각 로딩 상태를 적용하여 버튼 연타 및 Stale Closure 방지
+        setBookmarksLoading(true);
+
         if (!isLoadMore) {
-            setBookmarksLoading(true);
             setBookmarkPage(0);
         }
+
         const targetPage = isLoadMore ? bookmarkPage + 1 : 0;
+
         try {
             const { data } = await api.get(`/v1/bookmarks/projects?page=${targetPage}&size=9`);
             const newContent = data.content || [];
@@ -150,7 +154,7 @@ export default function FreelancerDashboardPage() {
 
     if (!authorized) return null;
 
-    // 🎯 [수정] 지원 내역 정렬 적용
+    // 지원 내역 정렬 적용
     const sortedApplications = [...applications]
         .filter(a => filterStatus === 'ALL' || a.status === filterStatus)
         .sort((a, b) => {
@@ -159,7 +163,7 @@ export default function FreelancerDashboardPage() {
             return sortOrder === 'DESC' ? timeB - timeA : timeA - timeB;
         });
 
-    // 🎯 [수정] 받은 제안 정렬 적용
+    // 받은 제안 정렬 적용
     const sortedProposals = [...receivedProposals].sort((a, b) => {
         const timeA = new Date(a.createdAt || 0).getTime();
         const timeB = new Date(b.createdAt || 0).getTime();
@@ -168,7 +172,6 @@ export default function FreelancerDashboardPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
-            {/* 🎨 [배경] 깔끔한 그리드 패턴 */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
             </div>
@@ -180,7 +183,6 @@ export default function FreelancerDashboardPage() {
                 <div className="flex gap-4 items-center relative z-10 md:gap-8">
                     <button onClick={() => router.push('/freelancer/mypage')} className="text-xs font-black text-zinc-400 hover:text-zinc-950 tracking-[0.2em] transition uppercase font-mono">마이페이지</button>
                     <NotificationBell />
-                    {/* 🎯 [수정] 경로 변경: /projects -> /freelancer/explore */}
                     <button onClick={() => router.push("/freelancer/explore")} className="px-7 py-3 bg-zinc-950 text-white rounded-2xl text-xs font-black tracking-widest hover:bg-[#7A4FFF] transition-all shadow-xl flex items-center gap-2 uppercase font-mono">
                         <Search size={14} /> 프로젝트 찾기
                     </button>
@@ -217,11 +219,9 @@ export default function FreelancerDashboardPage() {
                             <div className="flex items-center gap-4">
                                 <h2 className="text-2xl font-black tracking-tight text-zinc-950 uppercase font-mono">나의 지원 내역</h2>
                                 <span className="px-3 py-1 bg-white border border-zinc-200 rounded-lg text-xs font-black text-[#7A4FFF]">총 {sortedApplications.length}건</span>
-                                {/* 🎯 [수정] 경로 변경: /projects -> /freelancer/explore */}
                                 <button onClick={() => router.push("/freelancer/explore")} className="p-2.5 bg-white border border-zinc-200 text-[#7A4FFF] rounded-xl hover:bg-[#7A4FFF] hover:text-white transition-all shadow-sm group"><Search size={20} className="group-hover:scale-110 transition-transform duration-300" strokeWidth={3} /></button>
                             </div>
 
-                            {/* 🎯 [추가] 필터 및 정렬 컨트롤 */}
                             <div className="flex flex-wrap items-center gap-3">
                                 <div className="flex gap-2 p-2 bg-white/50 backdrop-blur-md border border-zinc-200 rounded-3xl">
                                     {[{ id: 'ALL', label: '전체' }, { id: 'PENDING', label: '대기중' }, { id: 'ACCEPTED', label: '수락됨' }, { id: 'REJECTED', label: '거절됨' }].map((s) => (
@@ -249,7 +249,6 @@ export default function FreelancerDashboardPage() {
 
                                         return (
                                             <div key={app.applicationId} className="flex flex-col gap-3">
-                                                {/* 아코디언 헤더 (프로젝트 정보) */}
                                                 <motion.div className={`group bg-white p-10 rounded-[2.5rem] border transition-all duration-500 cursor-pointer ${isExpanded ? 'border-[#7A4FFF] shadow-2xl ring-1 ring-[#7A4FFF]/20' : 'border-zinc-100 shadow-xl hover:border-[#7A4FFF]/30'}`} onClick={() => handleToggleExpand(app.applicationId)}>
                                                     <div className="flex flex-col xl:flex-row justify-between items-center gap-8 w-full">
                                                         <div className="flex-1 w-full">
@@ -270,7 +269,6 @@ export default function FreelancerDashboardPage() {
                                                     </div>
                                                 </motion.div>
 
-                                                {/* 아코디언 바디 (내 지원 상세) */}
                                                 <AnimatePresence>
                                                     {isExpanded && (
                                                         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
@@ -285,7 +283,6 @@ export default function FreelancerDashboardPage() {
                                                                     </div>
                                                                 </div>
                                                                 <div className="flex flex-col gap-3 w-full md:w-auto border-t md:border-t-0 md:border-l border-zinc-100 pt-6 md:pt-0 md:pl-8">
-                                                                    {/* 🎯 [수정] 지원 취소 버튼 제거 완료 */}
                                                                     {app.status === 'ACCEPTED' && (
                                                                         <button onClick={() => router.push(`/freelancer/projects/${app.projectId}`)} className="w-full md:w-auto px-8 py-4 bg-zinc-950 text-white rounded-2xl text-xs font-black hover:bg-[#7A4FFF] transition-all uppercase font-mono flex items-center justify-center gap-2 shadow-sm">워크스페이스 입장 <ArrowUpRight size={16}/></button>
                                                                     )}
@@ -312,7 +309,6 @@ export default function FreelancerDashboardPage() {
                                 <p className="text-sm font-medium text-zinc-400">클라이언트가 나에게 직접 보낸 달달한 러브콜입니다.</p>
                             </div>
 
-                            {/* 🎯 [추가] 정렬 컨트롤 */}
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
@@ -377,7 +373,7 @@ export default function FreelancerDashboardPage() {
                             <div><h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">관심 프로젝트</h2><p className="text-sm font-medium text-zinc-400">마스터가 눈여겨보고 있는 일거리 목록입니다.</p></div>
                             <span className="px-5 py-2 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#7A4FFF]">공고 수: {bookmarkedProjects.length}개</span>
                         </div>
-                        {bookmarksLoading ? (
+                        {bookmarksLoading && bookmarkPage === 0 ? (
                             <div className="py-40 flex justify-center"><Loader2 className="w-12 h-12 animate-spin text-[#7A4FFF]" /></div>
                         ) : bookmarkedProjects.length === 0 ? (
                             <div className="text-center py-48 bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 font-black text-zinc-200 italic uppercase tracking-tighter">찜한 프로젝트가 없습니다</div>
