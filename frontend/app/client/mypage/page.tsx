@@ -121,7 +121,7 @@ export default function ClientMyPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative overflow-hidden font-sans">
+        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative overflow-y-scroll scroll-smooth font-sans">
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
             </div>
@@ -145,10 +145,13 @@ export default function ClientMyPage() {
                 <div className="space-y-8 min-w-0">
                     <motion.div
                         key={activeTab}
-                        initial={{ opacity: 0, y: 15 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                        className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/50 min-h-[600px]"
+                        transition={{ 
+                            duration: 0.3,
+                            ease: "easeOut"
+                        }}
+                        className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/50 min-h-[700px] w-full"
                     >
                         {activeTab === 'projects' && (
                             <ProjectsTab user={user} projects={projects} loading={loading} setSelectedProjectForView={setSelectedProjectForView} />
