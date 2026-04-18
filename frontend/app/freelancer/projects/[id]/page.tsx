@@ -56,28 +56,41 @@ export default function ProjectDetailPage() {
     useEffect(() => {
         const fetchProjectDetail = async () => {
             if (!id) return;
+
+            // 🎯 [리뷰 반영] 메인 API 호출과 보조(지원여부, 찜여부) API를 독립적인 try-catch로 분리
             try {
                 const response = await api.get(`/v1/projects/${id}`);
                 setProject(response.data);
                 setBidPrice(String(response.data.budget));
-
-                const token = localStorage.getItem("accessToken");
-                if (token) {
-                    const myApps = await api.get('/applications/me');
-                    setIsApplied(myApps.data.some((app: any) => app.projectId === Number(id)));
-
-                    // 🎯 [CodeRabbit 리뷰 반영] size=1000을 추가하여 페이징 누락으로 인한 북마크 버튼 False-negative 방지
-                    const myBookmarks = await api.get('/v1/bookmarks/projects?size=1000');
-                    const bookmarkList = myBookmarks.data.content || [];
-                    setIsBookmarked(bookmarkList.some((b: any) => b.projectId === Number(id)));
-                }
             } catch (err: any) {
                 if (err.response?.status !== 401) {
                     setError("프로젝트 정보를 불러오는데 실패했습니다.");
                 }
-            } finally {
                 setLoading(false);
+                return; // 메인 정보를 못 가져왔으니 여기서 중단합니다.
             }
+
+            const token = localStorage.getItem("accessToken");
+            if (token) {
+                // 내 지원 내역 체크 (에러 격리)
+                try {
+                    const myApps = await api.get('/applications/me');
+                    setIsApplied(myApps.data.some((app: any) => app.projectId === Number(id)));
+                } catch (e) {
+                    console.error("지원 내역을 불러오는데 실패했습니다.", e);
+                }
+
+                // 🎯 [리뷰 반영] size=1000을 추가하여 페이징 누락으로 인한 북마크 버튼 False-negative 방지
+                // 북마크 내역 체크 (에러 격리)
+                try {
+                    const myBookmarks = await api.get('/v1/bookmarks/projects?size=1000');
+                    const bookmarkList = myBookmarks.data.content || [];
+                    setIsBookmarked(bookmarkList.some((b: any) => b.projectId === Number(id)));
+                } catch (e) {
+                    console.error("북마크 내역을 불러오는데 실패했습니다.", e);
+                }
+            }
+            setLoading(false);
         };
         fetchProjectDetail();
     }, [id]);
@@ -188,9 +201,12 @@ export default function ProjectDetailPage() {
                             </div>
                         </div>
 
+                        {/* 🎯 [리뷰 반영] 북마크 버튼 웹 접근성 처리 */}
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={handleBookmarkToggle}
+                            aria-label={isBookmarked ? '북마크 해제' : '북마크 추가'}
+                            aria-pressed={isBookmarked}
                             className={`p-6 rounded-[2rem] shadow-xl transition-all border-2 flex items-center justify-center ${isBookmarked ? 'bg-white border-red-100 text-red-500' : 'bg-zinc-950 border-zinc-950 text-white hover:bg-white hover:text-zinc-950 hover:border-zinc-100'}`}
                         >
                             <Heart size={28} className={isBookmarked ? "fill-red-500" : ""} />
@@ -277,7 +293,12 @@ export default function ProjectDetailPage() {
                     <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-zinc-950/80 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></motion.div>
                         <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-white w-full max-w-lg rounded-[3.5rem] p-12 shadow-2xl border border-zinc-100">
-                            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-zinc-300 hover:text-zinc-950 transition-all p-2 bg-zinc-50 rounded-full">
+                            {/* 🎯 [리뷰 반영] 모달 닫기 버튼 웹 접근성 처리 */}
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                aria-label="지원서 닫기"
+                                className="absolute top-8 right-8 text-zinc-300 hover:text-zinc-950 transition-all p-2 bg-zinc-50 rounded-full"
+                            >
                                 <X size={24} />
                             </button>
                             <h2 className="text-4xl font-black text-zinc-950 mb-3 tracking-tighter">지원서 작성</h2>
