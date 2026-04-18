@@ -37,9 +37,9 @@ interface ProjectDto {
 }
 
 const TABS = [
+    { id: 'settings', label: 'ACCOUNT SETTINGS', icon: UserCircle },
     { id: 'projects', label: 'MY PROJECTS', icon: Briefcase },
     { id: 'bookmarks', label: 'BOOKMARKS', icon: Heart },
-    { id: 'settings', label: 'ACCOUNT SETTINGS', icon: UserCircle },
 ];
 
 export default function ClientMyPage() {
@@ -49,7 +49,7 @@ export default function ClientMyPage() {
     const [projects, setProjects] = useState<ProjectDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
-    const [activeTab, setActiveTab] = useState('projects');
+    const [activeTab, setActiveTab] = useState('settings');
 
     const [selectedProjectForView, setSelectedProjectForView] = useState<ProjectDto | null>(null);
 

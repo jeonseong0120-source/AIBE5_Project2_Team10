@@ -38,7 +38,7 @@ const EMPTY_PORTFOLIO_FORM = { id: null as number | null | undefined, title: '',
 
 export default function FreelancerMyPage() {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState('portfolio');
+    const [activeTab, setActiveTab] = useState('profile');
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
 
