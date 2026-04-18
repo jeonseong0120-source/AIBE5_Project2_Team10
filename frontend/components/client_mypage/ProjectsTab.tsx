@@ -58,7 +58,16 @@ export default function ProjectsTab({ user, projects, loading, setSelectedProjec
                                 transition={{ delay: idx * 0.05 }} 
                                 key={project.projectId || idx}
                                 onClick={() => setSelectedProjectForView(project)}
-                                className="group bg-zinc-50/50 p-8 rounded-[2.5rem] border border-zinc-100/50 transition-all hover:bg-white hover:shadow-2xl hover:border-[#FF7D00]/20 hover:translate-y-[-4px] cursor-pointer"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setSelectedProjectForView(project);
+                                    }
+                                }}
+                                tabIndex={0}
+                                role="button"
+                                aria-label={`View details for project ${project.projectName}`}
+                                className="group bg-zinc-50/50 p-8 rounded-[2.5rem] border border-zinc-100/50 transition-all hover:bg-white hover:shadow-2xl hover:border-[#FF7D00]/20 hover:translate-y-[-4px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FF7D00]/50"
                             >
                                 <div className="flex items-center justify-between mb-6">
                                     <div className="flex items-center gap-3">
