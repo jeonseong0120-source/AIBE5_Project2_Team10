@@ -156,7 +156,8 @@ export default function FreelancerMyPage() {
         setLoading(true);
         try {
             const { data } = await api.get('/portfolios/me');
-            setPortfolios(data || []);
+            const sortedPortfolios = (data || []).sort((a: any, b: any) => b.id - a.id);
+            setPortfolios(sortedPortfolios);
         } catch (error) {
             console.error("포트폴리오 로드 실패", error);
         } finally {
