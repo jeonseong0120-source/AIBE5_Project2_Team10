@@ -1,14 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '@/app/lib/axios';
 import { Bookmark, MapPin, DollarSign, Calendar, ChevronRight, Loader2, Sparkles, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
+interface BookmarkedProject {
+    projectId: number;
+    projectName: string;
+    companyName: string;
+    budget: number;
+    deadline: string;
+    location: string;
+}
+
 export default function MypageBookmarksTab() {
     const router = useRouter();
-    const [bookmarks, setBookmarks] = useState<any[]>([]);
+    const [bookmarks, setBookmarks] = useState<BookmarkedProject[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchBookmarks = async () => {
@@ -86,7 +95,6 @@ export default function MypageBookmarksTab() {
                                 onClick={() => router.push(`/freelancer/projects/${project.projectId}`)}
                                 className="group bg-white rounded-[2.5rem] p-8 border border-zinc-100 shadow-sm hover:shadow-2xl hover:shadow-purple-200/20 hover:-translate-y-1 transition-all cursor-pointer relative overflow-hidden"
                             >
-                                {/* 카드 배경 데코레이션 */}
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#7A4FFF] opacity-0 group-hover:opacity-[0.03] rounded-full -mr-16 -mt-16 transition-opacity" />
                                 
                                 <div className="flex justify-between items-start mb-6">

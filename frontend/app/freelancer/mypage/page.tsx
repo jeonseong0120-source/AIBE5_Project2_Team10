@@ -16,7 +16,7 @@ import MypageReviewTab from '@/components/freelancer_mypage/MypageReviewTab';
 import MypageGradeTab from '@/components/freelancer_mypage/MypageGradeTab';
 import PortfolioFormModal from '@/components/freelancer_mypage/PortfolioFormModal';
 import PortfolioDetailModal from '@/components/freelancer_mypage/PortfolioDetailModal';
-import MypageBookmarksTab from '@/components/freelancer_mypage/MypageBookmarksTab';
+import BookmarkTab from '../../../components/freelancer_mypage/MypageBookmarksTab';
 
 const TABS = [
     { id: 'profile', label: 'MY PROFILE', icon: UserIcon },
@@ -433,7 +433,7 @@ export default function FreelancerMyPage() {
                                     <MypageGradeTab profile={profile} />
                                 )}
                                 {activeTab === 'bookmarks' && (
-                                    <MypageBookmarksTab />
+                                    <BookmarkTab />
                                 )}
                             </>
                         )}
