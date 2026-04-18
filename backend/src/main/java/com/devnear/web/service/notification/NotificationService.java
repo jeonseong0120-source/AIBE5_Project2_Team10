@@ -94,11 +94,14 @@ public class NotificationService {
             return null;
         }
         return switch (type) {
-            case CHAT_ROOM_CREATED -> "/client/mypage";
-            case PROJECT_PROPOSAL_SENT, PROJECT_PROPOSAL_ACCEPTED, PROJECT_PROPOSAL_REJECTED ->
-                    "/freelancer/mypage";
+            // 문의하기는 알림 링크 대신 화면 내 "문의하기" 버튼에서 처리
+            case CHAT_ROOM_CREATED -> null;
+            // 역제안 도착 알림만 링크 이동 허용
+            case PROJECT_PROPOSAL_SENT -> "/freelancer/mypage";
+            // 수락/거절은 우측 X로 확인 처리
+            case PROJECT_PROPOSAL_ACCEPTED, PROJECT_PROPOSAL_REJECTED -> null;
             case PROJECT_APPLICATION_SUBMITTED -> "/client/dashboard";
-            case PROJECT_APPLICATION_ACCEPTED, PROJECT_APPLICATION_REJECTED -> "/freelancer/mypage";
+            case PROJECT_APPLICATION_ACCEPTED, PROJECT_APPLICATION_REJECTED -> null;
         };
     }
 }
