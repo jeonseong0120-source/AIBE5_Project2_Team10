@@ -84,7 +84,7 @@ export default function ProjectsTab({ user, projects, loading, setSelectedProjec
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[10px] font-black text-zinc-300 uppercase font-mono mb-1">Target_Budget</p>
-                                        <p className="text-xl font-black text-zinc-900 group-hover:text-[#FF7D00] transition-colors font-mono italic">₩{project.budget?.toLocaleString()}</p>
+                                        <p className="text-xl font-black text-zinc-900 group-hover:text-[#FF7D00] transition-colors font-mono italic">₩{project.budget != null ? project.budget.toLocaleString() : '0'}</p>
                                     </div>
                                 </div>
 

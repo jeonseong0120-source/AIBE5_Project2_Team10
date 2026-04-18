@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Settings, LogOut, ChevronRight, Calendar, XCircle, ExternalLink, Briefcase, LayoutGrid, UserCircle, Heart, Send } from 'lucide-react';
+import { XCircle, ExternalLink, Briefcase, UserCircle, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { logout } from '../../lib/authEvents';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
@@ -106,11 +106,11 @@ export default function ClientMyPage() {
     const handleUpdateSuccess = (updatedData: any) => {
         if (typeof updatedData === 'string') {
             // 구버전: 닉네임만 전달받은 경우
-            setUser(prev => prev ? { ...prev, nickname: updatedData } : null);
+            setUser(prev => ({ ...(prev || {}), nickname: updatedData } as UserProfile));
         } else {
             // 신버전: 전체 formData 오브젝트를 전달받은 경우
-            setUser(prev => prev ? { ...prev, nickname: updatedData.nickname } : null);
-            setProfile((prev: any) => ({ ...prev, ...updatedData }));
+            setUser(prev => ({ ...(prev || {}), nickname: updatedData.nickname } as UserProfile));
+            setProfile((prev: any) => ({ ...(prev || {}), ...updatedData }));
         }
     };
 

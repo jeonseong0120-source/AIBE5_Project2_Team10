@@ -21,14 +21,17 @@ interface ProposalDto {
 export default function ProposalsTab() {
     const [proposals, setProposals] = useState<ProposalDto[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchProposals = async () => {
         setLoading(true);
+        setError(null);
         try {
             const { data } = await api.get('/v1/proposals/sent');
             setProposals(data || []);
-        } catch (err) {
+        } catch (err: any) {
             console.error("제안 목록 조회 실패", err);
+            setError(err.response?.data?.message || err.message || "Failed to load proposals");
         } finally {
             setLoading(false);
         }
@@ -66,7 +69,19 @@ export default function ProposalsTab() {
                 <span className="px-4 py-1.5 bg-zinc-950 text-white text-[10px] font-black rounded-full font-mono shadow-lg">SENT_{proposals.length}</span>
             </div>
 
-            {proposals.length > 0 ? (
+            {error ? (
+                <div className="text-center py-32 bg-red-50/50 rounded-[3rem] border-4 border-dashed border-red-100 flex flex-col items-center justify-center">
+                    <XCircle className="text-red-300 w-16 h-16 mb-4" />
+                    <h3 className="font-mono font-black text-red-400 italic uppercase text-lg tracking-widest">Error: Fetch_Failed</h3>
+                    <p className="text-red-400/60 text-xs font-mono mt-2 uppercase">{error}</p>
+                    <button 
+                        onClick={() => fetchProposals()}
+                        className="mt-6 px-6 py-2 bg-red-500 text-white rounded-xl text-[10px] font-black font-mono tracking-widest uppercase hover:bg-red-600 transition-colors"
+                    >
+                        Try_Again
+                    </button>
+                </div>
+            ) : proposals.length > 0 ? (
                 <div className="grid grid-cols-1 gap-6">
                     {proposals.map((proposal, idx) => (
                         <motion.div

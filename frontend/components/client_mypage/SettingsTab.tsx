@@ -89,9 +89,10 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
     }, []);
 
     const handleBnCheck = () => {
+        // 사업자번호 형식만 검증 (실제 인증은 제출 시 서버에서 수행됨)
         if (formData.bn.match(/^\d{3}-\d{2}-\d{5}$/)) {
             setIsBnVerified(true);
-            alert("사업자 번호가 인증되었습니다.");
+            alert("사업자번호 형식이 확인되었습니다. 실제 상세 인증은 저장 시 서버에서 처리됩니다.");
         } else {
             alert("사업자번호 형식을 확인해주세요. (000-00-00000)");
             setIsBnVerified(false);
