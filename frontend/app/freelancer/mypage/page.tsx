@@ -337,46 +337,45 @@ export default function FreelancerMyPage() {
         }
     };
 
-    if (!authorized) return <div className="min-h-screen bg-white flex items-center justify-center text-[#7A4FFF] font-black tracking-widest animate-pulse font-mono uppercase">System_Authorizing...</div>;
+    if (!authorized) return <div className="min-h-screen items-center justify-center flex bg-zinc-950 text-[#7A4FFF] font-black text-xl animate-pulse uppercase font-mono">System_Authorizing...</div>;
     if (!profile && !isEditingProfile) return null;
 
     return (
-        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 font-sans">
-            <nav className="w-full py-5 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/freelancer/explore")}>
-                    <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
+        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative overflow-hidden font-sans">
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
+            </div>
+
+            <nav className="w-full py-6 px-10 bg-white/70 backdrop-blur-2xl border-b border-zinc-200/50 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+                <div className="font-black text-2xl tracking-tighter cursor-pointer group" onClick={() => router.push("/freelancer/explore")}>
+                    <span className="text-[#FF7D00] group-hover:drop-shadow-[0_0_8px_#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
-                <div className="flex gap-4 items-center md:gap-6">
-                    <button onClick={() => router.push('/freelancer/dashboard')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
-                        DASHBOARD
-                    </button>
-                    <button onClick={() => router.push('/freelancer/explore')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
-                        EXPLORE
-                    </button>
-                    <button onClick={() => router.push('/freelancer/mypage')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
-                        MY_PROFILE
-                    </button>
+                <div className="flex gap-4 items-center relative z-10 md:gap-8">
+                    <button onClick={() => router.push('/freelancer/dashboard')} className="text-xs font-black text-zinc-400 hover:text-zinc-950 tracking-[0.2em] transition uppercase font-mono">DASHBOARD</button>
+                    <button onClick={() => router.push('/freelancer/explore')} className="text-xs font-black text-zinc-400 hover:text-zinc-950 tracking-[0.2em] transition uppercase font-mono">EXPLORE</button>
+                    <button onClick={() => router.push('/freelancer/mypage')} className="text-xs font-black text-zinc-950 tracking-[0.2em] transition uppercase font-mono">MY_PROFILE</button>
                     <NotificationBell />
-                    <div className="w-8 h-8 rounded-full bg-[#7A4FFF] border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-white font-bold text-xs">
-                        {profile?.userName ? profile.userName.charAt(0) : 'U'}
+                    <div className="w-10 h-10 rounded-full bg-[#7A4FFF] border-2 border-white shadow-xl shadow-purple-200 overflow-hidden flex items-center justify-center text-white font-black text-sm font-mono">
+                        {profile?.userName ? profile.userName.charAt(0).toUpperCase() : 'U'}
                     </div>
                 </div>
             </nav>
 
-            <main className="max-w-7xl mx-auto px-6 mt-10 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start">
+            {/* 🎯 레이아웃 뼈대: 그리드 [300px(사이드바) + 1fr(메인 콘텐츠)] */}
+            <main className="max-w-7xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start relative z-10">
                 <MypageSidebar tabs={TABS} activeTab={activeTab} setActiveTab={setActiveTab} />
 
-                <div className="space-y-6 min-w-0">
+                <div className="space-y-8 min-w-0">
                     <motion.div
                         key={activeTab}
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="bg-white rounded-2xl p-6 md:p-8 border border-zinc-200 shadow-sm min-h-[500px]"
+                        transition={{ duration: 0.4 }}
+                        className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/50 min-h-[600px]"
                     >
                         {loading ? (
                             <div className="flex flex-col items-center justify-center h-64 gap-4">
-                                <div className="w-8 h-8 border-4 border-[#7A4FFF]/20 border-t-[#7A4FFF] rounded-full animate-spin" />
+                                <div className="w-10 h-10 border-4 border-[#7A4FFF]/20 border-t-[#7A4FFF] rounded-full animate-spin" />
                             </div>
                         ) : (
                             <>
@@ -424,6 +423,7 @@ export default function FreelancerMyPage() {
                     </motion.div>
                 </div>
             </main>
+
             <PortfolioFormModal
                 isOpen={isPortfolioModalOpen}
                 onClose={() => { setIsPortfolioModalOpen(false); setPortfolioForm(EMPTY_PORTFOLIO_FORM); setPortfolioSkillSearchQuery(''); }}
