@@ -66,6 +66,7 @@ export default function FreelancerMyPage() {
     const [isProfileUploading, setIsProfileUploading] = useState(false);
     const [isThumbUploading, setIsThumbUploading] = useState(false);
     const [isBulkUploading, setIsBulkUploading] = useState(false);
+    const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
     // 숨김 파일 입력용 ref
     const profileFileInputRef = useRef<HTMLInputElement>(null);
@@ -211,14 +212,17 @@ export default function FreelancerMyPage() {
     };
 
     const handleToggleStatus = async () => {
+        if (isTogglingStatus) return;
+        setIsTogglingStatus(true);
         try {
             const newStatus = !profile.isActive;
             await api.patch('/v1/freelancers/status', { isActive: newStatus });
             setProfile((prev: any) => ({ ...prev, isActive: newStatus }));
             setEditProfileData((prev: any) => ({ ...prev, isActive: newStatus }));
-            alert(newStatus ? '활동중으로 변경되었습니다.' : '휴식중으로 변경되었습니다.');
         } catch (error) {
             alert('상태 변경 실패');
+        } finally {
+            setIsTogglingStatus(false);
         }
     }
 
@@ -410,6 +414,7 @@ export default function FreelancerMyPage() {
                                         profileFileInputRef={profileFileInputRef}
                                         handleProfileImageUpload={handleProfileImageUpload}
                                         handleToggleStatus={handleToggleStatus}
+                                        isTogglingStatus={isTogglingStatus}
                                         validationError={validationError}
                                         setValidationError={setValidationError}
                                         setMySkillIds={setMySkillIds}

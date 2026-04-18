@@ -1,6 +1,6 @@
 'use client';
 
-import { Settings, User as UserIcon, Loader2, Upload, Save, MapPin, Clock, Activity, X } from 'lucide-react';
+import { Settings, User as UserIcon, Loader2, Upload, Save, MapPin, Clock, Activity, X, CheckCircle2 } from 'lucide-react';
 
 interface MypageProfileTabProps {
     profile: any;
@@ -21,6 +21,7 @@ interface MypageProfileTabProps {
     validationError: string;
     setValidationError: (val: string) => void;
     setMySkillIds: (ids: number[]) => void;
+    isTogglingStatus: boolean;
 }
 
 export default function MypageProfileTab({
@@ -41,7 +42,8 @@ export default function MypageProfileTab({
     handleToggleStatus,
     validationError,
     setValidationError,
-    setMySkillIds
+    setMySkillIds,
+    isTogglingStatus
 }: MypageProfileTabProps) {
     return (
         <div className="space-y-8">
@@ -73,24 +75,70 @@ export default function MypageProfileTab({
                 )}
             </div>
 
-            {/* ====== 상태 토글 컨트롤 ====== */}
+            {/* ⚡️ 고급 활동 상태 마스터 컨트롤 */}
             {!isEditingProfile && (
-                <div className="bg-zinc-50 rounded-[2rem] p-6 border border-zinc-100 flex items-center justify-between shadow-inner">
-                    <div className="flex items-center gap-3">
-                        <span className={`w-3 h-3 rounded-full ${profile?.isActive ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)]'}`}></span>
-                        <span className="text-sm font-black text-zinc-700 tracking-tight">
-                            현재 {profile?.isActive ? '활동중' : '휴식중'}
-                        </span>
+                <div className={`relative overflow-hidden rounded-[2.5rem] p-8 border transition-all duration-500 ${
+                    profile?.isActive 
+                        ? 'bg-gradient-to-br from-green-50/50 to-emerald-50/30 border-green-100 shadow-lg shadow-green-100/20' 
+                        : 'bg-gradient-to-br from-zinc-50 to-zinc-100/50 border-zinc-200/60 shadow-inner'
+                }`}>
+                    {/* Decorative Background Pattern */}
+                    <div className="absolute top-0 right-0 w-64 h-64 opacity-[0.03] pointer-events-none transform translate-x-16 -translate-y-16">
+                        <Activity size={256} className={profile?.isActive ? 'text-green-600' : 'text-zinc-400'} />
                     </div>
-                    <button
-                        onClick={handleToggleStatus}
-                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#7A4FFF] focus:ring-offset-2 hover:opacity-80 shadow-sm ${profile?.isActive ? 'bg-[#7A4FFF]' : 'bg-zinc-300'}`}
-                        role="switch"
-                        aria-checked={profile?.isActive}
-                        type="button"
-                    >
-                        <span aria-hidden="true" className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${profile?.isActive ? 'translate-x-5' : 'translate-x-0'}`} />
-                    </button>
+
+                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="flex items-center gap-6 text-center md:text-left">
+                            <div className={`w-16 h-16 rounded-3xl flex items-center justify-center transition-all duration-500 ${
+                                profile?.isActive 
+                                    ? 'bg-white text-green-500 shadow-xl shadow-green-200/50 scale-110' 
+                                    : 'bg-zinc-200/50 text-zinc-400'
+                            }`}>
+                                <Activity size={32} className={profile?.isActive ? 'animate-pulse' : ''} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-zinc-900 tracking-tight flex items-center justify-center md:justify-start gap-2">
+                                    <span className={`w-2.5 h-2.5 rounded-full ${profile?.isActive ? 'bg-green-500' : 'bg-zinc-400'} animate-pulse`}></span>
+                                    {profile?.isActive ? '현재 프로젝트 제안 받는 중' : '잠시 휴식 중입니다'}
+                                </h3>
+                                <p className="text-xs text-zinc-500 mt-1 font-medium leading-relaxed max-w-[280px]">
+                                    {profile?.isActive 
+                                        ? '클라이언트들이 당신의 프로필을 발견하고 프로젝트를 제안할 수 있는 상태입니다.' 
+                                        : '프로필이 검색 결과에 노출되지 않으며 새로운 제안을 받지 않습니다.'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-3">
+                            <span className="text-[10px] font-black font-mono uppercase tracking-[0.2em] text-zinc-400">Availability_Toggle</span>
+                            <button
+                                onClick={handleToggleStatus}
+                                className={`group relative inline-flex h-10 w-20 shrink-0 cursor-pointer items-center rounded-full border-4 border-transparent transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 ${
+                                    profile?.isActive 
+                                        ? 'bg-green-500 focus:ring-green-500/20 shadow-lg shadow-green-500/40' 
+                                        : 'bg-zinc-300 focus:ring-zinc-300/20'
+                                }`}
+                                role="switch"
+                                aria-checked={profile?.isActive}
+                                type="button"
+                            >
+                                <span className="sr-only">Toggle Status</span>
+                                <span 
+                                    className={`pointer-events-none flex items-center justify-center h-8 w-8 transform rounded-full bg-white shadow-xl ring-0 transition duration-300 ease-in-out ${
+                                        profile?.isActive ? 'translate-x-10' : 'translate-x-0'
+                                    }`}
+                                >
+                                    {isTogglingStatus ? (
+                                        <Loader2 size={16} className="text-zinc-400 animate-spin" />
+                                    ) : profile?.isActive ? (
+                                        <CheckCircle2 size={16} className="text-green-500" />
+                                    ) : (
+                                        <X size={16} className="text-zinc-400" />
+                                    )}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
