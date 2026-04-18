@@ -354,12 +354,12 @@ export default function FreelancerMyPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative overflow-y-scroll scroll-smooth font-sans">
+        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative scroll-smooth font-sans">
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
             </div>
 
-            <MypageNavbar 
+            <MypageNavbar
                 userType="FREELANCER"
                 userName={profile?.userName}
                 profileImage={profile?.profileImageUrl}
@@ -369,10 +369,10 @@ export default function FreelancerMyPage() {
 
             {/* 🎯 레이아웃 뼈대: 그리드 [300px(사이드바) + 1fr(메인 콘텐츠)] */}
             <main className="max-w-7xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start relative z-10">
-                <MypageSidebar 
-                    tabs={TABS} 
-                    activeTab={activeTab} 
-                    setActiveTab={setActiveTab} 
+                <MypageSidebar
+                    tabs={TABS}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
                     accentColor="#7A4FFF"
                 />
 
@@ -381,8 +381,8 @@ export default function FreelancerMyPage() {
                         key={activeTab}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ 
-                            duration: 0.3, 
+                        transition={{
+                            duration: 0.3,
                             ease: "easeOut"
                         }}
                         className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/50 min-h-[700px] w-full"

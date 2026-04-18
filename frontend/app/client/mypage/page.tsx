@@ -121,13 +121,13 @@ export default function ClientMyPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative overflow-y-scroll scroll-smooth font-sans">
+        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative scroll-smooth font-sans">
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
             </div>
 
-            <MypageNavbar 
-                userType="CLIENT" 
+            <MypageNavbar
+                userType="CLIENT"
                 userName={user?.name}
                 profileImage={profile?.logoUrl}
                 navItems={navItems}
@@ -135,11 +135,11 @@ export default function ClientMyPage() {
             />
 
             <main className="max-w-7xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start relative z-10">
-                <MypageSidebar 
-                    tabs={TABS} 
-                    activeTab={activeTab} 
-                    setActiveTab={setActiveTab} 
-                    accentColor="#FF7D00" 
+                <MypageSidebar
+                    tabs={TABS}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    accentColor="#FF7D00"
                 />
 
                 <div className="space-y-8 min-w-0">
@@ -147,7 +147,7 @@ export default function ClientMyPage() {
                         key={activeTab}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ 
+                        transition={{
                             duration: 0.3,
                             ease: "easeOut"
                         }}

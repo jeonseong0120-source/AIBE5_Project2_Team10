@@ -16,7 +16,7 @@ export default function MypageSidebar({ tabs, activeTab, setActiveTab, accentCol
     const router = useRouter();
 
     return (
-        <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
+        <aside className="space-y-6 lg:sticky lg:top-[136px] lg:self-start">
             {/* Main Navigation Card */}
             <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-4 border border-zinc-200/50 shadow-xl shadow-zinc-200/40">
                 <div className="flex flex-col gap-2">
@@ -24,23 +24,21 @@ export default function MypageSidebar({ tabs, activeTab, setActiveTab, accentCol
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`group relative flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black tracking-[0.2em] transition-all duration-300 uppercase font-mono ${
-                                activeTab === tab.id
+                            className={`group relative flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black tracking-[0.2em] transition-all duration-300 uppercase font-mono ${activeTab === tab.id
                                     ? 'bg-zinc-900 text-white shadow-lg shadow-zinc-200'
                                     : 'text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900'
-                            }`}
-                        >
-                             <tab.icon 
-                                size={18} 
-                                className={`transition-colors duration-300 ${
-                                    activeTab === tab.id ? '' : 'group-hover:text-zinc-900'
                                 }`}
+                        >
+                            <tab.icon
+                                size={18}
+                                className={`transition-colors duration-300 ${activeTab === tab.id ? '' : 'group-hover:text-zinc-900'
+                                    }`}
                                 style={{ color: activeTab === tab.id ? accentColor : undefined }}
-                             />
+                            />
                             {tab.label}
-                            
+
                             {activeTab === tab.id && (
-                                <motion.div 
+                                <motion.div
                                     layoutId="activeTabIndicator"
                                     className="absolute right-4 w-1.5 h-1.5 rounded-full"
                                     style={{ backgroundColor: accentColor }}
@@ -53,8 +51,8 @@ export default function MypageSidebar({ tabs, activeTab, setActiveTab, accentCol
 
             {/* Logout Section */}
             <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-2 border border-zinc-100 shadow-sm">
-                <button 
-                    onClick={() => { if(confirm('로그아웃 하시겠습니까?')) { logout(); router.push('/login'); } }} 
+                <button
+                    onClick={() => { if (confirm('로그아웃 하시겠습니까?')) { logout(); router.push('/login'); } }}
                     className="w-full flex items-center gap-3 p-4 hover:bg-red-50 rounded-xl transition-all duration-300 text-[10px] font-black text-red-400 hover:text-red-500 uppercase font-mono tracking-widest"
                 >
                     <LogOut size={16} />
