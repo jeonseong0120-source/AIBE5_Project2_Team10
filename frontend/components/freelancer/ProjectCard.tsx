@@ -68,7 +68,6 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6">
                         <div className="flex items-center gap-1.5 text-zinc-500 text-xs font-bold">
                             <ShieldCheck size={14} className="text-[#7A4FFF]" />
-                            {/* [수정] 로그 확인 결과: data.companyName에 데이터가 있음 */}
                             {data.companyName || "개인 클라이언트"}
                         </div>
                         <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-mono font-bold">
@@ -86,8 +85,7 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
                                     key={idx}
                                     className="px-3 py-1.5 bg-zinc-50 border border-zinc-100 rounded-xl text-[10px] font-bold text-zinc-400 uppercase tracking-tighter font-mono group-hover:border-[#7A4FFF]/20 group-hover:text-[#7A4FFF] transition-colors"
                                 >
-                                    {/* [수정] skill이 객체 { name: 'Java' }로 올 경우와 문자열 'Java'로 올 경우 모두 대응 */}
-                                    #{typeof skill === 'object' ? skill.name : skill}
+                                    {typeof skill === 'object' ? skill.name : skill}
                                 </span>
                             ))
                         ) : (
@@ -101,7 +99,7 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
                 {/* 우측 예산 및 액션 버튼 */}
                 <div className="flex flex-col justify-between items-end md:w-52 border-t md:border-t-0 md:border-l border-zinc-100 pt-6 md:pt-0 md:pl-8">
                     <div className="text-right">
-                        <p className="text-[10px] font-black text-zinc-400 uppercase font-mono tracking-widest mb-2 text-right">Estimated_Budget</p>
+                        <p className="text-[10px] font-black text-zinc-400 uppercase font-mono tracking-widest mb-2 text-right">예상 금액</p>
                         <p className="text-3xl font-black text-zinc-900 font-mono tracking-tighter">
                             <span className="text-[#FF7D00] text-lg mr-1">₩</span>
                             {((data.budget || 0) / 10000).toLocaleString()}만
@@ -112,7 +110,7 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
                         whileTap={{ scale: 0.97 }}
                         className="w-full mt-6 bg-zinc-950 text-white py-4 rounded-[1.25rem] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 group-hover:bg-[#7A4FFF] transition-all shadow-lg shadow-zinc-200 group-hover:shadow-[#7A4FFF]/20"
                     >
-                        VIEW_MISSION <ArrowUpRight size={16} />
+                        상세 보기 <ArrowUpRight size={16} />
                     </motion.button>
                 </div>
             </div>

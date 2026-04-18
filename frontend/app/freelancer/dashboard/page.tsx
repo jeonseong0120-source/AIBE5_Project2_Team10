@@ -7,18 +7,21 @@ import { NotificationBell } from '@/components/notifications/NotificationProvide
 import {
     User, Users, CheckCircle, XCircle, Edit, Trash2,
     Calendar, DollarSign, Activity, ChevronRight,
-    Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, Clock, ArrowUpRight, Search, FileText, Inbox, Bookmark
+    Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, Clock, ArrowUpRight, Search, FileText, Inbox, Bookmark, Plus, ListFilter
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function FreelancerDashboardPage() {
     const router = useRouter();
-    const [loading, setLoading] = useState(true); // 🔍 Auth 통신을 위해 true로 복구
+    const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
 
     // 🎯 탭 상태
     const [activeMainTab, setActiveMainTab] = useState<'APPLICATIONS' | 'RECEIVED_PROPOSALS' | 'BOOKMARKS'>('APPLICATIONS');
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
+
+    // 🎯 [추가] 정렬 상태 (최신순/과거순)
+    const [sortOrder, setSortOrder] = useState<'DESC' | 'ASC'>('DESC');
 
     // 🎯 1. 지원 내역 상태
     const [applications, setApplications] = useState<any[]>([]);
@@ -29,19 +32,13 @@ export default function FreelancerDashboardPage() {
     const [receivedProposals, setReceivedProposals] = useState<any[]>([]);
     const [proposalsLoading, setProposalsLoading] = useState(false);
 
-    // 🎯 3. 관심 프로젝트 상태 (아직 API 없음)
+    // 🎯 3. 관심 프로젝트 상태
     const [bookmarkedProjects, setBookmarkedProjects] = useState<any[]>([]);
     const [bookmarksLoading, setBookmarksLoading] = useState(false);
+    const [bookmarkPage, setBookmarkPage] = useState(0);
+    const [hasMoreBookmarks, setHasMoreBookmarks] = useState(true);
 
-    const [cursor, setCursor] = useState({ x: 0, y: 0 });
-
-    useEffect(() => {
-        const move = (e: MouseEvent) => setCursor({ x: e.clientX, y: e.clientY });
-        window.addEventListener("mousemove", move);
-        return () => window.removeEventListener("mousemove", move);
-    }, []);
-
-    // 🚀 1. 권한 체크 (봉인 해제)
+    // 🚀 1. 권한 체크
     useEffect(() => {
         const checkAccess = async () => {
             try {
@@ -66,7 +63,6 @@ export default function FreelancerDashboardPage() {
     const fetchApplications = async () => {
         setAppsLoading(true);
         try {
-            // axios.ts에서 이미 /api를 붙여주므로 /applications/me 로 요청
             const { data } = await api.get('/applications/me');
             setApplications(data || []);
         } catch (error) {
@@ -89,7 +85,39 @@ export default function FreelancerDashboardPage() {
         }
     };
 
-    // 🚀 4. 제안 수락/거절 PATCH API 호출
+    // 🚀 4. 관심 프로젝트(북마크) API 호출
+    const fetchBookmarks = useCallback(async (isLoadMore = false) => {
+        if (!isLoadMore) {
+            setBookmarksLoading(true);
+            setBookmarkPage(0);
+        }
+        const targetPage = isLoadMore ? bookmarkPage + 1 : 0;
+        try {
+            const { data } = await api.get(`/v1/bookmarks/projects?page=${targetPage}&size=9`);
+            const newContent = data.content || [];
+
+            setBookmarkedProjects(prev => isLoadMore ? [...prev, ...newContent] : newContent);
+            setBookmarkPage(targetPage);
+            setHasMoreBookmarks(!data.last);
+        } catch (err) {
+            console.error("관심 프로젝트 로드 실패", err);
+        } finally {
+            setBookmarksLoading(false);
+        }
+    }, [bookmarkPage]);
+
+    // 🚀 5. 관심 프로젝트(북마크) 삭제 API
+    const handleRemoveBookmark = async (projectId: number) => {
+        if (!confirm("관심 프로젝트에서 삭제하시겠습니까?")) return;
+        try {
+            await api.delete(`/v1/bookmarks/projects/${projectId}`);
+            fetchBookmarks(false);
+        } catch (err) {
+            alert("삭제에 실패했습니다.");
+        }
+    };
+
+    // 🚀 제안 수락/거절 PATCH API 호출
     const handleProposalStatus = async (proposalId: number, status: 'ACCEPTED' | 'REJECTED') => {
         const actionText = status === 'ACCEPTED' ? '수락' : '거절';
         if (!confirm(`이 제안을 ${actionText}하시겠습니까?`)) return;
@@ -97,7 +125,7 @@ export default function FreelancerDashboardPage() {
         try {
             await api.patch(`/v1/proposals/${proposalId}/status`, { status });
             alert(`제안이 ${actionText}되었습니다.`);
-            fetchReceivedProposals(); // 리스트 갱신
+            fetchReceivedProposals();
         } catch (error) {
             console.error("제안 상태 변경 실패:", error);
             alert('상태 변경에 실패했습니다.');
@@ -109,10 +137,7 @@ export default function FreelancerDashboardPage() {
         if (!authorized) return;
         if (activeMainTab === 'APPLICATIONS') fetchApplications();
         if (activeMainTab === 'RECEIVED_PROPOSALS') fetchReceivedProposals();
-        if (activeMainTab === 'BOOKMARKS') {
-            // API가 없으므로 일단 빈 배열 처리
-            setBookmarkedProjects([]);
-        }
+        if (activeMainTab === 'BOOKMARKS') fetchBookmarks(false);
     }, [authorized, activeMainTab]);
 
     const handleToggleExpand = (id: number) => {
@@ -125,14 +150,26 @@ export default function FreelancerDashboardPage() {
 
     if (!authorized) return null;
 
-    const filteredApplications = applications.filter(a => filterStatus === 'ALL' || a.status === filterStatus);
+    // 🎯 [수정] 지원 내역 정렬 적용
+    const sortedApplications = [...applications]
+        .filter(a => filterStatus === 'ALL' || a.status === filterStatus)
+        .sort((a, b) => {
+            const timeA = new Date(a.appliedAt || 0).getTime();
+            const timeB = new Date(b.appliedAt || 0).getTime();
+            return sortOrder === 'DESC' ? timeB - timeA : timeA - timeB;
+        });
+
+    // 🎯 [수정] 받은 제안 정렬 적용
+    const sortedProposals = [...receivedProposals].sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return sortOrder === 'DESC' ? timeB - timeA : timeA - timeB;
+    });
 
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
-            {/* 🎨 [배경] 프리랜서 전용 퍼플 테마 */}
+            {/* 🎨 [배경] 깔끔한 그리드 패턴 */}
             <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute w-[500px] h-[500px] rounded-full bg-[#7A4FFF]/10 blur-[120px] transition-all duration-300" style={{ left: cursor.x - 250, top: cursor.y - 250 }} />
-                <div className="absolute w-[400px] h-[400px] rounded-full bg-[#FF7D00]/5 blur-[100px] transition-all duration-700" style={{ left: cursor.x - 100, top: cursor.y - 100 }} />
                 <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
             </div>
 
@@ -143,7 +180,8 @@ export default function FreelancerDashboardPage() {
                 <div className="flex gap-4 items-center relative z-10 md:gap-8">
                     <button onClick={() => router.push('/freelancer/mypage')} className="text-xs font-black text-zinc-400 hover:text-zinc-950 tracking-[0.2em] transition uppercase font-mono">마이페이지</button>
                     <NotificationBell />
-                    <button onClick={() => router.push("/projects")} className="px-7 py-3 bg-zinc-950 text-white rounded-2xl text-xs font-black tracking-widest hover:bg-[#7A4FFF] transition-all shadow-xl flex items-center gap-2 uppercase font-mono">
+                    {/* 🎯 [수정] 경로 변경: /projects -> /freelancer/explore */}
+                    <button onClick={() => router.push("/freelancer/explore")} className="px-7 py-3 bg-zinc-950 text-white rounded-2xl text-xs font-black tracking-widest hover:bg-[#7A4FFF] transition-all shadow-xl flex items-center gap-2 uppercase font-mono">
                         <Search size={14} /> 프로젝트 찾기
                     </button>
                 </div>
@@ -160,7 +198,7 @@ export default function FreelancerDashboardPage() {
                     {[
                         { id: 'APPLICATIONS', label: '지원 내역', icon: <FileText size={18} /> },
                         { id: 'RECEIVED_PROPOSALS', label: '받은 제안', icon: <Inbox size={18} /> },
-                        { id: 'BOOKMARKS', label: '관심 프로젝트 (준비중)', icon: <Bookmark size={18} /> }
+                        { id: 'BOOKMARKS', label: '관심 프로젝트', icon: <Bookmark size={18} /> }
                     ].map((tab) => (
                         <button key={tab.id} onClick={() => setActiveMainTab(tab.id as any)} className={`flex items-center gap-2.5 pb-6 text-sm font-black transition-all relative ${activeMainTab === tab.id ? 'text-[#7A4FFF]' : 'text-zinc-400 hover:text-zinc-600'}`}>
                             {tab.icon} {tab.label}
@@ -178,13 +216,24 @@ export default function FreelancerDashboardPage() {
                         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-8">
                             <div className="flex items-center gap-4">
                                 <h2 className="text-2xl font-black tracking-tight text-zinc-950 uppercase font-mono">나의 지원 내역</h2>
-                                <span className="px-3 py-1 bg-white border border-zinc-200 rounded-lg text-xs font-black text-[#7A4FFF]">총 {filteredApplications.length}건</span>
-                                <button onClick={() => router.push("/projects")} className="p-2.5 bg-white border border-zinc-200 text-[#7A4FFF] rounded-xl hover:bg-[#7A4FFF] hover:text-white transition-all shadow-sm group"><Search size={20} className="group-hover:scale-110 transition-transform duration-300" strokeWidth={3} /></button>
+                                <span className="px-3 py-1 bg-white border border-zinc-200 rounded-lg text-xs font-black text-[#7A4FFF]">총 {sortedApplications.length}건</span>
+                                {/* 🎯 [수정] 경로 변경: /projects -> /freelancer/explore */}
+                                <button onClick={() => router.push("/freelancer/explore")} className="p-2.5 bg-white border border-zinc-200 text-[#7A4FFF] rounded-xl hover:bg-[#7A4FFF] hover:text-white transition-all shadow-sm group"><Search size={20} className="group-hover:scale-110 transition-transform duration-300" strokeWidth={3} /></button>
                             </div>
-                            <div className="flex gap-2 p-2 bg-white/50 backdrop-blur-md border border-zinc-200 rounded-3xl">
-                                {[{ id: 'ALL', label: '전체' }, { id: 'PENDING', label: '대기중' }, { id: 'ACCEPTED', label: '수락됨' }, { id: 'REJECTED', label: '거절됨' }].map((s) => (
-                                    <button key={s.id} onClick={() => setFilterStatus(s.id)} className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all tracking-wider uppercase font-mono ${filterStatus === s.id ? 'bg-zinc-950 text-white shadow-xl' : 'text-zinc-400 hover:text-zinc-600'}`}>{s.label}</button>
-                                ))}
+
+                            {/* 🎯 [추가] 필터 및 정렬 컨트롤 */}
+                            <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex gap-2 p-2 bg-white/50 backdrop-blur-md border border-zinc-200 rounded-3xl">
+                                    {[{ id: 'ALL', label: '전체' }, { id: 'PENDING', label: '대기중' }, { id: 'ACCEPTED', label: '수락됨' }, { id: 'REJECTED', label: '거절됨' }].map((s) => (
+                                        <button key={s.id} onClick={() => setFilterStatus(s.id)} className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all tracking-wider uppercase font-mono ${filterStatus === s.id ? 'bg-zinc-950 text-white shadow-xl' : 'text-zinc-400 hover:text-zinc-600'}`}>{s.label}</button>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
+                                    className="px-5 py-3 bg-white border border-zinc-200 rounded-[1.25rem] text-xs font-black text-zinc-600 hover:bg-zinc-50 transition-all shadow-sm flex items-center gap-2 uppercase font-mono"
+                                >
+                                    <ListFilter size={16} className="text-[#7A4FFF]" /> {sortOrder === 'DESC' ? '최신순' : '과거순'}
+                                </button>
                             </div>
                         </div>
 
@@ -192,10 +241,10 @@ export default function FreelancerDashboardPage() {
                             <div className="py-40 flex justify-center"><Loader2 className="w-12 h-12 animate-spin text-[#7A4FFF]" /></div>
                         ) : (
                             <div className="grid gap-8">
-                                {filteredApplications.length === 0 ? (
+                                {sortedApplications.length === 0 ? (
                                     <div className="text-center py-24 bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 font-black text-zinc-300 italic uppercase tracking-widest">지원한 프로젝트가 없습니다</div>
                                 ) : (
-                                    filteredApplications.map((app) => {
+                                    sortedApplications.map((app) => {
                                         const isExpanded = expandedAppId === app.applicationId;
 
                                         return (
@@ -226,16 +275,19 @@ export default function FreelancerDashboardPage() {
                                                     {isExpanded && (
                                                         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                                                             <div className="mt-2 mb-12 p-8 bg-white border border-zinc-200 shadow-2xl rounded-[3rem] flex flex-col md:flex-row gap-8 items-center">
-                                                                <div className="flex-1 space-y-4 w-full">
-                                                                    <p className="text-[10px] font-black text-zinc-400 uppercase font-mono tracking-widest">내가 제출한 입찰가</p>
-                                                                    <p className="text-3xl font-black text-zinc-950 font-mono italic">₩{app.bidPrice?.toLocaleString()}</p>
+                                                                <div className="flex-1 w-full space-y-6">
+                                                                    <div>
+                                                                        <p className="text-[10px] font-black text-zinc-400 uppercase font-mono tracking-widest mb-1">내가 제출한 입찰가</p>
+                                                                        <p className="text-3xl font-black text-zinc-950 font-mono italic">₩{app.bidPrice?.toLocaleString()}</p>
+                                                                    </div>
+                                                                    <div className="p-6 bg-purple-50/50 rounded-2xl border border-purple-100/50 text-sm font-medium text-zinc-600 italic leading-relaxed">
+                                                                        "{app.message || "작성한 지원 메시지가 없습니다."}"
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex gap-3 w-full md:w-auto border-t md:border-t-0 md:border-l border-zinc-100 pt-6 md:pt-0 md:pl-8">
-                                                                    {app.status === 'PENDING' && (
-                                                                        <button className="w-full md:w-auto px-8 py-4 bg-white border border-zinc-200 text-zinc-400 rounded-2xl text-xs font-black hover:text-red-500 hover:border-red-200 transition-all uppercase font-mono">지원 취소</button>
-                                                                    )}
+                                                                <div className="flex flex-col gap-3 w-full md:w-auto border-t md:border-t-0 md:border-l border-zinc-100 pt-6 md:pt-0 md:pl-8">
+                                                                    {/* 🎯 [수정] 지원 취소 버튼 제거 완료 */}
                                                                     {app.status === 'ACCEPTED' && (
-                                                                        <button className="w-full md:w-auto px-8 py-4 bg-zinc-950 text-white rounded-2xl text-xs font-black hover:bg-[#7A4FFF] transition-all uppercase font-mono flex items-center justify-center gap-2">워크스페이스 입장 <ArrowUpRight size={16}/></button>
+                                                                        <button onClick={() => router.push(`/freelancer/projects/${app.projectId}`)} className="w-full md:w-auto px-8 py-4 bg-zinc-950 text-white rounded-2xl text-xs font-black hover:bg-[#7A4FFF] transition-all uppercase font-mono flex items-center justify-center gap-2 shadow-sm">워크스페이스 입장 <ArrowUpRight size={16}/></button>
                                                                     )}
                                                                 </div>
                                                             </div>
@@ -254,13 +306,27 @@ export default function FreelancerDashboardPage() {
                 {/* 🎯 2. 받은 제안 섹션 (RECEIVED_PROPOSALS) */}
                 {activeMainTab === 'RECEIVED_PROPOSALS' && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
-                        <div className="flex items-center justify-between">
-                            <div><h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">받은 제안 내역</h2><p className="text-sm font-medium text-zinc-400">클라이언트가 나에게 직접 보낸 달달한 러브콜입니다.</p></div>
-                            <span className="px-5 py-2 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#7A4FFF]">총 {receivedProposals.length}건</span>
+                        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                            <div>
+                                <h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">받은 제안 내역</h2>
+                                <p className="text-sm font-medium text-zinc-400">클라이언트가 나에게 직접 보낸 달달한 러브콜입니다.</p>
+                            </div>
+
+                            {/* 🎯 [추가] 정렬 컨트롤 */}
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
+                                    className="px-5 py-3 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-zinc-600 hover:bg-zinc-50 transition-all shadow-sm flex items-center gap-2 uppercase font-mono"
+                                >
+                                    <ListFilter size={16} className="text-[#7A4FFF]" /> {sortOrder === 'DESC' ? '최신순' : '과거순'}
+                                </button>
+                                <span className="px-5 py-3 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#7A4FFF]">총 {sortedProposals.length}건</span>
+                            </div>
                         </div>
+
                         {proposalsLoading ? (
                             <div className="py-40 flex justify-center"><Loader2 className="w-12 h-12 animate-spin text-[#7A4FFF]" /></div>
-                        ) : receivedProposals.length === 0 ? (
+                        ) : sortedProposals.length === 0 ? (
                             <div className="bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 p-24 flex flex-col items-center justify-center text-center">
                                 <Inbox size={60} className="text-zinc-200 mb-6" strokeWidth={1} />
                                 <p className="text-xl font-black text-zinc-400 mb-2 italic">아직 받은 제안이 없습니다</p>
@@ -268,8 +334,8 @@ export default function FreelancerDashboardPage() {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 gap-6">
-                                {receivedProposals.map((proposal, idx) => (
-                                    <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: idx * 0.05 }} key={proposal.proposalId} className="bg-white p-10 rounded-[3rem] border border-zinc-100 hover:border-[#7A4FFF] hover:shadow-2xl transition-all group flex flex-col xl:flex-row justify-between items-center gap-10">
+                                {sortedProposals.map((proposal) => (
+                                    <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} key={proposal.proposalId} className="bg-white p-10 rounded-[3rem] border border-zinc-100 hover:border-[#7A4FFF] hover:shadow-2xl transition-all group flex flex-col xl:flex-row justify-between items-center gap-10">
                                         <div className="flex-1 w-full">
                                             <div className="flex items-center gap-3 mb-6">
                                                 <div className="flex items-center gap-2 bg-zinc-950 text-white px-3 py-1 rounded text-[9px] font-black uppercase font-mono tracking-widest"><Sparkles size={10} /> INBOUND_OFFER</div>
@@ -278,16 +344,24 @@ export default function FreelancerDashboardPage() {
                                             <div className="flex items-center gap-2 mb-6"><div className="w-1.5 h-1.5 rounded-full bg-[#7A4FFF]" /><p className="text-xs font-black text-zinc-400 uppercase font-mono tracking-widest">제안 프로젝트: {proposal.projectName}</p></div>
                                             <div className="p-6 bg-purple-50/50 rounded-2xl border border-purple-100/50 text-sm font-medium text-zinc-600 italic leading-relaxed">"{proposal.message}"</div>
                                         </div>
+
                                         <div className="w-full xl:w-auto flex flex-row xl:flex-col justify-between items-end gap-6 min-w-[240px] p-8 bg-zinc-50 rounded-[2rem] border border-zinc-100 shadow-inner">
-                                            <div className="text-right"><p className="text-[10px] font-black text-zinc-400 uppercase font-mono tracking-widest mb-1">클라이언트 제시액</p><p className="text-3xl font-black text-zinc-950 font-mono italic">₩{proposal.offeredPrice?.toLocaleString()}</p></div>
-                                            {proposal.status === 'PENDING' ? (
-                                                <div className="flex gap-2 w-full mt-4">
-                                                    <button onClick={() => handleProposalStatus(proposal.proposalId, 'ACCEPTED')} className="flex-1 px-6 py-4 bg-zinc-950 text-white hover:bg-[#7A4FFF] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all font-mono">수락</button>
-                                                    <button onClick={() => handleProposalStatus(proposal.proposalId, 'REJECTED')} className="flex-1 px-6 py-4 bg-white border border-zinc-200 text-zinc-400 hover:text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all font-mono">거절</button>
-                                                </div>
-                                            ) : (
-                                                <div className="text-right"><span className={`px-4 py-2 rounded-lg text-xs font-black ${proposal.status === 'ACCEPTED' ? 'bg-purple-100 text-[#7A4FFF]' : 'bg-red-50 text-red-500'}`}>{proposal.status === 'ACCEPTED' ? '수락 완료' : '거절 완료'}</span></div>
-                                            )}
+                                            <div className="text-right w-full flex flex-col items-end">
+                                                <p className="text-[10px] font-black text-zinc-400 uppercase font-mono tracking-widest mb-1">클라이언트 제시액</p>
+                                                <p className="text-3xl font-black text-zinc-950 font-mono italic mb-4">₩{proposal.offeredPrice?.toLocaleString()}</p>
+                                            </div>
+                                            <div className="flex flex-col gap-3 w-full">
+                                                <button onClick={() => router.push(`/freelancer/projects/${proposal.projectId}`)} className="w-full px-8 py-3 bg-white border border-zinc-200 text-zinc-500 hover:text-[#7A4FFF] hover:border-[#7A4FFF] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all font-mono flex items-center justify-center gap-2 shadow-sm">프로젝트 확인 <ArrowUpRight size={14} /></button>
+
+                                                {proposal.status === 'PENDING' ? (
+                                                    <div className="flex gap-2 w-full">
+                                                        <button onClick={() => handleProposalStatus(proposal.proposalId, 'ACCEPTED')} className="flex-1 px-6 py-4 bg-zinc-950 text-white hover:bg-[#7A4FFF] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all font-mono">수락</button>
+                                                        <button onClick={() => handleProposalStatus(proposal.proposalId, 'REJECTED')} className="flex-1 px-6 py-4 bg-white border border-zinc-200 text-zinc-400 hover:text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all font-mono">거절</button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-center w-full"><span className={`block px-4 py-3 rounded-xl text-xs font-black ${proposal.status === 'ACCEPTED' ? 'bg-purple-100 text-[#7A4FFF]' : 'bg-red-50 text-red-500'}`}>{proposal.status === 'ACCEPTED' ? '수락 완료' : '거절 완료'}</span></div>
+                                                )}
+                                            </div>
                                         </div>
                                     </motion.div>
                                 ))}
@@ -300,11 +374,45 @@ export default function FreelancerDashboardPage() {
                 {activeMainTab === 'BOOKMARKS' && (
                     <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-12">
                         <div className="flex items-center justify-between mb-4">
-                            <div><h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">관심 프로젝트</h2><p className="text-sm font-medium text-zinc-400">마스터가 눈여겨보고 있는 일거리 목록입니다. (API 연동 대기중)</p></div>
+                            <div><h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">관심 프로젝트</h2><p className="text-sm font-medium text-zinc-400">마스터가 눈여겨보고 있는 일거리 목록입니다.</p></div>
+                            <span className="px-5 py-2 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#7A4FFF]">공고 수: {bookmarkedProjects.length}개</span>
                         </div>
-                        <div className="text-center py-48 bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 font-black text-zinc-200 italic uppercase tracking-tighter">
-                            COMMING_SOON
-                        </div>
+                        {bookmarksLoading ? (
+                            <div className="py-40 flex justify-center"><Loader2 className="w-12 h-12 animate-spin text-[#7A4FFF]" /></div>
+                        ) : bookmarkedProjects.length === 0 ? (
+                            <div className="text-center py-48 bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 font-black text-zinc-200 italic uppercase tracking-tighter">찜한 프로젝트가 없습니다</div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {bookmarkedProjects.map((project, idx) => (
+                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={project.projectId} className="group bg-white p-10 rounded-[3rem] border border-zinc-100 hover:border-[#7A4FFF] hover:shadow-[0_20px_50px_rgba(122,79,255,0.15)] transition-all relative">
+                                        <button onClick={() => handleRemoveBookmark(project.projectId)} className="absolute top-8 right-8 p-3 bg-zinc-50 rounded-2xl text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 size={18} /></button>
+                                        <div className="flex flex-col mb-8 pt-4">
+                                            <span className="text-[10px] font-black text-[#7A4FFF] bg-purple-50 px-3 py-1 rounded w-fit mb-4 uppercase text-center border border-purple-100">{project.companyName}</span>
+                                            <h3 className="text-2xl font-black text-zinc-900 group-hover:text-[#7A4FFF] transition-colors mb-2 leading-tight">{project.projectName}</h3>
+                                            <p className="text-xl font-black text-zinc-950 font-mono italic mb-4">₩{project.budget.toLocaleString()}</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {project.skills && project.skills.map((skill: string) => <span key={skill} className="px-2 py-1 bg-zinc-50 border border-zinc-100 text-[10px] font-bold text-zinc-400 rounded-md uppercase font-mono">#{skill}</span>)}
+                                            </div>
+                                        </div>
+                                        <button onClick={() => router.push(`/freelancer/projects/${project.projectId}`)} className="w-full py-4 bg-zinc-50 text-zinc-400 group-hover:bg-[#7A4FFF] group-hover:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all font-mono">공고 상세보기</button>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Load More 버튼 */}
+                        {hasMoreBookmarks && bookmarkedProjects.length > 0 && (
+                            <div className="flex justify-center pt-10">
+                                <button
+                                    onClick={() => fetchBookmarks(true)}
+                                    disabled={bookmarksLoading}
+                                    className="px-12 py-5 bg-white border-2 border-zinc-900 text-zinc-900 rounded-[2rem] font-black text-xs tracking-[0.3em] uppercase hover:bg-zinc-900 hover:text-white transition-all flex items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {bookmarksLoading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
+                                    프로젝트 더 보기
+                                </button>
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </main>
