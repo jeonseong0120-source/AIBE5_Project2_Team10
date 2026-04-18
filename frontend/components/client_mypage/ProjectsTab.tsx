@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Calendar, Briefcase } from 'lucide-react';
+import { Calendar, Briefcase, Plus, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface ProjectDto {
@@ -36,7 +36,15 @@ export default function ProjectsTab({ user, projects, loading, setSelectedProjec
                         <h2 className="text-sm font-black uppercase font-mono tracking-[0.3em] text-zinc-400">Project_Snapshot</h2>
                         <p className="text-[10px] text-zinc-400 font-mono uppercase mt-1 italic">Tracking your active missions and completed goals</p>
                     </div>
-                    <span className="px-4 py-1.5 bg-zinc-950 text-white text-[10px] font-black rounded-full font-mono shadow-lg">TOTAL_{projects.length}</span>
+                    <div className="flex items-center gap-3">
+                        <span className="px-4 py-1.5 bg-zinc-100 text-zinc-500 text-[10px] font-black rounded-full font-mono">TOTAL_{projects.length}</span>
+                        <button 
+                            onClick={() => router.push("/client/projects/new")} 
+                            className="flex items-center gap-2 px-6 py-2.5 bg-zinc-950 text-white rounded-xl text-[10px] font-black tracking-widest hover:scale-105 transition-all shadow-xl shadow-zinc-200 uppercase font-mono bg-[#FF7D00]"
+                        >
+                            <Plus size={14} /> NEW_PROJECT
+                        </button>
+                    </div>
                 </div>
                 
                 {loading ? (

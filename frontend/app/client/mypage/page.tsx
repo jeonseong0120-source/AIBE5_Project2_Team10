@@ -132,11 +132,6 @@ export default function ClientMyPage() {
                 profileImage={profile?.logoUrl}
                 navItems={navItems}
                 accentColor="#FF7D00"
-                actionButton={{
-                    label: "POST_PROJECT",
-                    path: "/client/projects/new",
-                    icon: Send
-                }}
             />
 
             <main className="max-w-7xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start relative z-10">
