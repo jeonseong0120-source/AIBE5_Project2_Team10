@@ -16,29 +16,25 @@ export default function FreelancerDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
 
-    // 🎯 탭 상태
     const [activeMainTab, setActiveMainTab] = useState<'APPLICATIONS' | 'RECEIVED_PROPOSALS' | 'BOOKMARKS'>('APPLICATIONS');
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
-
-    // 🎯 정렬 상태 (최신순/과거순)
     const [sortOrder, setSortOrder] = useState<'DESC' | 'ASC'>('DESC');
 
-    // 🎯 1. 지원 내역 상태
     const [applications, setApplications] = useState<any[]>([]);
     const [appsLoading, setAppsLoading] = useState(false);
     const [expandedAppId, setExpandedAppId] = useState<number | null>(null);
 
-    // 🎯 2. 받은 제안 상태
     const [receivedProposals, setReceivedProposals] = useState<any[]>([]);
     const [proposalsLoading, setProposalsLoading] = useState(false);
 
-    // 🎯 3. 관심 프로젝트 상태
     const [bookmarkedProjects, setBookmarkedProjects] = useState<any[]>([]);
     const [bookmarksLoading, setBookmarksLoading] = useState(false);
     const [bookmarkPage, setBookmarkPage] = useState(0);
     const [hasMoreBookmarks, setHasMoreBookmarks] = useState(true);
 
-    // 🚀 1. 권한 체크
+    // 🎯 [리뷰 반영] 북마크 전체 개수를 관리하는 상태 추가
+    const [totalBookmarks, setTotalBookmarks] = useState(0);
+
     useEffect(() => {
         const checkAccess = async () => {
             try {
@@ -59,7 +55,6 @@ export default function FreelancerDashboardPage() {
         checkAccess();
     }, [router]);
 
-    // 🚀 2. 지원 내역 API 호출
     const fetchApplications = async () => {
         setAppsLoading(true);
         try {
@@ -72,7 +67,6 @@ export default function FreelancerDashboardPage() {
         }
     };
 
-    // 🚀 3. 받은 제안 API 호출
     const fetchReceivedProposals = async () => {
         setProposalsLoading(true);
         try {
@@ -85,17 +79,12 @@ export default function FreelancerDashboardPage() {
         }
     };
 
-    // 🚀 4. 관심 프로젝트(북마크) API 호출
     const fetchBookmarks = useCallback(async (isLoadMore = false) => {
-        // 🎯 [CodeRabbit 리뷰 반영] Load More 시에도 즉각 로딩 상태를 적용하여 버튼 연타 및 Stale Closure 방지
-        setBookmarksLoading(true);
-
         if (!isLoadMore) {
+            setBookmarksLoading(true);
             setBookmarkPage(0);
         }
-
         const targetPage = isLoadMore ? bookmarkPage + 1 : 0;
-
         try {
             const { data } = await api.get(`/v1/bookmarks/projects?page=${targetPage}&size=9`);
             const newContent = data.content || [];
@@ -103,14 +92,16 @@ export default function FreelancerDashboardPage() {
             setBookmarkedProjects(prev => isLoadMore ? [...prev, ...newContent] : newContent);
             setBookmarkPage(targetPage);
             setHasMoreBookmarks(!data.last);
+
+            // 🎯 [리뷰 반영] 백엔드에서 주는 totalElements 활용 (없으면 불러온 배열 길이)
+            setTotalBookmarks(data.totalElements !== undefined ? data.totalElements : (isLoadMore ? bookmarkedProjects.length + newContent.length : newContent.length));
         } catch (err) {
             console.error("관심 프로젝트 로드 실패", err);
         } finally {
             setBookmarksLoading(false);
         }
-    }, [bookmarkPage]);
+    }, [bookmarkPage, bookmarkedProjects.length]);
 
-    // 🚀 5. 관심 프로젝트(북마크) 삭제 API
     const handleRemoveBookmark = async (projectId: number) => {
         if (!confirm("관심 프로젝트에서 삭제하시겠습니까?")) return;
         try {
@@ -121,7 +112,6 @@ export default function FreelancerDashboardPage() {
         }
     };
 
-    // 🚀 제안 수락/거절 PATCH API 호출
     const handleProposalStatus = async (proposalId: number, status: 'ACCEPTED' | 'REJECTED') => {
         const actionText = status === 'ACCEPTED' ? '수락' : '거절';
         if (!confirm(`이 제안을 ${actionText}하시겠습니까?`)) return;
@@ -136,7 +126,6 @@ export default function FreelancerDashboardPage() {
         }
     };
 
-    // 탭 이동 시 API 분기 호출
     useEffect(() => {
         if (!authorized) return;
         if (activeMainTab === 'APPLICATIONS') fetchApplications();
@@ -154,7 +143,6 @@ export default function FreelancerDashboardPage() {
 
     if (!authorized) return null;
 
-    // 지원 내역 정렬 적용
     const sortedApplications = [...applications]
         .filter(a => filterStatus === 'ALL' || a.status === filterStatus)
         .sort((a, b) => {
@@ -163,7 +151,6 @@ export default function FreelancerDashboardPage() {
             return sortOrder === 'DESC' ? timeB - timeA : timeA - timeB;
         });
 
-    // 받은 제안 정렬 적용
     const sortedProposals = [...receivedProposals].sort((a, b) => {
         const timeA = new Date(a.createdAt || 0).getTime();
         const timeB = new Date(b.createdAt || 0).getTime();
@@ -219,7 +206,14 @@ export default function FreelancerDashboardPage() {
                             <div className="flex items-center gap-4">
                                 <h2 className="text-2xl font-black tracking-tight text-zinc-950 uppercase font-mono">나의 지원 내역</h2>
                                 <span className="px-3 py-1 bg-white border border-zinc-200 rounded-lg text-xs font-black text-[#7A4FFF]">총 {sortedApplications.length}건</span>
-                                <button onClick={() => router.push("/freelancer/explore")} className="p-2.5 bg-white border border-zinc-200 text-[#7A4FFF] rounded-xl hover:bg-[#7A4FFF] hover:text-white transition-all shadow-sm group"><Search size={20} className="group-hover:scale-110 transition-transform duration-300" strokeWidth={3} /></button>
+                                {/* 🎯 [리뷰 반영] 웹 접근성(aria-label) 추가 */}
+                                <button
+                                    onClick={() => router.push("/freelancer/explore")}
+                                    aria-label="새로운 프로젝트 찾기"
+                                    className="p-2.5 bg-white border border-zinc-200 text-[#7A4FFF] rounded-xl hover:bg-[#7A4FFF] hover:text-white transition-all shadow-sm group"
+                                >
+                                    <Search size={20} className="group-hover:scale-110 transition-transform duration-300" strokeWidth={3} />
+                                </button>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-3">
@@ -371,7 +365,8 @@ export default function FreelancerDashboardPage() {
                     <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-12">
                         <div className="flex items-center justify-between mb-4">
                             <div><h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">관심 프로젝트</h2><p className="text-sm font-medium text-zinc-400">마스터가 눈여겨보고 있는 일거리 목록입니다.</p></div>
-                            <span className="px-5 py-2 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#7A4FFF]">공고 수: {bookmarkedProjects.length}개</span>
+                            {/* 🎯 [리뷰 반영] 페이징 길이에 종속받지 않는 백엔드 토탈 데이터 개수 활용 */}
+                            <span className="px-5 py-2 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#7A4FFF]">공고 수: {totalBookmarks}개</span>
                         </div>
                         {bookmarksLoading && bookmarkPage === 0 ? (
                             <div className="py-40 flex justify-center"><Loader2 className="w-12 h-12 animate-spin text-[#7A4FFF]" /></div>
@@ -381,7 +376,14 @@ export default function FreelancerDashboardPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {bookmarkedProjects.map((project, idx) => (
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={project.projectId} className="group bg-white p-10 rounded-[3rem] border border-zinc-100 hover:border-[#7A4FFF] hover:shadow-[0_20px_50px_rgba(122,79,255,0.15)] transition-all relative">
-                                        <button onClick={() => handleRemoveBookmark(project.projectId)} className="absolute top-8 right-8 p-3 bg-zinc-50 rounded-2xl text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 size={18} /></button>
+                                        {/* 🎯 [리뷰 반영] 웹 접근성(aria-label) 추가 */}
+                                        <button
+                                            onClick={() => handleRemoveBookmark(project.projectId)}
+                                            aria-label="북마크에서 삭제"
+                                            className="absolute top-8 right-8 p-3 bg-zinc-50 rounded-2xl text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
                                         <div className="flex flex-col mb-8 pt-4">
                                             <span className="text-[10px] font-black text-[#7A4FFF] bg-purple-50 px-3 py-1 rounded w-fit mb-4 uppercase text-center border border-purple-100">{project.companyName}</span>
                                             <h3 className="text-2xl font-black text-zinc-900 group-hover:text-[#7A4FFF] transition-colors mb-2 leading-tight">{project.projectName}</h3>
@@ -396,7 +398,6 @@ export default function FreelancerDashboardPage() {
                             </div>
                         )}
 
-                        {/* Load More 버튼 */}
                         {hasMoreBookmarks && bookmarkedProjects.length > 0 && (
                             <div className="flex justify-center pt-10">
                                 <button

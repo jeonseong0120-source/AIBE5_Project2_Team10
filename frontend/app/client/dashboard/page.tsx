@@ -7,76 +7,68 @@ import { NotificationBell } from '@/components/notifications/NotificationProvide
 import {
     User, Users, CheckCircle, XCircle, Edit, Trash2,
     Calendar, DollarSign, Activity, ChevronRight,
-    Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, Clock, ArrowUpRight, Search, FileText, Inbox, Bookmark, Plus, ListFilter
+    Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, Clock, ArrowUpRight, Plus, RefreshCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function FreelancerDashboardPage() {
+export default function ClientDashboardPage() {
     const router = useRouter();
+    const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
 
-    const [activeMainTab, setActiveMainTab] = useState<'APPLICATIONS' | 'RECEIVED_PROPOSALS' | 'BOOKMARKS'>('APPLICATIONS');
-    const [filterStatus, setFilterStatus] = useState<string>('ALL');
-    const [sortOrder, setSortOrder] = useState<'DESC' | 'ASC'>('DESC');
-
-    const [applications, setApplications] = useState<any[]>([]);
-    const [appsLoading, setAppsLoading] = useState(false);
-    const [expandedAppId, setExpandedAppId] = useState<number | null>(null);
-
-    const [receivedProposals, setReceivedProposals] = useState<any[]>([]);
-    const [proposalsLoading, setProposalsLoading] = useState(false);
-
-    const [bookmarkedProjects, setBookmarkedProjects] = useState<any[]>([]);
+    // 찜 목록 관련 상태
+    const [bookmarks, setBookmarks] = useState<any[]>([]);
     const [bookmarksLoading, setBookmarksLoading] = useState(false);
     const [bookmarkPage, setBookmarkPage] = useState(0);
     const [hasMoreBookmarks, setHasMoreBookmarks] = useState(true);
 
-    // 🎯 [리뷰 반영] 북마크 전체 개수를 관리하는 상태 추가
-    const [totalBookmarks, setTotalBookmarks] = useState(0);
+    const [activeMainTab, setActiveMainTab] = useState<'PROJECTS' | 'BOOKMARKS' | 'PROPOSALS'>('PROJECTS');
+    const [filterStatus, setFilterStatus] = useState<string>('ALL');
+
+    // 지원자 관리 상태
+    const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
+    const [applicantsByProject, setApplicantsByProject] = useState<{ [key: number]: any[] }>({});
+    const [loadingApplicants, setLoadingApplicants] = useState<{ [key: number]: boolean }>({});
+    const [applicantsErrorByProject, setApplicantsErrorByProject] = useState<{ [key: number]: boolean }>({});
+    const [selectedProjectForApplicant, setSelectedProjectForApplicant] = useState<any>(null);
+
+    // 역제안 관리 상태
+    const [sentProposals, setSentProposals] = useState<any[]>([]);
+    const [proposalsLoading, setProposalsLoading] = useState(false);
+
+    const [cursor, setCursor] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const move = (e: MouseEvent) => setCursor({ x: e.clientX, y: e.clientY });
+        window.addEventListener("mousemove", move);
+        return () => window.removeEventListener("mousemove", move);
+    }, []);
 
     useEffect(() => {
         const checkAccess = async () => {
             try {
                 const res = await api.get("/v1/users/me");
                 const roles = res.data.role || "";
-                if (!roles.includes("FREELANCER") && !roles.includes("BOTH")) {
-                    alert("프리랜서 또는 BOTH 계정만 접근 가능합니다.");
-                    if (roles.includes("CLIENT")) return router.replace("/client/dashboard");
+                if (!roles.includes("CLIENT") && !roles.includes("BOTH")) {
+                    alert("클라이언트 또는 BOTH 계정만 접근 가능합니다.");
+                    if (roles.includes("FREELANCER")) return router.replace("/");
                     return router.replace("/onboarding");
                 }
                 setAuthorized(true);
             } catch (err) {
                 router.replace("/login");
-            } finally {
-                setLoading(false);
             }
         };
         checkAccess();
     }, [router]);
 
-    const fetchApplications = async () => {
-        setAppsLoading(true);
+    const fetchMyProjects = async () => {
         try {
-            const { data } = await api.get('/applications/me');
-            setApplications(data || []);
-        } catch (error) {
-            console.error("지원 내역 로드 실패:", error);
-        } finally {
-            setAppsLoading(false);
-        }
-    };
-
-    const fetchReceivedProposals = async () => {
-        setProposalsLoading(true);
-        try {
-            const { data } = await api.get('/v1/proposals/received');
-            setReceivedProposals(data || []);
-        } catch (error) {
-            console.error("받은 제안 로드 실패:", error);
-        } finally {
-            setProposalsLoading(false);
-        }
+            const { data } = await api.get('/v1/projects/me');
+            const projectArray = data.content || data || [];
+            setProjects(projectArray.filter((p: any) => p.status !== 'COMPLETED'));
+        } catch (err) { console.error("로드 실패", err); } finally { setLoading(false); }
     };
 
     const fetchBookmarks = useCallback(async (isLoadMore = false) => {
@@ -86,319 +78,260 @@ export default function FreelancerDashboardPage() {
         }
         const targetPage = isLoadMore ? bookmarkPage + 1 : 0;
         try {
-            const { data } = await api.get(`/v1/bookmarks/projects?page=${targetPage}&size=9`);
+            const { data } = await api.get(`/bookmarks/freelancers?page=${targetPage}&size=9`);
             const newContent = data.content || [];
-
-            setBookmarkedProjects(prev => isLoadMore ? [...prev, ...newContent] : newContent);
+            setBookmarks(prev => isLoadMore ? [...prev, ...newContent] : newContent);
             setBookmarkPage(targetPage);
             setHasMoreBookmarks(!data.last);
-
-            // 🎯 [리뷰 반영] 백엔드에서 주는 totalElements 활용 (없으면 불러온 배열 길이)
-            setTotalBookmarks(data.totalElements !== undefined ? data.totalElements : (isLoadMore ? bookmarkedProjects.length + newContent.length : newContent.length));
         } catch (err) {
-            console.error("관심 프로젝트 로드 실패", err);
+            console.error("찜 목록 로드 실패", err);
         } finally {
             setBookmarksLoading(false);
         }
-    }, [bookmarkPage, bookmarkedProjects.length]);
+    }, [bookmarkPage]);
 
-    const handleRemoveBookmark = async (projectId: number) => {
-        if (!confirm("관심 프로젝트에서 삭제하시겠습니까?")) return;
+    const fetchSentProposals = async () => {
+        setProposalsLoading(true);
         try {
-            await api.delete(`/v1/bookmarks/projects/${projectId}`);
-            fetchBookmarks(false);
-        } catch (err) {
-            alert("삭제에 실패했습니다.");
-        }
+            const { data } = await api.get('/v1/proposals/sent');
+            setSentProposals(data || []);
+        } catch (err) { console.error("제안 로드 실패", err); } finally { setProposalsLoading(false); }
     };
 
-    const handleProposalStatus = async (proposalId: number, status: 'ACCEPTED' | 'REJECTED') => {
-        const actionText = status === 'ACCEPTED' ? '수락' : '거절';
-        if (!confirm(`이 제안을 ${actionText}하시겠습니까?`)) return;
-
+    const handleRemoveBookmark = async (profileId: number) => {
+        if (!confirm("찜 목록에서 삭제하시겠습니까?")) return;
         try {
-            await api.patch(`/v1/proposals/${proposalId}/status`, { status });
-            alert(`제안이 ${actionText}되었습니다.`);
-            fetchReceivedProposals();
-        } catch (error) {
-            console.error("제안 상태 변경 실패:", error);
-            alert('상태 변경에 실패했습니다.');
-        }
+            await api.delete(`/bookmarks/freelancers/${profileId}`);
+            fetchBookmarks(false);
+        } catch (err) { alert("삭제에 실패했습니다."); }
     };
 
     useEffect(() => {
-        if (!authorized) return;
-        if (activeMainTab === 'APPLICATIONS') fetchApplications();
-        if (activeMainTab === 'RECEIVED_PROPOSALS') fetchReceivedProposals();
-        if (activeMainTab === 'BOOKMARKS') fetchBookmarks(false);
+        if (authorized) {
+            if (activeMainTab === 'PROJECTS') fetchMyProjects();
+            if (activeMainTab === 'BOOKMARKS') fetchBookmarks(false);
+            if (activeMainTab === 'PROPOSALS') fetchSentProposals();
+        }
     }, [authorized, activeMainTab]);
 
-    const handleToggleExpand = (id: number) => {
-        setExpandedAppId(expandedAppId === id ? null : id);
+    const handleEditProjectClick = (projectId: number) => router.push(`/client/projects/${projectId}/edit`);
+    const handleStatusChange = async (projectId: number, action: 'start' | 'close') => {
+        const msg = action === 'start' ? '시작' : '마감';
+        if (!confirm(`프로젝트를 ${msg} 처리하시겠습니까?`)) return;
+        try { await api.patch(`/v1/projects/${projectId}/${action}`); fetchMyProjects(); } catch (err) { alert('상태 변경 실패'); }
+    };
+    const handleDeleteProject = async (projectId: number) => {
+        if (!confirm('정말 삭제하시겠습니까?')) return;
+        try { await api.delete(`/v1/projects/${projectId}`); fetchMyProjects(); } catch (err) { alert('삭제 실패'); }
     };
 
-    if (loading) return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#7A4FFF] font-black text-xl animate-pulse uppercase font-mono">인증 정보를 확인 중입니다...</div>
+    const handleViewApplicants = async (project: any) => {
+        const pid = project.projectId;
+        if (expandedProjectId === pid) { setExpandedProjectId(null); return; }
+        setSelectedProjectForApplicant(project);
+        setExpandedProjectId(pid);
+        if (applicantsByProject[pid] && !applicantsErrorByProject[pid]) return;
+        setLoadingApplicants(prev => ({ ...prev, [pid]: true }));
+        setApplicantsErrorByProject(prev => ({ ...prev, [pid]: false }));
+        try {
+            const { data } = await api.get(`/projects/${pid}/applications`);
+            setApplicantsByProject(prev => ({ ...prev, [pid]: data }));
+        } catch (err) {
+            setApplicantsErrorByProject(prev => ({ ...prev, [pid]: true }));
+        } finally {
+            setLoadingApplicants(prev => ({ ...prev, [pid]: false }));
+        }
+    };
+
+    const handleApplicationStatus = async (applicationId: number, status: 'ACCEPTED' | 'REJECTED') => {
+        try {
+            await api.patch(`/applications/${applicationId}/status`, { status });
+            alert(`지원자가 ${status === 'ACCEPTED' ? '수락' : '거절'} 처리되었습니다.`);
+            if (selectedProjectForApplicant) {
+                const { data } = await api.get(`/projects/${selectedProjectForApplicant.projectId}/applications`);
+                setApplicantsByProject(prev => ({ ...prev, [selectedProjectForApplicant.projectId]: data }));
+            }
+            fetchMyProjects();
+        } catch (err) { alert('상태 처리 중 오류가 발생했습니다.'); }
+    };
+
+    if (!authorized || loading) return (
+        <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#FF7D00] font-black text-xl animate-pulse uppercase font-mono">데이터를 불러오는 중...</div>
     );
 
-    if (!authorized) return null;
-
-    const sortedApplications = [...applications]
-        .filter(a => filterStatus === 'ALL' || a.status === filterStatus)
-        .sort((a, b) => {
-            const timeA = new Date(a.appliedAt || 0).getTime();
-            const timeB = new Date(b.appliedAt || 0).getTime();
-            return sortOrder === 'DESC' ? timeB - timeA : timeA - timeB;
-        });
-
-    const sortedProposals = [...receivedProposals].sort((a, b) => {
-        const timeA = new Date(a.createdAt || 0).getTime();
-        const timeB = new Date(b.createdAt || 0).getTime();
-        return sortOrder === 'DESC' ? timeB - timeA : timeA - timeB;
-    });
+    const filteredProjects = projects.filter(p => filterStatus === 'ALL' || p.status === filterStatus);
 
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
+            {/* 배경 레이어 */}
             <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute w-[500px] h-[500px] rounded-full bg-[#FF7D00]/10 blur-[120px] transition-all duration-300" style={{ left: cursor.x - 250, top: cursor.y - 250 }} />
+                <div className="absolute w-[400px] h-[400px] rounded-full bg-[#7A4FFF]/10 blur-[100px] transition-all duration-700" style={{ left: cursor.x - 100, top: cursor.y - 100 }} />
                 <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
             </div>
 
             <nav className="w-full py-6 px-10 bg-white/70 backdrop-blur-2xl border-b border-zinc-200/50 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer group" onClick={() => router.push("/")}>
-                    <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF] group-hover:drop-shadow-[0_0_8px_#7A4FFF]">Near</span>
+                <div className="font-black text-2xl tracking-tighter cursor-pointer group" onClick={() => router.push("/client/mainpage")}>
+                    <span className="text-[#FF7D00] group-hover:drop-shadow-[0_0_8px_#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
                 </div>
                 <div className="flex gap-4 items-center relative z-10 md:gap-8">
-                    <button onClick={() => router.push('/freelancer/mypage')} className="text-xs font-black text-zinc-400 hover:text-zinc-950 tracking-[0.2em] transition uppercase font-mono">마이페이지</button>
+                    <button onClick={() => router.push('/client/mypage')} className="text-xs font-black text-zinc-400 hover:text-zinc-950 tracking-[0.2em] transition uppercase font-mono">mypage</button>
                     <NotificationBell />
-                    <button onClick={() => router.push("/freelancer/explore")} className="px-7 py-3 bg-zinc-950 text-white rounded-2xl text-xs font-black tracking-widest hover:bg-[#7A4FFF] transition-all shadow-xl flex items-center gap-2 uppercase font-mono">
-                        <Search size={14} /> 프로젝트 찾기
-                    </button>
+                    <button onClick={() => router.push("/client/projects/new")} className="px-7 py-3 bg-zinc-950 text-white rounded-2xl text-xs font-black tracking-widest hover:bg-[#FF7D00] transition-all shadow-xl flex items-center gap-2 uppercase font-mono"><Plus size={14} /> 프로젝트 등록</button>
                 </div>
             </nav>
 
             <header className="relative pt-24 pb-16 px-8 overflow-hidden max-w-6xl mx-auto">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3 mb-6">
-                    <span className="w-12 h-[3px] bg-[#7A4FFF] rounded-full"></span>
-                    <span className="text-[11px] font-black text-[#7A4FFF] uppercase tracking-[0.4em] font-mono">작업자 콘솔</span>
+                    <span className="w-12 h-[3px] bg-[#FF7D00] rounded-full"></span>
+                    <span className="text-[11px] font-black text-[#FF7D00] uppercase tracking-[0.4em] font-mono">관리 콘솔</span>
                 </motion.div>
-                <h1 className="text-5xl font-black tracking-tighter mb-12 text-zinc-950">프리랜서 <span className="text-zinc-400">대시보드</span></h1>
+                <h1 className="text-5xl font-black tracking-tighter mb-12 text-zinc-950">클라이언트 <span className="text-zinc-400">대시보드</span></h1>
 
                 <div className="flex gap-10 border-b border-zinc-200/50">
                     {[
-                        { id: 'APPLICATIONS', label: '지원 내역', icon: <FileText size={18} /> },
-                        { id: 'RECEIVED_PROPOSALS', label: '받은 제안', icon: <Inbox size={18} /> },
-                        { id: 'BOOKMARKS', label: '관심 프로젝트', icon: <Bookmark size={18} /> }
+                        { id: 'PROJECTS', label: '프로젝트 관리', icon: <Briefcase size={18} /> },
+                        { id: 'BOOKMARKS', label: '관심 프리랜서', icon: <Heart size={18} /> },
+                        { id: 'PROPOSALS', label: '제안 현황', icon: <Send size={18} /> }
                     ].map((tab) => (
-                        <button key={tab.id} onClick={() => setActiveMainTab(tab.id as any)} className={`flex items-center gap-2.5 pb-6 text-sm font-black transition-all relative ${activeMainTab === tab.id ? 'text-[#7A4FFF]' : 'text-zinc-400 hover:text-zinc-600'}`}>
+                        <button key={tab.id} onClick={() => setActiveMainTab(tab.id as any)} className={`flex items-center gap-2.5 pb-6 text-sm font-black transition-all relative ${activeMainTab === tab.id ? 'text-[#FF7D00]' : 'text-zinc-400 hover:text-zinc-600'}`}>
                             {tab.icon} {tab.label}
-                            {activeMainTab === tab.id && <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 right-0 h-1 bg-[#7A4FFF] rounded-t-full shadow-[0_-4px_10px_#7A4FFF]" />}
+                            {activeMainTab === tab.id && <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 right-0 h-1 bg-[#FF7D00] rounded-t-full shadow-[0_-4px_10px_#FF7D00]" />}
                         </button>
                     ))}
                 </div>
             </header>
 
             <main className="max-w-6xl mx-auto px-8 py-16 relative z-10">
-
-                {/* 🎯 1. 지원 내역 섹션 (APPLICATIONS) */}
-                {activeMainTab === 'APPLICATIONS' && (
+                {/* 1. 운영 프로젝트 섹션 */}
+                {activeMainTab === 'PROJECTS' && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-8">
                             <div className="flex items-center gap-4">
-                                <h2 className="text-2xl font-black tracking-tight text-zinc-950 uppercase font-mono">나의 지원 내역</h2>
-                                <span className="px-3 py-1 bg-white border border-zinc-200 rounded-lg text-xs font-black text-[#7A4FFF]">총 {sortedApplications.length}건</span>
-                                {/* 🎯 [리뷰 반영] 웹 접근성(aria-label) 추가 */}
-                                <button
-                                    onClick={() => router.push("/freelancer/explore")}
-                                    aria-label="새로운 프로젝트 찾기"
-                                    className="p-2.5 bg-white border border-zinc-200 text-[#7A4FFF] rounded-xl hover:bg-[#7A4FFF] hover:text-white transition-all shadow-sm group"
-                                >
-                                    <Search size={20} className="group-hover:scale-110 transition-transform duration-300" strokeWidth={3} />
-                                </button>
+                                <h2 className="text-2xl font-black tracking-tight text-zinc-950 uppercase font-mono">프로젝트 목록</h2>
+                                <span className="px-3 py-1 bg-white border border-zinc-200 rounded-lg text-xs font-black text-[#FF7D00]">총 {filteredProjects.length}개</span>
+                                <button onClick={() => router.push("/client/projects/new")} className="p-2.5 bg-white border border-zinc-200 text-[#FF7D00] rounded-xl hover:bg-[#FF7D00] hover:text-white transition-all shadow-sm group"><Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" strokeWidth={3} /></button>
                             </div>
-
-                            <div className="flex flex-wrap items-center gap-3">
-                                <div className="flex gap-2 p-2 bg-white/50 backdrop-blur-md border border-zinc-200 rounded-3xl">
-                                    {[{ id: 'ALL', label: '전체' }, { id: 'PENDING', label: '대기중' }, { id: 'ACCEPTED', label: '수락됨' }, { id: 'REJECTED', label: '거절됨' }].map((s) => (
-                                        <button key={s.id} onClick={() => setFilterStatus(s.id)} className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all tracking-wider uppercase font-mono ${filterStatus === s.id ? 'bg-zinc-950 text-white shadow-xl' : 'text-zinc-400 hover:text-zinc-600'}`}>{s.label}</button>
-                                    ))}
-                                </div>
-                                <button
-                                    onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
-                                    className="px-5 py-3 bg-white border border-zinc-200 rounded-[1.25rem] text-xs font-black text-zinc-600 hover:bg-zinc-50 transition-all shadow-sm flex items-center gap-2 uppercase font-mono"
-                                >
-                                    <ListFilter size={16} className="text-[#7A4FFF]" /> {sortOrder === 'DESC' ? '최신순' : '과거순'}
-                                </button>
-                            </div>
-                        </div>
-
-                        {appsLoading ? (
-                            <div className="py-40 flex justify-center"><Loader2 className="w-12 h-12 animate-spin text-[#7A4FFF]" /></div>
-                        ) : (
-                            <div className="grid gap-8">
-                                {sortedApplications.length === 0 ? (
-                                    <div className="text-center py-24 bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 font-black text-zinc-300 italic uppercase tracking-widest">지원한 프로젝트가 없습니다</div>
-                                ) : (
-                                    sortedApplications.map((app) => {
-                                        const isExpanded = expandedAppId === app.applicationId;
-
-                                        return (
-                                            <div key={app.applicationId} className="flex flex-col gap-3">
-                                                <motion.div className={`group bg-white p-10 rounded-[2.5rem] border transition-all duration-500 cursor-pointer ${isExpanded ? 'border-[#7A4FFF] shadow-2xl ring-1 ring-[#7A4FFF]/20' : 'border-zinc-100 shadow-xl hover:border-[#7A4FFF]/30'}`} onClick={() => handleToggleExpand(app.applicationId)}>
-                                                    <div className="flex flex-col xl:flex-row justify-between items-center gap-8 w-full">
-                                                        <div className="flex-1 w-full">
-                                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase font-mono border ${app.status === 'ACCEPTED' ? 'bg-[#7A4FFF]/10 text-[#7A4FFF] border-[#7A4FFF]/20' : app.status === 'REJECTED' ? 'bg-red-50 text-red-500 border-red-100' : 'bg-zinc-50 text-zinc-400'}`}>
-                                                                {app.status === 'ACCEPTED' ? '수락됨' : app.status === 'REJECTED' ? '거절됨' : '심사중'}
-                                                            </span>
-                                                            <h3 className="text-3xl font-black text-zinc-900 mt-4 group-hover:text-[#7A4FFF] transition-colors tracking-tight">{app.projectName}</h3>
-                                                            <div className="flex gap-8 mt-6 text-xs font-bold text-zinc-400 font-mono uppercase">
-                                                                <span><Briefcase size={16} className="inline mr-1 text-[#7A4FFF]"/>{app.clientCompanyName}</span>
-                                                                <span><Calendar size={16} className="inline mr-1 text-[#7A4FFF]"/>지원일: {new Date(app.appliedAt).toLocaleDateString()}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-5">
-                                                            <div className={`px-8 py-4 rounded-[1.5rem] font-black text-xs tracking-[0.2em] uppercase transition-all flex items-center gap-3 font-mono border ${isExpanded ? 'bg-[#7A4FFF] text-white border-[#7A4FFF]' : 'bg-white text-zinc-400 border-zinc-200 group-hover:border-[#7A4FFF] group-hover:text-[#7A4FFF]'}`}>
-                                                                상세 보기 <ChevronRight size={18} className={`transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-
-                                                <AnimatePresence>
-                                                    {isExpanded && (
-                                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                                            <div className="mt-2 mb-12 p-8 bg-white border border-zinc-200 shadow-2xl rounded-[3rem] flex flex-col md:flex-row gap-8 items-center">
-                                                                <div className="flex-1 w-full space-y-6">
-                                                                    <div>
-                                                                        <p className="text-[10px] font-black text-zinc-400 uppercase font-mono tracking-widest mb-1">내가 제출한 입찰가</p>
-                                                                        <p className="text-3xl font-black text-zinc-950 font-mono italic">₩{app.bidPrice?.toLocaleString()}</p>
-                                                                    </div>
-                                                                    <div className="p-6 bg-purple-50/50 rounded-2xl border border-purple-100/50 text-sm font-medium text-zinc-600 italic leading-relaxed">
-                                                                        "{app.message || "작성한 지원 메시지가 없습니다."}"
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex flex-col gap-3 w-full md:w-auto border-t md:border-t-0 md:border-l border-zinc-100 pt-6 md:pt-0 md:pl-8">
-                                                                    {app.status === 'ACCEPTED' && (
-                                                                        <button onClick={() => router.push(`/freelancer/projects/${app.projectId}`)} className="w-full md:w-auto px-8 py-4 bg-zinc-950 text-white rounded-2xl text-xs font-black hover:bg-[#7A4FFF] transition-all uppercase font-mono flex items-center justify-center gap-2 shadow-sm">워크스페이스 입장 <ArrowUpRight size={16}/></button>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
-                                        );
-                                    })
-                                )}
-                            </div>
-                        )}
-                    </motion.div>
-                )}
-
-                {/* 🎯 2. 받은 제안 섹션 (RECEIVED_PROPOSALS) */}
-                {activeMainTab === 'RECEIVED_PROPOSALS' && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
-                        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-                            <div>
-                                <h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">받은 제안 내역</h2>
-                                <p className="text-sm font-medium text-zinc-400">클라이언트가 나에게 직접 보낸 달달한 러브콜입니다.</p>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
-                                    className="px-5 py-3 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-zinc-600 hover:bg-zinc-50 transition-all shadow-sm flex items-center gap-2 uppercase font-mono"
-                                >
-                                    <ListFilter size={16} className="text-[#7A4FFF]" /> {sortOrder === 'DESC' ? '최신순' : '과거순'}
-                                </button>
-                                <span className="px-5 py-3 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#7A4FFF]">총 {sortedProposals.length}건</span>
-                            </div>
-                        </div>
-
-                        {proposalsLoading ? (
-                            <div className="py-40 flex justify-center"><Loader2 className="w-12 h-12 animate-spin text-[#7A4FFF]" /></div>
-                        ) : sortedProposals.length === 0 ? (
-                            <div className="bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 p-24 flex flex-col items-center justify-center text-center">
-                                <Inbox size={60} className="text-zinc-200 mb-6" strokeWidth={1} />
-                                <p className="text-xl font-black text-zinc-400 mb-2 italic">아직 받은 제안이 없습니다</p>
-                                <p className="text-sm font-medium text-zinc-300 max-w-sm">프로필을 매력적으로 꾸미고 제안을 기다려보세요!</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-6">
-                                {sortedProposals.map((proposal) => (
-                                    <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} key={proposal.proposalId} className="bg-white p-10 rounded-[3rem] border border-zinc-100 hover:border-[#7A4FFF] hover:shadow-2xl transition-all group flex flex-col xl:flex-row justify-between items-center gap-10">
-                                        <div className="flex-1 w-full">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="flex items-center gap-2 bg-zinc-950 text-white px-3 py-1 rounded text-[9px] font-black uppercase font-mono tracking-widest"><Sparkles size={10} /> INBOUND_OFFER</div>
-                                            </div>
-                                            <h3 className="text-3xl font-black text-zinc-900 group-hover:text-[#7A4FFF] transition-colors mb-4">From: {proposal.clientName}</h3>
-                                            <div className="flex items-center gap-2 mb-6"><div className="w-1.5 h-1.5 rounded-full bg-[#7A4FFF]" /><p className="text-xs font-black text-zinc-400 uppercase font-mono tracking-widest">제안 프로젝트: {proposal.projectName}</p></div>
-                                            <div className="p-6 bg-purple-50/50 rounded-2xl border border-purple-100/50 text-sm font-medium text-zinc-600 italic leading-relaxed">"{proposal.message}"</div>
-                                        </div>
-
-                                        <div className="w-full xl:w-auto flex flex-row xl:flex-col justify-between items-end gap-6 min-w-[240px] p-8 bg-zinc-50 rounded-[2rem] border border-zinc-100 shadow-inner">
-                                            <div className="text-right w-full flex flex-col items-end">
-                                                <p className="text-[10px] font-black text-zinc-400 uppercase font-mono tracking-widest mb-1">클라이언트 제시액</p>
-                                                <p className="text-3xl font-black text-zinc-950 font-mono italic mb-4">₩{proposal.offeredPrice?.toLocaleString()}</p>
-                                            </div>
-                                            <div className="flex flex-col gap-3 w-full">
-                                                <button onClick={() => router.push(`/freelancer/projects/${proposal.projectId}`)} className="w-full px-8 py-3 bg-white border border-zinc-200 text-zinc-500 hover:text-[#7A4FFF] hover:border-[#7A4FFF] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all font-mono flex items-center justify-center gap-2 shadow-sm">프로젝트 확인 <ArrowUpRight size={14} /></button>
-
-                                                {proposal.status === 'PENDING' ? (
-                                                    <div className="flex gap-2 w-full">
-                                                        <button onClick={() => handleProposalStatus(proposal.proposalId, 'ACCEPTED')} className="flex-1 px-6 py-4 bg-zinc-950 text-white hover:bg-[#7A4FFF] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all font-mono">수락</button>
-                                                        <button onClick={() => handleProposalStatus(proposal.proposalId, 'REJECTED')} className="flex-1 px-6 py-4 bg-white border border-zinc-200 text-zinc-400 hover:text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all font-mono">거절</button>
-                                                    </div>
-                                                ) : (
-                                                    <div className="text-center w-full"><span className={`block px-4 py-3 rounded-xl text-xs font-black ${proposal.status === 'ACCEPTED' ? 'bg-purple-100 text-[#7A4FFF]' : 'bg-red-50 text-red-500'}`}>{proposal.status === 'ACCEPTED' ? '수락 완료' : '거절 완료'}</span></div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </motion.div>
+                            <div className="flex gap-2 p-2 bg-white/50 backdrop-blur-md border border-zinc-200 rounded-3xl">
+                                {[{ id: 'ALL', label: '전체' }, { id: 'OPEN', label: '모집중' }, { id: 'IN_PROGRESS', label: '진행중' }, { id: 'CLOSED', label: '마감됨' }].map((s) => (
+                                    <button key={s.id} onClick={() => setFilterStatus(s.id)} className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all tracking-wider uppercase font-mono ${filterStatus === s.id ? 'bg-zinc-950 text-white shadow-xl' : 'text-zinc-400 hover:text-zinc-600'}`}>{s.label}</button>
                                 ))}
                             </div>
-                        )}
+                        </div>
+
+                        <div className="grid gap-8">
+                            {filteredProjects.map((project, idx) => {
+                                const isExpanded = expandedProjectId === project.projectId;
+                                const projectApplicants = applicantsByProject[project.projectId] || [];
+                                const hasError = applicantsErrorByProject[project.projectId];
+
+                                return (
+                                    <div key={project.projectId} className="flex flex-col gap-3">
+                                        <motion.div className={`group bg-white p-10 rounded-[2.5rem] border transition-all duration-500 ${isExpanded ? 'border-[#FF7D00] shadow-2xl ring-1 ring-[#FF7D00]/20' : 'border-zinc-100 shadow-xl hover:border-[#FF7D00]/30'}`}>
+                                            <div className="flex flex-col xl:flex-row justify-between items-center gap-8 w-full">
+                                                <div className="flex-1 w-full">
+                                                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase font-mono border ${project.status === 'OPEN' ? 'bg-[#FF7D00]/10 text-[#FF7D00] border-[#FF7D00]/20' : 'bg-zinc-50 text-zinc-400'}`}>{project.status === 'OPEN' ? '모집중' : '진행/마감'}</span>
+                                                    <h3 className="text-3xl font-black text-zinc-900 mt-4 group-hover:text-[#FF7D00] transition-colors tracking-tight">{project.projectName}</h3>
+                                                    <div className="flex gap-8 mt-6 text-xs font-bold text-zinc-400 font-mono uppercase">
+                                                        <span><DollarSign size={16} className="inline mr-1 text-[#FF7D00]"/>{project.budget?.toLocaleString()}원</span>
+                                                        <span><Calendar size={16} className="inline mr-1 text-[#FF7D00]"/>{project.deadline} 마감</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-5">
+                                                    <div className="flex gap-2 px-4 border-x border-zinc-100">
+                                                        <button onClick={() => handleEditProjectClick(project.projectId)} className="p-4 text-zinc-300 hover:text-[#7A4FFF] transition-all"><Edit size={20} /></button>
+                                                        <button onClick={() => handleDeleteProject(project.projectId)} className="p-4 text-zinc-300 hover:text-red-500 transition-all"><Trash2 size={20} /></button>
+                                                    </div>
+                                                    <button onClick={() => handleViewApplicants(project)} className={`px-10 py-5 rounded-[1.5rem] font-black text-xs tracking-[0.2em] uppercase transition-all flex items-center gap-3 shadow-2xl font-mono ${isExpanded ? 'bg-[#FF7D00] text-white shadow-orange-200' : 'bg-zinc-950 text-white hover:bg-[#FF7D00]'}`}>
+                                                        <Users size={18} /> 지원자 확인 {projectApplicants.length > 0 && `(${projectApplicants.length})`}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+
+                                        <AnimatePresence>
+                                            {isExpanded && (
+                                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                                    <div className="mt-2 mb-12 p-3 bg-white border border-zinc-200 shadow-2xl rounded-[3rem]">
+                                                        {loadingApplicants[project.projectId] ? (
+                                                            <div className="py-24 flex flex-col items-center justify-center gap-5"><Loader2 className="w-10 h-10 animate-spin text-[#FF7D00]" /><span className="animate-pulse tracking-[0.3em] text-xs font-black font-mono text-zinc-400 uppercase">지원자 정보를 동기화 중...</span></div>
+                                                        ) : hasError ? (
+                                                            <div className="py-24 flex flex-col items-center justify-center gap-4 text-center">
+                                                                <XCircle className="text-red-400 w-12 h-12" />
+                                                                <p className="text-lg font-black text-zinc-900 uppercase font-mono">연결 실패</p>
+                                                                <p className="text-sm font-medium text-zinc-400 mb-4">지원자 목록을 가져오는 데 실패했습니다.</p>
+                                                                {/* 🎯 [FIX] pid -> project.projectId 로 수정하여 에러 해결 */}
+                                                                <button onClick={() => { setApplicantsErrorByProject(p => ({ ...p, [project.projectId]: false })); handleViewApplicants(project); }} className="px-8 py-3 bg-zinc-950 text-white rounded-xl text-xs font-black flex items-center gap-2 hover:bg-[#FF7D00] transition-all uppercase font-mono"><RefreshCcw size={14} /> 다시 시도</button>
+                                                            </div>
+                                                        ) : projectApplicants.length === 0 ? (
+                                                            <div className="py-24 text-center text-zinc-200 font-black border-4 border-dashed border-zinc-50 rounded-[2.5rem] text-2xl font-mono uppercase">지원자가 없습니다</div>
+                                                        ) : (
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5">
+                                                                {projectApplicants.map((app: any) => (
+                                                                    <div key={app.applicationId} className={`p-8 bg-zinc-50 rounded-[2rem] border transition-all hover:bg-white hover:shadow-xl ${app.status === 'ACCEPTED' ? 'border-[#FF7D00] bg-orange-50/30' : 'border-zinc-100'}`}>
+                                                                        <div className="flex items-center gap-6 mb-8">
+                                                                            <div className="w-16 h-16 rounded-2xl bg-white border border-zinc-200 overflow-hidden cursor-pointer shadow-sm" onClick={() => router.push(`/freelancer/${app.freelancerId}`)}>{app.freelancerProfileImageUrl ? <img src={app.freelancerProfileImageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-300"><User size={28} /></div>}</div>
+                                                                            <div className="flex-1">
+                                                                                <div className="flex items-center gap-3 mb-1"><h4 className="font-black text-xl text-zinc-900">{app.freelancerNickname}</h4><span className="text-[10px] font-black text-[#FF7D00] bg-white px-2 py-0.5 rounded border border-orange-100">일치율 {Math.round(app.matchingRate)}%</span></div>
+                                                                                <p className="text-[10px] font-black text-zinc-400 font-mono uppercase tracking-widest">프리랜서 노드</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center justify-between pt-6 border-t border-zinc-200/50">
+                                                                            <p className="text-xl font-black text-zinc-950 font-mono italic">₩{app.bidPrice?.toLocaleString()}</p>
+                                                                            <div className="flex gap-2">
+                                                                                {app.status === 'PENDING' ? (
+                                                                                    <><button onClick={() => handleApplicationStatus(app.applicationId, 'ACCEPTED')} className="px-6 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-[#FF7D00] transition-all uppercase">수락</button><button onClick={() => handleApplicationStatus(app.applicationId, 'REJECTED')} className="px-6 py-3 bg-white border border-zinc-200 text-zinc-400 rounded-xl text-[10px] font-black hover:text-red-500 transition-all uppercase">거절</button></>
+                                                                                ) : (
+                                                                                    <div className={`px-6 py-3 rounded-xl text-[10px] font-black flex items-center gap-2 uppercase border ${app.status === 'ACCEPTED' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' : 'bg-red-50 text-red-500 border border-red-100'}`}>{app.status === 'ACCEPTED' ? <CheckCircle size={14} /> : <XCircle size={14} />}{app.status === 'ACCEPTED' ? '수락됨' : '거절됨'}</div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </motion.div>
                 )}
 
-                {/* 🎯 3. 관심 프로젝트 섹션 (BOOKMARKS) */}
+                {/* 2. 관심 인재 섹션 */}
                 {activeMainTab === 'BOOKMARKS' && (
                     <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-12">
                         <div className="flex items-center justify-between mb-4">
-                            <div><h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">관심 프로젝트</h2><p className="text-sm font-medium text-zinc-400">마스터가 눈여겨보고 있는 일거리 목록입니다.</p></div>
-                            {/* 🎯 [리뷰 반영] 페이징 길이에 종속받지 않는 백엔드 토탈 데이터 개수 활용 */}
-                            <span className="px-5 py-2 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#7A4FFF]">공고 수: {totalBookmarks}개</span>
+                            <div><h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">관심 프리랜서</h2><p className="text-sm font-medium text-zinc-400">지목한 최정상급 프리랜서 후보군입니다.</p></div>
+                            <span className="px-5 py-2 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#FF7D00]">프리랜서 수: {bookmarks.length}명</span>
                         </div>
-                        {bookmarksLoading && bookmarkPage === 0 ? (
-                            <div className="py-40 flex justify-center"><Loader2 className="w-12 h-12 animate-spin text-[#7A4FFF]" /></div>
-                        ) : bookmarkedProjects.length === 0 ? (
-                            <div className="text-center py-48 bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 font-black text-zinc-200 italic uppercase tracking-tighter">찜한 프로젝트가 없습니다</div>
+                        {bookmarks.length === 0 && !bookmarksLoading ? (
+                            <div className="text-center py-48 bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 font-black text-zinc-200 italic uppercase tracking-tighter">찜한 인재가 없습니다</div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {bookmarkedProjects.map((project, idx) => (
-                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={project.projectId} className="group bg-white p-10 rounded-[3rem] border border-zinc-100 hover:border-[#7A4FFF] hover:shadow-[0_20px_50px_rgba(122,79,255,0.15)] transition-all relative">
-                                        {/* 🎯 [리뷰 반영] 웹 접근성(aria-label) 추가 */}
-                                        <button
-                                            onClick={() => handleRemoveBookmark(project.projectId)}
-                                            aria-label="북마크에서 삭제"
-                                            className="absolute top-8 right-8 p-3 bg-zinc-50 rounded-2xl text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-all"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                        <div className="flex flex-col mb-8 pt-4">
-                                            <span className="text-[10px] font-black text-[#7A4FFF] bg-purple-50 px-3 py-1 rounded w-fit mb-4 uppercase text-center border border-purple-100">{project.companyName}</span>
-                                            <h3 className="text-2xl font-black text-zinc-900 group-hover:text-[#7A4FFF] transition-colors mb-2 leading-tight">{project.projectName}</h3>
-                                            <p className="text-xl font-black text-zinc-950 font-mono italic mb-4">₩{project.budget.toLocaleString()}</p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {project.skills && project.skills.map((skill: string) => <span key={skill} className="px-2 py-1 bg-zinc-50 border border-zinc-100 text-[10px] font-bold text-zinc-400 rounded-md uppercase font-mono">#{skill}</span>)}
+                                {bookmarks.map((freelancer, idx) => (
+                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={freelancer.profileId} className="group bg-white p-10 rounded-[3rem] border border-zinc-100 hover:border-[#FF7D00] hover:shadow-[0_20px_50px_rgba(255,125,0,0.15)] transition-all relative">
+                                        <button onClick={() => handleRemoveBookmark(freelancer.profileId)} className="absolute top-8 right-8 p-3 bg-zinc-50 rounded-2xl text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 size={18} /></button>
+                                        <div className="flex flex-col items-center text-center mb-8 cursor-pointer" onClick={() => router.push(`/freelancer/${freelancer.profileId}`)}>
+                                            <div className="w-24 h-24 rounded-[2rem] bg-zinc-100 overflow-hidden border-4 border-white shadow-xl mb-6">{freelancer.profileImageUrl ? <img src={freelancer.profileImageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-300 bg-zinc-50"><User size={40} /></div>}</div>
+                                            <div className="flex items-center gap-2 mb-2"><h3 className="text-2xl font-black text-zinc-900 group-hover:text-[#FF7D00] transition-colors">{freelancer.userName}</h3><span className="px-2 py-0.5 bg-zinc-950 text-white text-[9px] font-black rounded font-mono uppercase">{freelancer.gradeName}</span></div>
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-[#FF7D00] mb-4">
+                                                <Star size={16} fill="#FF7D00" strokeWidth={0} />
+                                                <span>{(freelancer.averageRating ?? 0).toFixed(1)}</span>
+                                                <span className="text-zinc-300 ml-1 font-mono">({freelancer.reviewCount} 리뷰)</span>
                                             </div>
+                                            <p className="text-xs font-medium text-zinc-400 line-clamp-2 italic leading-relaxed">"{freelancer.introduction || "준비된 프리랜서입니다."}"</p>
                                         </div>
-                                        <button onClick={() => router.push(`/freelancer/projects/${project.projectId}`)} className="w-full py-4 bg-zinc-50 text-zinc-400 group-hover:bg-[#7A4FFF] group-hover:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all font-mono">공고 상세보기</button>
+                                        <button onClick={() => router.push(`/freelancer/${freelancer.profileId}`)} className="w-full py-4 bg-zinc-50 text-zinc-400 group-hover:bg-[#FF7D00] group-hover:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all font-mono">프로필 상세보기</button>
                                     </motion.div>
                                 ))}
                             </div>
                         )}
 
-                        {hasMoreBookmarks && bookmarkedProjects.length > 0 && (
+                        {hasMoreBookmarks && (
                             <div className="flex justify-center pt-10">
                                 <button
                                     onClick={() => fetchBookmarks(true)}
@@ -406,8 +339,46 @@ export default function FreelancerDashboardPage() {
                                     className="px-12 py-5 bg-white border-2 border-zinc-900 text-zinc-900 rounded-[2rem] font-black text-xs tracking-[0.3em] uppercase hover:bg-zinc-900 hover:text-white transition-all flex items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {bookmarksLoading ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
-                                    프로젝트 더 보기
+                                    인재 더 보기
                                 </button>
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+
+                {/* 3. 역제안 현황 섹션 */}
+                {activeMainTab === 'PROPOSALS' && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+                        <div className="flex items-center justify-between">
+                            <div><h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">보낸 제안내역</h2><p className="text-sm font-medium text-zinc-400">먼저 협업을 제안한 인재 목록입니다.</p></div>
+                            <span className="px-5 py-2 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#FF7D00]">총 {sentProposals.length}건</span>
+                        </div>
+                        {proposalsLoading ? ( <div className="py-40 flex justify-center"><Loader2 className="w-12 h-12 animate-spin text-[#FF7D00]" /></div> ) : sentProposals.length === 0 ? (
+                            <div className="bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 p-24 flex flex-col items-center justify-center text-center">
+                                <Sparkles size={60} className="text-zinc-200 mb-6" strokeWidth={1} />
+                                <p className="text-xl font-black text-zinc-400 mb-2 italic">보낸 제안이 없습니다</p>
+                                <p className="text-sm font-medium text-zinc-300 max-w-sm">관심 인재에게 먼저 비즈니스 역제안을 날려보세요!</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-6">
+                                {sentProposals.map((proposal, idx) => (
+                                    <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: idx * 0.05 }} key={proposal.proposalId} className="bg-white p-10 rounded-[3rem] border border-zinc-100 hover:border-[#FF7D00] hover:shadow-2xl transition-all group flex flex-col xl:flex-row justify-between items-center gap-10">
+                                        <div className="flex-1 w-full">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="flex items-center gap-2 bg-zinc-950 text-white px-3 py-1 rounded text-[9px] font-black uppercase font-mono tracking-widest"><Send size={10} /> 보낸 제안</div>
+                                                <span className={`px-3 py-1 rounded text-[9px] font-black uppercase font-mono border ${proposal.status === 'ACCEPTED' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' : 'bg-zinc-50 text-zinc-400'}`}>{proposal.statusDescription}</span>
+                                            </div>
+                                            <h3 className="text-3xl font-black text-zinc-900 group-hover:text-[#FF7D00] transition-colors mb-4">대상: {proposal.freelancerName}</h3>
+                                            <div className="flex items-center gap-2 mb-6"><div className="w-1.5 h-1.5 rounded-full bg-[#FF7D00]" /><p className="text-xs font-black text-zinc-400 uppercase font-mono tracking-widest">대상 프로젝트: {proposal.projectName}</p></div>
+                                            <div className="p-6 bg-zinc-50/50 rounded-2xl border border-zinc-100 text-sm font-medium text-zinc-500 italic leading-relaxed">"{proposal.message || "보낸 메시지가 없습니다."}"</div>
+                                        </div>
+                                        <div className="w-full xl:w-auto flex flex-row xl:flex-col justify-between items-end gap-6 min-w-[240px] p-8 bg-zinc-50 rounded-[2rem] border border-zinc-100 shadow-inner">
+                                            <div className="text-right"><p className="text-[10px] font-black text-zinc-400 uppercase font-mono tracking-widest mb-1">제안 금액</p><p className="text-3xl font-black text-zinc-950 font-mono italic">₩{proposal.offeredPrice?.toLocaleString()}</p></div>
+                                            <div className="text-right"><p className="text-xs font-bold text-zinc-500 flex items-center justify-end gap-1 font-mono"><Clock size={14} /> {new Date(proposal.createdAt).toLocaleDateString()}</p></div>
+                                            <button onClick={() => router.push(`/freelancer/${proposal.freelancerProfileId}`)} className="w-full px-8 py-4 bg-white border border-zinc-200 text-zinc-400 hover:text-[#FF7D00] hover:border-[#FF7D00] rounded-xl text-[10px] font-black uppercase tracking-widest transition-all font-mono flex items-center justify-center gap-2 shadow-sm">프로필 분석 <ArrowUpRight size={16} /></button>
+                                        </div>
+                                    </motion.div>
+                                ))}
                             </div>
                         )}
                     </motion.div>
