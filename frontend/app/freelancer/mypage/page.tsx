@@ -18,6 +18,12 @@ import PortfolioFormModal from '@/components/freelancer_mypage/PortfolioFormModa
 import PortfolioDetailModal from '@/components/freelancer_mypage/PortfolioDetailModal';
 import BookmarkTab from '../../../components/freelancer_mypage/MypageBookmarksTab';
 
+const NAV_ITEMS = [
+    { label: 'DASHBOARD', path: '/freelancer/dashboard' },
+    { label: 'EXPLORE', path: '/freelancer/explore' },
+    { label: 'MY_PROFILE', path: '/freelancer/mypage', active: true },
+];
+
 const TABS = [
     { id: 'profile', label: 'MY PROFILE', icon: UserIcon },
     { id: 'portfolio', label: 'PORTFOLIO', icon: Briefcase },
@@ -203,6 +209,7 @@ export default function FreelancerMyPage() {
             await api.put('/v1/freelancers/me', requestBody);
             alert('정보가 업데이트 되었습니다.');
             setIsEditingProfile(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             fetchProfile();
         } catch (error: any) {
             const errorMsg = error.response?.data?.message || '모든 필수값을 확인해주세요.';
@@ -351,12 +358,6 @@ export default function FreelancerMyPage() {
     );
     if (!profile && !isEditingProfile) return null;
 
-    const navItems = [
-        { label: 'DASHBOARD', path: '/freelancer/dashboard' },
-        { label: 'EXPLORE', path: '/freelancer/explore' },
-        { label: 'MY_PROFILE', path: '/freelancer/mypage', active: true },
-    ];
-
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative scroll-smooth font-sans">
             <div className="fixed inset-0 pointer-events-none z-0">
@@ -367,7 +368,7 @@ export default function FreelancerMyPage() {
                 userType="FREELANCER"
                 userName={profile?.userName}
                 profileImage={profile?.profileImageUrl}
-                navItems={navItems}
+                navItems={NAV_ITEMS}
                 accentColor="#7A4FFF"
             />
 

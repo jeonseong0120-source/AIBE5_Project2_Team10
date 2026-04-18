@@ -59,7 +59,12 @@ export default function MypageNavbar({
                         >
                             {item.label}
                             {item.active && (
-                                <motion.div layoutId="navIndicator" className="h-0.5 w-full mt-1" style={{ backgroundColor: accentColor }} />
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="h-0.5 w-full mt-1" 
+                                    style={{ backgroundColor: accentColor }} 
+                                />
                             )}
                         </button>
                     ))}

@@ -107,6 +107,7 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
             setOriginalData(formData);
             onUpdateSuccess(formData);
             setIsEditing(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (err) {
             alert("수정 실패: 양식을 확인해주세요.");
         } finally {
@@ -162,7 +163,7 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                             </div>
                             
                             <button
-                                onClick={() => setIsEditing(true)}
+                                onClick={() => { setIsEditing(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                                 className="h-12 px-6 bg-zinc-950 hover:bg-[#FF7D00] text-white shadow-xl shadow-zinc-200 rounded-2xl text-xs font-black transition-all font-mono tracking-widest uppercase flex items-center gap-2 group"
                             >
                                 <Settings size={14} className="group-hover:rotate-90 transition-transform duration-500" /> 프로필 편집하기
@@ -327,6 +328,7 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                                     setIsEditing(false);
                                     setFormData(originalData);
                                     setIsBnVerified(originalData.bn?.match(/^\d{3}-\d{2}-\d{5}$/) ? true : false);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
                                 className="flex-[1] py-5 bg-zinc-200 hover:bg-zinc-300 text-zinc-700 rounded-[1.5rem] text-xs font-black transition-colors uppercase tracking-widest font-mono"
                             >
