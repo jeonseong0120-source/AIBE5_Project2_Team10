@@ -45,17 +45,30 @@ export default function MypageProfileTab({
 }: MypageProfileTabProps) {
     return (
         <div className="space-y-8">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h2 className="text-2xl font-black tracking-tighter">마이 프로필</h2>
-                    <p className="text-[10px] text-zinc-400 font-mono uppercase mt-1">MANAGE_YOUR_PROFILE</p>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                <div className="flex items-center gap-6">
+                    <div className="w-20 h-20 rounded-[2rem] bg-zinc-100 border-4 border-white shadow-xl overflow-hidden flex-shrink-0">
+                        {profile?.profileImageUrl ? (
+                            <img src={profile.profileImageUrl} alt="profile" className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-zinc-300">
+                                <UserIcon size={32} />
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <h2 className="text-3xl font-black tracking-tighter text-zinc-900">{profile?.userName || '사용자'}</h2>
+                        <p className="text-[10px] text-[#7A4FFF] font-mono font-black uppercase tracking-widest mt-1.5 flex items-center gap-2">
+                             <Activity size={12} /> {profile?.isActive ? 'ACTIVE_STATUS' : 'AWAY_STATUS'}
+                        </p>
+                    </div>
                 </div>
                 {!isEditingProfile && (
                     <button 
                         onClick={() => setIsEditingProfile(true)} 
-                        className="h-10 px-5 bg-zinc-950 hover:bg-[#7A4FFF] text-white shadow-xl shadow-zinc-200 rounded-[1rem] text-[10px] font-black transition-all font-mono tracking-widest uppercase flex items-center gap-2"
+                        className="h-12 px-6 bg-zinc-950 hover:bg-[#7A4FFF] text-white shadow-xl shadow-zinc-200 rounded-2xl text-xs font-black transition-all font-mono tracking-widest uppercase flex items-center gap-2 group"
                     >
-                        <Settings size={14} /> 편집 켜기
+                        <Settings size={14} className="group-hover:rotate-90 transition-transform duration-500" /> 프로필 편집하기
                     </button>
                 )}
             </div>

@@ -42,6 +42,8 @@ public class ClientProfileRequest {
     @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "연락처 형식이 올바르지 않습니다. (예: 010-1234-5678)")  // 추가
     private String phoneNum;
 
+    private String logoUrl; // 🔍 로고 URL 필드 추가
+
     public ClientProfile toEntity(User user) {
         return ClientProfile.builder()
                 .user(user)
@@ -51,6 +53,7 @@ public class ClientProfileRequest {
                 .introduction(introduction)
                 .homepageUrl(homepageUrl)
                 .phoneNum(phoneNum)
+                .logoUrl(logoUrl)
                 .build();
     }
 }

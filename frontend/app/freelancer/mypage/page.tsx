@@ -8,7 +8,8 @@ import api from '@/app/lib/axios';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
 
 // New Components
-import MypageSidebar from '@/components/freelancer_mypage/MypageSidebar';
+import MypageSidebar from '@/components/layout/MypageSidebar';
+import MypageNavbar from '@/components/layout/MypageNavbar';
 import MypageProfileTab from '@/components/freelancer_mypage/MypageProfileTab';
 import MypagePortfolioTab from '@/components/freelancer_mypage/MypagePortfolioTab';
 import MypageReviewTab from '@/components/freelancer_mypage/MypageReviewTab';
@@ -337,8 +338,18 @@ export default function FreelancerMyPage() {
         }
     };
 
-    if (!authorized) return <div className="min-h-screen items-center justify-center flex bg-zinc-950 text-[#7A4FFF] font-black text-xl animate-pulse uppercase font-mono">System_Authorizing...</div>;
+    if (!authorized) return (
+        <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#7A4FFF] font-black text-xl animate-pulse uppercase font-mono tracking-[0.2em]">
+            SYSTEM_AUTHORIZING...
+        </div>
+    );
     if (!profile && !isEditingProfile) return null;
+
+    const navItems = [
+        { label: 'DASHBOARD', path: '/freelancer/dashboard' },
+        { label: 'EXPLORE', path: '/freelancer/explore' },
+        { label: 'MY_PROFILE', path: '/freelancer/mypage', active: true },
+    ];
 
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative overflow-hidden font-sans">
@@ -346,24 +357,22 @@ export default function FreelancerMyPage() {
                 <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
             </div>
 
-            <nav className="w-full py-6 px-10 bg-white/70 backdrop-blur-2xl border-b border-zinc-200/50 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer group" onClick={() => router.push("/freelancer/explore")}>
-                    <span className="text-[#FF7D00] group-hover:drop-shadow-[0_0_8px_#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
-                </div>
-                <div className="flex gap-4 items-center relative z-10 md:gap-8">
-                    <button onClick={() => router.push('/freelancer/dashboard')} className="text-xs font-black text-zinc-400 hover:text-zinc-950 tracking-[0.2em] transition uppercase font-mono">DASHBOARD</button>
-                    <button onClick={() => router.push('/freelancer/explore')} className="text-xs font-black text-zinc-400 hover:text-zinc-950 tracking-[0.2em] transition uppercase font-mono">EXPLORE</button>
-                    <button onClick={() => router.push('/freelancer/mypage')} className="text-xs font-black text-zinc-950 tracking-[0.2em] transition uppercase font-mono">MY_PROFILE</button>
-                    <NotificationBell />
-                    <div className="w-10 h-10 rounded-full bg-[#7A4FFF] border-2 border-white shadow-xl shadow-purple-200 overflow-hidden flex items-center justify-center text-white font-black text-sm font-mono">
-                        {profile?.userName ? profile.userName.charAt(0).toUpperCase() : 'U'}
-                    </div>
-                </div>
-            </nav>
+            <MypageNavbar 
+                userType="FREELANCER"
+                userName={profile?.userName}
+                profileImage={profile?.profileImageUrl}
+                navItems={navItems}
+                accentColor="#7A4FFF"
+            />
 
             {/* 🎯 레이아웃 뼈대: 그리드 [300px(사이드바) + 1fr(메인 콘텐츠)] */}
             <main className="max-w-7xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start relative z-10">
-                <MypageSidebar tabs={TABS} activeTab={activeTab} setActiveTab={setActiveTab} />
+                <MypageSidebar 
+                    tabs={TABS} 
+                    activeTab={activeTab} 
+                    setActiveTab={setActiveTab} 
+                    accentColor="#7A4FFF"
+                />
 
                 <div className="space-y-8 min-w-0">
                     <motion.div
