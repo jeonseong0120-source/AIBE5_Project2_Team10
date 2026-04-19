@@ -8,7 +8,10 @@ export function parseJwt(token: string): Record<string, unknown> | null {
         const payload = token.split(".")[1];
         if (!payload) return null;
 
-        const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+        const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+        const padLength = (4 - (normalized.length % 4)) % 4;
+        const padded = normalized + "=".repeat(padLength);
+        const decoded = atob(padded);
         return JSON.parse(decoded);
     } catch (error) {
         console.error("JWT 파싱 실패:", error);
@@ -26,7 +29,10 @@ export function getCurrentUserId(): number | null {
     const userId = payload.userId;
 
     if (typeof userId === "number") return userId;
-    if (typeof userId === "string") return Number(userId);
+    if (typeof userId === "string")
+        {const parsed = Number(userId);
+        return Number.isFinite(parsed) ? parsed : null;
+        }
 
     return null;
 }
