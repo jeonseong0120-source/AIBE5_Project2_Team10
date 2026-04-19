@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, Grid3X3 } from 'lucide-react';
+import { ChevronLeft, Briefcase, Grid3X3 } from 'lucide-react';
 import api from '@/app/lib/axios';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
 import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
@@ -15,6 +15,8 @@ export type FreelancerProfileDetailVariant = 'freelancer' | 'client';
 type Props = {
     profileId: string;
     variant: FreelancerProfileDetailVariant;
+    // 🎯 [리뷰 반영] 별도의 Navbar가 없을 때 보여줄 보조 헤더 옵션 추가
+    showFallbackHeader?: boolean;
 };
 
 const VARIANT_CONFIG = {
@@ -30,7 +32,7 @@ const VARIANT_CONFIG = {
     },
 } as const;
 
-export default function FreelancerProfileDetail({ profileId, variant }: Props) {
+export default function FreelancerProfileDetail({ profileId, variant, showFallbackHeader = true }: Props) {
     const router = useRouter();
     const cfg = VARIANT_CONFIG[variant];
     const [freelancer, setFreelancer] = useState<FreelancerProfile | null>(null);
@@ -46,8 +48,6 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
     useEffect(() => {
         setPortalReady(true);
     }, []);
-
-    // 🎯 [리뷰 반영] 중복 API 호출(fetchMyInfo) 및 미사용 상태(myUser, myProfile) 삭제 완료
 
     useEffect(() => {
         if (!profileId) return;
@@ -130,6 +130,19 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
     return (
         <div className="pb-40 font-sans text-zinc-900 relative">
             <main className="mx-auto max-w-4xl px-4 pt-12 relative z-10">
+
+                {/* 🎯 [리뷰 반영] showFallbackHeader가 true일 때만 뒤로가기 버튼 표시 */}
+                {showFallbackHeader && (
+                    <button
+                        type="button"
+                        onClick={() => router.back()}
+                        className="group mb-12 flex items-center gap-1.5 font-mono text-[10px] font-black uppercase tracking-widest text-zinc-400 transition-all hover:text-zinc-900"
+                    >
+                        <ChevronLeft size={16} className="transition-transform group-hover:-translate-x-1" />
+                        BACK_TO_PREVIOUS
+                    </button>
+                )}
+
                 <div className="bg-white rounded-[3rem] p-10 md:p-14 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-12">
                     <section className="flex flex-col items-center gap-8 md:flex-row md:items-start md:gap-12">
                         <div className="relative shrink-0">
@@ -154,14 +167,6 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
                                     <span className="font-mono text-[10px] font-black uppercase tracking-widest text-[#FF7D00] bg-orange-50 px-3 py-1 rounded-md border border-orange-100">
                                         Agent Profile
                                     </span>
-                                    {isOwner && (
-                                        <button
-                                            type="button"
-                                            className="rounded-lg bg-zinc-100 px-4 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest transition hover:bg-zinc-200"
-                                        >
-                                            Edit_Profile
-                                        </button>
-                                    )}
                                 </div>
                             </div>
 
@@ -210,7 +215,8 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
                         <div className="-mt-[34px] flex cursor-pointer items-center gap-1.5 border-t-2 border-[#FF7D00] pt-3 font-mono text-xs font-black uppercase tracking-widest text-zinc-900">
                             <Grid3X3 size={14} className="text-[#FF7D00]" /> PORTFOLIOS
                         </div>
-                        <div className="-mt-[34px] flex cursor-pointer items-center gap-1.5 pt-3 font-mono text-xs font-bold uppercase tracking-widest text-zinc-400 transition hover:text-[#FF7D00]">
+                        {/* 🎯 [리뷰 반영] 아직 구현되지 않은 PROJECTS 탭의 클릭 속성 및 스타일 비활성화 처리 */}
+                        <div className="-mt-[34px] flex items-center gap-1.5 pt-3 font-mono text-xs font-bold uppercase tracking-widest text-zinc-400">
                             <Briefcase size={14} /> PROJECTS
                         </div>
                     </div>
