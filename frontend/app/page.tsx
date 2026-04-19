@@ -56,7 +56,14 @@ export default function Home() {
       <div className="flex flex-col min-h-screen bg-white font-sans selection:bg-[#FF7D00]/30">
         {/* 네비게이션 바 (간결하게) */}
         <nav className="flex items-center justify-between px-8 py-6 max-w-7xl mx-auto w-full">
-          <div className="text-2xl font-black tracking-tighter text-[#FF7D00]">DevNear</div>
+          <div className="text-2xl font-black tracking-tighter text-[#FF7D00]">
+            <img
+                src="/devnear-logo.png" 
+                alt="DevNear_Logo"
+                className="h-8 w-auto object-contain inline-block mr-2" 
+            />
+            DevNear
+          </div>
           <div className="flex gap-8 items-center font-medium text-zinc-600">
             <a href="#" className="hover:text-black transition-colors text-sm">프로젝트 찾기</a>
             <a href="#" className="hover:text-black transition-colors text-sm">프리랜서 찾기</a>

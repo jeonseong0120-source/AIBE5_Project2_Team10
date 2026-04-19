@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Briefcase, Grid3X3 } from 'lucide-react';
+import { Briefcase, Grid3X3 } from 'lucide-react';
 import api from '@/app/lib/axios';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
 import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
@@ -40,11 +40,37 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
     const [selectedPortfolio, setSelectedPortfolio] = useState<PortfolioDetailShape | null>(null);
     const [portalReady, setPortalReady] = useState(false);
 
+    // 유저 데이터 상태 (로직 보존을 위해 유지)
+    const [myUser, setMyUser] = useState<any>(null);
+    const [myProfile, setMyProfile] = useState<any>(null);
+
     const FALLBACK_IMAGE_URL =
         'https://ui-avatars.com/api/?name=Agent&background=F4F4F5&color=A1A1AA&size=150';
 
     useEffect(() => {
         setPortalReady(true);
+    }, []);
+
+    // 접속한 '나'의 정보 가져오기 로직 유지
+    useEffect(() => {
+        const fetchMyInfo = async () => {
+            try {
+                const userRes = await api.get('/v1/users/me');
+                setMyUser(userRes.data);
+
+                const role = userRes.data.role || '';
+                if (role.includes('CLIENT')) {
+                    const profileRes = await api.get('/client/profile');
+                    setMyProfile(profileRes.data);
+                } else if (role.includes('FREELANCER')) {
+                    const profileRes = await api.get('/v1/freelancers/me');
+                    setMyProfile(profileRes.data);
+                }
+            } catch (err) {
+                console.error("내 정보 로드 실패", err);
+            }
+        };
+        fetchMyInfo();
     }, []);
 
     useEffect(() => {
@@ -100,7 +126,7 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
 
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-mono text-xl font-black uppercase tracking-widest text-dn-orange animate-pulse">
+            <div className="flex min-h-[70vh] items-center justify-center font-mono text-xl font-black uppercase tracking-widest text-[#FF7D00] animate-pulse">
                 SCANNING AGENT DOSSIER...
             </div>
         );
@@ -108,7 +134,7 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
 
     if (!freelancer) {
         return (
-            <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 text-center">
+            <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
                 <h3 className="font-mono text-lg font-bold italic uppercase tracking-tighter text-zinc-400">
                     Null: No_Expert_Found
                 </h3>
@@ -126,157 +152,135 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
     const isOwner = false;
 
     return (
-        <div className="min-h-screen bg-white pb-40 font-sans text-zinc-900">
-            <nav className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-zinc-200 bg-white/80 px-10 py-5 shadow-sm backdrop-blur-xl">
-                <div className="flex items-center gap-8">
-                    <button
-                        type="button"
-                        className="cursor-pointer font-black text-2xl tracking-tighter"
-                        onClick={() => router.push(cfg.brandHref)}
-                    >
-                        <span className="text-[#FF7D00]">Dev</span>
-                        <span className="text-[#7A4FFF]">Near</span>
-                    </button>
+        <div className="pb-40 font-sans text-zinc-900 relative">
+            <main className="mx-auto max-w-4xl px-4 pt-12 relative z-10">
 
-                    <div className="hidden h-4 w-px bg-zinc-200 md:block" />
+                {/* 🎯 주황색 톤업 + 모눈종이/뒤로가기 삭제된 깔끔한 카드 레이아웃 */}
+                <div className="bg-white rounded-[3rem] p-10 md:p-14 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-12">
+                    <section className="flex flex-col items-center gap-8 md:flex-row md:items-start md:gap-12">
+                        {/* 프로필 이미지 (주황색 그라데이션) */}
+                        <div className="relative shrink-0">
+                            <div className="h-32 w-32 rounded-full bg-gradient-to-tr from-[#FF7D00] to-[#FFB347] p-1 md:h-40 md:w-40 shadow-xl shadow-orange-900/10">
+                                <img
+                                    src={freelancer.profileImageUrl || FALLBACK_IMAGE_URL}
+                                    alt={freelancer.nickname}
+                                    onError={(e) => {
+                                        if (e.currentTarget.src !== FALLBACK_IMAGE_URL) {
+                                            e.currentTarget.src = FALLBACK_IMAGE_URL;
+                                        }
+                                    }}
+                                    className="h-full w-full rounded-full border-4 border-white bg-white object-cover"
+                                />
+                            </div>
+                        </div>
 
-                    <button
-                        type="button"
-                        onClick={() => router.back()}
-                        className="group flex items-center gap-1.5 font-mono text-[10px] font-black uppercase tracking-widest text-zinc-400 transition-all hover:text-zinc-900"
-                    >
-                        <ChevronLeft size={16} className="transition-transform group-hover:-translate-x-1" />
-                        BACK_TO_LIST
-                    </button>
-                </div>
+                        {/* 프로필 상세 텍스트 */}
+                        <div className="w-full flex-1">
+                            <div className="mb-6 flex flex-col md:flex-row md:items-center gap-4">
+                                <h1 className="text-4xl font-black tracking-tight text-center md:text-left">{freelancer.nickname}</h1>
+                                <div className="flex justify-center md:justify-start items-center gap-3">
+                                    <span className="font-mono text-[10px] font-black uppercase tracking-widest text-[#FF7D00] bg-orange-50 px-3 py-1 rounded-md border border-orange-100">
+                                        Agent Profile
+                                    </span>
+                                    {isOwner && (
+                                        <button
+                                            type="button"
+                                            className="rounded-lg bg-zinc-100 px-4 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest transition hover:bg-zinc-200"
+                                        >
+                                            Edit_Profile
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
 
-                <div className="hidden items-center gap-4 sm:flex">
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-zinc-300">
-                        {cfg.navLabel}
-                    </span>
-                </div>
-            </nav>
+                            {/* 스탯 구분 */}
+                            <div className="mb-8 flex justify-center md:justify-start divide-x divide-zinc-200 font-mono">
+                                <div className="px-6 first:pl-0 text-center md:text-left flex flex-col">
+                                    <span className="font-black text-2xl leading-none">{portfolioList.length}</span>
+                                    <span className="text-zinc-400 text-[10px] uppercase tracking-widest mt-1">Posts</span>
+                                </div>
+                                <div className="px-6 text-center md:text-left flex flex-col">
+                                    <span className="font-black text-2xl leading-none">{freelancer.completedProjects || 0}</span>
+                                    <span className="text-zinc-400 text-[10px] uppercase tracking-widest mt-1">Projects</span>
+                                </div>
+                                <div className="px-6 text-center md:text-left flex flex-col">
+                                    <span className="font-black text-2xl text-[#FF7D00] leading-none">{freelancer.averageRating.toFixed(1)}</span>
+                                    <span className="text-zinc-400 text-[10px] uppercase tracking-widest mt-1">Rating</span>
+                                </div>
+                            </div>
 
-            <main className="mx-auto max-w-4xl px-4 pt-32">
-                <section className="mb-16 flex flex-col items-center gap-8 px-4 md:flex-row md:items-start md:gap-12">
-                    <div className="relative shrink-0">
-                        <div className="h-32 w-32 rounded-full bg-gradient-to-tr from-[#FF7D00] to-[#7A4FFF] p-1 md:h-40 md:w-40">
-                            <img
-                                src={freelancer.profileImageUrl || FALLBACK_IMAGE_URL}
-                                alt={freelancer.nickname}
-                                onError={(e) => {
-                                    if (e.currentTarget.src !== FALLBACK_IMAGE_URL) {
-                                        e.currentTarget.src = FALLBACK_IMAGE_URL;
-                                    }
-                                }}
-                                className="h-full w-full rounded-full border-4 border-white bg-white object-cover"
-                            />
+                            {/* 지역 및 소개글 */}
+                            <div className="space-y-4 text-center md:text-left">
+                                <p className="font-mono text-xs font-bold tracking-widest text-[#FF7D00] uppercase flex items-center justify-center md:justify-start gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF7D00]"></span>
+                                    {freelancer.location} • {freelancer.workStyle || 'HYBRID'}
+                                </p>
+                                <div className="p-6 bg-orange-50/30 rounded-3xl border border-orange-50/50">
+                                    <p className="text-sm font-medium leading-relaxed text-zinc-600 italic">
+                                        &quot;{freelancer.introduction}&quot;
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* 스킬 태그 */}
+                    <div className="mt-8 border-t border-zinc-100 pt-8">
+                        <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                            {freelancer.skills.map((skill) => (
+                                <span key={skill.id} className="px-4 py-2 bg-zinc-950 text-white rounded-xl font-mono text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#FF7D00] transition-colors cursor-default">
+                                    {skill.name}
+                                </span>
+                            ))}
                         </div>
                     </div>
-
-                    <div className="w-full flex-1">
-                        <div className="mb-6 flex flex-wrap items-center justify-center gap-4 md:justify-start">
-                            <h1 className="text-3xl font-black">{freelancer.nickname}</h1>
-                            {isOwner && (
-                                <button
-                                    type="button"
-                                    className="rounded-lg bg-zinc-100 px-5 py-1.5 font-mono text-sm font-bold tracking-tighter transition hover:bg-zinc-200"
-                                >
-                                    Edit_Profile
-                                </button>
-                            )}
-                            <span className="font-mono text-[10px] font-black uppercase tracking-widest text-[#7A4FFF]">
-                                Agent Profile
-                            </span>
-                        </div>
-
-                        <div className="mb-6 flex justify-center gap-8 border-y border-zinc-100 py-4 font-mono md:justify-start md:border-none md:py-0">
-                            <div className="text-center md:text-left">
-                                <span className="font-bold">{portfolioList.length}</span>{' '}
-                                <span className="text-zinc-500">게시물</span>
-                            </div>
-                            <div className="text-center md:text-left">
-                                <span className="font-bold">{freelancer.completedProjects || 0}</span>{' '}
-                                <span className="text-zinc-500">프로젝트</span>
-                            </div>
-                            <div className="text-center md:text-left">
-                                <span className="font-bold text-[#FF7D00]">{freelancer.averageRating.toFixed(1)}</span>{' '}
-                                <span className="text-zinc-500">평점</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-1 text-center md:text-left">
-                            <p className="font-mono text-sm font-bold tracking-tight text-[#7A4FFF]">
-                                {freelancer.location} • {freelancer.workStyle || 'HYBRID'}
-                            </p>
-                            <p className="mt-2 max-w-xl italic leading-relaxed text-zinc-600">
-                                &quot;{freelancer.introduction}&quot;
-                            </p>
-                        </div>
-                    </div>
-                </section>
-
-                <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-8">
-                    {freelancer.skills.map((skill) => (
-                        <div key={skill.id} className="group flex shrink-0 flex-col items-center gap-2">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-xl shadow-sm transition-transform group-hover:scale-105 group-hover:border-[#FF7D00]">
-                                🚀
-                            </div>
-                            <span className="font-mono text-[10px] font-bold uppercase tracking-tighter text-zinc-500">
-                                {skill.name}
-                            </span>
-                        </div>
-                    ))}
                 </div>
 
-                <div className="border-t border-zinc-200 px-4 pt-8">
+                {/* 포트폴리오 섹션 */}
+                <div className="bg-white rounded-[3rem] p-10 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                     <div className="mb-8 flex justify-center gap-12">
-                        <div className="-mt-[34px] flex cursor-pointer items-center gap-1.5 border-t-2 border-zinc-950 pt-3 font-mono text-xs font-bold uppercase tracking-widest text-zinc-900">
-                            <Grid3X3 size={14} /> PORTFOLIOS
+                        <div className="-mt-[34px] flex cursor-pointer items-center gap-1.5 border-t-2 border-[#FF7D00] pt-3 font-mono text-xs font-black uppercase tracking-widest text-zinc-900">
+                            <Grid3X3 size={14} className="text-[#FF7D00]" /> PORTFOLIOS
                         </div>
-                        <div className="-mt-[34px] flex cursor-pointer items-center gap-1.5 pt-3 font-mono text-xs font-bold uppercase tracking-widest text-zinc-400 transition hover:text-zinc-600">
+                        <div className="-mt-[34px] flex cursor-pointer items-center gap-1.5 pt-3 font-mono text-xs font-bold uppercase tracking-widest text-zinc-400 transition hover:text-[#FF7D00]">
                             <Briefcase size={14} /> PROJECTS
                         </div>
                     </div>
 
                     {!portfolioFetchDone ? (
-                        <div className="grid animate-pulse grid-cols-3 gap-1 md:gap-4">
+                        <div className="grid animate-pulse grid-cols-3 gap-3 md:gap-4">
                             {[0, 1, 2, 3, 4, 5].map((i) => (
-                                <div
-                                    key={i}
-                                    className="aspect-square rounded-xl border border-zinc-200 bg-zinc-100"
-                                />
+                                <div key={i} className="aspect-square rounded-[2rem] border border-zinc-100 bg-zinc-50" />
                             ))}
                         </div>
                     ) : portfolioList.length === 0 ? (
-                        <div className="flex w-full flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-zinc-200 bg-zinc-50 py-20 text-center shadow-inner">
-                            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                                <Briefcase className="text-zinc-300" size={28} />
+                        <div className="flex w-full flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-zinc-200 bg-zinc-50/50 py-24 text-center">
+                            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-zinc-100 bg-white shadow-sm">
+                                <Briefcase className="text-zinc-300" size={32} />
                             </div>
-                            <p className="font-mono text-sm font-black uppercase tracking-widest text-[#7A4FFF]">
+                            <p className="font-mono text-sm font-black uppercase tracking-widest text-[#FF7D00]">
                                 &gt; NO_PORTFOLIO_DATA_ATTACHED
                             </p>
-                            <p className="mt-2 text-sm font-bold text-zinc-400">
+                            <p className="mt-3 text-xs font-bold text-zinc-400">
                                 이 요원은 아직 설계도를 업로드하지 않았습니다.
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-3 gap-1 md:gap-4">
+                        <div className="grid grid-cols-3 gap-3 md:gap-4">
                             {portfolioList.map((p) => {
-                                const thumb =
-                                    p.thumbnailUrl || p.portfolioImages?.[0] || FALLBACK_IMAGE_URL;
+                                const thumb = p.thumbnailUrl || p.portfolioImages?.[0] || FALLBACK_IMAGE_URL;
                                 return (
                                     <motion.button
                                         type="button"
                                         key={p.id}
-                                        whileHover={{ opacity: 0.9 }}
+                                        whileHover={{ y: -5, opacity: 0.95 }}
                                         onClick={() => setSelectedPortfolio(p)}
-                                        className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 text-left"
+                                        className="group relative aspect-square cursor-pointer overflow-hidden rounded-[2rem] border border-zinc-200 bg-zinc-100 text-left shadow-sm hover:shadow-xl hover:border-[#FF7D00]/50 transition-all duration-300"
                                     >
                                         <img
                                             src={thumb}
                                             alt={p.title}
-                                            className="h-full w-full object-cover"
+                                            className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             onError={(e) => {
                                                 if (e.currentTarget.src !== FALLBACK_IMAGE_URL) {
                                                     e.currentTarget.src = FALLBACK_IMAGE_URL;
@@ -291,26 +295,30 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
                 </div>
             </main>
 
+            {/* 얇고 날렵해진 주황색 하단 오퍼 바 */}
             <AnimatePresence>
                 <motion.div
                     initial={{ y: 100 }}
                     animate={{ y: 0 }}
-                    className="fixed bottom-6 left-1/2 z-[60] w-[90%] max-w-2xl -translate-x-1/2"
+                    className="fixed bottom-6 left-1/2 z-[60] w-[95%] max-w-3xl -translate-x-1/2"
                 >
-                    <div className="flex items-center justify-between rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
-                        <div className="border-l-4 border-[#FF7D00] pl-6">
-                            <div className="mb-1 font-mono text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                                Estimated Rate
-                            </div>
-                            <div className="text-2xl font-black tracking-tighter text-white">
-                                ₩{(freelancer.hourlyRate || 0).toLocaleString()}{' '}
-                                <span className="font-mono text-xs text-[#7A4FFF]">/HR</span>
+                    <div className="flex items-center justify-between rounded-full border border-zinc-800 bg-zinc-950/95 backdrop-blur-xl px-8 py-4 shadow-2xl">
+                        <div className="flex items-center gap-4">
+                            <div className="h-10 w-1 bg-[#FF7D00] rounded-full"></div>
+                            <div>
+                                <div className="mb-0.5 font-mono text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                                    Estimated Rate
+                                </div>
+                                <div className="text-xl font-black tracking-tighter text-white">
+                                    ₩{(freelancer.hourlyRate || 0).toLocaleString()}{' '}
+                                    <span className="font-mono text-[10px] text-[#FF7D00]">/HR</span>
+                                </div>
                             </div>
                         </div>
                         <button
                             type="button"
                             onClick={() => alert('시스템 설계 중입니다. 다음 업데이트를 기다려주세요.')}
-                            className="rounded-2xl bg-white px-8 py-3.5 font-mono text-sm font-black uppercase tracking-tighter text-zinc-900 shadow-[0_0_20px_rgba(255,125,0,0.2)] transition-all hover:bg-[#FF7D00] hover:text-white active:scale-95"
+                            className="rounded-full bg-white px-8 py-3 font-mono text-xs font-black uppercase tracking-widest text-zinc-900 shadow-[0_0_20px_rgba(255,125,0,0.2)] transition-all hover:bg-[#FF7D00] hover:text-white active:scale-95"
                         >
                             Offer_Project
                         </button>

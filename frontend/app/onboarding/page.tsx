@@ -162,7 +162,14 @@ export default function OnboardingPage() {
             </div>
 
             <nav className="w-full py-5 px-10 bg-zinc-950 border-b border-zinc-800 flex justify-between items-center fixed top-0 left-0 z-50">
-                <div className="font-black text-2xl tracking-tighter cursor-default"><span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span></div>
+                <div className="font-black text-2xl tracking-tighter cursor-default">
+                    <img
+                        src="/devnear-logo.png" 
+                        alt="DevNear_Logo"
+                        className="h-8 w-auto object-contain inline-block mr-2" 
+                    />
+                    <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
+                </div>
             </nav>
 
             <div className="relative z-10 max-w-6xl w-full grid md:grid-cols-2 gap-16 items-center px-8 mt-32 mb-16">

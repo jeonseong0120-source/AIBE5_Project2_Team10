@@ -114,6 +114,11 @@ export default function SignupPage() {
             {/* [상단 네비게이션] */}
             <nav className="w-full py-5 px-10 bg-zinc-950 border-b border-zinc-800 flex justify-between items-center fixed top-0 left-0 z-50">
                 <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
+                    <img
+                        src="/devnear-logo.png" 
+                        alt="DevNear_Logo"
+                        className="h-8 w-auto object-contain inline-block mr-2" 
+                    />
                     <span className="text-[#FF7D00]">Dev</span>
                     <span className="text-[#7A4FFF]">Near</span>
                 </div>
