@@ -4,6 +4,8 @@ import com.devnear.web.domain.community.CommunityComment;
 import com.devnear.web.domain.community.CommunityCommentRepository;
 import com.devnear.web.domain.community.CommunityPost;
 import com.devnear.web.domain.community.CommunityPostRepository;
+import com.devnear.web.domain.user.User;
+import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.community.CommunityCommentCreateRequest;
 import com.devnear.web.dto.community.CommunityCommentResponse;
 import com.devnear.web.dto.community.CommunityCommentUpdateRequest;
@@ -23,6 +25,7 @@ public class CommunityCommentService {
     private final CommunityCommentRepository communityCommentRepository;
     private final CommunityPostService communityPostService;
     private final CommunityPostRepository communityPostRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public Long create(CommunityCommentCreateRequest request, Long authorId) {
@@ -32,10 +35,16 @@ public class CommunityCommentService {
         if (authorId == null) {
             throw new IllegalArgumentException("작성자 ID는 필수입니다.");
         }
+
         validateCommentRequest(request.getContent());
         CommunityPost post = communityPostService.getPost(request.getPostId());
 
-        CommunityComment comment = new CommunityComment(post.getId(), authorId, request.getContent());
+        CommunityComment comment = new CommunityComment(
+                post.getId(),
+                authorId,
+                request.getContent()
+        );
+
         Long commentId = communityCommentRepository.save(comment).getId();
         communityPostRepository.incrementCommentCount(post.getId());
         return commentId;
@@ -43,8 +52,12 @@ public class CommunityCommentService {
 
     public List<CommunityCommentResponse> findByPostId(Long postId) {
         communityPostService.getPost(postId);
+
         return communityCommentRepository.findByPostIdOrderByIdAsc(postId).stream()
-                .map(CommunityCommentResponse::new)
+                .map(comment -> new CommunityCommentResponse(
+                        comment,
+                        getNickname(comment.getAuthorId())
+                ))
                 .toList();
     }
 
@@ -69,6 +82,12 @@ public class CommunityCommentService {
     private CommunityComment getComment(Long commentId) {
         return communityCommentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("댓글이 없습니다."));
+    }
+
+    private String getNickname(Long userId) {
+        return userRepository.findById(userId)
+                .map(User::getNickname)
+                .orElse("알 수 없음");
     }
 
     private void validateCommentRequest(String content) {
