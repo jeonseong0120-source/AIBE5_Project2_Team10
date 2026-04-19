@@ -45,21 +45,23 @@ export default function ClientDashboard() {
 
             try {
                 const res = await api.get("/v1/users/me");
-                const role = res.data.role;
 
-                if (role === "GUEST" || role === "ROLE_GUEST") {
+                // 🎯 [리뷰 반영] Role 정규화: ROLE_BOTH -> BOTH (GlobalNavbar 대응)
+                const normalizedRole = res.data.role?.replace("ROLE_", "") || "";
+
+                if (normalizedRole === "GUEST") {
                     router.replace("/onboarding");
                     return;
                 }
 
-                if (role === "FREELANCER" || role === "ROLE_FREELANCER") {
+                if (normalizedRole === "FREELANCER") {
                     alert("해당 대시보드는 클라이언트 전용 화면입니다.");
                     router.replace("/");
                     return;
                 }
 
-                // 🎯 3. 유저 정보 저장
-                setUser(res.data);
+                // 🎯 3. 정규화된 유저 정보 저장
+                setUser({ ...res.data, role: normalizedRole });
                 setAuthorized(true);
             } catch (err) {
                 router.replace("/login");
@@ -69,6 +71,15 @@ export default function ClientDashboard() {
         checkAccess();
     }, [router]);
 
+    // 🎯 [리뷰 반영] 프로필 호출을 필터 의존성에서 분리하여 세션 스코프로 한 번만 실행
+    useEffect(() => {
+        if (authorized) {
+            api.get('/client/profile')
+                .then(res => setProfile(res.data))
+                .catch(() => {});
+        }
+    }, [authorized]);
+
     const fetchFreelancers = async () => {
         setLoading(true);
         try {
@@ -76,19 +87,15 @@ export default function ClientDashboard() {
             const mappedData = data.map(mapFreelancerDtoToProfile);
             setFreelancers(mappedData);
         } catch (err) {
-            // 봇 리뷰 반영: 불필요한 콘솔 로그 제거
+            // quiet
         } finally {
             setLoading(false);
         }
     };
 
+    // 🎯 [리뷰 반영] 프리랜서 목록만 필터 변경 시 호출
     useEffect(() => {
         if (authorized) {
-            // 🎯 [추가] 마이페이지처럼 사진을 가져오기 위한 프로필 API 호출!
-            api.get('/client/profile')
-                .then(res => setProfile(res.data))
-                .catch(() => {});
-
             fetchFreelancers();
         }
     }, [filter, authorized]);
@@ -112,7 +119,7 @@ export default function ClientDashboard() {
                 style={{ transform: `translate(${cursor.x - 150}px, ${cursor.y - 150}px)` }}
             />
 
-            {/* 🎯 [수정] user와 함께 profile 데이터(logoUrl 포함)를 통째로 넘겨줍니다! */}
+            {/* 🎯 user와 함께 profile 데이터(logoUrl 포함)를 넘겨줍니다. */}
             <GlobalNavbar user={user} profile={profile} />
 
             {/* HEADER */}

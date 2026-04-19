@@ -33,6 +33,7 @@ export default function ClientFreelancerProfilePage() {
                 setUser(res.data);
                 setAuthorized(true);
 
+                // 🎯 Navbar용 프로필 데이터는 여기서 한 번만 호출
                 api.get('/client/profile')
                     .then(pRes => setProfile(pRes.data))
                     .catch(err => console.error("프로필 로드 실패", err));
@@ -61,15 +62,12 @@ export default function ClientFreelancerProfilePage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 font-sans relative">
-            {/* 🎨 은은한 그리드 배경 */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
             </div>
 
-            {/* 🎯 상단 네비게이션 */}
             <GlobalNavbar user={user} profile={profile} />
 
-            {/* 실제 내용 렌더링 */}
             <div className="relative z-10">
                 <FreelancerProfileDetail profileId={profileId} variant="client" />
             </div>

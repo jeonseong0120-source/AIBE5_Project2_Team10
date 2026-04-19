@@ -40,10 +40,6 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
     const [selectedPortfolio, setSelectedPortfolio] = useState<PortfolioDetailShape | null>(null);
     const [portalReady, setPortalReady] = useState(false);
 
-    // 유저 데이터 상태 (로직 보존을 위해 유지)
-    const [myUser, setMyUser] = useState<any>(null);
-    const [myProfile, setMyProfile] = useState<any>(null);
-
     const FALLBACK_IMAGE_URL =
         'https://ui-avatars.com/api/?name=Agent&background=F4F4F5&color=A1A1AA&size=150';
 
@@ -51,27 +47,7 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
         setPortalReady(true);
     }, []);
 
-    // 접속한 '나'의 정보 가져오기 로직 유지
-    useEffect(() => {
-        const fetchMyInfo = async () => {
-            try {
-                const userRes = await api.get('/v1/users/me');
-                setMyUser(userRes.data);
-
-                const role = userRes.data.role || '';
-                if (role.includes('CLIENT')) {
-                    const profileRes = await api.get('/client/profile');
-                    setMyProfile(profileRes.data);
-                } else if (role.includes('FREELANCER')) {
-                    const profileRes = await api.get('/v1/freelancers/me');
-                    setMyProfile(profileRes.data);
-                }
-            } catch (err) {
-                console.error("내 정보 로드 실패", err);
-            }
-        };
-        fetchMyInfo();
-    }, []);
+    // 🎯 [리뷰 반영] 중복 API 호출(fetchMyInfo) 및 미사용 상태(myUser, myProfile) 삭제 완료
 
     useEffect(() => {
         if (!profileId) return;
@@ -154,11 +130,8 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
     return (
         <div className="pb-40 font-sans text-zinc-900 relative">
             <main className="mx-auto max-w-4xl px-4 pt-12 relative z-10">
-
-                {/* 🎯 주황색 톤업 + 모눈종이/뒤로가기 삭제된 깔끔한 카드 레이아웃 */}
                 <div className="bg-white rounded-[3rem] p-10 md:p-14 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-12">
                     <section className="flex flex-col items-center gap-8 md:flex-row md:items-start md:gap-12">
-                        {/* 프로필 이미지 (주황색 그라데이션) */}
                         <div className="relative shrink-0">
                             <div className="h-32 w-32 rounded-full bg-gradient-to-tr from-[#FF7D00] to-[#FFB347] p-1 md:h-40 md:w-40 shadow-xl shadow-orange-900/10">
                                 <img
@@ -174,7 +147,6 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
                             </div>
                         </div>
 
-                        {/* 프로필 상세 텍스트 */}
                         <div className="w-full flex-1">
                             <div className="mb-6 flex flex-col md:flex-row md:items-center gap-4">
                                 <h1 className="text-4xl font-black tracking-tight text-center md:text-left">{freelancer.nickname}</h1>
@@ -193,7 +165,6 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
                                 </div>
                             </div>
 
-                            {/* 스탯 구분 */}
                             <div className="mb-8 flex justify-center md:justify-start divide-x divide-zinc-200 font-mono">
                                 <div className="px-6 first:pl-0 text-center md:text-left flex flex-col">
                                     <span className="font-black text-2xl leading-none">{portfolioList.length}</span>
@@ -209,7 +180,6 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
                                 </div>
                             </div>
 
-                            {/* 지역 및 소개글 */}
                             <div className="space-y-4 text-center md:text-left">
                                 <p className="font-mono text-xs font-bold tracking-widest text-[#FF7D00] uppercase flex items-center justify-center md:justify-start gap-2">
                                     <span className="w-1.5 h-1.5 rounded-full bg-[#FF7D00]"></span>
@@ -224,7 +194,6 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
                         </div>
                     </section>
 
-                    {/* 스킬 태그 */}
                     <div className="mt-8 border-t border-zinc-100 pt-8">
                         <div className="flex flex-wrap justify-center md:justify-start gap-2">
                             {freelancer.skills.map((skill) => (
@@ -236,7 +205,6 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
                     </div>
                 </div>
 
-                {/* 포트폴리오 섹션 */}
                 <div className="bg-white rounded-[3rem] p-10 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                     <div className="mb-8 flex justify-center gap-12">
                         <div className="-mt-[34px] flex cursor-pointer items-center gap-1.5 border-t-2 border-[#FF7D00] pt-3 font-mono text-xs font-black uppercase tracking-widest text-zinc-900">
@@ -250,7 +218,7 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
                     {!portfolioFetchDone ? (
                         <div className="grid animate-pulse grid-cols-3 gap-3 md:gap-4">
                             {[0, 1, 2, 3, 4, 5].map((i) => (
-                                <div key={i} className="aspect-square rounded-[2rem] border border-zinc-100 bg-zinc-50" />
+                                <div key={i} className="aspect-square rounded-[2rem] border border-zinc-200 bg-zinc-50" />
                             ))}
                         </div>
                     ) : portfolioList.length === 0 ? (
@@ -295,7 +263,6 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
                 </div>
             </main>
 
-            {/* 얇고 날렵해진 주황색 하단 오퍼 바 */}
             <AnimatePresence>
                 <motion.div
                     initial={{ y: 100 }}
