@@ -435,13 +435,15 @@ export default function CommunityDetailPage() {
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={() => startEditComment(comment)}
-                                                        className="text-xs font-medium text-zinc-600 hover:underline"
+                                                        disabled={commentActionLoading}
+                                                        className="text-xs font-medium text-zinc-600 hover:underline disabled:opacity-50"
                                                     >
                                                         수정
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteComment(comment.id)}
-                                                        className="text-xs font-medium text-red-500 hover:underline"
+                                                        disabled={commentActionLoading}
+                                                        className="text-xs font-medium text-red-500 hover:underline disabled:opacity-50"
                                                     >
                                                         삭제
                                                     </button>
