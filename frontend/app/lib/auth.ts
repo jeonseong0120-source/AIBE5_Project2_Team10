@@ -1,6 +1,10 @@
 export function getAccessToken(): string | null {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("accessToken");
+    try {
+        return localStorage.getItem("accessToken");
+    } catch {
+        return null;
+    }
 }
 
 export function parseJwt(token: string): Record<string, unknown> | null {
