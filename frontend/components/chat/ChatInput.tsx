@@ -30,7 +30,6 @@ export default function ChatInput({
                 <button
                     type="button"
                     onClick={onSend}
-                    aria-label="메시지 전송"
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white hover:bg-violet-700"
                 >
                     ➤
