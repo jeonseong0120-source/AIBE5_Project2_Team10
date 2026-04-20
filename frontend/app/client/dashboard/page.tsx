@@ -399,14 +399,14 @@ export default function ClientDashboardPage() {
             const errorInfo = {
                 message: err?.message || err?.desc || 'No message provided',
                 code: err?.code,
-                response: err?.response?.data,
                 status: err?.response?.status,
-                raw: typeof err === 'object' ? { ...err } : err,
-                stack: err?.stack || 'No stack trace'
+                stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined
             };
             
-            // console.error 대신 console.warn을 사용하여 Next.js 오버레이 트리거 방지
-            console.warn('Payment Notification (Handled):', errorInfo);
+            // 개발 환경에서만 상세 에러 로그 출력
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('Payment Notification (Handled):', errorInfo, err);
+            }
             
             // 토스페이먼츠 사용자 취소 또는 '취소되었습니다' 에러는 경고창을 띄우지 않음
             if (err?.code === 'USER_CANCEL' || err?.message?.includes('취소되었습니다')) {
@@ -430,6 +430,12 @@ export default function ClientDashboardPage() {
 
             if (!amount || amount <= 0) {
                 alert(`유효하지 않은 데모 결제 금액입니다: ${amount}`);
+                setPaymentProjectIdInFlight(null);
+                return;
+            }
+
+            if (!project.projectId) {
+                alert('프로젝트 ID를 찾을 수 없습니다.');
                 setPaymentProjectIdInFlight(null);
                 return;
             }
@@ -463,12 +469,12 @@ export default function ClientDashboardPage() {
              const errorInfo = {
                 message: err?.message || 'No message provided',
                 code: err?.code,
-                response: err?.response?.data,
                 status: err?.response?.status,
-                raw: typeof err === 'object' ? { ...err } : err,
-                stack: err?.stack || 'No stack trace'
+                stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined
             };
-            console.warn('Demo Payment Notification (Handled):', errorInfo);
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('Demo Payment Notification (Handled):', errorInfo, err);
+            }
             
             alert(err?.response?.data?.message || err?.message || err?.code || '데모 결제 준비 중 오류가 발생했습니다.');
             setPaymentProjectIdInFlight(null);
