@@ -86,6 +86,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_GATEWAY, e.getMessage(), request);
     }
 
+    @ExceptionHandler({org.springframework.dao.CannotAcquireLockException.class, org.springframework.dao.PessimisticLockingFailureException.class})
+    public ResponseEntity<ErrorResponse> handleLockingFailureException(Exception e, HttpServletRequest request) {
+        log.warn("데이터베이스 락 획득 실패 (동시성 경합): {}", e.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, "현재 요청이 너무 많아 처리가 지연되고 있습니다. 잠시 후 다시 시도해주세요.", request);
+    }
+
     @ExceptionHandler(PaymentAmountMismatchException.class)
     public ResponseEntity<ErrorResponse> handlePaymentAmountMismatchException(
             PaymentAmountMismatchException e, HttpServletRequest request) {
