@@ -41,6 +41,8 @@ export default function FreelancerReviewModal({ isOpen, onClose, projectId, free
             // Swagger: POST /api/reviews/freelancers
             await api.post('/reviews/freelancers', payload);
             alert("리뷰가 성공적으로 등록되었습니다!");
+            setComment("");
+            +            setScores({ workQuality: 5, deadline: 5, communication: 5, expertise: 5 });
             onClose();
         } catch (err: any) {
             console.error("❌ 리뷰 등록 실패:", err.response?.data);
