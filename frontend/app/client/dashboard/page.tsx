@@ -180,7 +180,11 @@ export default function ClientDashboardPage() {
         ].filter(Boolean).join('\n');
         const deadline = new Date();
         deadline.setDate(deadline.getDate() + 30);
-        const deadlineStr = deadline.toISOString().split('T')[0];
+        const deadlineStr = [
+            deadline.getFullYear(),
+            String(deadline.getMonth() + 1).padStart(2, '0'),
+            String(deadline.getDate()).padStart(2, '0'),
+        ].join('-');
         return {
             projectName: `[제안서] ${title}`,
             budget: Math.max(1, Math.floor(parsedPrice)),
@@ -535,8 +539,9 @@ export default function ClientDashboardPage() {
             </main>
 
             <AnimatePresence>
-                {proposalModalOpen && (
+                {proposalModalOpen ? (
                     <motion.div
+                        key="client-dashboard-proposal-modal"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -549,7 +554,7 @@ export default function ClientDashboardPage() {
                             className="w-full max-w-2xl"
                         >
                             <ProposalSendModal
-                                open={proposalModalOpen}
+                                open
                                 targetName={proposalTargetFreelancer?.userName}
                                 mode={proposalMode}
                                 onChangeMode={setProposalMode}
@@ -573,7 +578,7 @@ export default function ClientDashboardPage() {
                             />
                         </motion.div>
                     </motion.div>
-                )}
+                ) : null}
             </AnimatePresence>
         </div>
     );
