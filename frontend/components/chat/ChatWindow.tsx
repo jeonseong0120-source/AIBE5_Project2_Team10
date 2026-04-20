@@ -18,6 +18,7 @@ interface ChatWindowProps {
     onSend: () => void;
     loadingRooms: boolean;
     loadingMessages: boolean;
+    currentUserId: number | null;
 }
 
 export default function ChatWindow({
@@ -32,6 +33,7 @@ export default function ChatWindow({
                                        onSend,
                                        loadingRooms,
                                        loadingMessages,
+                                       currentUserId,
                                    }: ChatWindowProps) {
     const [mounted, setMounted] = useState(false);
 

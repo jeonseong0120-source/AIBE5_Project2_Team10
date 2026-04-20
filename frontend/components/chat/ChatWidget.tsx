@@ -8,11 +8,12 @@ import {
     markChatAsRead,
 } from "../../app/lib/chatApi";
 import { ChatMessageResponse, ChatRoomResponse } from "../../types/chat";
+import { getCurrentUserId } from "../../app/lib/auth";
 
 export default function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
-
+    const currentUserId = getCurrentUserId();
     const [rooms, setRooms] = useState<ChatRoomResponse[]>([]);
     const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
     const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
@@ -103,6 +104,7 @@ export default function ChatWidget() {
                 onSend={handleSend}
                 loadingRooms={loadingRooms}
                 loadingMessages={loadingMessages}
+                currentUserId={currentUserId}
             />
 
             <button
