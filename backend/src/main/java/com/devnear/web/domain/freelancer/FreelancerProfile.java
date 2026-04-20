@@ -59,6 +59,9 @@ public class FreelancerProfile extends BaseTimeEntity {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "balance", nullable = false)
+    private Long balance = 0L;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "freelancer_grade_id")
     private FreelancerGrade grade;
@@ -83,6 +86,7 @@ public class FreelancerProfile extends BaseTimeEntity {
         this.averageRating = 0.0;
         this.reviewCount = 0;
         this.completedProjects = 0;
+        this.balance = 0L;
         
         // [추가] 500 NPE 에러 방어: Builder로 생성 시 컬렉션이 null이 되지 않도록 빈 리스트로 명시적 초기화
         this.freelancerSkills = new ArrayList<>();
@@ -150,5 +154,16 @@ public class FreelancerProfile extends BaseTimeEntity {
     // 리뷰 개수를 갱신하는 메서드
     public void updateReviewCount(Integer reviewCount) {
         this.reviewCount = reviewCount;
+    }
+
+    // 정산 금액 가산
+    public void addBalance(Long amount) {
+        if (amount == null || amount < 0) {
+            throw new IllegalArgumentException("정산 금액은 0 이상이어야 합니다.");
+        }
+        if (this.balance == null) {
+            this.balance = 0L;
+        }
+        this.balance += amount;
     }
 }
