@@ -12,11 +12,20 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import ProposalSendModal from '@/components/proposal/ProposalSendModal';
 
+// 🎯 [추가] 컴포넌 호출
+import GlobalNavbar from '@/components/common/GlobalNavbar';
+
 export default function ClientDashboardPage() {
     const router = useRouter();
     const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
+
+    // 🎯 [추가] GlobalNavbar에 넘겨줄 유저 정보를 담을 상태
+    const [user, setUser] = useState<any>(null);
+
+    // 🎯 [1. 추가] 사진 데이터를 담을 프로필 상태
+    const [profile, setProfile] = useState<any>(null);
 
     // 찜 목록 관련 상태
     const [bookmarks, setBookmarks] = useState<any[]>([]);
@@ -68,6 +77,9 @@ export default function ClientDashboardPage() {
                     if (roles.includes("FREELANCER")) return router.replace("/");
                     return router.replace("/onboarding");
                 }
+
+                // 🎯 [추가] GlobalNavbar에 넘길 유저 정보 세팅
+                setUser(res.data);
                 setAuthorized(true);
             } catch (err) {
                 router.replace("/login");
@@ -248,6 +260,10 @@ export default function ClientDashboardPage() {
 
     useEffect(() => {
         if (authorized) {
+            api.get('/client/profile')
+                .then(res => setProfile(res.data))
+                .catch(() => console.error("프로필 로드 실패"));
+
             if (activeMainTab === 'PROJECTS') fetchMyProjects();
             if (activeMainTab === 'BOOKMARKS') fetchBookmarks(false);
             if (activeMainTab === 'PROPOSALS') fetchSentProposals();
@@ -300,26 +316,17 @@ export default function ClientDashboardPage() {
     );
 
     const filteredProjects = projects.filter(p => filterStatus === 'ALL' || p.status === filterStatus);
-
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
-            {/* 배경 레이어 */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute w-[500px] h-[500px] rounded-full bg-[#FF7D00]/10 blur-[120px] transition-all duration-300" style={{ left: cursor.x - 250, top: cursor.y - 250 }} />
-                <div className="absolute w-[400px] h-[400px] rounded-full bg-[#7A4FFF]/10 blur-[100px] transition-all duration-700" style={{ left: cursor.x - 100, top: cursor.y - 100 }} />
-                <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
-            </div>
 
-            <nav className="w-full py-6 px-10 bg-white/70 backdrop-blur-2xl border-b border-zinc-200/50 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer group" onClick={() => router.push("/client/mainpage")}>
-                    <span className="text-[#FF7D00] group-hover:drop-shadow-[0_0_8px_#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
-                </div>
-                <div className="flex gap-4 items-center relative z-10 md:gap-8">
-                    <button onClick={() => router.push('/client/mypage')} className="text-xs font-black text-zinc-400 hover:text-zinc-950 tracking-[0.2em] transition uppercase font-mono">mypage</button>
-                    <NotificationBell />
-                    <button onClick={() => router.push("/client/projects/new")} className="px-7 py-3 bg-zinc-950 text-white rounded-2xl text-xs font-black tracking-widest hover:bg-[#FF7D00] transition-all shadow-xl flex items-center gap-2 uppercase font-mono"><Plus size={14} /> 프로젝트 등록</button>
-                </div>
-            </nav>
+            {/* 🔥 커서 글로우 보존 */}
+            <div
+                className="pointer-events-none fixed left-0 top-0 z-0 h-[300px] w-[300px] rounded-full bg-[#FF7D00]/20 blur-[120px] will-change-transform"
+                style={{ transform: `translate(${cursor.x - 150}px, ${cursor.y - 150}px)` }}
+            />
+
+            {/* 🎯 대통합 네비게이션 바 */}
+            <GlobalNavbar user={user} profile={profile} />
 
             <header className="relative pt-24 pb-16 px-8 overflow-hidden max-w-6xl mx-auto">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3 mb-6">

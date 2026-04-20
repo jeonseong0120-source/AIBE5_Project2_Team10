@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import FreelancerCard from '@/components/freelancer/FreelancerCard';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
 import api from '../../lib/axios';
-import { NotificationBell } from '@/components/notifications/NotificationProvider';
 import { Search, MapPin, SlidersHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+// 🎯 1. 대통합 네비게이션 바 불러오기
+import GlobalNavbar from '@/components/common/GlobalNavbar';
 
 export default function ClientDashboard() {
     const router = useRouter();
@@ -15,6 +17,12 @@ export default function ClientDashboard() {
     const [filter, setFilter] = useState({ skill: '', region: '', sort: 'id' });
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
+
+    // 🎯 2. GlobalNavbar에 전달할 유저 정보 상태
+    const [user, setUser] = useState<any>(null);
+
+    // 🎯 [추가] 사진(logoUrl) 데이터를 담을 프로필 상태
+    const [profile, setProfile] = useState<any>(null);
 
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
@@ -37,19 +45,23 @@ export default function ClientDashboard() {
 
             try {
                 const res = await api.get("/v1/users/me");
-                const role = res.data.role;
 
-                if (role === "GUEST" || role === "ROLE_GUEST") {
+                // 🎯 [리뷰 반영] Role 정규화: ROLE_BOTH -> BOTH (GlobalNavbar 대응)
+                const normalizedRole = res.data.role?.replace("ROLE_", "") || "";
+
+                if (normalizedRole === "GUEST") {
                     router.replace("/onboarding");
                     return;
                 }
 
-                if (role === "FREELANCER" || role === "ROLE_FREELANCER") {
+                if (normalizedRole === "FREELANCER") {
                     alert("해당 대시보드는 클라이언트 전용 화면입니다.");
                     router.replace("/");
                     return;
                 }
 
+                // 🎯 3. 정규화된 유저 정보 저장
+                setUser({ ...res.data, role: normalizedRole });
                 setAuthorized(true);
             } catch (err) {
                 router.replace("/login");
@@ -59,6 +71,15 @@ export default function ClientDashboard() {
         checkAccess();
     }, [router]);
 
+    // 🎯 [리뷰 반영] 프로필 호출을 필터 의존성에서 분리하여 세션 스코프로 한 번만 실행
+    useEffect(() => {
+        if (authorized) {
+            api.get('/client/profile')
+                .then(res => setProfile(res.data))
+                .catch(() => {});
+        }
+    }, [authorized]);
+
     const fetchFreelancers = async () => {
         setLoading(true);
         try {
@@ -66,12 +87,13 @@ export default function ClientDashboard() {
             const mappedData = data.map(mapFreelancerDtoToProfile);
             setFreelancers(mappedData);
         } catch (err) {
-            // [수정] 봇 리뷰 반영: 불필요한 콘솔 로그 제거
+            // quiet
         } finally {
             setLoading(false);
         }
     };
 
+    // 🎯 [리뷰 반영] 프리랜서 목록만 필터 변경 시 호출
     useEffect(() => {
         if (authorized) {
             fetchFreelancers();
@@ -96,29 +118,9 @@ export default function ClientDashboard() {
                 className="pointer-events-none fixed left-0 top-0 z-0 h-[300px] w-[300px] rounded-full bg-[#FF7D00]/20 blur-[120px] will-change-transform"
                 style={{ transform: `translate(${cursor.x - 150}px, ${cursor.y - 150}px)` }}
             />
-            {/* NAV */}
-            <nav className="w-full py-5 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/client/mainpage")}>
-                    <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
-                </div>
 
-                <div className="flex gap-4 items-center md:gap-6">
-                    <button
-                        onClick={() => router.push('/client/mypage')} // <-- 딱 여기만 '/profile'에서 변경했습니다!
-                        className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono"
-                    >
-                        MY_PROFILE
-                    </button>
-                    <NotificationBell />
-                    {/* [수정] 봇 리뷰 반영: onClick 핸들러 추가하여 알림창 띄우기 */}
-                    <button
-                        onClick={() => router.push("/client/projects/new")}
-                        className="px-6 py-2.5 bg-[#FF7D00] text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition shadow-md shadow-orange-100 uppercase font-mono"
-                    >
-                        Register_Project
-                    </button>
-                </div>
-            </nav>
+            {/* 🎯 user와 함께 profile 데이터(logoUrl 포함)를 넘겨줍니다. */}
+            <GlobalNavbar user={user} profile={profile} />
 
             {/* HEADER */}
             <section className="relative pt-24 pb-16 px-8 bg-white border-b border-zinc-200 overflow-hidden">

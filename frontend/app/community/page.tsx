@@ -67,7 +67,14 @@ export default function CommunityPage() {
             {/* 상단 */}
             <section className="border-b border-zinc-200 bg-white px-6 py-12 md:px-10">
                 <div className="mx-auto max-w-6xl">
-                    <p className="mb-2 text-sm font-bold text-[#FF7D00]">DevNear Community</p>
+                    <div className="mb-2 flex items-center">
+                        <img
+                            src="/devnear-logo.png" 
+                            alt="DevNear_Logo"
+                            className="h-5 w-auto object-contain mr-1" 
+                        />
+                        <p className="text-sm font-bold text-[#FF7D00]">DevNear Community</p>
+                    </div>
                     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                         <div>
                             <h1 className="text-4xl font-black tracking-tight text-zinc-900">

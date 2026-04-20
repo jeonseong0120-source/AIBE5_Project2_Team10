@@ -9,7 +9,8 @@ import { NotificationBell } from '@/components/notifications/NotificationProvide
 
 // New Components
 import MypageSidebar from '@/components/layout/MypageSidebar';
-import MypageNavbar from '@/components/layout/MypageNavbar';
+// 🎯 [수정] MypageNavbar를 지우고 GlobalNavbar로 교체합니다!
+import GlobalNavbar from '@/components/common/GlobalNavbar';
 import MypageProfileTab from '@/components/freelancer_mypage/MypageProfileTab';
 import MypagePortfolioTab from '@/components/freelancer_mypage/MypagePortfolioTab';
 import MypageReviewTab from '@/components/freelancer_mypage/MypageReviewTab';
@@ -17,12 +18,6 @@ import MypageGradeTab from '@/components/freelancer_mypage/MypageGradeTab';
 import PortfolioFormModal from '@/components/freelancer_mypage/PortfolioFormModal';
 import PortfolioDetailModal from '@/components/freelancer_mypage/PortfolioDetailModal';
 import BookmarkTab from '../../../components/freelancer_mypage/MypageBookmarksTab';
-
-const NAV_ITEMS = [
-    { label: 'DASHBOARD', path: '/freelancer/dashboard' },
-    { label: 'EXPLORE', path: '/freelancer/explore' },
-    { label: 'MY_PROFILE', path: '/freelancer/mypage', active: true },
-];
 
 const TABS = [
     { id: 'profile', label: 'MY PROFILE', icon: UserIcon },
@@ -49,6 +44,9 @@ export default function FreelancerMyPage() {
     const [activeTab, setActiveTab] = useState('profile');
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
+
+    // 🎯 [추가] GlobalNavbar에 역할을 전달하기 위해 유저 상태 추가
+    const [user, setUser] = useState<any>(null);
 
     const [profile, setProfile] = useState<any>(null);
     const [portfolios, setPortfolios] = useState<any[]>([]);
@@ -101,6 +99,8 @@ export default function FreelancerMyPage() {
                     return;
                 }
 
+                // 🎯 [수정] GlobalNavbar용 user 데이터 세팅
+                setUser(userRes.data);
                 setUserId(userRes.data.user_id || userRes.data.id);
                 setAuthorized(true);
 
@@ -365,13 +365,8 @@ export default function FreelancerMyPage() {
                 <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
             </div>
 
-            <MypageNavbar
-                userType="FREELANCER"
-                userName={profile?.userName}
-                profileImage={profile?.profileImageUrl}
-                navItems={NAV_ITEMS}
-                accentColor="#7A4FFF"
-            />
+            {/* 🎯 [수정] 기존 MypageNavbar를 지우고 GlobalNavbar 적용 (navItems 제거) */}
+            <GlobalNavbar user={user} profile={profile} />
 
             {/* 🎯 레이아웃 뼈대: 그리드 [300px(사이드바) + 1fr(메인 콘텐츠)] */}
             <main className="max-w-7xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start relative z-10">
