@@ -116,7 +116,7 @@ export default function ChatWindow({
                                 hour: "2-digit",
                                 minute: "2-digit",
                             })}
-                            isMine={false}
+                            isMine={msg.senderId === currentUserId}
                         />
                     ))
                 )}

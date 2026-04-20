@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ChatWindow from "./ChatWindow";
 import {
     getChatMessages,
@@ -47,11 +47,18 @@ export default function ChatWidget() {
     };
 
     const fetchMessages = async (roomId: number) => {
+        const requestId = ++latestMessageReqId.current;
         try {
             setLoadingMessages(true);
             const messageData = await getChatMessages(roomId);
+            if (requestId !== latestMessageReqId.current) return;
             setMessages(messageData);
             await markChatAsRead(roomId);
+            setRooms((prev) =>
+                prev.map((room) =>
+                    room.roomId === roomId ? { ...room, unreadCount: 0 } : room
+                )
+            );
         } catch (error) {
             console.error("메시지 조회 실패", error);
         } finally {
