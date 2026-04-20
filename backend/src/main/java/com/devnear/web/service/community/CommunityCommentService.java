@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -53,12 +56,22 @@ public class CommunityCommentService {
     public List<CommunityCommentResponse> findByPostId(Long postId) {
         communityPostService.getPost(postId);
 
-        return communityCommentRepository.findByPostIdOrderByIdAsc(postId).stream()
+        List<CommunityComment> comments = communityCommentRepository.findByPostIdOrderByIdAsc(postId);
+
+        // collect unique author IDs and batch fetch nicknames
+        Set<Long> authorIds = comments.stream()
+                .map(CommunityComment::getAuthorId)
+                .collect(Collectors.toSet());
+
+        Map<Long, String> nicknameMap = userRepository.findAllById(authorIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getNickname));
+
+        return comments.stream()
                 .map(comment -> new CommunityCommentResponse(
                         comment,
-                        getNickname(comment.getAuthorId())
+                        nicknameMap.getOrDefault(comment.getAuthorId(), "알 수 없음")
                 ))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -82,12 +95,6 @@ public class CommunityCommentService {
     private CommunityComment getComment(Long commentId) {
         return communityCommentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("댓글이 없습니다."));
-    }
-
-    private String getNickname(Long userId) {
-        return userRepository.findById(userId)
-                .map(User::getNickname)
-                .orElse("알 수 없음");
     }
 
     private void validateCommentRequest(String content) {
