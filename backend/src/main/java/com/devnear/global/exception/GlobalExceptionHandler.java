@@ -4,6 +4,7 @@ import com.devnear.web.exception.DuplicateProfileException;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ChatAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.exception.PaymentAmountMismatchException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -77,6 +78,25 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleResourceConflict(
             ResourceConflictException e, HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(com.devnear.web.exception.PaymentGatewayException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentGatewayException(
+            com.devnear.web.exception.PaymentGatewayException e, HttpServletRequest request) {
+        log.error("결제 게이트웨이 연동 중 오류 발생: {}", e.getMessage(), e);
+        return buildResponse(HttpStatus.BAD_GATEWAY, "결제 서비스 통신 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", request);
+    }
+
+    @ExceptionHandler({org.springframework.dao.CannotAcquireLockException.class, org.springframework.dao.PessimisticLockingFailureException.class})
+    public ResponseEntity<ErrorResponse> handleLockingFailureException(Exception e, HttpServletRequest request) {
+        log.warn("데이터베이스 락 획득 실패 (동시성 경합): {}", e.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, "현재 요청이 너무 많아 처리가 지연되고 있습니다. 잠시 후 다시 시도해주세요.", request);
+    }
+
+    @ExceptionHandler(PaymentAmountMismatchException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentAmountMismatchException(
+            PaymentAmountMismatchException e, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request);
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(

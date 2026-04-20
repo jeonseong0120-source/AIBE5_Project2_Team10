@@ -3,6 +3,7 @@ package com.devnear.web.service.application;
 import com.devnear.web.domain.application.ProjectApplication;
 import com.devnear.web.domain.application.ProjectApplicationRepository;
 import com.devnear.web.domain.enums.NotificationType;
+import com.devnear.web.domain.enums.ProjectStatus; // 🎯 봇의 요청대로 임포트 추가
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.project.Project;
@@ -15,8 +16,10 @@ import com.devnear.web.dto.application.ApplicationStatusUpdateRequest;
 import com.devnear.web.dto.application.MyApplicationResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.exception.ResourceConflictException; // 🎯 충돌 예외 임포트 추가
 import com.devnear.web.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.PessimisticLockingFailureException; // 🎯 락 실패 예외 임포트 추가
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +52,7 @@ public class ApplicationService {
         Project project = projectRepository.findByIdWithClientProfile(request.getProjectId())
                 .orElseThrow(() -> new IllegalArgumentException("지원하려는 프로젝트(공고)를 찾을 수 없습니다."));
 
-        if (project.getStatus() != com.devnear.web.domain.enums.ProjectStatus.OPEN) {
+        if (project.getStatus() != ProjectStatus.OPEN) {
             throw new IllegalStateException("현재 모집 중인 공고가 아닙니다. (지원 불가)");
         }
 
@@ -65,7 +68,7 @@ public class ApplicationService {
         ProjectApplication application = ProjectApplication.builder()
                 .project(project)
                 .freelancerProfile(freelancer)
-                .clientProfile(project.getClientProfile()) 
+                .clientProfile(project.getClientProfile())
                 .bidPrice(request.getBidPrice())
                 .message(request.getMessage())
                 .matchingRate(matchingRate)
@@ -151,10 +154,26 @@ public class ApplicationService {
             );
         }
 
-        // [Fix] Coderabbit 리뷰 반영: 지원자 수락 시 프로젝트 상태를 자동으로 '진행 중'으로 변경
+        // 🎯 [핵심 수정] 지원자 수락 시 동시성 제어(비관적 락) 및 상태 이중 검증
         if (newStatus == ApplicationStatus.ACCEPTED) {
-            Project project = application.getProject();
-            project.start(); // Project 엔티티의 상태 변경 메서드 호출
+            try {
+                // 1. 비관적 락을 걸고 최신 상태의 프로젝트를 가져옵니다.
+                Project project = projectRepository.findByIdForUpdate(application.getProject().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("해당 공고를 찾을 수 없습니다."));
+
+                // 2. 이미 매칭된 프리랜서가 있거나, 프로젝트 상태가 모집중(OPEN)이 아니라면 튕겨냅니다.
+                if (project.getStatus() != ProjectStatus.OPEN || project.getFreelancerProfile() != null) {
+                    throw new ResourceConflictException("이미 다른 프리랜서와 매칭이 완료되었거나 모집 중인 공고가 아닙니다.");
+                }
+
+                // 3. 안전하게 할당 후 상태 변경
+                project.assignFreelancer(application.getFreelancerProfile());
+                project.start();
+
+            } catch (PessimisticLockingFailureException e) {
+                // 4. 누군가 이미 락을 선점해서 처리 중일 때의 예외 처리
+                throw new ResourceConflictException("현재 다른 사용자가 매칭을 처리 중입니다. 잠시 후 다시 시도해주세요.");
+            }
         }
     }
 
