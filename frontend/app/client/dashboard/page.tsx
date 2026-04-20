@@ -10,12 +10,22 @@ import {
     Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, Clock, ArrowUpRight, Plus, RefreshCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } from '@/components/proposal/ProposalSendModal';
+
+// 🎯 [추가] 컴포넌 호출
+import GlobalNavbar from '@/components/common/GlobalNavbar';
 
 export default function ClientDashboardPage() {
     const router = useRouter();
     const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
+
+    // 🎯 [추가] GlobalNavbar에 넘겨줄 유저 정보를 담을 상태
+    const [user, setUser] = useState<any>(null);
+
+    // 🎯 [1. 추가] 사진 데이터를 담을 프로필 상태
+    const [profile, setProfile] = useState<any>(null);
 
     // 찜 목록 관련 상태
     const [bookmarks, setBookmarks] = useState<any[]>([]);
@@ -36,6 +46,18 @@ export default function ClientDashboardPage() {
     // 역제안 관리 상태
     const [sentProposals, setSentProposals] = useState<any[]>([]);
     const [proposalsLoading, setProposalsLoading] = useState(false);
+    const [proposalModalOpen, setProposalModalOpen] = useState(false);
+    const [proposalTargetFreelancer, setProposalTargetFreelancer] = useState<any>(null);
+    const [proposalMode, setProposalMode] = useState<'PROJECT' | 'FORM'>('PROJECT');
+    const [proposalProjects, setProposalProjects] = useState<ProjectOption[]>([]);
+    const [proposalProjectsLoading, setProposalProjectsLoading] = useState(false);
+    const [proposalProjectId, setProposalProjectId] = useState<number | null>(null);
+    const [proposalOfferedPrice, setProposalOfferedPrice] = useState('');
+    const [proposalMessage, setProposalMessage] = useState('');
+    const [proposalPositionTitle, setProposalPositionTitle] = useState('');
+    const [proposalWorkScope, setProposalWorkScope] = useState('');
+    const [proposalWorkingPeriod, setProposalWorkingPeriod] = useState('');
+    const [proposalSending, setProposalSending] = useState(false);
 
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
@@ -55,6 +77,9 @@ export default function ClientDashboardPage() {
                     if (roles.includes("FREELANCER")) return router.replace("/");
                     return router.replace("/onboarding");
                 }
+
+                // 🎯 [추가] GlobalNavbar에 넘길 유저 정보 세팅
+                setUser(res.data);
                 setAuthorized(true);
             } catch (err) {
                 router.replace("/login");
@@ -106,8 +131,150 @@ export default function ClientDashboardPage() {
         } catch (err) { alert("삭제에 실패했습니다."); }
     };
 
+    const openProposalModal = async (freelancer: any) => {
+        setProposalTargetFreelancer(freelancer);
+        setProposalModalOpen(true);
+        setProposalProjectsLoading(true);
+        setProposalMode('PROJECT');
+        try {
+            const { data } = await api.get('/v1/projects/me');
+            const usable = mapProjectsForProposalPicker(data?.content ?? data ?? []);
+            setProposalProjects(usable);
+            setProposalProjectId(usable.length > 0 ? usable[0].projectId : null);
+        } catch {
+            setProposalProjects([]);
+            setProposalProjectId(null);
+        } finally {
+            setProposalProjectsLoading(false);
+        }
+    };
+
+    const closeProposalModal = () => {
+        if (proposalSending) return;
+        setProposalModalOpen(false);
+        setProposalTargetFreelancer(null);
+        setProposalOfferedPrice('');
+        setProposalMessage('');
+        setProposalPositionTitle('');
+        setProposalWorkScope('');
+        setProposalWorkingPeriod('');
+    };
+
+    const buildProposalMessageFromForm = () => {
+        const chunks = [
+            proposalPositionTitle.trim() ? `포지션: ${proposalPositionTitle.trim()}` : '',
+            proposalWorkScope.trim() ? `업무 범위: ${proposalWorkScope.trim()}` : '',
+            proposalWorkingPeriod.trim() ? `예상 기간: ${proposalWorkingPeriod.trim()}` : '',
+            proposalMessage.trim() ? `추가 메시지: ${proposalMessage.trim()}` : '',
+        ].filter(Boolean);
+        return chunks.join('\n');
+    };
+
+    const buildStandaloneProjectPayload = (parsedPrice: number) => {
+        const title = proposalPositionTitle.trim() || '제안서 기반 협업 프로젝트';
+        const details = [
+            '[자동 생성] 제안서 기반 프로젝트',
+            proposalWorkScope.trim() ? `업무 범위: ${proposalWorkScope.trim()}` : '',
+            proposalWorkingPeriod.trim() ? `예상 기간: ${proposalWorkingPeriod.trim()}` : '',
+            proposalMessage.trim() ? `추가 메시지: ${proposalMessage.trim()}` : '',
+        ].filter(Boolean).join('\n');
+        const deadline = new Date();
+        deadline.setDate(deadline.getDate() + 30);
+        const deadlineStr = [
+            deadline.getFullYear(),
+            String(deadline.getMonth() + 1).padStart(2, '0'),
+            String(deadline.getDate()).padStart(2, '0'),
+        ].join('-');
+        return {
+            projectName: `[제안서] ${title}`,
+            budget: Math.max(1, Math.floor(parsedPrice)),
+            deadline: deadlineStr,
+            detail: details,
+            online: true,
+            offline: false,
+            location: null,
+            latitude: null,
+            longitude: null,
+            skills: [],
+        };
+    };
+
+    const handleSendProposal = async () => {
+        if (!proposalTargetFreelancer?.profileId) return;
+        if (proposalMode === 'PROJECT' && !proposalProjectId) {
+            alert('연결할 프로젝트를 선택해주세요.');
+            return;
+        }
+
+        const parsedPrice = Number(proposalOfferedPrice);
+        if (!Number.isInteger(parsedPrice) || parsedPrice < 1) {
+            alert('제안 금액은 1원 이상의 정수로 입력해주세요.');
+            return;
+        }
+        if (proposalMode === 'FORM' && !proposalPositionTitle.trim()) {
+            alert('포지션명을 입력해주세요.');
+            return;
+        }
+
+        if (proposalMode === 'FORM' && !proposalWorkScope.trim()) {
+            alert('업무 범위를 입력해주세요.');
+            return;
+        }
+
+        const composedMessage = proposalMode === 'FORM' ? buildProposalMessageFromForm() : proposalMessage.trim();
+        if (!composedMessage) {
+            alert('제안 메시지를 입력해주세요.');
+            return;
+        }
+
+        const payload = {
+            projectId: proposalProjectId,
+            freelancerProfileId: proposalTargetFreelancer.profileId,
+            offeredPrice: parsedPrice,
+            message: composedMessage,
+        };
+
+        setProposalSending(true);
+        try {
+            if (proposalMode === 'FORM') {
+                await api.post('/v1/proposals/with-standalone-project', {
+                    project: buildStandaloneProjectPayload(parsedPrice),
+                    freelancerProfileId: proposalTargetFreelancer.profileId,
+                    offeredPrice: parsedPrice,
+                    message: composedMessage,
+                });
+            } else {
+                await api.post('/v1/proposals', payload);
+            }
+            alert('제안을 전송했습니다.');
+            closeProposalModal();
+            fetchSentProposals();
+        } catch (e: any) {
+            const status = e?.response?.status;
+            const raw = e?.response?.data?.message;
+            const msg = typeof raw === 'string' ? raw : '';
+            const reqUrl = String(e?.response?.config?.url ?? '');
+            const wasStandaloneRequest =
+                proposalMode === 'FORM' || reqUrl.includes('with-standalone-project');
+            // Backend returns 400 with no body for IllegalArgumentException (e.g. ALREADY_PROPOSED) on proposal POSTs.
+            const likelyAlreadyProposed =
+                msg.includes('ALREADY_PROPOSED') || (status === 400 && wasStandaloneRequest);
+            if (likelyAlreadyProposed) {
+                alert('이미 해당 프로젝트로 이 프리랜서에게 제안을 보냈습니다.');
+            } else {
+                alert('제안 전송에 실패했습니다.');
+            }
+        } finally {
+            setProposalSending(false);
+        }
+    };
+
     useEffect(() => {
         if (authorized) {
+            api.get('/client/profile')
+                .then(res => setProfile(res.data))
+                .catch(() => console.error("프로필 로드 실패"));
+
             if (activeMainTab === 'PROJECTS') fetchMyProjects();
             if (activeMainTab === 'BOOKMARKS') fetchBookmarks(false);
             if (activeMainTab === 'PROPOSALS') fetchSentProposals();
@@ -160,26 +327,17 @@ export default function ClientDashboardPage() {
     );
 
     const filteredProjects = projects.filter(p => filterStatus === 'ALL' || p.status === filterStatus);
-
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
-            {/* 배경 레이어 */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute w-[500px] h-[500px] rounded-full bg-[#FF7D00]/10 blur-[120px] transition-all duration-300" style={{ left: cursor.x - 250, top: cursor.y - 250 }} />
-                <div className="absolute w-[400px] h-[400px] rounded-full bg-[#7A4FFF]/10 blur-[100px] transition-all duration-700" style={{ left: cursor.x - 100, top: cursor.y - 100 }} />
-                <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
-            </div>
 
-            <nav className="w-full py-6 px-10 bg-white/70 backdrop-blur-2xl border-b border-zinc-200/50 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer group" onClick={() => router.push("/client/mainpage")}>
-                    <span className="text-[#FF7D00] group-hover:drop-shadow-[0_0_8px_#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
-                </div>
-                <div className="flex gap-4 items-center relative z-10 md:gap-8">
-                    <button onClick={() => router.push('/client/mypage')} className="text-xs font-black text-zinc-400 hover:text-zinc-950 tracking-[0.2em] transition uppercase font-mono">mypage</button>
-                    <NotificationBell />
-                    <button onClick={() => router.push("/client/projects/new")} className="px-7 py-3 bg-zinc-950 text-white rounded-2xl text-xs font-black tracking-widest hover:bg-[#FF7D00] transition-all shadow-xl flex items-center gap-2 uppercase font-mono"><Plus size={14} /> 프로젝트 등록</button>
-                </div>
-            </nav>
+            {/* 🔥 커서 글로우 보존 */}
+            <div
+                className="pointer-events-none fixed left-0 top-0 z-0 h-[300px] w-[300px] rounded-full bg-[#FF7D00]/20 blur-[120px] will-change-transform"
+                style={{ transform: `translate(${cursor.x - 150}px, ${cursor.y - 150}px)` }}
+            />
+
+            {/* 🎯 대통합 네비게이션 바 */}
+            <GlobalNavbar user={user} profile={profile} />
 
             <header className="relative pt-24 pb-16 px-8 overflow-hidden max-w-6xl mx-auto">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3 mb-6">
@@ -325,7 +483,10 @@ export default function ClientDashboardPage() {
                                             </div>
                                             <p className="text-xs font-medium text-zinc-400 line-clamp-2 italic leading-relaxed">"{freelancer.introduction || "준비된 프리랜서입니다."}"</p>
                                         </div>
-                                        <button onClick={() => router.push(`/freelancer/${freelancer.profileId}`)} className="w-full py-4 bg-zinc-50 text-zinc-400 group-hover:bg-[#FF7D00] group-hover:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all font-mono">프로필 상세보기</button>
+                                        <div className="space-y-2">
+                                            <button onClick={() => router.push(`/freelancer/${freelancer.profileId}`)} className="w-full py-4 bg-zinc-50 text-zinc-400 group-hover:bg-[#FF7D00] group-hover:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all font-mono">프로필 상세보기</button>
+                                            <button onClick={() => openProposalModal(freelancer)} className="w-full py-4 bg-zinc-950 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF7D00] font-mono">제안 보내기</button>
+                                        </div>
                                     </motion.div>
                                 ))}
                             </div>
@@ -384,6 +545,49 @@ export default function ClientDashboardPage() {
                     </motion.div>
                 )}
             </main>
+
+            <AnimatePresence>
+                {proposalModalOpen ? (
+                    <motion.div
+                        key="client-dashboard-proposal-modal"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 24, scale: 0.98 }}
+                            className="w-full max-w-2xl"
+                        >
+                            <ProposalSendModal
+                                open
+                                targetName={proposalTargetFreelancer?.userName}
+                                mode={proposalMode}
+                                onChangeMode={setProposalMode}
+                                projects={proposalProjects}
+                                projectsLoading={proposalProjectsLoading}
+                                selectedProjectId={proposalProjectId}
+                                onChangeProjectId={setProposalProjectId}
+                                offeredPrice={proposalOfferedPrice}
+                                onChangeOfferedPrice={setProposalOfferedPrice}
+                                positionTitle={proposalPositionTitle}
+                                onChangePositionTitle={setProposalPositionTitle}
+                                workScope={proposalWorkScope}
+                                onChangeWorkScope={setProposalWorkScope}
+                                workingPeriod={proposalWorkingPeriod}
+                                onChangeWorkingPeriod={setProposalWorkingPeriod}
+                                message={proposalMessage}
+                                onChangeMessage={setProposalMessage}
+                                sending={proposalSending}
+                                onClose={closeProposalModal}
+                                onSend={handleSendProposal}
+                            />
+                        </motion.div>
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
         </div>
     );
 }

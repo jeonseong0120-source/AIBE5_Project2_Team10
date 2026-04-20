@@ -55,6 +55,7 @@ public class CommunityCommentService {
 
     public List<CommunityCommentResponse> findByPostId(Long postId) {
         communityPostService.getPost(postId);
+<<<<<<< HEAD
 
         List<CommunityComment> comments = communityCommentRepository.findByPostIdOrderByIdAsc(postId);
 
@@ -72,6 +73,24 @@ public class CommunityCommentService {
                         nicknameMap.getOrDefault(comment.getAuthorId(), "알 수 없음")
                 ))
                 .collect(Collectors.toList());
+=======
+        List<CommunityComment> comments = communityCommentRepository.findByPostIdOrderByIdAsc(postId);
+        if (comments.isEmpty()) {
+            return List.of();
+        }
+        Set<Long> authorIds = comments.stream()
+                .map(CommunityComment::getAuthorId)
+                .collect(Collectors.toSet());
+        Map<Long, String> nicknameByUserId = userRepository.findAllById(authorIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getNickname));
+
+        return comments.stream()
+                .map(c -> new CommunityCommentResponse(
+                        c,
+                        nicknameByUserId.getOrDefault(c.getAuthorId(), "알 수 없는 사용자")
+                ))
+                .toList();
+>>>>>>> main
     }
 
     @Transactional

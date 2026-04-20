@@ -27,6 +27,13 @@ public class Project extends BaseTimeEntity {
     @Column(name = "project_id")
     private Long id;
 
+    /**
+     * 동시에 여러 역제안 수락 등으로 프로젝트 매칭/상태가 덮어쓰이는 것을 방지합니다.
+     */
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", nullable = false)
     private ClientProfile clientProfile;

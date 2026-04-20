@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, DollarSign, Cpu, ChevronDown, RotateCcw, BarChart3, Activity } from 'lucide-react';
+import { Search, MapPin, DollarSign, Cpu, RotateCcw, BarChart3, Activity } from 'lucide-react';
 import ProjectCard from "@/components/freelancer/ProjectCard";
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
-import { NotificationBell } from '@/components/notifications/NotificationProvider';
+
+// 🎯 [추가] 대통합 네비게이션 바 불러오기!
+import GlobalNavbar from '@/components/common/GlobalNavbar';
 
 export default function FreelancerExplorePage() {
     const router = useRouter();
@@ -14,6 +16,11 @@ export default function FreelancerExplorePage() {
     const [totalElements, setTotalElements] = useState(0);
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
+
+    // 🎯 GlobalNavbar에 전달할 유저 정보 상태
+    const [user, setUser] = useState<any>(null);
+    // 🎯 [추가] 사진(logoUrl 등) 데이터를 담을 프로필 상태
+    const [profile, setProfile] = useState<any>(null);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLocation, setSelectedLocation] = useState('');
@@ -23,8 +30,6 @@ export default function FreelancerExplorePage() {
 
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(false);
-    
-    // [수정] 무한 클릭 방지용 상태
     const [fetchingMore, setFetchingMore] = useState(false);
 
     const locations = ['서울', '경기', '인천', '부산', '대구', '원격'];
@@ -50,6 +55,8 @@ export default function FreelancerExplorePage() {
                     router.replace("/dashboard");
                     return;
                 }
+
+                setUser(res.data);
                 setAuthorized(true);
             } catch (err) {
                 router.replace("/login");
@@ -78,20 +85,13 @@ export default function FreelancerExplorePage() {
             };
             const { data } = await api.get('/v1/projects', { params });
 
-            if (isLoadMore) {
-                setProjects(prev => [...prev, ...(data.content || [])]);
-            } else {
-                setProjects(data.content || []);
-            }
-            
+            if (isLoadMore) setProjects(prev => [...prev, ...(data.content || [])]);
+            else setProjects(data.content || []);
+
             setTotalElements(data.totalElements || 0);
-            setHasMore(!data.last); 
-            
-            // [수정] 데이터 로드가 완벽히 성공했을 때만 page 상태를 업데이트합니다!
-            if (isLoadMore) {
-                setPage(pageNum);
-            }
-            
+            setHasMore(!data.last);
+            if (isLoadMore) setPage(pageNum);
+
         } catch (err) {
             console.error("프로젝트 공고를 불러오지 못했습니다.", err);
         } finally {
@@ -100,66 +100,44 @@ export default function FreelancerExplorePage() {
         }
     };
 
-    // [수정] 단순 상태 초기화뿐만 아니라, 명시적으로 데이터를 다시 불러와서 '새로고침' 역할을 확실히 합니다.
     const resetFilters = () => {
-        // 이미 기본값일 때를 대비해 명시적 호출
-        const isDefault = searchQuery === '' && selectedLocation === '' && selectedTech === '' && activeTab === '전체' && sort === 'createdAt';
-        
-        setSearchQuery('');
-        setSelectedLocation('');
-        setSelectedTech('');
-        setActiveTab('전체');
-        setSort('createdAt');
-        setPage(0);
-
-        if (isDefault) {
-            fetchProjects(0, false);
-        }
+        setSearchQuery(''); setSelectedLocation(''); setSelectedTech(''); setActiveTab('전체'); setSort('createdAt'); setPage(0);
     };
 
     useEffect(() => {
         if (authorized) {
+            // 🎯 [추가] 사진을 가져오기 위해 프리랜서 프로필 API 호출! (클라이언트와 동일한 방식)
+            api.get('/v1/freelancers/me')
+                .then(res => setProfile(res.data))
+                .catch(() => console.error("프로필 로드 실패"));
+
             setPage(0);
-            const timeoutId = setTimeout(() => {
-                fetchProjects(0, false);
-            }, 300);
+            const timeoutId = setTimeout(() => { fetchProjects(0, false); }, 300);
             return () => clearTimeout(timeoutId);
         }
     }, [searchQuery, selectedLocation, selectedTech, activeTab, sort, authorized]);
 
-    // [수정] 로딩 중이 아닐 때만 다음 페이지 요청을 보냅니다.
     const handleLoadMore = () => {
         if (fetchingMore) return;
         const nextPage = page + 1;
         fetchProjects(nextPage, true);
     };
 
-    if (!authorized) return <div className="min-h-screen bg-white flex items-center justify-center text-[#7A4FFF] font-black tracking-widest animate-pulse font-mono uppercase text-xs">System_Authorizing...</div>;
+    if (!authorized) return <div className="min-h-screen bg-white flex items-center justify-center text-[#7A4FFF] font-black tracking-widest animate-pulse font-mono uppercase text-xs">인증 정보를 확인 중입니다...</div>;
 
     const isFiltered = searchQuery !== '' || selectedLocation !== '' || selectedTech !== '' || activeTab !== '전체';
 
     return (
         <div className="min-h-screen bg-[#F9FAFB] text-zinc-900 pb-20 font-sans overflow-x-hidden">
-            {/* 상단 네비게이션 바 */}
-            <nav className="w-full py-5 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/freelancer/explore")}>
-                    <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
-                </div>
-                <div className="flex gap-4 items-center md:gap-6">
-                    <button onClick={() => router.push('/freelancer/mypage')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
-                        MY_PROFILE
-                    </button>
-                    <NotificationBell />
-                    <div className="w-8 h-8 rounded-full bg-[#FF7D00] border-2 border-white shadow-sm overflow-hidden">
-                        <img src="https://placehold.co/100x100" alt="profile" className="w-full h-full object-cover" />
-                    </div>
-                </div>
-            </nav>
+
+            {/* 🎯 [수정 완료] user 정보와 profile(사진 등) 정보를 통째로 넘겨줍니다! */}
+            <GlobalNavbar user={user} profile={profile} />
 
             {/* Hero Section */}
             <header className="relative pt-24 pb-16 px-6 bg-white border-b border-zinc-100 overflow-hidden text-center">
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
                      style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+
                 <div className="absolute left-[-20px] bottom-4 opacity-5 hidden lg:block text-[#7A4FFF]">
                     <BarChart3 size={200} strokeWidth={0.5} />
                 </div>
@@ -286,10 +264,10 @@ export default function FreelancerExplorePage() {
                         <p className="font-mono text-[11px] font-black text-zinc-900 uppercase tracking-tighter">
                             Total_Missions: <span className="text-[#FF7D00] ml-1">{totalElements}</span>
                         </p>
-                        
+
                         <div className="flex items-center gap-2 text-[10px] font-black uppercase font-mono text-zinc-400">
-                            SORT: 
-                            <select 
+                            SORT:
+                            <select
                                 className="bg-transparent text-zinc-900 outline-none cursor-pointer hover:text-[#7A4FFF] transition-colors"
                                 value={sort}
                                 onChange={(e) => setSort(e.target.value)}
