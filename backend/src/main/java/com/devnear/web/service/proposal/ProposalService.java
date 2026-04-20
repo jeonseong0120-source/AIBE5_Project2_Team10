@@ -14,6 +14,7 @@ import com.devnear.web.domain.proposal.ProposalRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.proposal.ProposalRequest;
 import com.devnear.web.dto.proposal.ProposalStatusUpdateRequest;
+import com.devnear.web.dto.proposal.ProposalWithStandaloneProjectRequest;
 import com.devnear.web.dto.proposal.ReceivedProposalResponse;
 import com.devnear.web.dto.proposal.SentProposalResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
@@ -21,6 +22,7 @@ import com.devnear.web.exception.ResourceNotFoundException;
 import com.devnear.web.exception.ResourceConflictException;
 import com.devnear.web.service.chat.ChatService;
 import com.devnear.web.service.notification.NotificationService;
+import com.devnear.web.service.project.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -44,17 +46,16 @@ public class ProposalService {
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final ChatService chatService;
     private final NotificationService notificationService;
+    private final ProjectService projectService;
 
     /**
      * [CLI] 클라이언트가 특정 프리랜서에게 역제안을 전송합니다.
      */
     @Transactional
     public Long sendProposal(User user, ProposalRequest request) {
-        // 1. 클라이언트 프로필 조회
         ClientProfile clientProfile = clientProfileRepository.findByUser_Id(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("클라이언트 프로필이 등록되어 있지 않습니다."));
 
-        // 2. 프로젝트 존재 및 소유권 확인
         Project project = projectRepository.findByIdWithClientProfile(request.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("해당 프로젝트를 찾을 수 없습니다."));
 
@@ -62,23 +63,61 @@ public class ProposalService {
             throw new ProjectAccessDeniedException("본인 소유의 프로젝트에만 역제안을 보낼 수 있습니다.");
         }
 
-        // 3. 프리랜서 프로필 조회
-        FreelancerProfile freelancerProfile = freelancerProfileRepository.findById(request.getFreelancerProfileId())
+        return sendProposalCore(
+                clientProfile,
+                project,
+                request.getFreelancerProfileId(),
+                request.getOfferedPrice(),
+                request.getMessage()
+        );
+    }
+
+    /**
+     * [CLI] 제안서(FORM) 전용: 프로젝트 생성과 역제안을 한 트랜잭션에서 처리합니다.
+     * 제안 전송 실패 시 고아 프로젝트가 남지 않습니다.
+     */
+    @Transactional
+    public Long sendProposalWithStandaloneProject(User user, ProposalWithStandaloneProjectRequest request) {
+        ClientProfile clientProfile = clientProfileRepository.findByUser_Id(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("클라이언트 프로필이 등록되어 있지 않습니다."));
+
+        Long projectId = projectService.createProject(user, request.getProject());
+        Project project = projectRepository.findByIdWithClientProfile(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("해당 프로젝트를 찾을 수 없습니다."));
+
+        if (!project.getClientProfile().getUser().getId().equals(user.getId())) {
+            throw new ProjectAccessDeniedException("본인 소유의 프로젝트에만 역제안을 보낼 수 있습니다.");
+        }
+
+        return sendProposalCore(
+                clientProfile,
+                project,
+                request.getFreelancerProfileId(),
+                request.getOfferedPrice(),
+                request.getMessage()
+        );
+    }
+
+    private Long sendProposalCore(
+            ClientProfile clientProfile,
+            Project project,
+            Long freelancerProfileId,
+            Integer offeredPrice,
+            String message
+    ) {
+        FreelancerProfile freelancerProfile = freelancerProfileRepository.findById(freelancerProfileId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 프리랜서를 찾을 수 없습니다."));
 
-        // 4. 중복 제안 방지
-        if (proposalRepository.existsByProjectIdAndFreelancerProfileId(
-                request.getProjectId(), request.getFreelancerProfileId())) {
+        if (proposalRepository.existsByProjectIdAndFreelancerProfileId(project.getId(), freelancerProfileId)) {
             throw new IllegalArgumentException("해당 프리랜서에게 이미 역제안을 보냈습니다. (ALREADY_PROPOSED)");
         }
 
-        // 5. 역제안 생성 및 저장
         Proposal proposal = Proposal.builder()
                 .project(project)
                 .clientProfile(clientProfile)
                 .freelancerProfile(freelancerProfile)
-                .message(request.getMessage())
-                .offeredPrice(request.getOfferedPrice())
+                .message(message)
+                .offeredPrice(offeredPrice)
                 .build();
 
         try {
@@ -100,7 +139,6 @@ public class ProposalService {
                     throw new IllegalArgumentException("해당 프리랜서에게 이미 역제안을 보냈습니다. (ALREADY_PROPOSED)");
                 }
             }
-            // UK_PROPOSAL 제약조건 위반이 아니라면 원본 예외 던지기
             throw e;
         }
     }
@@ -169,15 +207,32 @@ public class ProposalService {
         }
 
         try {
-            proposal.updateStatus(newStatus);
             if (newStatus == ProposalStatus.ACCEPTED) {
-                // 역제안 수락 시 해당 프로젝트를 진행 중으로 전환하고 담당 프리랜서를 매칭한다.
-                proposal.getProject().assignFreelancer(proposal.getFreelancerProfile());
-                if (proposal.getProject().getStatus() == ProjectStatus.OPEN) {
-                    proposal.getProject().start();
+                // 프로젝트 행 비관적 락: 동일 프로젝트에 대한 역제안 수락 경쟁 시 한 건만 성공하도록 직렬화
+                Project project;
+                try {
+                    project = projectRepository.findByIdForUpdate(proposal.getProject().getId())
+                            .orElseThrow(() -> new ResourceNotFoundException(
+                                    "프로젝트를 찾을 수 없습니다. id=" + proposal.getProject().getId()));
+                } catch (PessimisticLockingFailureException e) {
+                    throw new ResourceConflictException("동시 요청으로 인해 처리에 실패했습니다. 다시 시도해주세요.");
                 }
+
+                if (project.getStatus() != ProjectStatus.OPEN) {
+                    throw new ResourceConflictException("이미 진행 중이거나 종료되어 역제안을 수락할 수 없습니다.");
+                }
+                if (project.getFreelancerProfile() != null
+                        && !project.getFreelancerProfile().getId().equals(proposal.getFreelancerProfile().getId())) {
+                    throw new ResourceConflictException("이미 다른 프리랜서가 매칭된 프로젝트입니다.");
+                }
+
+                proposal.updateStatus(newStatus);
+                project.assignFreelancer(proposal.getFreelancerProfile());
+                project.start();
+            } else {
+                proposal.updateStatus(newStatus);
             }
-            proposalRepository.flush(); // 강제 플러시로 트랜잭션 종료 전 버전 체크 즉시 수행
+            proposalRepository.flush(); // 강제 플러시로 트랜잭션 종료 전 Proposal/Project 버전 체크 즉시 수행
             Long clientUserId = proposal.getClientProfile().getUser().getId();
             if (newStatus == ProposalStatus.ACCEPTED) {
                 notificationService.notifyUser(

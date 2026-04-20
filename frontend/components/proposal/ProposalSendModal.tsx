@@ -104,6 +104,9 @@ export default function ProposalSendModal({
                                 onChange={(e) => onChangeProjectId(Number(e.target.value))}
                                 className="w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-[#FF7D00]"
                             >
+                                <option value="" disabled>
+                                    프로젝트를 선택하세요
+                                </option>
                                 {projects.map((p: any) => (
                                     <option key={p.projectId} value={p.projectId}>
                                         {p.projectName}
@@ -184,7 +187,11 @@ export default function ProposalSendModal({
                 <button
                     type="button"
                     onClick={onSend}
-                    disabled={sending || (mode === 'PROJECT' && (projectsLoading || projects.length === 0))}
+                    disabled={
+                        sending ||
+                        (mode === 'PROJECT' &&
+                            (projectsLoading || projects.length === 0 || selectedProjectId == null))
+                    }
                     className="rounded-xl bg-zinc-950 px-4 py-2 text-sm font-black text-white transition hover:bg-[#FF7D00] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {sending ? '전송 중...' : '제안 전송'}

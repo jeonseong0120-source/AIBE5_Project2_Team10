@@ -110,6 +110,7 @@ public class SecurityConfig {
 
                         // [역제안] 전송/보낸 목록: 클라이언트
                         .requestMatchers(HttpMethod.POST, "/api/proposals", "/api/v1/proposals").hasAnyRole("CLIENT", "BOTH")
+                        .requestMatchers(HttpMethod.POST, "/api/proposals/with-standalone-project", "/api/v1/proposals/with-standalone-project").hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers(HttpMethod.GET, "/api/proposals/sent", "/api/v1/proposals/sent").hasAnyRole("CLIENT", "BOTH")
                         // [역제안] 받은 목록/상태 변경/문의하기: 프리랜서
                         .requestMatchers(HttpMethod.GET, "/api/proposals/received", "/api/v1/proposals/received").hasAnyRole("FREELANCER", "BOTH")

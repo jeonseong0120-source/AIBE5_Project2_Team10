@@ -4,6 +4,8 @@ import com.devnear.web.domain.community.CommunityComment;
 import com.devnear.web.domain.community.CommunityCommentRepository;
 import com.devnear.web.domain.community.CommunityPost;
 import com.devnear.web.domain.community.CommunityPostRepository;
+import com.devnear.web.domain.user.User;
+import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.community.CommunityCommentCreateRequest;
 import com.devnear.web.dto.community.CommunityCommentResponse;
 import com.devnear.web.dto.community.CommunityCommentUpdateRequest;
@@ -14,6 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +28,7 @@ public class CommunityCommentService {
     private final CommunityCommentRepository communityCommentRepository;
     private final CommunityPostService communityPostService;
     private final CommunityPostRepository communityPostRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public Long create(CommunityCommentCreateRequest request, Long authorId) {
@@ -43,8 +49,18 @@ public class CommunityCommentService {
 
     public List<CommunityCommentResponse> findByPostId(Long postId) {
         communityPostService.getPost(postId);
-        return communityCommentRepository.findByPostIdOrderByIdAsc(postId).stream()
-                .map(CommunityCommentResponse::new)
+        List<CommunityComment> comments = communityCommentRepository.findByPostIdOrderByIdAsc(postId);
+        if (comments.isEmpty()) {
+            return List.of();
+        }
+        Set<Long> authorIds = comments.stream()
+                .map(CommunityComment::getAuthorId)
+                .collect(Collectors.toSet());
+        Map<Long, String> nicknameByUserId = userRepository.findAllById(authorIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getNickname));
+
+        return comments.stream()
+                .map(c -> new CommunityCommentResponse(c, nicknameByUserId.get(c.getAuthorId())))
                 .toList();
     }
 

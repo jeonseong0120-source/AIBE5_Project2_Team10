@@ -95,7 +95,7 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
         return chunks.join('\n');
     };
 
-    const createStandaloneProposalProject = async (parsedPrice: number) => {
+    const buildStandaloneProjectPayload = (parsedPrice: number) => {
         const title = positionTitle.trim() || '제안서 기반 협업 프로젝트';
         const details = [
             '[자동 생성] 제안서 기반 프로젝트',
@@ -106,7 +106,7 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
         const deadline = new Date();
         deadline.setDate(deadline.getDate() + 30);
         const deadlineStr = deadline.toISOString().split('T')[0];
-        const { data } = await api.post('/v1/projects', {
+        return {
             projectName: `[제안서] ${title}`,
             budget: Math.max(1, Math.floor(parsedPrice)),
             deadline: deadlineStr,
@@ -117,8 +117,7 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
             latitude: null,
             longitude: null,
             skills: [],
-        });
-        return Number(data);
+        };
     };
 
     const handleSendProposal = async () => {
@@ -157,9 +156,15 @@ export default function FreelancerProfileDetail({ profileId, variant }: Props) {
         setIsSendingProposal(true);
         try {
             if (proposalMode === 'FORM') {
-                payload.projectId = await createStandaloneProposalProject(parsedPrice);
+                await api.post('/v1/proposals/with-standalone-project', {
+                    project: buildStandaloneProjectPayload(parsedPrice),
+                    freelancerProfileId: freelancer.id,
+                    offeredPrice: parsedPrice,
+                    message: composedMessage,
+                });
+            } else {
+                await api.post('/v1/proposals', payload);
             }
-            await api.post('/v1/proposals', payload);
             alert('제안을 전송했습니다.');
             setIsProposalModalOpen(false);
             setOfferedPrice('');
