@@ -338,10 +338,30 @@ export default function ClientDashboardPage() {
 
             // 1. 보안을 위한 주문번호 생성 및 정보 세팅
             const orderId = `devnear_order_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
-            const amount = Math.floor(project.budget);
-            const orderName = project.projectName;
+            const amount = Math.floor(project.budget || 0);
+            const orderName = project.projectName || '프로젝트 결제';
+
+            if (!amount || amount <= 0) {
+                alert(`유효하지 않은 결제 금액입니다: ${amount}`);
+                setPaymentProjectIdInFlight(null);
+                return;
+            }
+
+            if (!project.projectId) {
+                alert('프로젝트 ID를 찾을 수 없습니다.');
+                setPaymentProjectIdInFlight(null);
+                return;
+            }
 
             // 2. 백엔드 결제 준비 (Prepare) 호출 - 데이터 위변조 방지
+            console.log('Sending prepare request:', {
+                orderId,
+                amount,
+                orderName,
+                projectId: project.projectId,
+                apiUrl: '/v1/payments/prepare'
+            });
+
             await api.post('/v1/payments/prepare', {
                 orderId,
                 amount,
@@ -350,25 +370,52 @@ export default function ClientDashboardPage() {
             });
 
             // 3. 토스 SDK 로드 및 결제창 띄우기
-            const { loadTossPayments } = await import('@tosspayments/payment-sdk');
-            const tossPayments = await loadTossPayments(tossClientKey);
+            const originalConsoleError = console.error;
+            try {
+                // 토스 내부 기능 토글 에러({})가 Next.js 빨간 화면을 띄우지 않도록 한시적 차단
+                console.error = () => {};
 
-            const successUrl = `${window.location.origin}/client/payment/success`;
-            const failUrl = `${window.location.origin}/client/payment/fail`;
+                const { loadTossPayments } = await import('@tosspayments/payment-sdk');
+                const tossPayments = await loadTossPayments(tossClientKey);
 
-            // 가상계좌(가상계좌) 방식으로 호출하여 가장 간편한 실제 결제 환경 제공
-            await tossPayments.requestPayment('가상계좌', {
-                amount,
-                orderId,
-                orderName,
-                customerName: profile?.nickname || user?.nickname || '의뢰인',
-                successUrl,
-                failUrl,
-            });
+                const successUrl = `${window.location.origin}/client/payment/success`;
+                const failUrl = `${window.location.origin}/client/payment/fail`;
+
+                // 기존의 토스페이먼츠 카드 결제창을 호출하여 다양한 결제 수단 제공
+                await tossPayments.requestPayment('카드', {
+                    amount,
+                    orderId,
+                    orderName,
+                    customerName: profile?.nickname || user?.nickname || '의뢰인',
+                    successUrl,
+                    failUrl,
+                });
+            } finally {
+                // 호출 완료 또는 예외 발생 시 즉시 원래의 console.error 복구
+                console.error = originalConsoleError;
+            }
 
         } catch (err: any) {
-            console.error('Payment Error:', err);
-            alert(err.response?.data?.message || '결제 진행 중 오류가 발생했습니다.');
+            const errorInfo = {
+                message: err?.message || err?.desc || 'No message provided',
+                code: err?.code,
+                status: err?.response?.status,
+                stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined
+            };
+            
+            // 개발 환경에서만 상세 에러 로그 출력
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('Payment Notification (Handled):', errorInfo, err);
+            }
+            
+            // 토스페이먼츠 사용자 취소 또는 '취소되었습니다' 에러는 경고창을 띄우지 않음
+            if (err?.code === 'USER_CANCEL' || err?.message?.includes('취소되었습니다')) {
+                console.log('사용자가 결제창을 닫았거나 결제가 취소되었습니다.');
+                setPaymentProjectIdInFlight(null);
+                return;
+            }
+
+            alert(err?.response?.data?.message || err?.message || err?.code || '결제 진행 중 오류가 발생했습니다.');
             setPaymentProjectIdInFlight(null);
         }
     };
@@ -378,10 +425,29 @@ export default function ClientDashboardPage() {
             setPaymentProjectIdInFlight(project.projectId);
             // 1. 보안을 위한 주문번호 생성 및 정보 세팅
             const orderId = `devnear_order_demo_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
-            const amount = Math.floor(project.budget);
-            const orderName = project.projectName;
+            const amount = Math.floor(project.budget || 0);
+            const orderName = project.projectName || '데모 프로젝트 결제';
+
+            if (!amount || amount <= 0) {
+                alert(`유효하지 않은 데모 결제 금액입니다: ${amount}`);
+                setPaymentProjectIdInFlight(null);
+                return;
+            }
+
+            if (!project.projectId) {
+                alert('프로젝트 ID를 찾을 수 없습니다.');
+                setPaymentProjectIdInFlight(null);
+                return;
+            }
 
             // 2. 백엔드 결제 준비 (Prepare) 호출
+            console.log('Sending demo prepare request:', {
+                orderId,
+                amount,
+                orderName,
+                projectId: project.projectId
+            });
+
             await api.post('/v1/payments/prepare', {
                 orderId,
                 amount,
@@ -400,8 +466,17 @@ export default function ClientDashboardPage() {
             }, 1500);
 
         } catch (err: any) {
-            console.error('Demo Payment Error:', err);
-            alert(err.response?.data?.message || '데모 결제 준비 중 오류가 발생했습니다.');
+             const errorInfo = {
+                message: err?.message || 'No message provided',
+                code: err?.code,
+                status: err?.response?.status,
+                stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined
+            };
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('Demo Payment Notification (Handled):', errorInfo, err);
+            }
+            
+            alert(err?.response?.data?.message || err?.message || err?.code || '데모 결제 준비 중 오류가 발생했습니다.');
             setPaymentProjectIdInFlight(null);
         }
     };
