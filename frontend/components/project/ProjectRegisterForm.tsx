@@ -97,8 +97,7 @@ export default function ProjectRegisterForm() {
 
             router.refresh();
             if (resultId) {
-                // 🎯 [마스터! 여기가 핵심 수정 구간입니다]
-                // 기존의 router.push를 지우고, 모달을 띄우도록 상태를 바꿉니다.
+
                 setNewProjectId(resultId);
                 setIsModalOpen(true);
             } else {
@@ -199,7 +198,7 @@ export default function ProjectRegisterForm() {
                 </button>
             </form>
 
-            {/* 🎯 [마스터! 모달 팝업 추가] */}
+            {/* 🎯 [ 모달 팝업 추가] */}
             <AnimatePresence>
                 {isModalOpen && newProjectId && (
                     <MatchingresultForm
