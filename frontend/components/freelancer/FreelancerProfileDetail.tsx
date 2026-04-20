@@ -290,13 +290,15 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                                 <div className="flex justify-center md:justify-start items-center gap-3">
                                     <span className="font-mono text-[10px] font-black uppercase tracking-widest text-[#FF7D00] bg-orange-50 px-3 py-1 rounded-md border border-orange-100">Agent Profile</span>
 
-                                    {/* 🎯 북마크(하트) 버튼 - 이식된 로직 적용 */}
+                                    {/* 🎯 [리뷰 반영] 북마크(하트) 버튼 - 접근성 속성 추가 */}
                                     {viewerIsClient && (
                                         <motion.button
                                             whileHover={{ scale: 1.1 }}
                                             whileTap={{ scale: 0.9 }}
                                             onClick={handleBookmark}
                                             disabled={bookmarkLoading}
+                                            aria-label={isBookmarked ? 'Unbookmark profile' : 'Bookmark profile'}
+                                            aria-pressed={isBookmarked}
                                             className={`p-2.5 rounded-2xl border transition-all ${
                                                 isBookmarked
                                                     ? 'bg-red-50 border-red-100 text-red-500 shadow-sm'

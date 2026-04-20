@@ -208,11 +208,13 @@ export default function FreelancerCard({ data }: Props) {
                             className="pointer-events-none h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                         />
 
-                        {/* 🎯 [추가] 하트(북마크) 버튼 - 이미지 우측 상단 고정 */}
+                        {/* 🎯 [리뷰 반영] 북마크 버튼 - 접근성 속성 추가 */}
                         <button
                             type="button"
                             onClick={handleBookmarkToggle}
                             disabled={bookmarkLoading}
+                            aria-label={isBookmarked ? 'Unbookmark freelancer' : 'Bookmark freelancer'}
+                            aria-pressed={isBookmarked}
                             className={`absolute right-2.5 top-2.5 z-30 flex h-9 w-9 items-center justify-center rounded-full border shadow-lg transition-all active:scale-90 ${
                                 isBookmarked
                                     ? 'bg-white border-red-100 text-red-500'
@@ -266,21 +268,21 @@ export default function FreelancerCard({ data }: Props) {
 
                             <p className="mb-4 line-clamp-3 text-xs leading-relaxed text-zinc-500">{data.introduction}</p>
 
-                        <div className="mb-4 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
-                            {data.skills.slice(0, 8).map((skill) => (
-                                <span
-                                    key={skill.id}
-                                    className="rounded-md border border-orange-100 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold font-mono uppercase text-[#FF7D00]"
-                                >
+                            <div className="mb-4 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+                                {data.skills.slice(0, 8).map((skill) => (
+                                    <span
+                                        key={skill.id}
+                                        className="rounded-md border border-orange-100 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold font-mono uppercase text-[#FF7D00]"
+                                    >
                                     {skill.name}
                                 </span>
-                            ))}
-                            {data.skills.length > 8 && (
-                                <span className="rounded-md border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] font-black font-mono text-zinc-500">
+                                ))}
+                                {data.skills.length > 8 && (
+                                    <span className="rounded-md border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] font-black font-mono text-zinc-500">
                                     +{data.skills.length - 8}
                                 </span>
-                            )}
-                        </div>
+                                )}
+                            </div>
 
                             <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-4 text-xs font-mono font-bold text-zinc-500">
                                 <div className="flex items-center">
