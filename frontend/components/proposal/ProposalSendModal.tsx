@@ -4,7 +4,7 @@ import { XCircle } from 'lucide-react';
 
 type ProposalMode = 'PROJECT' | 'FORM';
 
-/** Fields used by the proposal flow’s project `<select>` (subset of `/v1/projects/me` rows). */
+
 export type ProjectOption = {
     projectId: number;
     projectName: string;
@@ -24,6 +24,7 @@ export function mapProjectsForProposalPicker(list: unknown): ProjectOption[] {
         }))
         .filter((p) => Number.isFinite(p.projectId));
 }
+
 
 type Props = {
     open: boolean;
@@ -143,10 +144,10 @@ export default function ProposalSendModal({
                 )}
 
                 <div>
-                    <label className="mb-1 block text-xs font-bold text-zinc-600">제안 금액 (원)</label>
+                    <label className="mb-1 block text-xs font-bold text-zinc-600">제안 금액 (원, 1원 이상)</label>
                     <input
                         type="number"
-                        min={0}
+                        min={1}
                         value={offeredPrice}
                         onChange={(e) => onChangeOfferedPrice(e.target.value)}
                         placeholder="예: 3000000"

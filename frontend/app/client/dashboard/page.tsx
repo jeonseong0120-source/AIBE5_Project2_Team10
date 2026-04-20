@@ -203,8 +203,8 @@ export default function ClientDashboardPage() {
         }
 
         const parsedPrice = Number(proposalOfferedPrice);
-        if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
-            alert('제안 금액을 올바르게 입력해주세요.');
+        if (!Number.isFinite(parsedPrice) || parsedPrice < 1) {
+            alert('제안 금액은 1원 이상으로 입력해주세요.');
             return;
         }
         if (proposalMode === 'FORM' && !proposalPositionTitle.trim()) {
