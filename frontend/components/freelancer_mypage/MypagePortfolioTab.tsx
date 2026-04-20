@@ -125,7 +125,7 @@ export default function MypagePortfolioTab({
                                         </h3>
                                         
                                         <div className="flex flex-wrap justify-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
-                                            {p.skills && p.skills.slice(0, 3).map((s: any, idx: number) => {
+                                            {p.skills && p.skills.slice(0, 8).map((s: any, idx: number) => {
                                                 const sId = s.skillId || s.id;
                                                 return (
                                                     <span key={`p-skill-${sId || idx}-${idx}`} className="px-3 py-1 bg-zinc-50 text-zinc-700 border border-zinc-100 rounded-lg text-[9px] font-bold uppercase font-mono tracking-tighter group-hover:border-[#7A4FFF]/30">
@@ -133,9 +133,9 @@ export default function MypagePortfolioTab({
                                                     </span>
                                                 );
                                             })}
-                                            {p.skills && p.skills.length > 3 && (
+                                            {p.skills && p.skills.length > 8 && (
                                                 <span className="px-2 py-1 bg-zinc-950 text-white rounded-lg text-[8px] font-black font-mono">
-                                                    +{p.skills.length - 3}
+                                                    +{p.skills.length - 8}
                                                 </span>
                                             )}
                                         </div>

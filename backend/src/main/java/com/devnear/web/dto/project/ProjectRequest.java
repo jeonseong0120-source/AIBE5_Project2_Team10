@@ -2,6 +2,7 @@ package com.devnear.web.dto.project;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.devnear.web.domain.client.ClientProfile;
+import com.devnear.web.domain.enums.ProjectListingKind;
 import com.devnear.web.domain.project.Project;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -43,9 +44,11 @@ public class ProjectRequest {
     private Double longitude;
 
     @JsonAlias({"skills", "projectSkills"})
+    @Size(max = 50, message = "프로젝트 스킬은 최대 50개까지 지정할 수 있습니다.")
     private List<String> skillNames;
 
     @JsonAlias({"skillIds"})
+    @Size(max = 50, message = "프로젝트 스킬은 최대 50개까지 지정할 수 있습니다.")
     private List<Long> skillIds; // 숫자 ID 기반 입력 호환용
 
     @AssertTrue(message = "오프라인 프로젝트는 주소 정보가 필수입니다.")
@@ -61,6 +64,10 @@ public class ProjectRequest {
     }
 
     public Project toEntity(ClientProfile clientProfile) {
+        return toEntity(clientProfile, ProjectListingKind.MARKETPLACE);
+    }
+
+    public Project toEntity(ClientProfile clientProfile, ProjectListingKind listingKind) {
         return Project.builder()
                 .clientProfile(clientProfile)
                 .projectName(projectName)
@@ -72,6 +79,7 @@ public class ProjectRequest {
                 .location(location)
                 .latitude(latitude)
                 .longitude(longitude)
+                .listingKind(listingKind)
                 .build();
     }
 

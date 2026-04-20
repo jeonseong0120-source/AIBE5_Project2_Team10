@@ -78,21 +78,23 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                        {skillList.length > 0 ? (
-                            skillList.map((skill: any, idx: number) => (
-                                <span
-                                    key={idx}
-                                    className="px-3 py-1.5 bg-zinc-50 border border-zinc-100 rounded-xl text-[10px] font-bold text-zinc-400 uppercase tracking-tighter font-mono group-hover:border-[#7A4FFF]/20 group-hover:text-[#7A4FFF] transition-colors"
-                                >
-                                    {typeof skill === 'object' ? skill.name : skill}
+                    <div className="max-h-36 overflow-y-auto pr-1">
+                        <div className="flex flex-wrap gap-2">
+                            {skillList.length > 0 ? (
+                                skillList.map((skill: any, idx: number) => (
+                                    <span
+                                        key={idx}
+                                        className="px-3 py-1.5 bg-zinc-50 border border-zinc-100 rounded-xl text-[10px] font-bold text-zinc-400 uppercase tracking-tighter font-mono group-hover:border-[#7A4FFF]/20 group-hover:text-[#7A4FFF] transition-colors"
+                                    >
+                                        {typeof skill === "object" ? skill.name : skill}
+                                    </span>
+                                ))
+                            ) : (
+                                <span className="text-[10px] font-mono text-zinc-300 italic tracking-widest">
+                                    [ NO_SKILLS_MAPPED ]
                                 </span>
-                            ))
-                        ) : (
-                            <span className="text-[10px] font-mono text-zinc-300 italic tracking-widest">
-                                [ NO_SKILLS_MAPPED ]
-                            </span>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
 

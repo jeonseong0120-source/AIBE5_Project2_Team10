@@ -2,6 +2,7 @@ package com.devnear.web.domain.project;
 
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.common.BaseTimeEntity;
+import com.devnear.web.domain.enums.ProjectListingKind;
 import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.dto.project.ProjectRequest;
@@ -59,6 +60,13 @@ public class Project extends BaseTimeEntity {
     @Column(nullable = false, length = 20)
     private ProjectStatus status;
 
+    /**
+     * null은 기존 DB 호환으로 {@link ProjectListingKind#MARKETPLACE}와 동일하게 취급합니다.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "listing_kind", length = 32)
+    private ProjectListingKind listingKind;
+
     @Column(nullable = false)
     private boolean online;
 
@@ -78,10 +86,23 @@ public class Project extends BaseTimeEntity {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectSkill> projectSkills = new ArrayList<>();
 
+    /**
+     * 공고 텍스트(제목·상세·스킬)에 대한 Gemini 임베딩(JSON 숫자 배열). 등록/수정 시 갱신.
+     */
+    @Column(name = "embedding_json", columnDefinition = "LONGTEXT")
+    private String embeddingJson;
+
+    @Column(name = "embedding_model", length = 64)
+    private String embeddingModel;
+
+    @Column(name = "embedding_dimensions")
+    private Integer embeddingDimensions;
+
     @Builder
     public Project(ClientProfile clientProfile, String projectName, Integer budget,
                    LocalDate deadline, String detail, boolean online, boolean offline,
-                   String location, Double latitude, Double longitude) {
+                   String location, Double latitude, Double longitude,
+                   ProjectListingKind listingKind) {
         this.clientProfile = clientProfile;
         this.projectName = projectName;
         this.budget = budget;
@@ -93,6 +114,7 @@ public class Project extends BaseTimeEntity {
         this.latitude = latitude;
         this.longitude = longitude;
         this.status = ProjectStatus.OPEN;
+        this.listingKind = listingKind != null ? listingKind : ProjectListingKind.MARKETPLACE;
         // [수정] Builder 생성 시 NullPointerException을 방지하기 위한 명시적 컬렉션 초기화
         this.projectSkills = new ArrayList<>();
     }
@@ -146,5 +168,17 @@ public class Project extends BaseTimeEntity {
                 // 양방향 연관관계 편의 로직 (생략 가능하지만 안전을 위해)
             }
         }
+    }
+
+    public void assignTextEmbedding(String json, String model, int dimensions) {
+        this.embeddingJson = json;
+        this.embeddingModel = model;
+        this.embeddingDimensions = dimensions;
+    }
+
+    public void clearTextEmbedding() {
+        this.embeddingJson = null;
+        this.embeddingModel = null;
+        this.embeddingDimensions = null;
     }
 }

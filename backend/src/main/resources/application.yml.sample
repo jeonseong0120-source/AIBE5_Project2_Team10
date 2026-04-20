@@ -36,6 +36,16 @@ jwt:
   expiration: ${JWT_EXPIRATION_MS:3600000}
 
 app:
+  # 벌크 데모 시드: APP_SEED_BULK_DEMO=true 시 기동 1회 삽입(DemoBulkSeedRunner)
+  # 최초 실행 후 false로 전환!!
+  # [벌크 데모 로그인] 이메일/비밀번호 로그인
+  #   프리랜서: bulk-demo-freelancer-01@local.test ~ bulk-demo-freelancer-10@local.test
+  #   클라이언트: bulk-demo-client-01@local.test ~ bulk-demo-client-10@local.test
+  #   비밀번호(공통): BulkDemo1!
+  #   재시드: 마커 계정이 있으면 스킵 → backend/scripts/clear_bulk_demo_seed.sql 후 재기동
+  seed:
+    bulk-demo: ${APP_SEED_BULK_DEMO:false}
+
   cors:
     allowed-origins:
       - ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
@@ -55,3 +65,9 @@ cloudinary:
   api-key: ${CLOUDINARY_API_KEY}
   api-secret: ${CLOUDINARY_API_SECRET}
   upload-folder: ${CLOUDINARY_UPLOAD_FOLDER:devnear}
+
+# Google Gemini (텍스트 임베딩 — 프로젝트 공고 벡터화 / AI 추천)
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  base-url: https://generativelanguage.googleapis.com/v1beta
+  embedding-model: gemini-embedding-001

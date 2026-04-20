@@ -81,7 +81,7 @@ public class ProposalService {
         ClientProfile clientProfile = clientProfileRepository.findByUser_Id(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("클라이언트 프로필이 등록되어 있지 않습니다."));
 
-        Long projectId = projectService.createProject(user, request.getProject());
+        Long projectId = projectService.createProjectForProposalStandalone(user, request.getProject());
         Project project = projectRepository.findByIdWithClientProfile(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 프로젝트를 찾을 수 없습니다."));
 

@@ -25,6 +25,7 @@ public interface FreelancerProfileRepository extends JpaRepository<FreelancerPro
 
     // [API] 프리랜서 상세 조회 (id로 찾기)
     @Query("SELECT DISTINCT fp FROM FreelancerProfile fp " +
+           "JOIN FETCH fp.user u " +
            "LEFT JOIN FETCH fp.freelancerSkills fs " +
            "LEFT JOIN FETCH fs.skill " +
            "WHERE fp.id = :id")
