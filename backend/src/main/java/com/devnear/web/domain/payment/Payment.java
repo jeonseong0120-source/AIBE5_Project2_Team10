@@ -47,6 +47,16 @@ public class Payment extends BaseTimeEntity {
 
     // 결제 완료 처리
     public void confirm(String paymentKey, String method) {
+        // 이미 완료된 경우 (멱등성 처리)
+        if (this.status == PaymentStatus.DONE) {
+            return;
+        }
+
+        // 상태 가드: READY 상태에서만 승인 가능
+        if (this.status != PaymentStatus.READY) {
+            throw new IllegalStateException("결제 승인은 READY 상태에서만 가능합니다. 현재 상태: " + this.status);
+        }
+
         this.paymentKey = paymentKey;
         this.method = method;
         this.status = PaymentStatus.DONE;
@@ -54,6 +64,16 @@ public class Payment extends BaseTimeEntity {
 
     // 구매 확정 처리
     public void confirmPurchase() {
+        // 이미 확정된 경우 (멱등성 처리)
+        if (this.status == PaymentStatus.PURCHASE_CONFIRMED) {
+            return;
+        }
+
+        // 상태 가드: DONE 상태에서만 구매 확정 가능
+        if (this.status != PaymentStatus.DONE) {
+            throw new IllegalStateException("구매 확정은 결제가 완료된(DONE) 상태에서만 가능합니다. 현재 상태: " + this.status);
+        }
+
         this.status = PaymentStatus.PURCHASE_CONFIRMED;
     }
 }
