@@ -26,7 +26,17 @@ export default function ChatWidget() {
             const roomData = await getChatRooms();
             setRooms(roomData);
 
-            if (roomData.length > 0 && !selectedRoomId) {
+            if (roomData.length === 0) {
+                setSelectedRoomId(null);
+                setMessages([]);
+                return;
+            }
+
+            const selectedStillExists =
+                selectedRoomId !== null &&
+                roomData.some((room) => room.roomId === selectedRoomId);
+
+            if (!selectedStillExists) {
                 setSelectedRoomId(roomData[0].roomId);
             }
         } catch (error) {
