@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, DollarSign, Cpu, RotateCcw, BarChart3, Activity, Sparkles, Loader2 } from 'lucide-react';
+import { Search, MapPin, DollarSign, Cpu, RotateCcw, BarChart3, Activity, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import ProjectCard from "@/components/freelancer/ProjectCard";
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
@@ -40,6 +40,49 @@ export default function FreelancerExplorePage() {
     };
     const [aiRecommendations, setAiRecommendations] = useState<AiRecommendedProject[]>([]);
     const [aiRecLoading, setAiRecLoading] = useState(false);
+    const [aiRecError, setAiRecError] = useState<string | null>(null);
+
+    const loadAiRecommendations = useCallback(async (signal?: { cancelled: boolean }) => {
+        const isCancelled = () => signal?.cancelled ?? false;
+        setAiRecLoading(true);
+        setAiRecError(null);
+        try {
+            const { data } = await api.get<AiRecommendedProject[]>('/v1/freelancer/me/recommended-projects', {
+                params: { limit: 5 },
+            });
+            if (!isCancelled()) {
+                setAiRecommendations(Array.isArray(data) ? data : []);
+            }
+        } catch (err: unknown) {
+            if (!isCancelled()) {
+                const parts: string[] = [];
+                if (err && typeof err === 'object' && 'response' in err) {
+                    const ax = err as {
+                        message?: string;
+                        response?: { status?: number; data?: { message?: string } };
+                    };
+                    if (ax.response?.status != null) {
+                        parts.push(`HTTP ${ax.response.status}`);
+                    }
+                    const bodyMsg = ax.response?.data?.message;
+                    if (typeof bodyMsg === 'string' && bodyMsg.trim()) {
+                        parts.push(bodyMsg.trim());
+                    } else if (ax.message) {
+                        parts.push(ax.message);
+                    }
+                } else if (err instanceof Error) {
+                    parts.push(err.message);
+                }
+                setAiRecError(
+                    parts.length > 0
+                        ? `AI 추천을 불러오지 못했습니다. (${parts.join(' — ')})`
+                        : 'AI 추천을 불러오지 못했습니다. 네트워크 또는 서버 상태를 확인해 주세요.'
+                );
+            }
+        } finally {
+            if (!isCancelled()) setAiRecLoading(false);
+        }
+    }, []);
 
     const locations = ['서울', '경기', '인천', '부산', '대구', '원격'];
     const techStacks = [
@@ -95,25 +138,12 @@ export default function FreelancerExplorePage() {
 
     useEffect(() => {
         if (!authorized) return;
-        let cancelled = false;
-        const loadAi = async () => {
-            setAiRecLoading(true);
-            try {
-                const { data } = await api.get<AiRecommendedProject[]>('/v1/freelancer/me/recommended-projects', {
-                    params: { limit: 5 },
-                });
-                if (!cancelled) setAiRecommendations(Array.isArray(data) ? data : []);
-            } catch {
-                if (!cancelled) setAiRecommendations([]);
-            } finally {
-                if (!cancelled) setAiRecLoading(false);
-            }
-        };
-        void loadAi();
+        const state = { cancelled: false };
+        void loadAiRecommendations(state);
         return () => {
-            cancelled = true;
+            state.cancelled = true;
         };
-    }, [authorized]);
+    }, [authorized, loadAiRecommendations]);
 
     const fetchProjects = async (pageNum: number, isLoadMore: boolean = false) => {
         if (!isLoadMore) setLoading(true);
@@ -239,6 +269,18 @@ export default function FreelancerExplorePage() {
                     {aiRecLoading ? (
                         <div className="flex justify-center py-12">
                             <Loader2 className="h-10 w-10 animate-spin text-[#7A4FFF]" />
+                        </div>
+                    ) : aiRecError ? (
+                        <div className="rounded-2xl border border-red-200 bg-red-50/80 px-6 py-10 text-center">
+                            <AlertCircle className="mx-auto mb-4 h-10 w-10 text-red-500" aria-hidden />
+                            <p className="text-sm font-semibold text-red-900">{aiRecError}</p>
+                            <button
+                                type="button"
+                                onClick={() => void loadAiRecommendations()}
+                                className="mt-6 rounded-xl bg-zinc-950 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-[#7A4FFF] font-mono"
+                            >
+                                다시 시도
+                            </button>
                         </div>
                     ) : aiRecommendations.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-zinc-200 bg-white/60 px-6 py-10 text-center text-sm font-medium text-zinc-400">

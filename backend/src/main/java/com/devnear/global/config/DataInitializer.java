@@ -4,6 +4,7 @@ import com.devnear.web.domain.skill.SkillRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,9 +19,11 @@ public class DataInitializer implements CommandLineRunner {
         // [수정] 리뷰 반영: count() == 0 체크 대신, 개별 스킬 이름을 확인하여 없는 스킬만 추가하는 방식으로 무결성 강화
         int addedCount = 0;
         for (var skill : DefaultSkillCatalog.newSkillEntities()) {
-            if (!skillRepository.existsByName(skill.getName())) {
+            try {
                 skillRepository.save(skill);
                 addedCount++;
+            } catch (DataIntegrityViolationException ignored) {
+                // already inserted by previous run or concurrent initializer
             }
         }
 

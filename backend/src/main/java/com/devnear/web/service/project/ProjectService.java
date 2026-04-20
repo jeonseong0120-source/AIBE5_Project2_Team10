@@ -200,8 +200,8 @@ public class ProjectService {
     }
 
     /**
-     * 공개 공고 검색. 로그인한 경우 {@code excludeOwnerUserId}에 본인 user id를 넘기면
-     * 동일 계정(BOTH)이 올린 공고는 목록에서 제외됩니다.
+     * 공개 공고 검색. {@code excludeOwnerUserId}가 있으면 해당 사용자(클라이언트 계정)가 올린 공고는 목록에서 제외됩니다.
+     * 컨트롤러에서 프리랜서 탐색 등에만 이 값을 넣도록 스코프를 제한합니다.
      */
     @Transactional(readOnly = true)
     public Page<ProjectResponse> searchProjects(String keyword, String location, String skill, Boolean online,

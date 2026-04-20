@@ -77,9 +77,9 @@ public class GeminiEmbeddingClient {
                 tmp.add(n.asDouble());
             }
             return tmp.stream().mapToDouble(Double::doubleValue).toArray();
-        } catch (RestClientResponseException e) {
-            log.warn("Gemini embed HTTP {}: {}", e.getStatusCode().value(), e.getResponseBodyAsString());
-            throw new IllegalStateException("Gemini embed request failed: HTTP " + e.getStatusCode().value(), e);
+           } catch ( RestClientResponseException  e ) {
+            log.warn ( "Gemini embed HTTP {}" , e.getStatusCode () . value ( ) ) ;
+            throw  new  IllegalStateException ( "Gemini 임베드 요청 실패: HTTP " + e.getStatusCode (). value ( ), e ) ;
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw e;
         } catch (Exception e) {

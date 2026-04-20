@@ -1,6 +1,7 @@
 package com.devnear.web.controller.project;
 
 import com.devnear.web.domain.enums.ProjectStatus;
+import com.devnear.web.domain.enums.Role;
 import com.devnear.web.domain.user.User;
 import org.springframework.lang.Nullable;
 import com.devnear.web.dto.project.ProjectRequest;
@@ -55,7 +56,13 @@ public class ProjectController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "전체 프로젝트 목록 조회", description = "필터 및 최신순으로 프로젝트 공고를 페이징하여 조회합니다.")
+    @Operation(
+            summary = "전체 프로젝트 목록 조회",
+            description = "필터 및 최신순으로 프로젝트 공고를 페이징하여 조회합니다. "
+                    + "본인이 클라이언트로 등록한 공고를 목록에서 빼려면 excludeOwn=true 를 주거나, "
+                    + "파라미터를 생략한 채 ROLE_FREELANCER / ROLE_BOTH 이면 기본으로 본인 공고를 제외합니다. "
+                    + "ROLE_CLIENT 만 있는 경우에는 생략 시 제외하지 않으며, excludeOwn=false 로 명시하면 역할과 관계없이 제외하지 않습니다."
+    )
     @GetMapping
     public ResponseEntity<Page<ProjectResponse>> getProjectList(
             @Nullable @AuthenticationPrincipal(errorOnInvalidType = false) User viewer,
@@ -64,14 +71,36 @@ public class ProjectController {
             @RequestParam(required = false) String skill,
             @RequestParam(required = false) Boolean online,
             @RequestParam(required = false) Boolean offline,
+            @RequestParam(required = false) Boolean excludeOwn,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        // [수정] 프론트엔드 리뷰 반영: 온라인/오프라인 필터 파라미터 추가
-        // 로그인 시 본인이 올린 공고는 프리랜서 탐색 목록에서 제외(BOTH 자기지원 방지)
-        Long excludeOwnerUserId = viewer != null ? viewer.getId() : null;
+        Long excludeOwnerUserId = resolveExcludeOwnerUserId(viewer, excludeOwn);
         Page<ProjectResponse> responses = projectService.searchProjects(
                 keyword, location, skill, online, offline, excludeOwnerUserId, pageable);
         return ResponseEntity.ok(responses);
+    }
+
+    /**
+     * 클라이언트 전용 계정은 기본적으로 본인 공고를 숨기지 않음.
+     * {@code excludeOwn=true}이면 역할과 관계없이 본인(user)이 올린 공고 제외.
+     * {@code excludeOwn=false}이면 제외하지 않음.
+     * 생략 시 FREELANCER/BOTH만 본인 공고 제외(프리랜서 탐색 UX).
+     */
+    private static Long resolveExcludeOwnerUserId(User viewer, Boolean excludeOwn) {
+        if (viewer == null) {
+            return null;
+        }
+        if (Boolean.FALSE.equals(excludeOwn)) {
+            return null;
+        }
+        if (Boolean.TRUE.equals(excludeOwn)) {
+            return viewer.getId();
+        }
+        Role role = viewer.getRole();
+        if (role == Role.FREELANCER || role == Role.BOTH) {
+            return viewer.getId();
+        }
+        return null;
     }
 
     @Operation(summary = "내 프로젝트 목록 조회", description = "로그인한 유저가 작성한 프로젝트 공고만 조회합니다.")
