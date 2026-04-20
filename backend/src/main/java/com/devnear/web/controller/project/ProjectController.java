@@ -1,8 +1,8 @@
 package com.devnear.web.controller.project;
 
 import com.devnear.web.domain.enums.ProjectStatus;
-import com.devnear.web.domain.project.ProjectSearchCond;
 import com.devnear.web.domain.user.User;
+import org.springframework.lang.Nullable;
 import com.devnear.web.dto.project.ProjectRequest;
 import com.devnear.web.dto.project.ProjectResponse;
 import com.devnear.web.service.project.ProjectService;
@@ -58,6 +58,7 @@ public class ProjectController {
     @Operation(summary = "전체 프로젝트 목록 조회", description = "필터 및 최신순으로 프로젝트 공고를 페이징하여 조회합니다.")
     @GetMapping
     public ResponseEntity<Page<ProjectResponse>> getProjectList(
+            @Nullable @AuthenticationPrincipal(errorOnInvalidType = false) User viewer,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String skill,
@@ -66,7 +67,10 @@ public class ProjectController {
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         // [수정] 프론트엔드 리뷰 반영: 온라인/오프라인 필터 파라미터 추가
-        Page<ProjectResponse> responses = projectService.searchProjects(keyword, location, skill, online, offline, pageable);
+        // 로그인 시 본인이 올린 공고는 프리랜서 탐색 목록에서 제외(BOTH 자기지원 방지)
+        Long excludeOwnerUserId = viewer != null ? viewer.getId() : null;
+        Page<ProjectResponse> responses = projectService.searchProjects(
+                keyword, location, skill, online, offline, excludeOwnerUserId, pageable);
         return ResponseEntity.ok(responses);
     }
 

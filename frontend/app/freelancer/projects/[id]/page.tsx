@@ -249,12 +249,17 @@ export default function ProjectDetailPage() {
                         <h3 className="text-sm font-black text-zinc-400 mb-8 uppercase tracking-[0.3em] font-mono flex items-center gap-3">
                             <span className="w-8 h-[1px] bg-zinc-200"></span> 필수 스택
                         </h3>
-                        <div className="flex flex-wrap gap-2">
-                            {project.skills?.map((skill, index) => (
-                                <span key={index} className="px-5 py-3 bg-white border border-zinc-200 rounded-2xl text-[10px] font-black text-zinc-950 shadow-sm hover:border-[#7A4FFF] transition-all cursor-default font-mono uppercase tracking-widest">
-                                    #{skill}
-                                </span>
-                            ))}
+                        <div className="max-h-80 overflow-y-auto rounded-2xl border border-zinc-100 bg-zinc-50/40 p-3">
+                            <div className="flex flex-wrap gap-2">
+                                {project.skills?.map((skill, index) => (
+                                    <span
+                                        key={index}
+                                        className="cursor-default rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-950 shadow-sm transition-all hover:border-[#7A4FFF] font-mono"
+                                    >
+                                        #{skill}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                     </div>
 

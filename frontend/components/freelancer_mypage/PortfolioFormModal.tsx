@@ -1,5 +1,6 @@
 'use client';
 
+import { MAX_SELECTED_SKILLS } from '@/app/lib/skillLimits';
 import type { ChangeEvent, Dispatch, RefObject, SetStateAction } from 'react';
 import { motion } from 'framer-motion';
 import { X, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
@@ -134,7 +135,12 @@ export default function PortfolioFormModal({
 
                         {/* 포트폴리오 스킬 선택 */}
                         <div className="space-y-3 border-t border-zinc-100 pt-6">
-                            <label className="text-[10px] font-black font-mono uppercase text-zinc-400">사용 기술 / Tech Stack</label>
+                            <label className="text-[10px] font-black font-mono uppercase text-zinc-400">
+                                사용 기술 / Tech Stack{" "}
+                                <span className="font-sans text-zinc-500">
+                                    ({portfolioForm.skills.length}/{MAX_SELECTED_SKILLS})
+                                </span>
+                            </label>
 
                             <div className="flex flex-wrap gap-2 min-h-[40px] p-4 bg-zinc-50 rounded-xl border border-zinc-200">
                                 {portfolioForm.skills.length === 0 ? (
@@ -155,16 +161,30 @@ export default function PortfolioFormModal({
                             <div className="relative mt-2">
                                 <input className="w-full px-4 py-3 rounded-xl bg-zinc-50 border border-zinc-200 outline-none text-sm font-bold focus:border-[#FF7D00] shadow-sm transition-all focus:ring-2 focus:ring-[#FF7D00]/10" placeholder="기술 검색하여 추가..." value={portfolioSkillSearchQuery} onChange={e => setPortfolioSkillSearchQuery(e.target.value)} />
                             </div>
-                            <div className="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto no-scrollbar p-2 bg-zinc-50 rounded-xl border border-zinc-100 shadow-inner">
+                            <div className="flex flex-wrap gap-1.5 max-h-[260px] overflow-y-auto no-scrollbar p-2 bg-zinc-50 rounded-xl border border-zinc-100 shadow-inner">
                                 {allGlobalSkills
                                     .filter((s) => s.name.toLowerCase().includes(portfolioSkillSearchQuery.toLowerCase()))
                                     .map((skill, idx) => {
                                         const sId = skill.skillId || skill.id;
                                         if (sId == null) return null;
                                         const isSelected = portfolioForm.skills.includes(sId);
+                                        const atCap = !isSelected && portfolioForm.skills.length >= MAX_SELECTED_SKILLS;
                                         return (
-                                            <button key={`global-port-skill-${sId || idx}`} onClick={() => togglePortfolioSkill(sId)} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${isSelected ? 'bg-[#FF7D00]/10 border-[#FF7D00]/30 text-[#FF7D00]' : 'bg-white border-zinc-200 text-zinc-500 hover:border-[#7A4FFF] hover:text-[#7A4FFF]'}`}>
-                                                {isSelected ? '✓ ' : '+ '}{skill.name}
+                                            <button
+                                                key={`global-port-skill-${sId || idx}`}
+                                                type="button"
+                                                disabled={atCap}
+                                                onClick={() => togglePortfolioSkill(sId)}
+                                                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
+                                                    isSelected
+                                                        ? 'bg-[#FF7D00]/10 border-[#FF7D00]/30 text-[#FF7D00]'
+                                                        : atCap
+                                                          ? 'cursor-not-allowed border-zinc-100 bg-zinc-100 text-zinc-300'
+                                                          : 'bg-white border-zinc-200 text-zinc-500 hover:border-[#7A4FFF] hover:text-[#7A4FFF]'
+                                                }`}
+                                            >
+                                                {isSelected ? '✓ ' : '+ '}
+                                                {skill.name}
                                             </button>
                                         );
                                     })}

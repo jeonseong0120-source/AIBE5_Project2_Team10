@@ -1,8 +1,10 @@
 package com.devnear.web.controller.freelancer;
 
 import com.devnear.web.domain.user.User;
+import com.devnear.web.dto.ai.RecommendedProjectResponse;
 import com.devnear.web.dto.freelancer.FreelancerProfileRequest;
 import com.devnear.web.dto.freelancer.FreelancerProfileResponse;
+import com.devnear.web.service.ai.AiRecommendationService;
 import com.devnear.web.service.freelancer.FreelancerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,7 @@ import jakarta.validation.Valid;
 public class FreelancerController {
 
     private final FreelancerService freelancerService;
+    private final AiRecommendationService aiRecommendationService;
 
     // ==== 내 프로필 관리 ====
 
@@ -71,6 +74,16 @@ public class FreelancerController {
         String safeSort = (sort != null && sort.trim().isEmpty()) ? null : sort;
 
         return ResponseEntity.ok(freelancerService.searchFreelancers(safeSkill, safeRegion, safeSort));
+    }
+
+    /**
+     * 프리랜서 포트폴리오·프로필 텍스트와 모집 중 공고 임베딩의 유사도 기준 상위 프로젝트 추천 (Gemini).
+     */
+    @GetMapping("/{id}/recommended-projects")
+    public ResponseEntity<List<RecommendedProjectResponse>> getRecommendedProjectsForFreelancer(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer limit) {
+        return ResponseEntity.ok(aiRecommendationService.recommendTopProjectsForFreelancer(id, limit));
     }
 
     // [조회] 특정 타 프리랜서의 상세 정보 보기

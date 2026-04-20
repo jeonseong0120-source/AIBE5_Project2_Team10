@@ -56,6 +56,12 @@ public class SecurityConfig {
                         .requestMatchers("/ws-chat", "/ws-chat/**").permitAll()
                         .requestMatchers("/api/auth/**", "/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/login/**", "/oauth2/**").permitAll()
 
+                        // AI 추천: 모집 공고 임베딩 유사도 (Gemini 호출) — 클라이언트 전용 (아래 GET freelancers permitAll 보다 먼저 매칭)
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/freelancers/*/recommended-projects",
+                                "/api/v1/freelancers/*/recommended-projects"
+                        ).hasAnyRole("CLIENT", "BOTH")
+
                         // [추가] 커뮤니티(Community) 조회 권한 추가 (명세서 준수: 누구나 조회 가능)
                         .requestMatchers(HttpMethod.GET, "/api/freelancers/**", "/api/v1/freelancers/**", "/api/projects/**", "/api/v1/projects/**", "/api/portfolios/**", "/api/v1/portfolios/**", "/api/skills/**", "/api/v1/skills/**", "/api/community/**", "/api/v1/community/**").permitAll()
 

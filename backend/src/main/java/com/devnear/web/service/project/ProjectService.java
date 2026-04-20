@@ -2,6 +2,7 @@ package com.devnear.web.service.project;
 
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.client.ClientProfileRepository;
+import com.devnear.web.domain.enums.ProjectListingKind;
 import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.project.Project;
@@ -15,6 +16,7 @@ import com.devnear.web.dto.project.ProjectRequest;
 import com.devnear.web.dto.project.ProjectResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.service.ai.ProjectEmbeddingService;
 import com.devnear.web.service.freelancer.FreelancerGradeService;
 import jakarta.persistence.EntityManager; // 🔍 추가
 import lombok.RequiredArgsConstructor;
@@ -43,23 +45,50 @@ public class ProjectService {
     private final SkillRepository skillRepository;
     private final FreelancerGradeService freelancerGradeService;
     private final EntityManager em; // 🔍 직접 플러시를 위해 주입
+    private final ProjectEmbeddingService projectEmbeddingService;
 
     @Transactional
     public Long createProject(User user, ProjectRequest request) {
+        return createProjectInternal(user, request, ProjectListingKind.MARKETPLACE);
+    }
+
+    /**
+     * 역제안(FORM) 전용 단독 공고 — 마켓 탐색·AI 추천 후보에서 제외됩니다.
+     */
+    @Transactional
+    public Long createProjectForProposalStandalone(User user, ProjectRequest request) {
+        return createProjectInternal(user, request, ProjectListingKind.PROPOSAL_STANDALONE);
+    }
+
+    private Long createProjectInternal(User user, ProjectRequest request, ProjectListingKind listingKind) {
         ClientProfile clientProfile = findClientProfileByUser(user);
 
         if (request.isOffline() && (request.getLocation() == null || request.getLatitude() == null)) {
             throw new IllegalArgumentException("오프라인 프로젝트는 장소 정보가 필수입니다.");
         }
 
-        Project project = projectRepository.save(request.toEntity(clientProfile));
+        Project project = projectRepository.save(request.toEntity(clientProfile, listingKind));
 
         List<Skill> skills = resolveSkills(request);
         if (!skills.isEmpty()) {
             mapSkillsToProject(project, skills);
         }
 
+        maybeRefreshProjectEmbedding(project.getId(), listingKind);
+
         return project.getId();
+    }
+
+    /** 제안서 단독 공고는 마켓 비대상이므로 Gemini 임베딩을 만들지 않습니다. */
+    private void maybeRefreshProjectEmbedding(Long projectId, ProjectListingKind listingKind) {
+        if (listingKind == ProjectListingKind.PROPOSAL_STANDALONE) {
+            return;
+        }
+        try {
+            projectEmbeddingService.refreshEmbeddingForProjectId(projectId);
+        } catch (Exception e) {
+            log.warn("프로젝트 임베딩 갱신 실패(공고는 정상 저장됨): projectId={}", projectId, e);
+        }
     }
 
     @Transactional
@@ -88,6 +117,10 @@ public class ProjectService {
                 mapSkillsToProject(project, skills);
             }
         }
+
+        maybeRefreshProjectEmbedding(projectId, project.getListingKind() != null
+                ? project.getListingKind()
+                : ProjectListingKind.MARKETPLACE);
     }
 
     private void mapSkillsToProject(Project project, List<Skill> skills) {
@@ -166,13 +199,19 @@ public class ProjectService {
         return projectRepository.findAll(pageable).map(ProjectResponse::from);
     }
 
+    /**
+     * 공개 공고 검색. 로그인한 경우 {@code excludeOwnerUserId}에 본인 user id를 넘기면
+     * 동일 계정(BOTH)이 올린 공고는 목록에서 제외됩니다.
+     */
     @Transactional(readOnly = true)
-    public Page<ProjectResponse> searchProjects(String keyword, String location, String skill, Boolean online, Boolean offline, Pageable pageable) {
+    public Page<ProjectResponse> searchProjects(String keyword, String location, String skill, Boolean online,
+                                                Boolean offline, Long excludeOwnerUserId, Pageable pageable) {
         String safeKeyword = (keyword != null && keyword.trim().isEmpty()) ? null : keyword;
         String safeLocation = (location != null && location.trim().isEmpty()) ? null : location;
         String safeSkill = (skill != null && skill.trim().isEmpty()) ? null : skill;
 
-        return projectRepository.searchProjects(safeKeyword, safeLocation, safeSkill, online, offline, pageable)
+        return projectRepository.searchProjects(safeKeyword, safeLocation, safeSkill, online, offline,
+                        ProjectListingKind.MARKETPLACE, excludeOwnerUserId, pageable)
                 .map(ProjectResponse::from);
     }
 

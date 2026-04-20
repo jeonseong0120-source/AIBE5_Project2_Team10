@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, DollarSign, Cpu, RotateCcw, BarChart3, Activity } from 'lucide-react';
+import { Search, MapPin, DollarSign, Cpu, RotateCcw, BarChart3, Activity, Sparkles, Loader2 } from 'lucide-react';
 import ProjectCard from "@/components/freelancer/ProjectCard";
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
@@ -32,8 +32,36 @@ export default function FreelancerExplorePage() {
     const [hasMore, setHasMore] = useState(false);
     const [fetchingMore, setFetchingMore] = useState(false);
 
+    type AiRecommendedProject = {
+        projectId: number;
+        projectName: string;
+        similarityScore: number;
+        budget: number;
+    };
+    const [aiRecommendations, setAiRecommendations] = useState<AiRecommendedProject[]>([]);
+    const [aiRecLoading, setAiRecLoading] = useState(false);
+
     const locations = ['서울', '경기', '인천', '부산', '대구', '원격'];
-    const techStacks = ['Java', 'Spring Boot', 'React', 'Next.js', 'MySQL', 'TypeScript'];
+    const techStacks = [
+        'Java',
+        'Spring Boot',
+        'React',
+        'Next.js',
+        'TypeScript',
+        'Node.js',
+        'Python',
+        'Kotlin',
+        'Go',
+        'Vue.js',
+        'PostgreSQL',
+        'MongoDB',
+        'AWS',
+        'Docker',
+        'Kubernetes',
+        'Flutter',
+        'GraphQL',
+        'Tailwind CSS',
+    ];
 
     useEffect(() => {
         const checkAccess = async () => {
@@ -64,6 +92,28 @@ export default function FreelancerExplorePage() {
         };
         checkAccess();
     }, [router]);
+
+    useEffect(() => {
+        if (!authorized) return;
+        let cancelled = false;
+        const loadAi = async () => {
+            setAiRecLoading(true);
+            try {
+                const { data } = await api.get<AiRecommendedProject[]>('/v1/freelancer/me/recommended-projects', {
+                    params: { limit: 5 },
+                });
+                if (!cancelled) setAiRecommendations(Array.isArray(data) ? data : []);
+            } catch {
+                if (!cancelled) setAiRecommendations([]);
+            } finally {
+                if (!cancelled) setAiRecLoading(false);
+            }
+        };
+        void loadAi();
+        return () => {
+            cancelled = true;
+        };
+    }, [authorized]);
 
     const fetchProjects = async (pageNum: number, isLoadMore: boolean = false) => {
         if (!isLoadMore) setLoading(true);
@@ -171,6 +221,56 @@ export default function FreelancerExplorePage() {
                     </div>
                 </div>
             </header>
+
+            <section className="relative z-10 max-w-6xl mx-auto px-6 md:px-10 pb-6">
+                <div className="rounded-[2rem] border border-purple-200/80 bg-gradient-to-br from-white via-purple-50/40 to-white p-8 md:p-10 shadow-xl shadow-purple-500/5">
+                    <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <div className="mb-2 flex items-center gap-2">
+                                <Sparkles className="text-[#7A4FFF]" size={20} />
+                                <span className="text-[10px] font-black uppercase tracking-[0.35em] text-[#7A4FFF] font-mono">Gemini similarity</span>
+                            </div>
+                            <h2 className="text-2xl font-black tracking-tight text-zinc-950 md:text-3xl">AI 추천 공고</h2>
+                            <p className="mt-1 text-sm font-medium text-zinc-500">
+                                내 프로필·포트폴리오와 맞는 모집 중 공고를 유사도 순으로 보여줍니다.
+                            </p>
+                        </div>
+                    </div>
+                    {aiRecLoading ? (
+                        <div className="flex justify-center py-12">
+                            <Loader2 className="h-10 w-10 animate-spin text-[#7A4FFF]" />
+                        </div>
+                    ) : aiRecommendations.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white/60 px-6 py-10 text-center text-sm font-medium text-zinc-400">
+                            모집 중 공고에 Gemini 임베딩이 저장되어 있어야 합니다. 백엔드에 GEMINI_API_KEY를 두고, 클라이언트로 공고를 한 번 저장해 임베딩을 만든 뒤 다시 확인해 보세요. (벌크 시드 사용 시 최신 백엔드로 기동하면 시드 공고에 임베딩이 채워집니다.)
+                        </div>
+                    ) : (
+                        <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {aiRecommendations.map((p) => (
+                                <li
+                                    key={p.projectId}
+                                    className="flex flex-col rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm transition hover:border-[#7A4FFF]/40 hover:shadow-md"
+                                >
+                                    <div className="mb-3 flex items-center justify-between gap-2">
+                                        <span className="rounded-full bg-purple-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-[#7A4FFF] font-mono border border-purple-100">
+                                            match {(p.similarityScore * 100).toFixed(1)}%
+                                        </span>
+                                    </div>
+                                    <h3 className="mb-2 line-clamp-2 text-lg font-black leading-snug text-zinc-900">{p.projectName}</h3>
+                                    <p className="mb-4 font-mono text-xl font-black italic text-zinc-800">₩{Number(p.budget).toLocaleString()}</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push(`/freelancer/projects/${p.projectId}`)}
+                                        className="mt-auto w-full rounded-xl bg-zinc-950 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-[#7A4FFF] font-mono"
+                                    >
+                                        공고 보기
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </section>
 
             <main className="max-w-6xl mx-auto px-6 md:px-10 py-10 flex flex-col lg:flex-row gap-10">
                 {/* 좌측 사이드바 필터 */}
