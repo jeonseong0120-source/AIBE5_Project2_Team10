@@ -1,45 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ChatWindow from "./ChatWindow";
-
-const initialMessages = [
-    {
-        id: 1,
-        message: "안녕하세요! 문의 주신 내용 확인 도와드릴게요.",
-        time: "오후 2:10",
-        isMine: false,
-    },
-    {
-        id: 2,
-        message: "채팅 위젯 UI를 먼저 붙이고 있어요.",
-        time: "오후 2:11",
-        isMine: true,
-    },
-    {
-        id: 3,
-        message: "좋아요. 지금은 오른쪽 하단에 뜨는지만 확인하면 됩니다.",
-        time: "오후 2:12",
-        isMine: false,
-    },
-];
+import {
+    getChatMessages,
+    getChatRooms,
+    markChatAsRead,
+} from "../../app/lib/chatApi";
+import { ChatMessageResponse, ChatRoomResponse } from "../../types/chat";
 
 export default function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
-    const [messages, setMessages] = useState(initialMessages);
+
+    const [rooms, setRooms] = useState<ChatRoomResponse[]>([]);
+    const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
+    const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
+
+    const [loadingRooms, setLoadingRooms] = useState(false);
+    const [loadingMessages, setLoadingMessages] = useState(false);
+
+    const fetchRooms = async () => {
+        try {
+            setLoadingRooms(true);
+            const roomData = await getChatRooms();
+            setRooms(roomData);
+
+            if (roomData.length > 0 && !selectedRoomId) {
+                setSelectedRoomId(roomData[0].roomId);
+            }
+        } catch (error) {
+            console.error("채팅방 조회 실패", error);
+        } finally {
+            setLoadingRooms(false);
+        }
+    };
+
+    const fetchMessages = async (roomId: number) => {
+        try {
+            setLoadingMessages(true);
+            const messageData = await getChatMessages(roomId);
+            setMessages(messageData);
+            await markChatAsRead(roomId);
+        } catch (error) {
+            console.error("메시지 조회 실패", error);
+        } finally {
+            setLoadingMessages(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!isOpen) return;
+        fetchRooms();
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || !selectedRoomId) return;
+        fetchMessages(selectedRoomId);
+    }, [isOpen, selectedRoomId]);
+
+    const handleOpenToggle = () => {
+        setIsOpen((prev) => !prev);
+    };
+
+    const handleSelectRoom = (roomId: number) => {
+        setSelectedRoomId(roomId);
+    };
 
     const handleSend = () => {
         if (!input.trim()) return;
-
-        const newMessage = {
-            id: Date.now(),
-            message: input,
-            time: "방금",
-            isMine: true,
-        };
-
-        setMessages((prev) => [...prev, newMessage]);
         setInput("");
     };
 
@@ -48,15 +77,20 @@ export default function ChatWidget() {
             <ChatWindow
                 isOpen={isOpen}
                 onClose={() => setIsOpen(false)}
+                rooms={rooms}
+                selectedRoomId={selectedRoomId}
+                onSelectRoom={handleSelectRoom}
                 messages={messages}
                 input={input}
                 onChangeInput={setInput}
                 onSend={handleSend}
+                loadingRooms={loadingRooms}
+                loadingMessages={loadingMessages}
             />
 
             <button
                 type="button"
-                onClick={() => setIsOpen((prev) => !prev)}
+                onClick={handleOpenToggle}
                 className="fixed bottom-6 right-6 z-[9999] flex h-16 w-16 items-center justify-center rounded-full bg-violet-600 text-2xl text-white shadow-xl transition hover:scale-105 hover:bg-violet-700"
                 aria-label="채팅 열기"
             >
