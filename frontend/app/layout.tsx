@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
+import ChatWidget from "@/components/chat/ChatWidget";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,18 +20,21 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
-  children,
-}: Readonly<{
+                                     children,
+                                   }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+      <html
+          lang="en"
+          className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      >
       <body className="min-h-full flex flex-col">
-        <NotificationProvider>{children}</NotificationProvider>
+      <NotificationProvider>
+        {children}
+        <ChatWidget />
+      </NotificationProvider>
       </body>
-    </html>
+      </html>
   );
 }
