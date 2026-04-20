@@ -65,7 +65,7 @@ public class ApplicationService {
         ProjectApplication application = ProjectApplication.builder()
                 .project(project)
                 .freelancerProfile(freelancer)
-                .clientProfile(project.getClientProfile()) 
+                .clientProfile(project.getClientProfile())
                 .bidPrice(request.getBidPrice())
                 .message(request.getMessage())
                 .matchingRate(matchingRate)
@@ -151,10 +151,15 @@ public class ApplicationService {
             );
         }
 
-        // [Fix] Coderabbit 리뷰 반영: 지원자 수락 시 프로젝트 상태를 자동으로 '진행 중'으로 변경
+        // 🎯 [핵심 수정] 지원자 수락 시 프로젝트와 프리랜서를 명확히 매칭합니다.
         if (newStatus == ApplicationStatus.ACCEPTED) {
             Project project = application.getProject();
-            project.start(); // Project 엔티티의 상태 변경 메서드 호출
+
+            // 💡 프로젝트 엔티티에 프리랜서 프로필을 할당합니다.
+            // (setFreelancerProfile 메서드가 없다면 엔티티 클래스에 추가하거나 직접 접근하여 설정하세요)
+            project.assignFreelancer(application.getFreelancerProfile());
+
+            project.start(); // Project 상태를 'IN_PROGRESS'로 변경
         }
     }
 
