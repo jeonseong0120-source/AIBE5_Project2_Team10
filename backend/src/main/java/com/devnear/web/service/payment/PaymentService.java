@@ -79,14 +79,28 @@ public class PaymentService {
             throw new PaymentAmountMismatchException("결제 금액이 일치하지 않습니다.");
         }
 
-        // 3. 토스페이먼츠 서버 승인 요청
+        // 3. 로컬 선행 조건 검증 (Fail-fast)
+        // 결제 상태가 READY가 아니면 중단 (이미 DONE인 경우 멱등성 보장을 위해 결과 반환)
+        if (payment.getStatus() != com.devnear.web.domain.enums.PaymentStatus.READY) {
+            if (payment.getStatus() == com.devnear.web.domain.enums.PaymentStatus.DONE) {
+                return PaymentResponse.from(payment);
+            }
+            throw new IllegalStateException("결제 승인이 가능한 상태가 아닙니다. 현재 상태: " + payment.getStatus());
+        }
+
+        // 프로젝트 상태 검증 (모집 중인 프로젝트만 결제 가능)
+        if (payment.getProject().getStatus() != com.devnear.web.domain.enums.ProjectStatus.OPEN) {
+            throw new IllegalStateException("모집 중인 프로젝트만 결제할 수 있습니다. 현재 상태: " + payment.getProject().getStatus());
+        }
+
+        // 4. 토스페이먼츠 서버 승인 요청 (모든 검증 통과 후 외부 호출)
         Map<String, Object> response = tossPaymentClient.confirmPayment(request);
 
-        // 4. 결제 상태 업데이트
+        // 5. 결제 상태 업데이트
         String method = (String) response.get("method");
         payment.confirm(request.getPaymentKey(), method);
 
-        // 5. 프로젝트 상태 변경 (진행 중으로 변경)
+        // 6. 프로젝트 상태 변경 (진행 중으로 변경)
         Project project = payment.getProject();
         if (project != null) {
             project.start();
