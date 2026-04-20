@@ -9,6 +9,7 @@ import api from '@/app/lib/axios';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
 import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
 import type { PortfolioDetailShape } from '@/components/portfolio/PortfolioDetailModal';
+import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } from '@/components/proposal/ProposalSendModal';
 
 export type FreelancerProfileDetailVariant = 'freelancer' | 'client';
 
@@ -35,12 +36,24 @@ const VARIANT_CONFIG = {
 export default function FreelancerProfileDetail({ profileId, variant, showFallbackHeader = true }: Props) {
     const router = useRouter();
     const cfg = VARIANT_CONFIG[variant];
+    const viewerIsClient = variant === 'client';
     const [freelancer, setFreelancer] = useState<FreelancerProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [portfolioList, setPortfolioList] = useState<PortfolioDetailShape[]>([]);
     const [portfolioFetchDone, setPortfolioFetchDone] = useState(false);
     const [selectedPortfolio, setSelectedPortfolio] = useState<PortfolioDetailShape | null>(null);
     const [portalReady, setPortalReady] = useState(false);
+    const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+    const [proposalMode, setProposalMode] = useState<'PROJECT' | 'FORM'>('PROJECT');
+    const [clientProjects, setClientProjects] = useState<ProjectOption[]>([]);
+    const [projectsLoading, setProjectsLoading] = useState(false);
+    const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+    const [offeredPrice, setOfferedPrice] = useState<string>('');
+    const [message, setMessage] = useState('');
+    const [positionTitle, setPositionTitle] = useState('');
+    const [workScope, setWorkScope] = useState('');
+    const [workingPeriod, setWorkingPeriod] = useState('');
+    const [isSendingProposal, setIsSendingProposal] = useState(false);
 
     const FALLBACK_IMAGE_URL =
         'https://ui-avatars.com/api/?name=Agent&background=F4F4F5&color=A1A1AA&size=150';
@@ -48,6 +61,135 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
     useEffect(() => {
         setPortalReady(true);
     }, []);
+
+    const openProposalModal = async () => {
+        if (!viewerIsClient) return;
+        setIsProposalModalOpen(true);
+        setProjectsLoading(true);
+        try {
+            const { data } = await api.get('/v1/projects/me');
+            const usable = mapProjectsForProposalPicker(data?.content ?? data ?? []);
+            setClientProjects(usable);
+            if (usable.length > 0) {
+                setSelectedProjectId(usable[0].projectId);
+            } else {
+                setSelectedProjectId(null);
+            }
+        } catch {
+            setClientProjects([]);
+            setSelectedProjectId(null);
+        } finally {
+            setProjectsLoading(false);
+        }
+    };
+
+    const closeProposalModal = () => {
+        if (isSendingProposal) return;
+        setIsProposalModalOpen(false);
+    };
+
+    const buildMessageFromForm = () => {
+        const chunks = [
+            positionTitle.trim() ? `포지션: ${positionTitle.trim()}` : '',
+            workScope.trim() ? `업무 범위: ${workScope.trim()}` : '',
+            workingPeriod.trim() ? `예상 기간: ${workingPeriod.trim()}` : '',
+            message.trim() ? `추가 메시지: ${message.trim()}` : '',
+        ].filter(Boolean);
+        return chunks.join('\n');
+    };
+
+    const buildStandaloneProjectPayload = (parsedPrice: number) => {
+        const title = positionTitle.trim() || '제안서 기반 협업 프로젝트';
+        const details = [
+            '[자동 생성] 제안서 기반 프로젝트',
+            workScope.trim() ? `업무 범위: ${workScope.trim()}` : '',
+            workingPeriod.trim() ? `예상 기간: ${workingPeriod.trim()}` : '',
+            message.trim() ? `추가 메시지: ${message.trim()}` : '',
+        ].filter(Boolean).join('\n');
+        const deadline = new Date();
+        deadline.setDate(deadline.getDate() + 30);
+        const deadlineStr = [
+            deadline.getFullYear(),
+            String(deadline.getMonth() + 1).padStart(2, '0'),
+            String(deadline.getDate()).padStart(2, '0'),
+        ].join('-');
+        return {
+            projectName: `[제안서] ${title}`,
+            budget: Math.max(1, Math.floor(parsedPrice)),
+            deadline: deadlineStr,
+            detail: details,
+            online: true,
+            offline: false,
+            location: null,
+            latitude: null,
+            longitude: null,
+            skills: [],
+        };
+    };
+
+    const handleSendProposal = async () => {
+        if (!freelancer?.id) return;
+        if (proposalMode === 'PROJECT' && !selectedProjectId) {
+            alert('연결할 프로젝트를 선택해주세요.');
+            return;
+        }
+        const parsedPrice = Number(offeredPrice);
+        if (!Number.isFinite(parsedPrice) || parsedPrice < 1) {
+            alert('제안 금액은 1원 이상으로 입력해주세요.');
+            return;
+        }
+        if (proposalMode === 'FORM' && !positionTitle.trim()) {
+            alert('포지션명을 입력해주세요.');
+            return;
+        }
+        if (proposalMode === 'FORM' && !workScope.trim()) {
+            alert('업무 범위를 입력해주세요.');
+            return;
+        }
+
+        const composedMessage = proposalMode === 'FORM' ? buildMessageFromForm() : message.trim();
+        if (!composedMessage) {
+            alert('제안 메시지를 입력해주세요.');
+            return;
+        }
+
+        const payload = {
+            projectId: selectedProjectId,
+            freelancerProfileId: freelancer.id,
+            offeredPrice: parsedPrice,
+            message: composedMessage,
+        };
+
+        setIsSendingProposal(true);
+        try {
+            if (proposalMode === 'FORM') {
+                await api.post('/v1/proposals/with-standalone-project', {
+                    project: buildStandaloneProjectPayload(parsedPrice),
+                    freelancerProfileId: freelancer.id,
+                    offeredPrice: parsedPrice,
+                    message: composedMessage,
+                });
+            } else {
+                await api.post('/v1/proposals', payload);
+            }
+            alert('제안을 전송했습니다.');
+            setIsProposalModalOpen(false);
+            setOfferedPrice('');
+            setMessage('');
+            setPositionTitle('');
+            setWorkScope('');
+            setWorkingPeriod('');
+        } catch (e: any) {
+            const text = e?.response?.data?.message;
+            if (typeof text === 'string' && text.includes('ALREADY_PROPOSED')) {
+                alert('이미 해당 프로젝트로 이 프리랜서에게 제안을 보냈습니다.');
+            } else {
+                alert('제안 전송에 실패했습니다.');
+            }
+        } finally {
+            setIsSendingProposal(false);
+        }
+    };
 
     useEffect(() => {
         if (!profileId) return;
@@ -269,35 +411,34 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                 </div>
             </main>
 
-            <AnimatePresence>
-                <motion.div
-                    initial={{ y: 100 }}
-                    animate={{ y: 0 }}
-                    className="fixed bottom-6 left-1/2 z-[60] w-[95%] max-w-3xl -translate-x-1/2"
-                >
-                    <div className="flex items-center justify-between rounded-full border border-zinc-800 bg-zinc-950/95 backdrop-blur-xl px-8 py-4 shadow-2xl">
-                        <div className="flex items-center gap-4">
-                            <div className="h-10 w-1 bg-[#FF7D00] rounded-full"></div>
-                            <div>
-                                <div className="mb-0.5 font-mono text-[9px] font-black uppercase tracking-widest text-zinc-400">
+            {variant === 'client' && (
+                <AnimatePresence>
+                    <motion.div
+                        initial={{ y: 100 }}
+                        animate={{ y: 0 }}
+                        className="fixed bottom-6 left-1/2 z-[60] w-[90%] max-w-2xl -translate-x-1/2"
+                    >
+                        <div className="flex items-center justify-between rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+                            <div className="border-l-4 border-[#FF7D00] pl-6">
+                                <div className="mb-1 font-mono text-[10px] font-black uppercase tracking-widest text-zinc-500">
                                     Estimated Rate
                                 </div>
-                                <div className="text-xl font-black tracking-tighter text-white">
+                                <div className="text-2xl font-black tracking-tighter text-white">
                                     ₩{(freelancer.hourlyRate || 0).toLocaleString()}{' '}
-                                    <span className="font-mono text-[10px] text-[#FF7D00]">/HR</span>
+                                    <span className="font-mono text-xs text-[`#7A4FFF`]">/HR</span>
                                 </div>
                             </div>
+                            <button
+                                type="button"
+                                onClick={openProposalModal}
+                                className="rounded-2xl bg-white px-8 py-3.5 font-mono text-sm font-black uppercase tracking-tighter text-zinc-900 shadow-[0_0_20px_rgba(255,125,0,0.2)] transition-all hover:bg-[`#FF7D00`] hover:text-white active:scale-95"
+                            >
+                                Offer_Project
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => alert('시스템 설계 중입니다. 다음 업데이트를 기다려주세요.')}
-                            className="rounded-full bg-white px-8 py-3 font-mono text-xs font-black uppercase tracking-widest text-zinc-900 shadow-[0_0_20px_rgba(255,125,0,0.2)] transition-all hover:bg-[#FF7D00] hover:text-white active:scale-95"
-                        >
-                            Offer_Project
-                        </button>
-                    </div>
-                </motion.div>
-            </AnimatePresence>
+                    </motion.div>
+                </AnimatePresence>
+            )}
 
             {portalReady &&
                 selectedPortfolio != null &&
@@ -307,6 +448,52 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                         readOnly
                         onClose={() => setSelectedPortfolio(null)}
                     />,
+                    document.body
+                )}
+
+            {portalReady &&
+                viewerIsClient &&
+                isProposalModalOpen &&
+                createPortal(
+                    <AnimatePresence>
+                        <motion.div
+                            key="proposal-modal"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm"
+                        >
+                            <motion.div
+                                initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 24, scale: 0.98 }}
+                                className="w-full max-w-2xl"
+                            >
+                                <ProposalSendModal
+                                    open={isProposalModalOpen}
+                                    mode={proposalMode}
+                                    onChangeMode={setProposalMode}
+                                    projects={clientProjects}
+                                    projectsLoading={projectsLoading}
+                                    selectedProjectId={selectedProjectId}
+                                    onChangeProjectId={setSelectedProjectId}
+                                    offeredPrice={offeredPrice}
+                                    onChangeOfferedPrice={setOfferedPrice}
+                                    positionTitle={positionTitle}
+                                    onChangePositionTitle={setPositionTitle}
+                                    workScope={workScope}
+                                    onChangeWorkScope={setWorkScope}
+                                    workingPeriod={workingPeriod}
+                                    onChangeWorkingPeriod={setWorkingPeriod}
+                                    message={message}
+                                    onChangeMessage={setMessage}
+                                    sending={isSendingProposal}
+                                    onClose={closeProposalModal}
+                                    onSend={handleSendProposal}
+                                />
+                            </motion.div>
+                        </motion.div>
+                    </AnimatePresence>,
                     document.body
                 )}
         </div>

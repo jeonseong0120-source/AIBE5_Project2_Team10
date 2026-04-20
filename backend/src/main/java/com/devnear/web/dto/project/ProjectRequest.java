@@ -6,11 +6,13 @@ import com.devnear.web.domain.project.Project;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Getter
+@Setter
 @NoArgsConstructor
 public class ProjectRequest {
     @NotBlank(message = "프로젝트 명은 필수입니다.")
