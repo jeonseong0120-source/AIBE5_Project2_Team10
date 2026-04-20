@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Briefcase, Grid3X3 } from 'lucide-react';
+// 🎯 [수정] Heart 아이콘 추가
+import { ChevronLeft, Briefcase, Grid3X3, Heart } from 'lucide-react';
 import api from '@/app/lib/axios';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
 import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
@@ -16,7 +17,6 @@ export type FreelancerProfileDetailVariant = 'freelancer' | 'client';
 type Props = {
     profileId: string;
     variant: FreelancerProfileDetailVariant;
-    // 🎯 [리뷰 반영] 별도의 Navbar가 없을 때 보여줄 보조 헤더 옵션 추가
     showFallbackHeader?: boolean;
 };
 
@@ -55,12 +55,38 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
     const [workingPeriod, setWorkingPeriod] = useState('');
     const [isSendingProposal, setIsSendingProposal] = useState(false);
 
+    // 🎯 [추가] 북마크 상태 및 로딩 상태
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [bookmarkLoading, setBookmarkLoading] = useState(false);
+
     const FALLBACK_IMAGE_URL =
         'https://ui-avatars.com/api/?name=Agent&background=F4F4F5&color=A1A1AA&size=150';
 
     useEffect(() => {
         setPortalReady(true);
     }, []);
+
+    // 🎯 [추가] 북마크(찜) 처리 함수
+    const handleBookmark = async () => {
+        if (!freelancer?.id || bookmarkLoading) return;
+        setBookmarkLoading(true);
+        try {
+            // Swagger 가이드에 따른 POST 요청
+            await api.post(`/v1/bookmarks/freelancers/${freelancer.id}`);
+            setIsBookmarked(true);
+            alert("관심 프리랜서로 등록되었습니다! ❤️");
+        } catch (err: any) {
+            const status = err.response?.status;
+            if (status === 409 || err.response?.data?.message?.includes("ALREADY")) {
+                alert("이미 관심 프리랜서로 등록된 요원입니다.");
+                setIsBookmarked(true);
+            } else {
+                alert("찜 등록에 실패했습니다. 다시 시도해 주세요.");
+            }
+        } finally {
+            setBookmarkLoading(false);
+        }
+    };
 
     const openProposalModal = async () => {
         if (!viewerIsClient) return;
@@ -267,13 +293,10 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
         );
     }
 
-    const isOwner = false;
-
     return (
         <div className="pb-40 font-sans text-zinc-900 relative">
             <main className="mx-auto max-w-4xl px-4 pt-12 relative z-10">
 
-                {/* 🎯 [리뷰 반영] showFallbackHeader가 true일 때만 뒤로가기 버튼 표시 */}
                 {showFallbackHeader && (
                     <button
                         type="button"
@@ -309,6 +332,27 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                                     <span className="font-mono text-[10px] font-black uppercase tracking-widest text-[#FF7D00] bg-orange-50 px-3 py-1 rounded-md border border-orange-100">
                                         Agent Profile
                                     </span>
+
+                                    {/* 🎯 [추가] 클라이언트일 때만 보이는 북마크 버튼 */}
+                                    {viewerIsClient && (
+                                        <motion.button
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={handleBookmark}
+                                            disabled={bookmarkLoading}
+                                            className={`p-2.5 rounded-2xl border transition-all ${
+                                                isBookmarked
+                                                    ? 'bg-red-50 border-red-100 text-red-500 shadow-sm'
+                                                    : 'bg-zinc-50 border-zinc-100 text-zinc-400 hover:text-red-500 hover:border-red-100 hover:bg-red-50'
+                                            }`}
+                                        >
+                                            <Heart
+                                                size={20}
+                                                fill={isBookmarked ? 'currentColor' : 'none'}
+                                                className={bookmarkLoading ? 'animate-pulse' : ''}
+                                            />
+                                        </motion.button>
+                                    )}
                                 </div>
                             </div>
 
@@ -357,7 +401,6 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                         <div className="-mt-[34px] flex cursor-pointer items-center gap-1.5 border-t-2 border-[#FF7D00] pt-3 font-mono text-xs font-black uppercase tracking-widest text-zinc-900">
                             <Grid3X3 size={14} className="text-[#FF7D00]" /> PORTFOLIOS
                         </div>
-                        {/* 🎯 [리뷰 반영] 아직 구현되지 않은 PROJECTS 탭의 클릭 속성 및 스타일 비활성화 처리 */}
                         <div className="-mt-[34px] flex items-center gap-1.5 pt-3 font-mono text-xs font-bold uppercase tracking-widest text-zinc-400">
                             <Briefcase size={14} /> PROJECTS
                         </div>
@@ -391,7 +434,7 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                                         key={p.id}
                                         whileHover={{ y: -5, opacity: 0.95 }}
                                         onClick={() => setSelectedPortfolio(p)}
-                                        className="group relative aspect-square cursor-pointer overflow-hidden rounded-[2rem] border border-zinc-200 bg-zinc-100 text-left shadow-sm hover:shadow-xl hover:border-[#FF7D00]/50 transition-all duration-300"
+                                        className="group relative aspect-square cursor-pointer overflow-hidden rounded-[2rem] border border-zinc-200 bg-zinc-100 text-left shadow-sm hover:shadow-xl hover:border-[#FF7D00]/50 transition-all duration-500"
                                     >
                                         <img
                                             src={thumb}
@@ -425,13 +468,13 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                                 </div>
                                 <div className="text-2xl font-black tracking-tighter text-white">
                                     ₩{(freelancer.hourlyRate || 0).toLocaleString()}{' '}
-                                    <span className="font-mono text-xs text-[`#7A4FFF`]">/HR</span>
+                                    <span className="font-mono text-xs text-zinc-400">/HR</span>
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 onClick={openProposalModal}
-                                className="rounded-2xl bg-white px-8 py-3.5 font-mono text-sm font-black uppercase tracking-tighter text-zinc-900 shadow-[0_0_20px_rgba(255,125,0,0.2)] transition-all hover:bg-[`#FF7D00`] hover:text-white active:scale-95"
+                                className="rounded-2xl bg-white px-8 py-3.5 font-mono text-sm font-black uppercase tracking-tighter text-zinc-900 shadow-[0_0_20px_rgba(255,125,0,0.2)] transition-all hover:bg-[#FF7D00] hover:text-white active:scale-95"
                             >
                                 Offer_Project
                             </button>

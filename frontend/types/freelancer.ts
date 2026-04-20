@@ -24,6 +24,7 @@ export interface FreelancerProfile {
     skills: Skill[];
     averageRating: number;
     completedProjects?: number; // 상세 페이지용 추가
+    isBookmarked?: boolean;
 }
 
 // 3. 백엔드 API 응답(DTO) 형태
