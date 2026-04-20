@@ -65,8 +65,8 @@ public class PaymentService {
      */
     @Transactional
     public PaymentResponse confirmPayment(com.devnear.web.domain.user.User user, PaymentConfirmRequest request) {
-        // 1. 기존 결제 대기 내역 조회
-        Payment payment = paymentRepository.findByOrderId(request.getOrderId())
+        // 1. 기존 결제 대기 내역 조회 (동시성 방지를 위한 비관적 락 적용)
+        Payment payment = paymentRepository.findByOrderIdForUpdate(request.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("결제 정보를 찾을 수 없습니다."));
 
         // [추가] 결제 소유권 검증 (프로젝트 소유자만 승인 가능)
