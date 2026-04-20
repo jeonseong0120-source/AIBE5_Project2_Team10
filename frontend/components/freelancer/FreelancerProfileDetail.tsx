@@ -108,7 +108,11 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
         ].filter(Boolean).join('\n');
         const deadline = new Date();
         deadline.setDate(deadline.getDate() + 30);
-        const deadlineStr = deadline.toISOString().split('T')[0];
+        const deadlineStr = [
+            deadline.getFullYear(),
+            String(deadline.getMonth() + 1).padStart(2, '0'),
+            String(deadline.getDate()).padStart(2, '0'),
+        ].join('-');
         return {
             projectName: `[제안서] ${title}`,
             budget: Math.max(1, Math.floor(parsedPrice)),
@@ -415,7 +419,7 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                         className="fixed bottom-6 left-1/2 z-[60] w-[90%] max-w-2xl -translate-x-1/2"
                     >
                         <div className="flex items-center justify-between rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
-                            <div className="border-l-4 border-[`#FF7D00`] pl-6">
+                            <div className="border-l-4 border-[#FF7D00] pl-6">
                                 <div className="mb-1 font-mono text-[10px] font-black uppercase tracking-widest text-zinc-500">
                                     Estimated Rate
                                 </div>

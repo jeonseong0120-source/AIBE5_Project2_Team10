@@ -207,8 +207,8 @@ export default function ClientDashboardPage() {
         }
 
         const parsedPrice = Number(proposalOfferedPrice);
-        if (!Number.isFinite(parsedPrice) || parsedPrice < 1) {
-            alert('제안 금액은 1원 이상으로 입력해주세요.');
+        if (!Number.isInteger(parsedPrice) || parsedPrice < 1) {
+            alert('제안 금액은 1원 이상의 정수로 입력해주세요.');
             return;
         }
         if (proposalMode === 'FORM' && !proposalPositionTitle.trim()) {
@@ -250,8 +250,16 @@ export default function ClientDashboardPage() {
             closeProposalModal();
             fetchSentProposals();
         } catch (e: any) {
-            const text = e?.response?.data?.message;
-            if (typeof text === 'string' && text.includes('ALREADY_PROPOSED')) {
+            const status = e?.response?.status;
+            const raw = e?.response?.data?.message;
+            const msg = typeof raw === 'string' ? raw : '';
+            const reqUrl = String(e?.response?.config?.url ?? '');
+            const wasStandaloneRequest =
+                proposalMode === 'FORM' || reqUrl.includes('with-standalone-project');
+            // Backend returns 400 with no body for IllegalArgumentException (e.g. ALREADY_PROPOSED) on proposal POSTs.
+            const likelyAlreadyProposed =
+                msg.includes('ALREADY_PROPOSED') || (status === 400 && wasStandaloneRequest);
+            if (likelyAlreadyProposed) {
                 alert('이미 해당 프로젝트로 이 프리랜서에게 제안을 보냈습니다.');
             } else {
                 alert('제안 전송에 실패했습니다.');
