@@ -10,7 +10,7 @@ import {
     Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, Clock, ArrowUpRight, Plus, RefreshCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ProposalSendModal from '@/components/proposal/ProposalSendModal';
+import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } from '@/components/proposal/ProposalSendModal';
 
 // 🎯 [추가] 컴포넌 호출
 import GlobalNavbar from '@/components/common/GlobalNavbar';
@@ -49,7 +49,7 @@ export default function ClientDashboardPage() {
     const [proposalModalOpen, setProposalModalOpen] = useState(false);
     const [proposalTargetFreelancer, setProposalTargetFreelancer] = useState<any>(null);
     const [proposalMode, setProposalMode] = useState<'PROJECT' | 'FORM'>('PROJECT');
-    const [proposalProjects, setProposalProjects] = useState<any[]>([]);
+    const [proposalProjects, setProposalProjects] = useState<ProjectOption[]>([]);
     const [proposalProjectsLoading, setProposalProjectsLoading] = useState(false);
     const [proposalProjectId, setProposalProjectId] = useState<number | null>(null);
     const [proposalOfferedPrice, setProposalOfferedPrice] = useState('');
@@ -138,8 +138,7 @@ export default function ClientDashboardPage() {
         setProposalMode('PROJECT');
         try {
             const { data } = await api.get('/v1/projects/me');
-            const list = data?.content ?? data ?? [];
-            const usable = list.filter((p: any) => p.status !== 'COMPLETED');
+            const usable = mapProjectsForProposalPicker(data?.content ?? data ?? []);
             setProposalProjects(usable);
             setProposalProjectId(usable.length > 0 ? usable[0].projectId : null);
         } catch {

@@ -9,7 +9,7 @@ import api from '@/app/lib/axios';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
 import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
 import type { PortfolioDetailShape } from '@/components/portfolio/PortfolioDetailModal';
-import ProposalSendModal from '@/components/proposal/ProposalSendModal';
+import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } from '@/components/proposal/ProposalSendModal';
 
 export type FreelancerProfileDetailVariant = 'freelancer' | 'client';
 
@@ -36,6 +36,7 @@ const VARIANT_CONFIG = {
 export default function FreelancerProfileDetail({ profileId, variant, showFallbackHeader = true }: Props) {
     const router = useRouter();
     const cfg = VARIANT_CONFIG[variant];
+    const viewerIsClient = variant === 'client';
     const [freelancer, setFreelancer] = useState<FreelancerProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [portfolioList, setPortfolioList] = useState<PortfolioDetailShape[]>([]);
@@ -44,7 +45,7 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
     const [portalReady, setPortalReady] = useState(false);
     const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
     const [proposalMode, setProposalMode] = useState<'PROJECT' | 'FORM'>('PROJECT');
-    const [clientProjects, setClientProjects] = useState<any[]>([]);
+    const [clientProjects, setClientProjects] = useState<ProjectOption[]>([]);
     const [projectsLoading, setProjectsLoading] = useState(false);
     const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
     const [offeredPrice, setOfferedPrice] = useState<string>('');
@@ -62,12 +63,12 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
     }, []);
 
     const openProposalModal = async () => {
+        if (!viewerIsClient) return;
         setIsProposalModalOpen(true);
         setProjectsLoading(true);
         try {
             const { data } = await api.get('/v1/projects/me');
-            const list = data?.content ?? data ?? [];
-            const usable = list.filter((p: any) => p.status !== 'COMPLETED');
+            const usable = mapProjectsForProposalPicker(data?.content ?? data ?? []);
             setClientProjects(usable);
             if (usable.length > 0) {
                 setSelectedProjectId(usable[0].projectId);
@@ -425,13 +426,15 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                                 </div>
                             </div>
                         </div>
-                        <button
-                            type="button"
-                            onClick={openProposalModal}
-                            className="rounded-2xl bg-white px-8 py-3.5 font-mono text-sm font-black uppercase tracking-tighter text-zinc-900 shadow-[0_0_20px_rgba(255,125,0,0.2)] transition-all hover:bg-[#FF7D00] hover:text-white active:scale-95"
-                        >
-                            Offer_Project
-                        </button>
+                        {viewerIsClient && (
+                            <button
+                                type="button"
+                                onClick={openProposalModal}
+                                className="rounded-2xl bg-white px-8 py-3.5 font-mono text-sm font-black uppercase tracking-tighter text-zinc-900 shadow-[0_0_20px_rgba(255,125,0,0.2)] transition-all hover:bg-[#FF7D00] hover:text-white active:scale-95"
+                            >
+                                Offer_Project
+                            </button>
+                        )}
                     </div>
                 </motion.div>
             </AnimatePresence>
@@ -448,6 +451,7 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                 )}
 
             {portalReady &&
+                viewerIsClient &&
                 isProposalModalOpen &&
                 createPortal(
                     <AnimatePresence>

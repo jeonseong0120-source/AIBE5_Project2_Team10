@@ -60,7 +60,10 @@ public class CommunityCommentService {
                 .collect(Collectors.toMap(User::getId, User::getNickname));
 
         return comments.stream()
-                .map(c -> new CommunityCommentResponse(c, nicknameByUserId.get(c.getAuthorId())))
+                .map(c -> new CommunityCommentResponse(
+                        c,
+                        nicknameByUserId.getOrDefault(c.getAuthorId(), "알 수 없는 사용자")
+                ))
                 .toList();
     }
 

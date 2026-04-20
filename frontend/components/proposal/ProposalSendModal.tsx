@@ -4,12 +4,33 @@ import { XCircle } from 'lucide-react';
 
 type ProposalMode = 'PROJECT' | 'FORM';
 
+/** Fields used by the proposal flow’s project `<select>` (subset of `/v1/projects/me` rows). */
+export type ProjectOption = {
+    projectId: number;
+    projectName: string;
+};
+
+/**
+ * Maps API project list payloads to `ProjectOption[]`, excluding completed projects.
+ */
+export function mapProjectsForProposalPicker(list: unknown): ProjectOption[] {
+    if (!Array.isArray(list)) return [];
+    return list
+        .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+        .filter((item) => item.status !== 'COMPLETED')
+        .map((item) => ({
+            projectId: Number(item.projectId),
+            projectName: String(item.projectName ?? ''),
+        }))
+        .filter((p) => Number.isFinite(p.projectId));
+}
+
 type Props = {
     open: boolean;
     targetName?: string;
     mode: ProposalMode;
     onChangeMode: (mode: ProposalMode) => void;
-    projects: any[];
+    projects: ProjectOption[];
     projectsLoading: boolean;
     selectedProjectId: number | null;
     onChangeProjectId: (projectId: number) => void;
@@ -107,7 +128,7 @@ export default function ProposalSendModal({
                                 <option value="" disabled>
                                     프로젝트를 선택하세요
                                 </option>
-                                {projects.map((p: any) => (
+                                {projects.map((p) => (
                                     <option key={p.projectId} value={p.projectId}>
                                         {p.projectName}
                                     </option>
