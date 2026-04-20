@@ -9,7 +9,8 @@ import { NotificationBell } from '@/components/notifications/NotificationProvide
 import api from '../../lib/axios';
 
 import MypageSidebar from '@/components/layout/MypageSidebar';
-import MypageNavbar from '@/components/layout/MypageNavbar';
+// 🎯 [수정 1] 기존 MypageNavbar 임포트 삭제 후 GlobalNavbar 임포트
+import GlobalNavbar from '@/components/common/GlobalNavbar';
 import ProjectsTab from '@/components/client_mypage/ProjectsTab';
 import SettingsTab from '@/components/client_mypage/SettingsTab';
 import BookmarkedFreelancers from '@/components/client_mypage/BookmarkedFreelancers';
@@ -126,13 +127,8 @@ export default function ClientMyPage() {
                 <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
             </div>
 
-            <MypageNavbar
-                userType="CLIENT"
-                userName={user?.name}
-                profileImage={profile?.logoUrl}
-                navItems={navItems}
-                accentColor="#FF7D00"
-            />
+            {/* 🎯 [2. 수정] 기존 MypageNavbar를 지우고 GlobalNavbar로 대체! (navItems 배열은 삭제해도 되지만 유지했습니다) */}
+            <GlobalNavbar user={user} profile={profile} />
 
             <main className="max-w-7xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start relative z-10">
                 <MypageSidebar
