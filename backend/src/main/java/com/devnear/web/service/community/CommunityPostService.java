@@ -74,7 +74,7 @@ public class CommunityPostService {
                 postPage.getTotalPages()
         );
     }
-    
+
      @Transactional
         public CommunityPostResponse findById(Long postId, Long userId) {
             communityPostRepository.incrementViewCount(postId);
