@@ -266,16 +266,21 @@ export default function FreelancerCard({ data }: Props) {
 
                             <p className="mb-4 line-clamp-3 text-xs leading-relaxed text-zinc-500">{data.introduction}</p>
 
-                            <div className="mb-4 flex flex-wrap gap-1.5">
-                                {data.skills.slice(0, 3).map((skill) => (
-                                    <span
-                                        key={skill.id}
-                                        className="rounded-md border border-orange-100 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold font-mono uppercase text-[#FF7D00]"
-                                    >
+                        <div className="mb-4 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+                            {data.skills.slice(0, 8).map((skill) => (
+                                <span
+                                    key={skill.id}
+                                    className="rounded-md border border-orange-100 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold font-mono uppercase text-[#FF7D00]"
+                                >
                                     {skill.name}
                                 </span>
-                                ))}
-                            </div>
+                            ))}
+                            {data.skills.length > 8 && (
+                                <span className="rounded-md border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] font-black font-mono text-zinc-500">
+                                    +{data.skills.length - 8}
+                                </span>
+                            )}
+                        </div>
 
                             <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-4 text-xs font-mono font-bold text-zinc-500">
                                 <div className="flex items-center">

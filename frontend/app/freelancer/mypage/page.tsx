@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { User as UserIcon, Briefcase, Star, Award, Bookmark } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
+import { MAX_SELECTED_SKILLS } from '@/app/lib/skillLimits';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
 
 // New Components
@@ -191,7 +192,16 @@ export default function FreelancerMyPage() {
 
     const handleProfileAndSkillUpdate = async () => {
         setValidationError('');
-        if (mySkillIds.length === 0) { setValidationError('최소 1개 이상의 스킬을 선택해야 합니다.'); return; }
+
+        if (mySkillIds.length === 0) {
+            setValidationError('최소 1개 이상의 스킬을 선택해야 합니다.');
+            return;
+        }
+        if (mySkillIds.length > MAX_SELECTED_SKILLS) {
+            setValidationError(`스킬은 최대 ${MAX_SELECTED_SKILLS}개까지 선택할 수 있습니다.`);
+            return;
+        }
+
         const hRate = Number(editProfileData.hourlyRate?.toString().replace(/,/g, ''));
         if (isNaN(hRate) || hRate < 0) { setValidationError('시급은 0 이상이어야 합니다.'); return; }
         const locationKey = editProfileData.location || '서울';
@@ -222,8 +232,11 @@ export default function FreelancerMyPage() {
     }
 
     const toggleSkill = (skillId: number) => {
-        if (mySkillIds.includes(skillId)) { setMySkillIds(mySkillIds.filter(id => id !== skillId)); }
-        else { setMySkillIds([...mySkillIds, skillId]); }
+        if (mySkillIds.includes(skillId)) {
+            setMySkillIds(mySkillIds.filter(id => id !== skillId));
+        } else if (mySkillIds.length < MAX_SELECTED_SKILLS) {
+            setMySkillIds([...mySkillIds, skillId]);
+        }
     };
 
     const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -266,12 +279,35 @@ export default function FreelancerMyPage() {
         } catch (error: any) { alert('다중 이미지 업로드 실패'); } finally { setIsBulkUploading(false); }
     };
 
-    const removePortfolioImage = (indexToRemove: number) => { setPortfolioForm(prev => ({ ...prev, portfolioImages: prev.portfolioImages.filter((_, idx) => idx !== indexToRemove) })); };
-    const togglePortfolioSkill = (skillId: number) => { setPortfolioForm(prev => ({ ...prev, skills: prev.skills.includes(skillId) ? prev.skills.filter(id => id !== skillId) : [...prev.skills, skillId] })); };
+    const removePortfolioImage = (indexToRemove: number) => {
+        setPortfolioForm(prev => ({ ...prev, portfolioImages: prev.portfolioImages.filter((_, idx) => idx !== indexToRemove) }));
+    };
+
+    const togglePortfolioSkill = (skillId: number) => {
+        setPortfolioForm(prev => {
+            if (prev.skills.includes(skillId)) {
+                return { ...prev, skills: prev.skills.filter(id => id !== skillId) };
+            }
+            if (prev.skills.length >= MAX_SELECTED_SKILLS) {
+                return prev;
+            }
+            return { ...prev, skills: [...prev.skills, skillId] };
+        });
+    };
 
     const handleSavePortfolio = async () => {
-        if (!portfolioForm.title || !portfolioForm.desc) { alert("제목과 내용을 입력해주세요."); return; }
-        if (portfolioForm.skills.length === 0) { alert("사용 기술을 1개 이상 선택해주세요."); return; }
+        if (!portfolioForm.title || !portfolioForm.desc) {
+            alert("제목과 내용을 입력해주세요.");
+            return;
+        }
+        if (portfolioForm.skills.length === 0) {
+            alert("사용 기술을 1개 이상 선택해주세요.");
+            return;
+        }
+        if (portfolioForm.skills.length > MAX_SELECTED_SKILLS) {
+            alert(`사용 기술은 최대 ${MAX_SELECTED_SKILLS}개까지 선택할 수 있습니다.`);
+            return;
+        }
         try {
             const requestBody = { title: portfolioForm.title, desc: portfolioForm.desc, thumbnailUrl: portfolioForm.thumbnailUrl || null, portfolioImages: portfolioForm.portfolioImages.length > 0 ? portfolioForm.portfolioImages : ["https://placehold.co/600x400?text=No+Image"], skills: portfolioForm.skills };
             if (portfolioForm.id) { await api.put(`/portfolios/${portfolioForm.id}`, requestBody); alert('포트폴리오가 수정되었습니다.'); }

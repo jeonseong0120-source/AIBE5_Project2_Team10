@@ -56,6 +56,12 @@ public class ApplicationService {
             throw new IllegalStateException("현재 모집 중인 공고가 아닙니다. (지원 불가)");
         }
 
+        // 2.5 동일 계정(BOTH 등): 본인이 올린 공고에 프리랜서로 지원 불가
+        Long projectOwnerUserId = project.getClientProfile().getUser().getId();
+        if (projectOwnerUserId.equals(user.getId())) {
+            throw new IllegalArgumentException("본인이 등록한 공고에는 지원할 수 없습니다. (CANNOT_APPLY_OWN_PROJECT)");
+        }
+
         // 3. 중복 지원 방지
         if (applicationRepository.existsByProjectIdAndFreelancerProfileId(project.getId(), freelancer.getId())) {
             throw new IllegalArgumentException("이미 이 공고에 지원했습니다. (ALREADY_APPLIED)");

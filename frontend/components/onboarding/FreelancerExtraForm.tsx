@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import api from "../../app/lib/axios";
+import { MAX_SELECTED_SKILLS } from "@/app/lib/skillLimits";
 
 interface FreelancerExtraFormProps {
     freelancerData: {
@@ -33,9 +34,12 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
     }, []);
 
     const toggleSkill = (skillId: number) => {
-        const newSkills = freelancerData.skillIds.includes(skillId)
-            ? freelancerData.skillIds.filter(id => id !== skillId)
-            : [...freelancerData.skillIds, skillId];
+        const cur = freelancerData.skillIds;
+        const newSkills = cur.includes(skillId)
+            ? cur.filter((id) => id !== skillId)
+            : cur.length >= MAX_SELECTED_SKILLS
+              ? cur
+              : [...cur, skillId];
         setFreelancerData({ ...freelancerData, skillIds: newSkills });
     };
 
@@ -135,21 +139,36 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
 
                 {/* 기술 스택 선택 */}
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest">Tech Stacks * (Min 1)</label>
-                    <div className="flex flex-wrap gap-2">
-                        {availableSkills.map((skill) => (
-                            <div
-                                key={skill.skillId}
-                                onClick={() => toggleSkill(skill.skillId)}
-                                className={`px-3 py-1.5 rounded-full text-[11px] font-bold cursor-pointer transition-all border ${
-                                    freelancerData.skillIds.includes(skill.skillId)
-                                        ? "bg-[#7A4FFF] text-white border-[#7A4FFF] shadow-md"
-                                        : "bg-zinc-50 text-zinc-500 border-zinc-100 hover:bg-zinc-100"
-                                }`}
-                            >
-                                {skill.name}
-                            </div>
-                        ))}
+                    <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest">
+                        Tech Stacks * (1–{MAX_SELECTED_SKILLS}){" "}
+                        <span className="text-zinc-500 normal-case">
+                            ({freelancerData.skillIds.length}/{MAX_SELECTED_SKILLS})
+                        </span>
+                    </label>
+                    <div className="max-h-56 overflow-y-auto rounded-2xl border border-zinc-100 bg-zinc-50/50 p-3">
+                        <div className="flex flex-wrap gap-2">
+                            {availableSkills.map((skill) => {
+                                const on = freelancerData.skillIds.includes(skill.skillId);
+                                const atCap = !on && freelancerData.skillIds.length >= MAX_SELECTED_SKILLS;
+                                return (
+                                    <button
+                                        key={skill.skillId}
+                                        type="button"
+                                        disabled={atCap}
+                                        onClick={() => toggleSkill(skill.skillId)}
+                                        className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition-all ${
+                                            on
+                                                ? "cursor-pointer border-[#7A4FFF] bg-[#7A4FFF] text-white shadow-md"
+                                                : atCap
+                                                  ? "cursor-not-allowed border-zinc-100 bg-zinc-100 text-zinc-300"
+                                                  : "cursor-pointer border-zinc-100 bg-white text-zinc-500 hover:bg-zinc-100"
+                                        }`}
+                                    >
+                                        {skill.name}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>

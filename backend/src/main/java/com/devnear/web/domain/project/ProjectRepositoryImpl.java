@@ -1,5 +1,6 @@
 package com.devnear.web.domain.project;
 
+import com.devnear.web.domain.enums.ProjectListingKind;
 import com.devnear.web.domain.enums.ProjectStatus;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -31,7 +32,8 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                         statusEq(cond.getStatus()),
                         isOnline(cond.getOnline()),
                         isOffline(cond.getOffline()),
-                        project.status.eq(ProjectStatus.OPEN) // 탐색 페이지 노출 로직 (OPEN만 노출)
+                        project.status.eq(ProjectStatus.OPEN), // 탐색 페이지 노출 로직 (OPEN만 노출)
+                        marketplaceListingOnly()
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -48,7 +50,8 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                         statusEq(cond.getStatus()),
                         isOnline(cond.getOnline()),
                         isOffline(cond.getOffline()),
-                        project.status.eq(ProjectStatus.OPEN) // 탐색 페이지 노출 로직
+                        project.status.eq(ProjectStatus.OPEN), // 탐색 페이지 노출 로직
+                        marketplaceListingOnly()
                 );
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -77,5 +80,10 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
 
     private BooleanExpression isOffline(Boolean offline) {
         return offline != null ? project.offline.eq(offline) : null;
+    }
+
+    /** 제안서 단독 공고는 QueryDSL 검색에서 제외 (null = 레거시 마켓 공고) */
+    private BooleanExpression marketplaceListingOnly() {
+        return project.listingKind.isNull().or(project.listingKind.eq(ProjectListingKind.MARKETPLACE));
     }
 }

@@ -352,15 +352,55 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                         </div>
                     ) : (
                         <div className="grid grid-cols-3 gap-3 md:gap-4">
-                            {portfolioList.map((p) => (
-                                <motion.button
-                                    type="button" key={p.id} whileHover={{ y: -5, opacity: 0.95 }}
-                                    onClick={() => setSelectedPortfolio(p)}
-                                    className="group relative aspect-square cursor-pointer overflow-hidden rounded-[2rem] border border-zinc-200 bg-zinc-100 text-left shadow-sm hover:shadow-xl hover:border-[#FF7D00]/50 transition-all duration-300"
-                                >
-                                    <img src={p.thumbnailUrl || p.portfolioImages?.[0] || FALLBACK_IMAGE_URL} alt={p.title} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                </motion.button>
-                            ))}
+                            {portfolioList.map((p) => {
+                                const thumb = p.thumbnailUrl || p.portfolioImages?.[0] || FALLBACK_IMAGE_URL;
+                                const portSkills = p.skills ?? [];
+                                return (
+                                    <motion.button
+                                        type="button"
+                                        key={p.id}
+                                        whileHover={{ y: -5, opacity: 0.95 }}
+                                        onClick={() => setSelectedPortfolio(p)}
+                                        className="group relative aspect-square cursor-pointer overflow-hidden rounded-[2rem] border border-zinc-200 bg-zinc-100 text-left shadow-sm hover:shadow-xl hover:border-[#FF7D00]/50 transition-all duration-300"
+                                    >
+                                        <img
+                                            src={thumb}
+                                            alt={p.title}
+                                            className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                            onError={(e) => {
+                                                if (e.currentTarget.src !== FALLBACK_IMAGE_URL) {
+                                                    e.currentTarget.src = FALLBACK_IMAGE_URL;
+                                                }
+                                            }}
+                                        />
+                                        <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/78 via-black/30 to-transparent p-2 pt-10 text-left md:p-2.5 md:pt-12">
+                                            <p className="line-clamp-2 text-[9px] font-black leading-tight text-white drop-shadow-md md:text-[10px]">
+                                                {p.title}
+                                            </p>
+                                            {portSkills.length > 0 && (
+                                                <div className="mt-1 flex flex-wrap gap-0.5 md:mt-1.5 md:gap-1">
+                                                    {portSkills.slice(0, 8).map((s, idx) => {
+                                                        const sid = s.skillId ?? s.id ?? idx;
+                                                        return (
+                                                            <span
+                                                                key={`port-grid-skill-${p.id}-${sid}-${idx}`}
+                                                                className="max-w-full truncate rounded border border-white/30 bg-white/15 px-1 py-0.5 text-[7px] font-bold uppercase tracking-tighter text-white backdrop-blur-[2px] md:px-1.5 md:text-[8px]"
+                                                            >
+                                                                {s.name}
+                                                            </span>
+                                                        );
+                                                    })}
+                                                    {portSkills.length > 8 && (
+                                                        <span className="rounded bg-[#FF7D00] px-1 py-0.5 text-[7px] font-black text-white md:px-1.5 md:text-[8px]">
+                                                            +{portSkills.length - 8}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.button>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

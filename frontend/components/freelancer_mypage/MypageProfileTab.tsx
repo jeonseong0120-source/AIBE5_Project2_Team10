@@ -1,5 +1,6 @@
 'use client';
 
+import { MAX_SELECTED_SKILLS } from '@/app/lib/skillLimits';
 import { Settings, User as UserIcon, Loader2, Upload, Save, MapPin, Clock, Activity, X, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -288,7 +289,15 @@ export default function MypageProfileTab({
                                 </div>
 
                                 <div className="space-y-4 md:col-span-2 border-t border-zinc-200/50 pt-8 mt-2">
-                                    <p className="text-[10px] font-black font-mono uppercase text-[#7A4FFF] tracking-widest mb-4">보유 기술 편집</p>
+                                    <p className="text-[10px] font-black font-mono uppercase text-[#7A4FFF] tracking-widest mb-1">
+                                        보유 기술 편집{" "}
+                                        <span className="text-zinc-400">
+                                            ({mySkillIds.length}/{MAX_SELECTED_SKILLS})
+                                        </span>
+                                    </p>
+                                    <p className="mb-4 text-[10px] font-medium text-zinc-400">
+                                        최대 {MAX_SELECTED_SKILLS}개까지 선택할 수 있습니다.
+                                    </p>
 
                                     <div className="flex flex-wrap gap-2.5 min-h-[60px] p-5 bg-white rounded-2xl border border-zinc-200 shadow-inner">
                                         {mySkillIds.length === 0 ? (
@@ -309,15 +318,29 @@ export default function MypageProfileTab({
                                     <div className="relative mt-4">
                                         <input className="w-full px-5 py-4 rounded-2xl bg-white border border-zinc-200 outline-none text-sm font-black focus:border-[#7A4FFF] shadow-sm transition-all focus:ring-4 focus:ring-[#7A4FFF]/10" placeholder="스킬 검색하여 추가하기..." value={skillSearchQuery} onChange={e => setSkillSearchQuery(e.target.value)} />
                                     </div>
-                                    <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto custom-scrollbar p-4 bg-white rounded-2xl border border-zinc-100 shadow-inner mt-2">
+                                    <div className="flex flex-wrap gap-2 max-h-[280px] overflow-y-auto custom-scrollbar p-4 bg-white rounded-2xl border border-zinc-100 shadow-inner mt-2">
                                         {allGlobalSkills
                                             .filter(s => s.name.toLowerCase().includes(skillSearchQuery.toLowerCase()))
                                             .map((skill, idx) => {
                                                 const sId = skill.skillId || skill.id;
                                                 const isSelected = mySkillIds.includes(sId);
+                                                const atCap = !isSelected && mySkillIds.length >= MAX_SELECTED_SKILLS;
                                                 return (
-                                                    <button key={`global-skill-${sId || idx}-${idx}`} onClick={() => toggleSkill(sId)} className={`px-4 py-2 rounded-xl text-[11px] font-black border transition-all tracking-wider ${isSelected ? 'bg-[#7A4FFF] border-[#7A4FFF] text-white shadow-md' : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-[#7A4FFF] hover:text-[#7A4FFF]'}`}>
-                                                        {isSelected ? '✓ ' : '+ '}{skill.name}
+                                                    <button
+                                                        key={`global-skill-${sId || idx}-${idx}`}
+                                                        type="button"
+                                                        disabled={atCap}
+                                                        onClick={() => toggleSkill(sId)}
+                                                        className={`px-4 py-2 rounded-xl text-[11px] font-black border transition-all tracking-wider ${
+                                                            isSelected
+                                                                ? 'bg-[#7A4FFF] border-[#7A4FFF] text-white shadow-md'
+                                                                : atCap
+                                                                  ? 'cursor-not-allowed border-zinc-100 bg-zinc-100 text-zinc-300'
+                                                                  : 'bg-zinc-50 border-zinc-200 text-zinc-500 hover:border-[#7A4FFF] hover:text-[#7A4FFF]'
+                                                        }`}
+                                                    >
+                                                        {isSelected ? '✓ ' : '+ '}
+                                                        {skill.name}
                                                     </button>
                                                 );
                                             })}
