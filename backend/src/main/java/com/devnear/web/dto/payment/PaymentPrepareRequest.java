@@ -22,5 +22,6 @@ public class PaymentPrepareRequest {
     private String orderName;
 
     @NotNull(message = "프로젝트 ID는 필수입니다.")
+    @Positive(message = "유효하지 않은 프로젝트 ID입니다.")
     private Long projectId;
 }
