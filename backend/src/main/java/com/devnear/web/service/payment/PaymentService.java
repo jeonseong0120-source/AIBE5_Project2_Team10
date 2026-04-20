@@ -37,9 +37,15 @@ public class PaymentService {
             throw new com.devnear.web.exception.ProjectAccessDeniedException("본인의 프로젝트만 결제할 수 있습니다.");
         }
 
-        // 수수료 5% 계산 (소수점 버림)
-        long fee = (long) (request.getAmount() * 0.05);
-        long netAmount = request.getAmount() - fee;
+        // 결제 금액 검증
+        if (request.getAmount() == null || request.getAmount() <= 0) {
+            throw new IllegalArgumentException("유효하지 않은 결제 금액입니다.");
+        }
+
+        // 수수료 5% 계산 (부동 소수점 오차 방지를 위해 정수 연산 사용)
+        long amount = request.getAmount();
+        long fee = amount * 5 / 100;
+        long netAmount = amount - fee;
 
         Payment payment = Payment.builder()
                 .orderId(request.getOrderId())
@@ -58,10 +64,15 @@ public class PaymentService {
      * 최종 결제 승인 로직
      */
     @Transactional
-    public PaymentResponse confirmPayment(PaymentConfirmRequest request) {
+    public PaymentResponse confirmPayment(com.devnear.web.domain.user.User user, PaymentConfirmRequest request) {
         // 1. 기존 결제 대기 내역 조회
         Payment payment = paymentRepository.findByOrderId(request.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("결제 정보를 찾을 수 없습니다."));
+
+        // [추가] 결제 소유권 검증 (프로젝트 소유자만 승인 가능)
+        if (!payment.getProject().getClientProfile().getUser().getId().equals(user.getId())) {
+            throw new com.devnear.web.exception.ProjectAccessDeniedException("본인의 결제 내역만 승인할 수 있습니다.");
+        }
 
         // 2. 금액 변조 검증
         if (!payment.getAmount().equals(request.getAmount())) {

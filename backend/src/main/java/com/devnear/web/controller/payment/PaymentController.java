@@ -33,7 +33,9 @@ public class PaymentController {
      * 결제 최종 승인 엔드포인트
      */
     @PostMapping("/confirm")
-    public ResponseEntity<PaymentResponse> confirmPayment(@RequestBody @Valid PaymentConfirmRequest request) {
-        return ResponseEntity.ok(paymentService.confirmPayment(request));
+    public ResponseEntity<PaymentResponse> confirmPayment(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.devnear.web.domain.user.User user,
+            @RequestBody @Valid PaymentConfirmRequest request) {
+        return ResponseEntity.ok(paymentService.confirmPayment(user, request));
     }
 }
