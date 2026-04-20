@@ -58,6 +58,7 @@ public class ApplicantResponse {
         // 역제안은 명시적 매칭률 필드가 없을 수 있으므로 100% 혹은 계산된 값(필요시)을 넣습니다.
         // 여기선 단순화하여 100% 또는 0으로 처리하거나, 프로젝트-프리랜서 기술 스택 비교 로직을 태울 수 있습니다.
         return ApplicantResponse.builder()
+                .applicationId(proposal.getId()) // Populate applicationId for stable key in UI
                 .proposalId(proposal.getId())
                 .source("PROPOSAL")
                 .status(com.devnear.web.domain.enums.ApplicationStatus.valueOf(proposal.getStatus().name()))

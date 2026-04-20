@@ -56,8 +56,8 @@ public class ApplicationService {
         Project project = projectRepository.findByIdWithClientProfile(request.getProjectId())
                 .orElseThrow(() -> new IllegalArgumentException("지원하려는 프로젝트(공고)를 찾을 수 없습니다."));
 
-        if (project.getStatus() != ProjectStatus.OPEN) {
-            throw new IllegalStateException("현재 모집 중인 공고가 아닙니다. (지원 불가)");
+        if (project.getStatus() != ProjectStatus.OPEN || project.getFreelancerProfile() != null) {
+            throw new IllegalStateException("현재 모집 중이 아니거나 이미 매칭(결제 대기)이 완료된 공고입니다. (지원 불가)");
         }
 
         // 2.5 동일 계정(BOTH 등): 본인이 올린 공고에 프리랜서로 지원 불가

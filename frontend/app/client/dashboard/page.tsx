@@ -55,6 +55,7 @@ export default function ClientDashboardPage() {
     const [proposalWorkingPeriod, setProposalWorkingPeriod] = useState('');
     const [proposalSending, setProposalSending] = useState(false);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+    const [paymentProjectIdInFlight, setPaymentProjectIdInFlight] = useState<number | null>(null);
 
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
@@ -327,9 +328,11 @@ export default function ClientDashboardPage() {
 
     const handlePayment = async (project: any, application: any) => {
         try {
+            setPaymentProjectIdInFlight(project.projectId);
             const tossClientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
             if (!tossClientKey) {
                 alert('결제 환경 변수가 설정되지 않았습니다.');
+                setPaymentProjectIdInFlight(null);
                 return;
             }
 
@@ -366,11 +369,13 @@ export default function ClientDashboardPage() {
         } catch (err: any) {
             console.error('Payment Error:', err);
             alert(err.response?.data?.message || '결제 진행 중 오류가 발생했습니다.');
+            setPaymentProjectIdInFlight(null);
         }
     };
 
     const handleDemoPayment = async (project: any, application: any) => {
         try {
+            setPaymentProjectIdInFlight(project.projectId);
             // 1. 보안을 위한 주문번호 생성 및 정보 세팅
             const orderId = `devnear_order_demo_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
             const amount = Math.floor(project.budget);
@@ -391,11 +396,13 @@ export default function ClientDashboardPage() {
             setTimeout(() => {
                 const mockPaymentKey = `mock_${new Date().getTime()}_${Math.random().toString(36).substring(2, 6)}`;
                 router.push(`/client/payment/success?paymentKey=${mockPaymentKey}&orderId=${orderId}&amount=${amount}`);
+                setPaymentProjectIdInFlight(null); // Cleanup in demo flow
             }, 1500);
 
         } catch (err: any) {
             console.error('Demo Payment Error:', err);
             alert(err.response?.data?.message || '데모 결제 준비 중 오류가 발생했습니다.');
+            setPaymentProjectIdInFlight(null);
         }
     };
 
@@ -555,16 +562,18 @@ export default function ClientDashboardPage() {
                                                                                                 <div className="flex flex-col gap-2 mt-2">
                                                                                                     <button
                                                                                                         onClick={() => handlePayment(project, app)}
-                                                                                                        className="w-full px-4 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-zinc-800 transition-all uppercase tracking-widest font-mono shadow-md"
+                                                                                                        disabled={paymentProjectIdInFlight === project.projectId}
+                                                                                                        className="w-full px-4 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-zinc-800 transition-all uppercase tracking-widest font-mono shadow-md disabled:opacity-50"
                                                                                                     >
-                                                                                                        안전 결제하기
+                                                                                                        {paymentProjectIdInFlight === project.projectId ? '처리 중...' : '안전 결제하기'}
                                                                                                     </button>
                                                                                                     <button
                                                                                                         onClick={() => handleDemoPayment(project, app)}
-                                                                                                        className="w-full px-4 py-3 bg-[#FF7D00] text-white rounded-xl text-[10px] font-black hover:bg-orange-600 transition-all uppercase tracking-widest font-mono shadow-[0_4px_15px_rgba(255,125,0,0.4)] flex items-center justify-center gap-2"
+                                                                                                        disabled={paymentProjectIdInFlight === project.projectId}
+                                                                                                        className="w-full px-4 py-3 bg-[#FF7D00] text-white rounded-xl text-[10px] font-black hover:bg-orange-600 transition-all uppercase tracking-widest font-mono shadow-[0_4px_15px_rgba(255,125,0,0.4)] flex items-center justify-center gap-2 disabled:opacity-50"
                                                                                                     >
-                                                                                                        <Sparkles size={14} className="animate-pulse" />
-                                                                                                        번개 데모 결제
+                                                                                                        <Sparkles size={14} className={paymentProjectIdInFlight === project.projectId ? "" : "animate-pulse"} />
+                                                                                                        {paymentProjectIdInFlight === project.projectId ? '처리 중...' : '번개 데모 결제'}
                                                                                                     </button>
                                                                                                 </div>
                                                                                             )}

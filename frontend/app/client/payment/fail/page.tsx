@@ -9,8 +9,8 @@ function PaymentFailContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     
-    const code = searchParams.get('code') || 'UNKNOWN_ERROR';
-    const message = searchParams.get('message') || '결제 처리 중 알 수 없는 오류가 발생했습니다.';
+    const code = searchParams.get('code') ?? 'UNKNOWN_ERROR';
+    const message = searchParams.get('message') ?? '결제 처리 중 알 수 없는 오류가 발생했습니다.';
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans p-6">
@@ -29,7 +29,7 @@ function PaymentFailContent() {
                 
                 <div className="bg-zinc-50 p-6 rounded-2xl w-full text-left border border-zinc-100 mb-8">
                     <p className="text-xs font-bold font-mono text-zinc-400 mb-1">오류 코드: {code}</p>
-                    <p className="text-sm font-medium text-red-500 line-clamp-3">{decodeURIComponent(message)}</p>
+                    <p className="text-sm font-medium text-red-500 line-clamp-3">{message}</p>
                 </div>
 
                 <div className="flex flex-col w-full gap-3">

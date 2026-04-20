@@ -21,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.devnear.web.service.freelancer.FreelancerGradeService;
+import com.devnear.web.domain.payment.PaymentRepository;
+import com.devnear.web.domain.payment.Payment;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -37,6 +39,7 @@ public class ReviewService {
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final ProjectRepository projectRepository;
     private final FreelancerGradeService freelancerGradeService;
+    private final PaymentRepository paymentRepository;
 
     @Transactional
     public Long createFreelancerReview(User user, FreelancerReviewCreateRequest request) {
@@ -87,11 +90,16 @@ public class ReviewService {
 
         // 저장 후 평점 및 등급 재계산 + 프로젝트 예산 정산 (지갑으로 입금)
         freelancerReviewRepository.save(review);
-        
-        // [정산 로직 추가] 프로젝트 예산을 프리랜서 잔액으로 이전
-        freelancer.addBalance(project.getBudget().longValue());
-        
-        recomputeFreelancerAggregates(freelancer.getId());
+        // [정산 로직 변경] 프로젝트 예산이 아닌 실제 결제된 순 정산액(netAmount)을 기준으로 입금 처리
+        Payment payment = paymentRepository.findByProjectId(project.getId())
+                .orElseThrow(() -> new IllegalStateException("해당 프로젝트의 결제 정보를 찾을 수 없어 정산할 수 없습니다."));
+
+        if (payment.getStatus() != com.devnear.web.domain.enums.PaymentStatus.DONE &&
+            payment.getStatus() != com.devnear.web.domain.enums.PaymentStatus.PURCHASE_CONFIRMED) {
+            throw new IllegalStateException("유효한 결제 완료 상태가 아닙니다.");
+        }
+
+        recomputeFreelancerAggregates(freelancer.getId(), payment.getNetAmount());
 
         return review.getId();
     }
@@ -214,9 +222,18 @@ public class ReviewService {
      */
     @Transactional
     public void recomputeFreelancerAggregates(Long freelancerId) {
+        recomputeFreelancerAggregates(freelancerId, 0L);
+    }
+
+    @Transactional
+    public void recomputeFreelancerAggregates(Long freelancerId, Long additionalBalance) {
         // obtain PESSIMISTIC_WRITE lock on freelancer profile
         FreelancerProfile locked = freelancerProfileRepository.findByIdForUpdate(freelancerId)
                 .orElseThrow(() -> new ResourceNotFoundException("프리랜서 프로필이 없습니다."));
+
+        if (additionalBalance != null && additionalBalance > 0) {
+            locked.addBalance(additionalBalance);
+        }
 
         List<FreelancerReview> reviews = freelancerReviewRepository.findByFreelancer(locked);
 

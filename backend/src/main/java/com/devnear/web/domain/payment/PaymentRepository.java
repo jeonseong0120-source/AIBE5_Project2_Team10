@@ -16,6 +16,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT p FROM Payment p WHERE p.project.id = :projectId")
     Optional<Payment> findByProjectId(@Param("projectId") Long projectId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Payment p WHERE p.project.id = :projectId")
+    Optional<Payment> findByProjectIdForUpdate(@Param("projectId") Long projectId);
+
     @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
     @Query("DELETE FROM Payment p WHERE p.project.id = :projectId")
     void deleteByProjectId(@Param("projectId") Long projectId);

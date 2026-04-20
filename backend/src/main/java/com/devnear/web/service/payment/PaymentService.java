@@ -37,19 +37,21 @@ public class PaymentService {
             throw new com.devnear.web.exception.ProjectAccessDeniedException("본인의 프로젝트만 결제할 수 있습니다.");
         }
 
-        // 중복 결제 내역 처리 (OneToOne 관계 대응)
-        paymentRepository.findByProjectId(request.getProjectId()).ifPresent(existingPayment -> {
-            if (existingPayment.getStatus() == com.devnear.web.domain.enums.PaymentStatus.DONE) {
-                throw new IllegalStateException("이미 결제가 완료된 프로젝트입니다.");
-            }
-            // 이미 결제된 건이 아니라면 기존 READY 내역을 직접 쿼리로 삭제 (ID 중복 충돌 방지)
-            paymentRepository.deleteByProjectId(request.getProjectId());
-        });
-
         // 결제 금액 검증
         if (request.getAmount() == null || request.getAmount() <= 0) {
             throw new IllegalArgumentException("유효하지 않은 결제 금액입니다.");
         }
+
+        // 중복 결제 내역 처리 및 락 확보 (OneToOne 관계 대응)
+        paymentRepository.findByProjectIdForUpdate(request.getProjectId()).ifPresent(existingPayment -> {
+            if (existingPayment.getStatus() == com.devnear.web.domain.enums.PaymentStatus.DONE) {
+                throw new IllegalStateException("이미 결제가 완료된 프로젝트입니다.");
+            }
+            // 이미 결제된 건이 아니라면 기존 전결제 내역(READY)을 삭제하여 레이스 컨디션 및 PK 이슈 방지
+            paymentRepository.deleteByProjectId(request.getProjectId());
+            paymentRepository.flush();
+        });
+
 
         // 수수료 5% 계산 (부동 소수점 오차 방지를 위해 정수 연산 사용)
         long amount = request.getAmount();

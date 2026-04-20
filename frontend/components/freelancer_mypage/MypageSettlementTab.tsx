@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Wallet, TrendingUp, CreditCard, ShieldCheck, HelpCircle, ArrowRight, Banknote, RefreshCw } from 'lucide-react';
+
 
 interface MypageSettlementTabProps {
     profile: any;
@@ -9,6 +11,13 @@ interface MypageSettlementTabProps {
 
 export default function MypageSettlementTab({ profile }: MypageSettlementTabProps) {
     const balance = profile?.balance || 0;
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        // FIXME: 향후 실제 잔액 갱신 API 연동 필요 (현재는 UI 시뮬레이션만 제공)
+        setTimeout(() => setIsRefreshing(false), 800);
+    };
 
     return (
         <div className="space-y-10">
@@ -55,11 +64,21 @@ export default function MypageSettlementTab({ profile }: MypageSettlementTabProp
                         </div>
 
                         <div className="flex gap-4">
-                            <button className="h-16 px-10 bg-white text-zinc-900 rounded-[2rem] text-sm font-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20 flex items-center gap-3">
+                            <button 
+                                disabled 
+                                className="relative group h-16 px-10 bg-white/50 text-zinc-500 rounded-[2rem] text-sm font-black shadow-xl shadow-black/10 flex items-center gap-3 cursor-not-allowed"
+                            >
                                 <Banknote size={18} /> 출금 신청하기
+                                <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-xs py-2 px-4 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none before:absolute before:bottom-[-4px] before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-zinc-900 shadow-xl">
+                                    서비스 준비 중입니다
+                                </div>
                             </button>
-                            <button className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-[2rem] border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-white">
-                                <RefreshCw size={20} />
+                            <button 
+                                onClick={handleRefresh}
+                                disabled={isRefreshing}
+                                className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-[2rem] border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-white disabled:opacity-50"
+                            >
+                                <RefreshCw size={20} className={isRefreshing ? "animate-spin text-[#A78BFA]" : ""} />
                             </button>
                         </div>
                     </div>
@@ -99,7 +118,7 @@ export default function MypageSettlementTab({ profile }: MypageSettlementTabProp
                     {[
                         { title: '실시간 정산 시스템', desc: '클라이언트가 프로젝트를 마감하고 리뷰를 남기면 즉시 자산으로 정산됩니다.' },
                         { title: '출금 한도', desc: '최소 출금 가능 금액은 10,000원이며, 1일 최대 1,000만원까지 신청 가능합니다.' },
-                        { title: '수수료 안내', desc: '데브니어 플랫폼 이용 수수료는 0%이며, 타사 대비 압도적인 수익률을 보장합니다.' }
+                        { title: '수수료 안내', desc: '데브니어 플랫폼 결제 이용 수수료는 5%이며, 업계 최저 수준의 수수료로 프리랜서의 수익을 극대화합니다.' }
                     ].map((item, i) => (
                         <div key={i} className="flex gap-4 group">
                             <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#7A4FFF]/40 flex-shrink-0 group-hover:scale-150 transition-transform" />
