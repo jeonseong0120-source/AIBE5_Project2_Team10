@@ -4,7 +4,13 @@ import com.devnear.web.domain.community.CommunityPost;
 import com.devnear.web.domain.community.CommunityPostLike;
 import com.devnear.web.domain.community.CommunityPostLikeRepository;
 import com.devnear.web.domain.community.CommunityPostRepository;
-import com.devnear.web.dto.community.*;
+import com.devnear.web.domain.user.User;
+import com.devnear.web.domain.user.UserRepository;
+import com.devnear.web.dto.community.CommunityLikeResponse;
+import com.devnear.web.dto.community.CommunityPostCreateRequest;
+import com.devnear.web.dto.community.CommunityPostPageResponse;
+import com.devnear.web.dto.community.CommunityPostResponse;
+import com.devnear.web.dto.community.CommunityPostUpdateRequest;
 import com.devnear.web.exception.ResourceConflictException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.List;
 
 @Service
@@ -24,6 +31,7 @@ public class CommunityPostService {
 
     private final CommunityPostRepository communityPostRepository;
     private final CommunityPostLikeRepository communityPostLikeRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public Long create(CommunityPostCreateRequest request, Long authorId) {
@@ -44,8 +52,18 @@ public class CommunityPostService {
             postPage = communityPostRepository.findAllByOrderByIdDesc(pageable);
         }
 
-        List<CommunityPostResponse> content = postPage.getContent().stream()
-                .map(CommunityPostResponse::new)
+        List<CommunityPost> posts = postPage.getContent();
+        Map<Long, String> nicknamesByUserId = userRepository.findAllById(
+                        posts.stream().map(CommunityPost::getAuthorId).distinct().toList()
+                ).stream()
+                .collect(Collectors.toMap(User::getId, User::getNickname));
+
+        List<CommunityPostResponse> content = posts.stream()
+                .map(post -> new CommunityPostResponse(
+                        post,
+                        nicknamesByUserId.getOrDefault(post.getAuthorId(), "알 수 없음"),
+                        false
+                ))
                 .toList();
 
         return new CommunityPostPageResponse(
@@ -57,16 +75,19 @@ public class CommunityPostService {
         );
     }
 
-    @Transactional
-    public CommunityPostResponse findById(Long postId, Long userId) {
-        communityPostRepository.incrementViewCount(postId);
-        CommunityPost post = getPost(postId);
-        boolean isLiked = false;
-        if (userId != null) {
-            isLiked = communityPostLikeRepository.existsByPostIdAndUserId(postId, userId);
+     @Transactional
+        public CommunityPostResponse findById(Long postId, Long userId) {
+            communityPostRepository.incrementViewCount(postId);
+            CommunityPost post = getPost(postId);
+
+            boolean isLiked = false;
+            if (userId != null) {
+                isLiked = communityPostLikeRepository.existsByPostIdAndUserId(postId, userId);
+            }
+
+            String nickname = getNickname(post.getAuthorId());
+            return new CommunityPostResponse(post, nickname, isLiked);
         }
-        return new CommunityPostResponse(post, isLiked);
-    }
 
     @Transactional
     public void update(Long postId, CommunityPostUpdateRequest request, Long userId) {
@@ -112,6 +133,12 @@ public class CommunityPostService {
     CommunityPost getPost(Long postId) {
         return communityPostRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("게시글이 없습니다."));
+    }
+
+    private String getNickname(Long userId) {
+        return userRepository.findById(userId)
+                .map(User::getNickname)
+                .orElse("알 수 없음");
     }
 
     private void validatePostRequest(String title, String content) {

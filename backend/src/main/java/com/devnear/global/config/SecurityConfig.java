@@ -110,6 +110,7 @@ public class SecurityConfig {
 
                         // [역제안] 전송/보낸 목록: 클라이언트
                         .requestMatchers(HttpMethod.POST, "/api/proposals", "/api/v1/proposals").hasAnyRole("CLIENT", "BOTH")
+                        .requestMatchers(HttpMethod.POST, "/api/proposals/with-standalone-project", "/api/v1/proposals/with-standalone-project").hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers(HttpMethod.GET, "/api/proposals/sent", "/api/v1/proposals/sent").hasAnyRole("CLIENT", "BOTH")
 
                         // [결제] 결제 준비 및 승인: 클라이언트 전용

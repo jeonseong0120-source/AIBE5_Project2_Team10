@@ -10,7 +10,6 @@ export interface CommunityPost {
     isLiked?: boolean;
     createdAt: string;
     updatedAt: string;
-
 }
 
 export interface CommunityPostPageResponse {
@@ -25,6 +24,7 @@ export interface CommunityComment {
     id: number;
     postId: number;
     authorId: number;
+    authorNickname?: string;
     content: string;
     createdAt: string;
     updatedAt: string;

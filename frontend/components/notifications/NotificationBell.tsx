@@ -1,11 +1,11 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { useNotifications } from "./notificationContext";
 
 /** 상단 네비 등에 인라인으로 배치 (MY_PAGE / MY_PROFILE 옆). */
 export function NotificationBell() {
-    const { showBell, open, setOpen, unreadCount, items, loading, panelRef, onRowClick } = useNotifications();
+    const { showBell, open, setOpen, unreadCount, items, loading, panelRef, onRowClick, onDismissClick } = useNotifications();
 
     if (!showBell) {
         return null;
@@ -41,21 +41,34 @@ export function NotificationBell() {
                             <ul className="divide-y divide-zinc-100">
                                 {items.map((n) => (
                                     <li key={n.notificationId}>
-                                        <button
-                                            type="button"
-                                            onClick={() => void onRowClick(n)}
-                                            className={`flex w-full flex-col gap-0.5 px-4 py-3 text-left text-sm transition hover:bg-zinc-50 ${
+                                        <div
+                                            className={`flex items-start gap-2 px-4 py-3 text-left text-sm ${
                                                 n.read ? "text-zinc-500" : "bg-orange-50/40 text-zinc-900"
                                             }`}
                                         >
-                                            <span className="font-medium">{n.title}</span>
-                                            {n.message ? (
-                                                <span className="line-clamp-2 text-xs text-zinc-600">{n.message}</span>
-                                            ) : null}
-                                            <span className="text-[10px] text-zinc-400">
-                                                {n.createdAt ? new Date(n.createdAt).toLocaleString() : ""}
-                                            </span>
-                                        </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => void onRowClick(n)}
+                                                disabled={!n.url}
+                                                className={`flex flex-1 flex-col gap-0.5 text-left ${n.url ? "transition hover:opacity-80" : "cursor-default"}`}
+                                            >
+                                                <span className="font-medium">{n.title}</span>
+                                                {n.message ? (
+                                                    <span className="line-clamp-2 text-xs text-zinc-600">{n.message}</span>
+                                                ) : null}
+                                                <span className="text-[10px] text-zinc-400">
+                                                    {n.createdAt ? new Date(n.createdAt).toLocaleString() : ""}
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => void onDismissClick(n)}
+                                                className="rounded-md p-1 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
+                                                aria-label="알림 확인"
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
                                     </li>
                                 ))}
                             </ul>

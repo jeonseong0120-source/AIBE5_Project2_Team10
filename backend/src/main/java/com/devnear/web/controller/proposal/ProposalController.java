@@ -3,6 +3,7 @@ package com.devnear.web.controller.proposal;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.proposal.ProposalInquiryResponse;
 import com.devnear.web.dto.proposal.ProposalRequest;
+import com.devnear.web.dto.proposal.ProposalWithStandaloneProjectRequest;
 import com.devnear.web.dto.proposal.ProposalStatusUpdateRequest;
 import com.devnear.web.dto.proposal.ReceivedProposalResponse;
 import com.devnear.web.dto.proposal.SentProposalResponse;
@@ -40,6 +41,25 @@ public class ProposalController {
 
         try {
             Long proposalId = proposalService.sendProposal(user, request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", proposalId));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    /**
+     * [CLI] 제안서(FORM)용: 프로젝트 생성과 역제안을 한 트랜잭션으로 처리합니다.
+     */
+    @Operation(summary = "역제안 전송(제안서 전용 프로젝트 동시 생성)", description = "프로젝트 공고를 생성하고 같은 요청에서 역제안을 보냅니다.")
+    @PostMapping("/with-standalone-project")
+    public ResponseEntity<Map<String, Long>> sendProposalWithStandaloneProject(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody ProposalWithStandaloneProjectRequest request) {
+
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        try {
+            Long proposalId = proposalService.sendProposalWithStandaloneProject(user, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", proposalId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
