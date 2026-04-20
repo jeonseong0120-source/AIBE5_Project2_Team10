@@ -63,6 +63,7 @@ export default function ChatWindow({
                 <button
                     type="button"
                     onClick={onClose}
+                    aria-label="채팅 닫기"
                     className="text-xl text-gray-400 hover:text-gray-600"
                 >
                     ×
