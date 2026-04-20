@@ -1,4 +1,4 @@
-// 1. 기초가 되는 스킬 인터페이스 정의 (이게 없어서 TS2304 에러 발생)
+// 1. 기초가 되는 스킬 인터페이스 정의
 export interface Skill {
     id: number;
     name: string;
@@ -23,8 +23,9 @@ export interface FreelancerProfile {
     workStyle: 'ONLINE' | 'OFFLINE' | 'HYBRID';
     skills: Skill[];
     averageRating: number;
-    completedProjects?: number; // 상세 페이지용 추가
-    isBookmarked?: boolean;
+    completedProjects?: number;
+    // 🎯 속성 추가
+    isBookmarked: boolean;
 }
 
 // 3. 백엔드 API 응답(DTO) 형태
@@ -40,10 +41,13 @@ export interface ApiFreelancerDto {
     workStyle: 'ONLINE' | 'OFFLINE' | 'HYBRID';
     skills: ApiSkill[];
     averageRating: number | null;
-    completedProjects?: number; // 상세 페이지용 추가
+    completedProjects?: number;
+    // 🎯 [수정] 서버에서 내려주는 북마크 필드 추가 (camelCase, snakeCase 둘 다 대비)
+    isBookmarked?: boolean;
+    is_bookmarked?: boolean;
 }
 
-// 4. 매퍼 함수
+// 4. 매퍼 함수 (통역사)
 export function mapFreelancerDtoToProfile(dto: ApiFreelancerDto): FreelancerProfile {
     return {
         id: dto.profileId,
@@ -61,5 +65,9 @@ export function mapFreelancerDtoToProfile(dto: ApiFreelancerDto): FreelancerProf
         })) : [],
         averageRating: dto.averageRating ?? 0,
         completedProjects: dto.completedProjects ?? 0,
+
+        // 🎯 [핵심 수정] 서버 데이터를 프론트엔드 속성에 연결!!
+        // dto.isBookmarked 또는 dto.is_bookmarked 중 있는 값을 쓰고 없으면 false
+        isBookmarked: dto.isBookmarked ?? dto.is_bookmarked ?? false,
     };
 }
