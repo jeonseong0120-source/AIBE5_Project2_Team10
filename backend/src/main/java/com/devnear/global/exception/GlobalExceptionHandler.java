@@ -4,6 +4,7 @@ import com.devnear.web.exception.DuplicateProfileException;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ChatAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.exception.PaymentAmountMismatchException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -77,6 +78,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleResourceConflict(
             ResourceConflictException e, HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(PaymentAmountMismatchException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentAmountMismatchException(
+            PaymentAmountMismatchException e, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request);
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(
