@@ -228,7 +228,6 @@ public class ProposalService {
 
                 proposal.updateStatus(newStatus);
                 project.assignFreelancer(proposal.getFreelancerProfile());
-                project.start();
             } else {
                 proposal.updateStatus(newStatus);
             }

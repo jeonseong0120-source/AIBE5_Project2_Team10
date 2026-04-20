@@ -14,6 +14,13 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
     // 중복 제안 여부 확인
     boolean existsByProjectIdAndFreelancerProfileId(Long projectId, Long freelancerProfileId);
 
+    // 특정 프로젝트에 보낸 모든 제안 목록 (지원자 목록 통합용)
+    @Query("SELECT p FROM Proposal p " +
+           "JOIN FETCH p.freelancerProfile fp " +
+           "JOIN FETCH fp.user " +
+           "WHERE p.project.id = :projectId")
+    List<Proposal> findAllByProjectId(@Param("projectId") Long projectId);
+
     // 클라이언트가 보낸 제안 목록 (최신순)
     @Query("SELECT p FROM Proposal p " +
            "JOIN FETCH p.project " +

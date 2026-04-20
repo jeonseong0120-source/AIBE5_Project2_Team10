@@ -54,6 +54,7 @@ export default function ClientDashboardPage() {
     const [proposalWorkScope, setProposalWorkScope] = useState('');
     const [proposalWorkingPeriod, setProposalWorkingPeriod] = useState('');
     const [proposalSending, setProposalSending] = useState(false);
+    const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
 
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
@@ -324,7 +325,82 @@ export default function ClientDashboardPage() {
         } catch (err) { alert('상태 처리 중 오류가 발생했습니다.'); }
     };
 
+    const handlePayment = async (project: any, application: any) => {
+        try {
+            const tossClientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+            if (!tossClientKey) {
+                alert('결제 환경 변수가 설정되지 않았습니다.');
+                return;
+            }
+
+            // 1. 보안을 위한 주문번호 생성 및 정보 세팅
+            const orderId = `devnear_order_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
+            const amount = Math.floor(project.budget);
+            const orderName = project.projectName;
+
+            // 2. 백엔드 결제 준비 (Prepare) 호출 - 데이터 위변조 방지
+            await api.post('/v1/payments/prepare', {
+                orderId,
+                amount,
+                orderName,
+                projectId: project.projectId
+            });
+
+            // 3. 토스 SDK 로드 및 결제창 띄우기
+            const { loadTossPayments } = await import('@tosspayments/payment-sdk');
+            const tossPayments = await loadTossPayments(tossClientKey);
+
+            const successUrl = `${window.location.origin}/client/payment/success`;
+            const failUrl = `${window.location.origin}/client/payment/fail`;
+
+            // 가상계좌(가상계좌) 방식으로 호출하여 가장 간편한 실제 결제 환경 제공
+            await tossPayments.requestPayment('가상계좌', {
+                amount,
+                orderId,
+                orderName,
+                customerName: profile?.nickname || user?.nickname || '의뢰인',
+                successUrl,
+                failUrl,
+            });
+
+        } catch (err: any) {
+            console.error('Payment Error:', err);
+            alert(err.response?.data?.message || '결제 진행 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleDemoPayment = async (project: any, application: any) => {
+        try {
+            // 1. 보안을 위한 주문번호 생성 및 정보 세팅
+            const orderId = `devnear_order_demo_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
+            const amount = Math.floor(project.budget);
+            const orderName = project.projectName;
+
+            // 2. 백엔드 결제 준비 (Prepare) 호출
+            await api.post('/v1/payments/prepare', {
+                orderId,
+                amount,
+                orderName,
+                projectId: project.projectId
+            });
+
+            // 3. 시뮬레이션 오버레이 표시
+            setIsPaymentProcessing(true);
+
+            // 4. 1.5초 후 가짜 성공 데이터와 함께 성공 페이지로 이동
+            setTimeout(() => {
+                const mockPaymentKey = `mock_${new Date().getTime()}_${Math.random().toString(36).substring(2, 6)}`;
+                router.push(`/client/payment/success?paymentKey=${mockPaymentKey}&orderId=${orderId}&amount=${amount}`);
+            }, 1500);
+
+        } catch (err: any) {
+            console.error('Demo Payment Error:', err);
+            alert(err.response?.data?.message || '데모 결제 준비 중 오류가 발생했습니다.');
+        }
+    };
+
     if (!authorized || loading) return (
+
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#FF7D00] font-black text-xl animate-pulse uppercase font-mono">데이터 동기화 중...</div>
     );
 
@@ -449,16 +525,50 @@ export default function ClientDashboardPage() {
                                                                             <div className="flex items-center gap-6 mb-8">
                                                                                 <div className="w-16 h-16 rounded-2xl bg-white border border-zinc-200 overflow-hidden cursor-pointer shadow-sm" onClick={() => router.push(`/freelancer/${app.freelancerId}`)}>{app.freelancerProfileImageUrl ? <img src={app.freelancerProfileImageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-300"><User size={28} /></div>}</div>
                                                                                 <div className="flex-1">
-                                                                                    <div className="flex items-center gap-3 mb-1"><h4 className="font-black text-xl text-zinc-900">{app.freelancerNickname}</h4><span className="text-[10px] font-black text-[#FF7D00] bg-white px-2 py-0.5 rounded border border-orange-100">일치율 {Math.round(app.matchingRate)}%</span></div>
+                                                                                    <div className="flex items-center gap-3 mb-1">
+                                                                                        <h4 className="font-black text-xl text-zinc-900">{app.freelancerNickname}</h4>
+                                                                                        <span className="text-[10px] font-black text-[#FF7D00] bg-white px-2 py-0.5 rounded border border-orange-100">일치율 {Math.round(app.matchingRate)}%</span>
+                                                                                        {app.source === 'PROPOSAL' && (
+                                                                                            <span className="text-[10px] font-black text-white bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800 uppercase font-mono tracking-wider animate-pulse">역제안 보냄</span>
+                                                                                        )}
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                             <div className="flex items-center justify-between pt-6 border-t border-zinc-200/50">
                                                                                 <p className="text-xl font-black text-zinc-950 font-mono italic">₩{app.bidPrice?.toLocaleString()}</p>
                                                                                 <div className="flex gap-2">
                                                                                     {app.status === 'PENDING' ? (
-                                                                                        <><button onClick={() => handleApplicationStatus(app.applicationId, 'ACCEPTED')} className="px-6 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-[#FF7D00] transition-all uppercase">수락</button><button onClick={() => handleApplicationStatus(app.applicationId, 'REJECTED')} className="px-6 py-3 bg-white border border-zinc-200 text-zinc-400 rounded-xl text-[10px] font-black hover:text-red-500 transition-all uppercase">거절</button></>
+                                                                                        app.source === 'PROPOSAL' ? (
+                                                                                            <div className="px-6 py-3 bg-white border border-zinc-200 text-zinc-400 rounded-xl text-[10px] font-black uppercase italic tracking-tighter">
+                                                                                                프리랜서 응답 대기 중
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <><button onClick={() => handleApplicationStatus(app.applicationId, 'ACCEPTED')} className="px-6 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-[#FF7D00] transition-all uppercase">수락</button><button onClick={() => handleApplicationStatus(app.applicationId, 'REJECTED')} className="px-6 py-3 bg-white border border-zinc-200 text-zinc-400 rounded-xl text-[10px] font-black hover:text-red-500 transition-all uppercase">거절</button></>
+                                                                                        )
                                                                                     ) : (
-                                                                                        <div className={`px-6 py-3 rounded-xl text-[10px] font-black flex items-center gap-2 uppercase border ${app.status === 'ACCEPTED' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' : 'bg-red-50 text-red-500 border border-red-100'}`}>{app.status === 'ACCEPTED' ? <CheckCircle size={14} /> : <XCircle size={14} />}{app.status === 'ACCEPTED' ? '수락됨' : '거절됨'}</div>
+                                                                                        <div className="flex flex-col gap-2 min-w-[120px]">
+                                                                                            <div className={`px-6 py-3 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 uppercase border ${app.status === 'ACCEPTED' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' : 'bg-red-50 text-red-500 border border-red-100'}`}>
+                                                                                                {app.status === 'ACCEPTED' ? <CheckCircle size={14} /> : <XCircle size={14} />}
+                                                                                                {app.status === 'ACCEPTED' ? '수락됨' : '거절됨'}
+                                                                                            </div>
+                                                                                            {app.status === 'ACCEPTED' && project.status === 'OPEN' && (
+                                                                                                <div className="flex flex-col gap-2 mt-2">
+                                                                                                    <button
+                                                                                                        onClick={() => handlePayment(project, app)}
+                                                                                                        className="w-full px-4 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-zinc-800 transition-all uppercase tracking-widest font-mono shadow-md"
+                                                                                                    >
+                                                                                                        안전 결제하기
+                                                                                                    </button>
+                                                                                                    <button
+                                                                                                        onClick={() => handleDemoPayment(project, app)}
+                                                                                                        className="w-full px-4 py-3 bg-[#FF7D00] text-white rounded-xl text-[10px] font-black hover:bg-orange-600 transition-all uppercase tracking-widest font-mono shadow-[0_4px_15px_rgba(255,125,0,0.4)] flex items-center justify-center gap-2"
+                                                                                                    >
+                                                                                                        <Sparkles size={14} className="animate-pulse" />
+                                                                                                        번개 데모 결제
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
                                                                                     )}
                                                                                 </div>
                                                                             </div>
@@ -605,6 +715,49 @@ export default function ClientDashboardPage() {
                         </motion.div>
                     </motion.div>
                 ) : null}
+            </AnimatePresence>
+            {/* 결제 처리 중 시뮬레이션 오버레이 (데모 모드) */}
+            <AnimatePresence>
+                {isPaymentProcessing && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/90 backdrop-blur-md"
+                    >
+                        <div className="flex flex-col items-center gap-10">
+                            <div className="relative">
+                                <motion.div 
+                                    animate={{ scale: [1, 1.2, 1] }} 
+                                    transition={{ duration: 2, repeat: Infinity }} 
+                                    className="w-32 h-32 rounded-full border-2 border-[#FF7D00]/30" 
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <Loader2 className="w-12 h-12 text-[#FF7D00] animate-spin" />
+                                </div>
+                                <motion.div 
+                                    className="absolute inset-0 rounded-full bg-[#FF7D00]/10"
+                                    animate={{ opacity: [0, 1, 0] }}
+                                    transition={{ duration: 1.5, repeat: Infinity }}
+                                />
+                            </div>
+                            <div className="flex flex-col items-center gap-3">
+                                <h3 className="text-3xl font-black text-white tracking-widest font-mono uppercase">Secure Escrow Processing</h3>
+                                <div className="flex gap-1.5">
+                                    {[0, 1, 2].map((i) => (
+                                        <motion.div 
+                                            key={i}
+                                            animate={{ opacity: [0.3, 1, 0.3] }}
+                                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                                            className="w-2 h-2 rounded-full bg-[#FF7D00]"
+                                        />
+                                    ))}
+                                </div>
+                                <p className="mt-4 text-zinc-400 font-black text-[10px] tracking-[0.4em] uppercase">안전한 에스크로 거래를 체결 중입니다</p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
             </AnimatePresence>
         </div>
     );

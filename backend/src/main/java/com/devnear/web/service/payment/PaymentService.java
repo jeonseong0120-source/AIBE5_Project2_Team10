@@ -37,6 +37,15 @@ public class PaymentService {
             throw new com.devnear.web.exception.ProjectAccessDeniedException("본인의 프로젝트만 결제할 수 있습니다.");
         }
 
+        // 중복 결제 내역 처리 (OneToOne 관계 대응)
+        paymentRepository.findByProjectId(request.getProjectId()).ifPresent(existingPayment -> {
+            if (existingPayment.getStatus() == com.devnear.web.domain.enums.PaymentStatus.DONE) {
+                throw new IllegalStateException("이미 결제가 완료된 프로젝트입니다.");
+            }
+            // 이미 결제된 건이 아니라면 기존 READY 내역을 직접 쿼리로 삭제 (ID 중복 충돌 방지)
+            paymentRepository.deleteByProjectId(request.getProjectId());
+        });
+
         // 결제 금액 검증
         if (request.getAmount() == null || request.getAmount() <= 0) {
             throw new IllegalArgumentException("유효하지 않은 결제 금액입니다.");
@@ -93,8 +102,14 @@ public class PaymentService {
             throw new IllegalStateException("모집 중인 프로젝트만 결제할 수 있습니다. 현재 상태: " + payment.getProject().getStatus());
         }
 
-        // 4. 토스페이먼츠 서버 승인 요청 (모든 검증 통과 후 외부 호출)
-        Map<String, Object> response = tossPaymentClient.confirmPayment(request);
+        // 4. 토스페이먼츠 서버 승인 요청 (데모 모드인 경우 건너뜀)
+        Map<String, Object> response;
+        if (request.getPaymentKey().startsWith("mock_")) {
+            // 데모용 가짜 응답 생성
+            response = java.util.Map.of("method", "간편결제(DEMO)");
+        } else {
+            response = tossPaymentClient.confirmPayment(request);
+        }
 
         // 5. 결제 상태 업데이트
         String method = (String) response.get("method");

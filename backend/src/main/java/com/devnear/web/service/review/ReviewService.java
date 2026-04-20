@@ -85,8 +85,12 @@ public class ReviewService {
                 .comment(request.getComment())
                 .build();
 
-        // 저장 후 평점 및 등급 재계산 (동시성 보호를 위해 잠금된 프로필을 사용하여 재계산)
+        // 저장 후 평점 및 등급 재계산 + 프로젝트 예산 정산 (지갑으로 입금)
         freelancerReviewRepository.save(review);
+        
+        // [정산 로직 추가] 프로젝트 예산을 프리랜서 잔액으로 이전
+        freelancer.addBalance(project.getBudget().longValue());
+        
         recomputeFreelancerAggregates(freelancer.getId());
 
         return review.getId();

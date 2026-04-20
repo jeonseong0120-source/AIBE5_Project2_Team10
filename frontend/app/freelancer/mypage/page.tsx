@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User as UserIcon, Briefcase, Star, Award, Bookmark } from 'lucide-react';
+import { User as UserIcon, Briefcase, Star, Award, Bookmark, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { MAX_SELECTED_SKILLS } from '@/app/lib/skillLimits';
@@ -18,6 +18,7 @@ import MypageGradeTab from '@/components/freelancer_mypage/MypageGradeTab';
 import PortfolioFormModal from '@/components/freelancer_mypage/PortfolioFormModal';
 import PortfolioDetailModal from '@/components/freelancer_mypage/PortfolioDetailModal';
 import BookmarkTab from '../../../components/freelancer_mypage/MypageBookmarksTab';
+import MypageSettlementTab from '@/components/freelancer_mypage/MypageSettlementTab';
 
 const TABS = [
     { id: 'profile', label: 'MY PROFILE', icon: UserIcon },
@@ -25,6 +26,7 @@ const TABS = [
     { id: 'reviews', label: 'REVIEWS', icon: Star },
     { id: 'grade', label: 'RANK', icon: Award },
     { id: 'bookmarks', label: 'BOOKMARKS', icon: Bookmark },
+    { id: 'settlement', label: 'SETTLEMENT', icon: CreditCard },
 ];
 
 const LOCATION_COORDS: Record<string, { lat: number, lng: number }> = {
@@ -354,6 +356,7 @@ export default function FreelancerMyPage() {
 
                                 {activeTab === 'grade' && <MypageGradeTab profile={profile} />}
                                 {activeTab === 'bookmarks' && <BookmarkTab />}
+                                {activeTab === 'settlement' && <MypageSettlementTab profile={profile} />}
                             </>
                         )}
                     </motion.div>
