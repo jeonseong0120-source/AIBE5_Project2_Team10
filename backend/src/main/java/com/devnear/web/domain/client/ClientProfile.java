@@ -64,17 +64,16 @@ public class ClientProfile extends BaseTimeEntity {
     @Column(name = "total_projects")
     private Integer totalProjects;
 
-    // 로고 업데이트가 필요할 때 주석을 해제하세요.
-    // @Column(name = "logo_url")
-    // private String logoUrl;
+    @Column(name = "logo_url")
+    private String logoUrl;
 
-    // public void updateLogo(String logoUrl) {
-    //     this.logoUrl = logoUrl;
-    // }
+    public void updateLogo(String logoUrl) {
+        this.logoUrl = logoUrl;
+    }
 
     @Builder
     public ClientProfile(User user, String companyName, String representativeName, String bn,
-                         String introduction, String homepageUrl, String phoneNum) {
+                         String introduction, String homepageUrl, String phoneNum, String logoUrl) {
         this.user = user;
         this.companyName = companyName;
         this.representativeName = representativeName;
@@ -82,6 +81,7 @@ public class ClientProfile extends BaseTimeEntity {
         this.introduction = introduction;
         this.homepageUrl = homepageUrl;
         this.phoneNum = phoneNum;
+        this.logoUrl = logoUrl;
         this.grade = ClientGrade.NORMAL;
         this.verificationStatus = VerificationStatus.PENDING;
         this.rating = BigDecimal.ZERO;
@@ -95,6 +95,7 @@ public class ClientProfile extends BaseTimeEntity {
         this.introduction = request.getIntroduction();
         this.homepageUrl = request.getHomepageUrl();
         this.phoneNum = request.getPhoneNum();
+        this.logoUrl = request.getLogoUrl();
     }
 
     public void updateRating(BigDecimal rating) {

@@ -2,25 +2,34 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { User as UserIcon, Briefcase, Star, Award } from 'lucide-react';
+import { User as UserIcon, Briefcase, Star, Award, Bookmark } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
 
 // New Components
-import MypageSidebar from '@/components/freelancer_mypage/MypageSidebar';
+import MypageSidebar from '@/components/layout/MypageSidebar';
+import MypageNavbar from '@/components/layout/MypageNavbar';
 import MypageProfileTab from '@/components/freelancer_mypage/MypageProfileTab';
 import MypagePortfolioTab from '@/components/freelancer_mypage/MypagePortfolioTab';
 import MypageReviewTab from '@/components/freelancer_mypage/MypageReviewTab';
 import MypageGradeTab from '@/components/freelancer_mypage/MypageGradeTab';
 import PortfolioFormModal from '@/components/freelancer_mypage/PortfolioFormModal';
 import PortfolioDetailModal from '@/components/freelancer_mypage/PortfolioDetailModal';
+import BookmarkTab from '../../../components/freelancer_mypage/MypageBookmarksTab';
+
+const NAV_ITEMS = [
+    { label: 'DASHBOARD', path: '/freelancer/dashboard' },
+    { label: 'EXPLORE', path: '/freelancer/explore' },
+    { label: 'MY_PROFILE', path: '/freelancer/mypage', active: true },
+];
 
 const TABS = [
     { id: 'profile', label: 'MY PROFILE', icon: UserIcon },
     { id: 'portfolio', label: 'PORTFOLIO', icon: Briefcase },
     { id: 'reviews', label: 'REVIEWS', icon: Star },
     { id: 'grade', label: 'RANK', icon: Award },
+    { id: 'bookmarks', label: 'BOOKMARKS', icon: Bookmark },
 ];
 
 const LOCATION_COORDS: Record<string, { lat: number, lng: number }> = {
@@ -37,7 +46,7 @@ const EMPTY_PORTFOLIO_FORM = { id: null as number | null | undefined, title: '',
 
 export default function FreelancerMyPage() {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState('portfolio');
+    const [activeTab, setActiveTab] = useState('profile');
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
 
@@ -63,6 +72,7 @@ export default function FreelancerMyPage() {
     const [isProfileUploading, setIsProfileUploading] = useState(false);
     const [isThumbUploading, setIsThumbUploading] = useState(false);
     const [isBulkUploading, setIsBulkUploading] = useState(false);
+    const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
     // 숨김 파일 입력용 ref
     const profileFileInputRef = useRef<HTMLInputElement>(null);
@@ -146,7 +156,8 @@ export default function FreelancerMyPage() {
         setLoading(true);
         try {
             const { data } = await api.get('/portfolios/me');
-            setPortfolios(data || []);
+            const sortedPortfolios = (data || []).sort((a: any, b: any) => b.id - a.id);
+            setPortfolios(sortedPortfolios);
         } catch (error) {
             console.error("포트폴리오 로드 실패", error);
         } finally {
@@ -199,6 +210,7 @@ export default function FreelancerMyPage() {
             await api.put('/v1/freelancers/me', requestBody);
             alert('정보가 업데이트 되었습니다.');
             setIsEditingProfile(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             fetchProfile();
         } catch (error: any) {
             const errorMsg = error.response?.data?.message || '모든 필수값을 확인해주세요.';
@@ -208,14 +220,17 @@ export default function FreelancerMyPage() {
     };
 
     const handleToggleStatus = async () => {
+        if (isTogglingStatus) return;
+        setIsTogglingStatus(true);
         try {
             const newStatus = !profile.isActive;
             await api.patch('/v1/freelancers/status', { isActive: newStatus });
             setProfile((prev: any) => ({ ...prev, isActive: newStatus }));
             setEditProfileData((prev: any) => ({ ...prev, isActive: newStatus }));
-            alert(newStatus ? '활동중으로 변경되었습니다.' : '휴식중으로 변경되었습니다.');
         } catch (error) {
             alert('상태 변경 실패');
+        } finally {
+            setIsTogglingStatus(false);
         }
     }
 
@@ -337,46 +352,50 @@ export default function FreelancerMyPage() {
         }
     };
 
-    if (!authorized) return <div className="min-h-screen bg-white flex items-center justify-center text-[#7A4FFF] font-black tracking-widest animate-pulse font-mono uppercase">System_Authorizing...</div>;
+    if (!authorized) return (
+        <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#7A4FFF] font-black text-xl animate-pulse uppercase font-mono tracking-[0.2em]">
+            SYSTEM_AUTHORIZING...
+        </div>
+    );
     if (!profile && !isEditingProfile) return null;
 
     return (
-        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 font-sans">
-            <nav className="w-full py-5 px-10 bg-white/80 backdrop-blur-xl border-b border-zinc-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/freelancer/explore")}>
-                    <span className="text-[#FF7D00]">Dev</span><span className="text-[#7A4FFF]">Near</span>
-                </div>
-                <div className="flex gap-4 items-center md:gap-6">
-                    <button onClick={() => router.push('/freelancer/dashboard')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
-                        DASHBOARD
-                    </button>
-                    <button onClick={() => router.push('/freelancer/explore')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
-                        EXPLORE
-                    </button>
-                    <button onClick={() => router.push('/freelancer/mypage')} className="text-xs font-bold text-zinc-500 hover:text-zinc-900 tracking-widest transition uppercase font-mono">
-                        MY_PROFILE
-                    </button>
-                    <NotificationBell />
-                    <div className="w-8 h-8 rounded-full bg-[#7A4FFF] border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-white font-bold text-xs">
-                        {profile?.userName ? profile.userName.charAt(0) : 'U'}
-                    </div>
-                </div>
-            </nav>
+        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-24 relative scroll-smooth font-sans">
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
+            </div>
 
-            <main className="max-w-7xl mx-auto px-6 mt-10 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start">
-                <MypageSidebar tabs={TABS} activeTab={activeTab} setActiveTab={setActiveTab} />
+            <MypageNavbar
+                userType="FREELANCER"
+                userName={profile?.userName}
+                profileImage={profile?.profileImageUrl}
+                navItems={NAV_ITEMS}
+                accentColor="#7A4FFF"
+            />
 
-                <div className="space-y-6 min-w-0">
+            {/* 🎯 레이아웃 뼈대: 그리드 [300px(사이드바) + 1fr(메인 콘텐츠)] */}
+            <main className="max-w-7xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start relative z-10">
+                <MypageSidebar
+                    tabs={TABS}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    accentColor="#7A4FFF"
+                />
+
+                <div className="space-y-8 min-w-0">
                     <motion.div
                         key={activeTab}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="bg-white rounded-2xl p-6 md:p-8 border border-zinc-200 shadow-sm min-h-[500px]"
+                        transition={{
+                            duration: 0.3,
+                            ease: "easeOut"
+                        }}
+                        className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/50 min-h-[700px] w-full"
                     >
                         {loading ? (
                             <div className="flex flex-col items-center justify-center h-64 gap-4">
-                                <div className="w-8 h-8 border-4 border-[#7A4FFF]/20 border-t-[#7A4FFF] rounded-full animate-spin" />
+                                <div className="w-10 h-10 border-4 border-[#7A4FFF]/20 border-t-[#7A4FFF] rounded-full animate-spin" />
                             </div>
                         ) : (
                             <>
@@ -397,6 +416,7 @@ export default function FreelancerMyPage() {
                                         profileFileInputRef={profileFileInputRef}
                                         handleProfileImageUpload={handleProfileImageUpload}
                                         handleToggleStatus={handleToggleStatus}
+                                        isTogglingStatus={isTogglingStatus}
                                         validationError={validationError}
                                         setValidationError={setValidationError}
                                         setMySkillIds={setMySkillIds}
@@ -419,11 +439,15 @@ export default function FreelancerMyPage() {
                                 {activeTab === 'grade' && (
                                     <MypageGradeTab profile={profile} />
                                 )}
+                                {activeTab === 'bookmarks' && (
+                                    <BookmarkTab />
+                                )}
                             </>
                         )}
                     </motion.div>
                 </div>
             </main>
+
             <PortfolioFormModal
                 isOpen={isPortfolioModalOpen}
                 onClose={() => { setIsPortfolioModalOpen(false); setPortfolioForm(EMPTY_PORTFOLIO_FORM); setPortfolioSkillSearchQuery(''); }}

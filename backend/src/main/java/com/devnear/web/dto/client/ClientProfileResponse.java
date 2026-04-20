@@ -19,6 +19,8 @@ public class ClientProfileResponse {
     private String verificationStatus;
     private Integer totalProjects;
     private Double rating;
+    private String logoUrl; // 🔍 로고 URL 필드 추가
+    private String grade; // 🔍 등급 필드 추가
 
     public static ClientProfileResponse from(ClientProfile profile) {
         double safeRating = (profile.getRating() != null)
@@ -38,6 +40,8 @@ public class ClientProfileResponse {
                 .verificationStatus(profile.getVerificationStatus().name())
                 .totalProjects(profile.getTotalProjects())
                 .rating(safeRating)
+                .logoUrl(profile.getLogoUrl()) // 🔍 추가
+                .grade(profile.getGrade().name()) // 🔍 추가
                 .build();
     }
 }
