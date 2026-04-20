@@ -407,37 +407,34 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                 </div>
             </main>
 
-            <AnimatePresence>
-                <motion.div
-                    initial={{ y: 100 }}
-                    animate={{ y: 0 }}
-                    className="fixed bottom-6 left-1/2 z-[60] w-[95%] max-w-3xl -translate-x-1/2"
-                >
-                    <div className="flex items-center justify-between rounded-full border border-zinc-800 bg-zinc-950/95 backdrop-blur-xl px-8 py-4 shadow-2xl">
-                        <div className="flex items-center gap-4">
-                            <div className="h-10 w-1 bg-[#FF7D00] rounded-full"></div>
-                            <div>
-                                <div className="mb-0.5 font-mono text-[9px] font-black uppercase tracking-widest text-zinc-400">
+            {variant === 'client' && (
+                <AnimatePresence>
+                    <motion.div
+                        initial={{ y: 100 }}
+                        animate={{ y: 0 }}
+                        className="fixed bottom-6 left-1/2 z-[60] w-[90%] max-w-2xl -translate-x-1/2"
+                    >
+                        <div className="flex items-center justify-between rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+                            <div className="border-l-4 border-[`#FF7D00`] pl-6">
+                                <div className="mb-1 font-mono text-[10px] font-black uppercase tracking-widest text-zinc-500">
                                     Estimated Rate
                                 </div>
-                                <div className="text-xl font-black tracking-tighter text-white">
+                                <div className="text-2xl font-black tracking-tighter text-white">
                                     ₩{(freelancer.hourlyRate || 0).toLocaleString()}{' '}
-                                    <span className="font-mono text-[10px] text-[#FF7D00]">/HR</span>
+                                    <span className="font-mono text-xs text-[`#7A4FFF`]">/HR</span>
                                 </div>
                             </div>
-                        </div>
-                        {viewerIsClient && (
                             <button
                                 type="button"
                                 onClick={openProposalModal}
-                                className="rounded-2xl bg-white px-8 py-3.5 font-mono text-sm font-black uppercase tracking-tighter text-zinc-900 shadow-[0_0_20px_rgba(255,125,0,0.2)] transition-all hover:bg-[#FF7D00] hover:text-white active:scale-95"
+                                className="rounded-2xl bg-white px-8 py-3.5 font-mono text-sm font-black uppercase tracking-tighter text-zinc-900 shadow-[0_0_20px_rgba(255,125,0,0.2)] transition-all hover:bg-[`#FF7D00`] hover:text-white active:scale-95"
                             >
                                 Offer_Project
                             </button>
-                        )}
-                    </div>
-                </motion.div>
-            </AnimatePresence>
+                        </div>
+                    </motion.div>
+                </AnimatePresence>
+            )}
 
             {portalReady &&
                 selectedPortfolio != null &&
