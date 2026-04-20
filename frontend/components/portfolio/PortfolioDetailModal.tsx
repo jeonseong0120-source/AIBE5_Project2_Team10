@@ -201,15 +201,17 @@ export default function PortfolioDetailModal({
                                         <h3 className="text-xs font-black uppercase tracking-widest text-[#7A4FFF]">
                                             Tech Stack
                                         </h3>
-                                        <div className="flex flex-wrap gap-2">
-                                            {portfolio.skills.map((s, idx) => (
-                                                <span
-                                                    key={`port-detail-skill-${s.skillId ?? s.id ?? idx}`}
-                                                    className="cursor-default rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm font-bold text-zinc-700 shadow-sm transition-colors hover:border-[#7A4FFF]/30 hover:bg-[#7A4FFF]/5"
-                                                >
-                                                    {s.name}
-                                                </span>
-                                            ))}
+                                        <div className="max-h-52 overflow-y-auto rounded-2xl border border-zinc-100 bg-zinc-50/50 p-3">
+                                            <div className="flex flex-wrap gap-2">
+                                                {portfolio.skills.map((s, idx) => (
+                                                    <span
+                                                        key={`port-detail-skill-${s.skillId ?? s.id ?? idx}`}
+                                                        className="cursor-default rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-700 shadow-sm transition-colors hover:border-[#7A4FFF]/30 hover:bg-[#7A4FFF]/5 md:px-4 md:py-2 md:text-sm"
+                                                    >
+                                                        {s.name}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                 )}

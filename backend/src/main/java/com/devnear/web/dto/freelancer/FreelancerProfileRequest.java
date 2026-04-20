@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 
 import java.util.List;
@@ -34,5 +35,6 @@ public class FreelancerProfileRequest {
     
     @NotNull(message = "스킬 목록(skillIds)은 필수 항목입니다.")
     @NotEmpty(message = "최소 1개 이상의 스킬을 선택해야 합니다.")
+    @Size(min = 1, max = 50, message = "스킬은 1개 이상 50개 이하로 선택해 주세요.")
     private List<Long> skillIds;
 }
