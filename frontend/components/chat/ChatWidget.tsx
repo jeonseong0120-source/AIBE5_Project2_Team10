@@ -40,8 +40,17 @@ export default function ChatWidget() {
             const roomData = await getChatRooms();
             setRooms(roomData);
 
-            if (roomData.length > 0 && !selectedRoomId) {
-                setSelectedRoomId(roomData[0].roomId);
+            const roomData = await getChatRooms();
+            setRooms(roomData);
+            const nextSelectedRoomId =
+                selectedRoomId !== null &&
+                roomData.some((room) => room.roomId === selectedRoomId)
+                    ? selectedRoomId
+                    : roomData[0]?.roomId ?? null;
+
+            setSelectedRoomId(nextSelectedRoomId);
+            if (nextSelectedRoomId === null) {
+                setMessages([]);
             }
         } catch (error) {
             console.error("채팅방 조회 실패", error);
