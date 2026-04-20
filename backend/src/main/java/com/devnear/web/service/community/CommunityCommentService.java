@@ -38,10 +38,16 @@ public class CommunityCommentService {
         if (authorId == null) {
             throw new IllegalArgumentException("작성자 ID는 필수입니다.");
         }
+
         validateCommentRequest(request.getContent());
         CommunityPost post = communityPostService.getPost(request.getPostId());
 
-        CommunityComment comment = new CommunityComment(post.getId(), authorId, request.getContent());
+        CommunityComment comment = new CommunityComment(
+                post.getId(),
+                authorId,
+                request.getContent()
+        );
+
         Long commentId = communityCommentRepository.save(comment).getId();
         communityPostRepository.incrementCommentCount(post.getId());
         return commentId;
@@ -49,6 +55,7 @@ public class CommunityCommentService {
 
     public List<CommunityCommentResponse> findByPostId(Long postId) {
         communityPostService.getPost(postId);
+
         List<CommunityComment> comments = communityCommentRepository.findByPostIdOrderByIdAsc(postId);
         if (comments.isEmpty()) {
             return List.of();
@@ -65,6 +72,7 @@ public class CommunityCommentService {
                         nicknameByUserId.getOrDefault(c.getAuthorId(), "알 수 없는 사용자")
                 ))
                 .toList();
+
     }
 
     @Transactional

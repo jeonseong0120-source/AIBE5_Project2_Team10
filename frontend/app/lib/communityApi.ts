@@ -75,6 +75,26 @@ export async function createCommunityComment(
     return data;
 }
 
+export async function updateCommunityComment(
+    commentId: number,
+    content: string
+): Promise<CommunitySuccessResponse> {
+    const { data } = await api.put<CommunitySuccessResponse>(
+        `/community/comments/${commentId}`,
+        { content }
+    );
+    return data;
+}
+
+export async function deleteCommunityComment(
+    commentId: number
+): Promise<CommunitySuccessResponse> {
+    const { data } = await api.delete<CommunitySuccessResponse>(
+        `/community/comments/${commentId}`
+    );
+    return data;
+}
+
 export async function likeCommunityPost(
     postId: number
 ): Promise<CommunityLikeResponse> {
