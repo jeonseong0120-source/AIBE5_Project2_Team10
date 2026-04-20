@@ -1,29 +1,51 @@
 package com.devnear.global.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @Getter
 public class TossPaymentConfig {
 
-    @Value("${payment.toss.test-secret-key:test_sk_Z61z40qa867k799Xpv0A3z9XmE7L}")
+    @Value("${TOSS_PAYMENT_SECRET_KEY}")
     private String secretKey;
 
-    @Value("${payment.toss.test-client-key:test_ck_D5b4Zne68qqDbg1mGnrVpM7n0N7v}")
+    @Value("${TOSS_PAYMENT_CLIENT_KEY}")
     private String clientKey;
 
-    @Value("${payment.toss.success-url:http://localhost:3000/client/payment/success}")
+    @Value("${TOSS_PAYMENT_SUCCESS_URL}")
     private String successUrl;
 
-    @Value("${payment.toss.fail-url:http://localhost:3000/client/payment/fail}")
+    @Value("${TOSS_PAYMENT_FAIL_URL}")
     private String failUrl;
+
+    @PostConstruct
+    public void validatePaymentConfig() {
+        if (!StringUtils.hasText(secretKey)) {
+            throw new IllegalStateException("Toss Payment Secret Key is missing. Please check TOSS_PAYMENT_SECRET_KEY in .env");
+        }
+        if (!StringUtils.hasText(clientKey)) {
+            throw new IllegalStateException("Toss Payment Client Key is missing. Please check TOSS_PAYMENT_CLIENT_KEY in .env");
+        }
+        if (!StringUtils.hasText(successUrl)) {
+            throw new IllegalStateException("Toss Payment Success URL is missing. Please check TOSS_PAYMENT_SUCCESS_URL in .env");
+        }
+        if (!StringUtils.hasText(failUrl)) {
+            throw new IllegalStateException("Toss Payment Fail URL is missing. Please check TOSS_PAYMENT_FAIL_URL in .env");
+        }
+    }
 
     @Bean
     public RestTemplate restTemplate() {
-        return new RestTemplate();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(10000);
+        return new RestTemplate(factory);
     }
 }

@@ -32,7 +32,17 @@ public class TossPaymentClient {
 
         HttpEntity<PaymentConfirmRequest> entity = new HttpEntity<>(request, headers);
 
-        return restTemplate.postForObject(CONFIRM_URL, entity, Map.class);
+        try {
+            Map<String, Object> response = restTemplate.postForObject(CONFIRM_URL, entity, Map.class);
+            
+            if (response == null) {
+                throw new com.devnear.web.exception.PaymentGatewayException("Toss Payment API returned a null response.");
+            }
+            
+            return response;
+        } catch (org.springframework.web.client.RestClientException e) {
+            throw new com.devnear.web.exception.PaymentGatewayException("Error occurred while calling Toss Payment API: " + e.getMessage(), e);
+        }
     }
 
     /**

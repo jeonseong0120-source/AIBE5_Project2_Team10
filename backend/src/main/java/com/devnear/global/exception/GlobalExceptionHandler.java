@@ -80,6 +80,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, e.getMessage(), request);
     }
 
+    @ExceptionHandler(com.devnear.web.exception.PaymentGatewayException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentGatewayException(
+            com.devnear.web.exception.PaymentGatewayException e, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_GATEWAY, e.getMessage(), request);
+    }
+
     @ExceptionHandler(PaymentAmountMismatchException.class)
     public ResponseEntity<ErrorResponse> handlePaymentAmountMismatchException(
             PaymentAmountMismatchException e, HttpServletRequest request) {
