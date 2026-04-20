@@ -10,7 +10,6 @@ export interface CommunityPost {
     isLiked?: boolean;
     createdAt: string;
     updatedAt: string;
-
 }
 
 export interface CommunityPostPageResponse {

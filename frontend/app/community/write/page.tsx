@@ -12,7 +12,6 @@ export default function CommunityWritePage() {
     const [content, setContent] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // 글 등록
     const handleSubmit = async () => {
         if (!title.trim()) {
             alert("제목을 입력해주세요.");
@@ -33,8 +32,7 @@ export default function CommunityWritePage() {
             });
 
             alert("게시글이 등록되었습니다.");
-            router.push("/community"); // 상세 페이지 아직 없으니까 목록으로 이동
-
+            router.push("/community");
         } catch (error) {
             console.error("글 등록 실패:", error);
             alert("게시글 등록에 실패했습니다.");
@@ -43,7 +41,6 @@ export default function CommunityWritePage() {
         }
     };
 
-    // 취소
     const handleCancel = () => {
         if (confirm("작성 중인 내용이 사라집니다. 나가시겠습니까?")) {
             router.push("/community");
@@ -53,7 +50,6 @@ export default function CommunityWritePage() {
     return (
         <div className="min-h-screen bg-zinc-50 px-6 py-10 md:px-10">
             <div className="mx-auto max-w-3xl">
-                {/* 헤더 */}
                 <div className="mb-8">
                     <div className="flex items-center gap-2 text-[#FF7D00]">
                         <PencilLine size={18} />
@@ -69,10 +65,8 @@ export default function CommunityWritePage() {
                     </p>
                 </div>
 
-                {/* 입력 영역 */}
                 <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <div className="flex flex-col gap-5">
-                        {/* 제목 */}
                         <div>
                             <label className="mb-2 block text-sm font-semibold text-zinc-700">
                                 제목
@@ -86,7 +80,6 @@ export default function CommunityWritePage() {
                             />
                         </div>
 
-                        {/* 내용 */}
                         <div>
                             <label className="mb-2 block text-sm font-semibold text-zinc-700">
                                 내용
@@ -100,7 +93,6 @@ export default function CommunityWritePage() {
                             />
                         </div>
 
-                        {/* 버튼 */}
                         <div className="flex justify-end gap-3 pt-2">
                             <button
                                 onClick={handleCancel}

@@ -10,7 +10,6 @@ import { NotificationBell } from '@/components/notifications/NotificationProvide
 
 // New Components
 import MypageSidebar from '@/components/layout/MypageSidebar';
-// 🎯 [수정] MypageNavbar를 지우고 GlobalNavbar로 교체합니다!
 import GlobalNavbar from '@/components/common/GlobalNavbar';
 import MypageProfileTab from '@/components/freelancer_mypage/MypageProfileTab';
 import MypagePortfolioTab from '@/components/freelancer_mypage/MypagePortfolioTab';
@@ -46,9 +45,7 @@ export default function FreelancerMyPage() {
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
 
-    // 🎯 [추가] GlobalNavbar에 역할을 전달하기 위해 유저 상태 추가
     const [user, setUser] = useState<any>(null);
-
     const [profile, setProfile] = useState<any>(null);
     const [portfolios, setPortfolios] = useState<any[]>([]);
     const [reviews, setReviews] = useState<any[]>([]);
@@ -67,16 +64,17 @@ export default function FreelancerMyPage() {
     const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-    // 업로드 로딩 상태 관리
     const [isProfileUploading, setIsProfileUploading] = useState(false);
     const [isThumbUploading, setIsThumbUploading] = useState(false);
     const [isBulkUploading, setIsBulkUploading] = useState(false);
     const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
-    // 숨김 파일 입력용 ref
     const profileFileInputRef = useRef<HTMLInputElement>(null);
     const thumbFileInputRef = useRef<HTMLInputElement>(null);
     const bulkFileInputRef = useRef<HTMLInputElement>(null);
+
+    // 🎯 중복 호출 방지를 위한 Ref
+    const hasFetchedReviews = useRef(false);
 
     useEffect(() => {
         const init = async () => {
@@ -100,14 +98,13 @@ export default function FreelancerMyPage() {
                     return;
                 }
 
-                // 🎯 [수정] GlobalNavbar용 user 데이터 세팅
                 setUser(userRes.data);
                 setUserId(userRes.data.user_id || userRes.data.id);
                 setAuthorized(true);
 
                 await Promise.all([fetchProfile(), fetchGlobalSkills()]);
             } catch (err) {
-                console.error("접근 권한 확인 실패", err);
+
                 router.replace("/login");
             }
         };
@@ -115,10 +112,22 @@ export default function FreelancerMyPage() {
     }, [router]);
 
     useEffect(() => {
-        if (!authorized) return;
-        if (activeTab === 'portfolio' && portfolios.length === 0) fetchPortfolios();
-        if (activeTab === 'reviews' && reviews.length === 0 && profile?.id) fetchReviews(profile.id);
-    }, [activeTab, authorized, profile?.id, portfolios.length, reviews.length]);
+        if (!authorized || !profile) return;
+
+        if (activeTab === 'portfolio' && portfolios.length === 0) {
+            fetchPortfolios();
+        }
+
+        // 🎯 [핵심 수정] 리뷰 탭을 눌렀을 때만, 정확한 profileId로 데이터 호출
+        if (activeTab === 'reviews' && !hasFetchedReviews.current) {
+            // 마스터가 보내준 JSON 데이터의 필드명인 'profileId'를 최우선으로 찾습니다.
+            const freelancerId = profile.profileId || profile.id;
+            if (freelancerId) {
+                fetchReviews(freelancerId);
+                hasFetchedReviews.current = true; // 한 번 불러오면 다시 안 부름
+            }
+        }
+    }, [activeTab, authorized, profile, portfolios.length]);
 
     const fetchGlobalSkills = async () => {
         try {
@@ -166,13 +175,16 @@ export default function FreelancerMyPage() {
         }
     };
 
+    // 🎯 [리뷰 로드 함수]
     const fetchReviews = async (id: number) => {
+        console.log("🔍 리뷰 데이터를 가져옵니다. 타겟 ID:", id);
         setLoading(true);
         try {
             const { data } = await api.get(`/reviews/freelancers/${id}`);
-            setReviews(data || []);
+            // 배열로 오면 그대로 넣고, 만약 페이징 객체면 data.content를 넣습니다.
+            setReviews(Array.isArray(data) ? data : (data.content || []));
         } catch (error) {
-            console.error("리뷰 로드 실패", error);
+            console.error("❌ 리뷰 로드 실패", error);
         } finally {
             setLoading(false);
         }
@@ -191,27 +203,12 @@ export default function FreelancerMyPage() {
         }
 
         const hRate = Number(editProfileData.hourlyRate?.toString().replace(/,/g, ''));
-        if (isNaN(hRate) || hRate < 0) {
-            setValidationError('시급은 0 이상이어야 합니다.');
-            return;
-        }
-
+        if (isNaN(hRate) || hRate < 0) { setValidationError('시급은 0 이상이어야 합니다.'); return; }
         const locationKey = editProfileData.location || '서울';
         const coords = LOCATION_COORDS[locationKey] || LOCATION_COORDS['서울'];
 
         try {
-            const requestBody = {
-                profileImageUrl: editProfileData.profileImageUrl || null,
-                introduction: editProfileData.introduction || '',
-                location: locationKey,
-                latitude: coords.lat,
-                longitude: coords.lng,
-                hourlyRate: hRate,
-                workStyle: editProfileData.workStyle || 'ONLINE',
-                isActive: editProfileData.isActive !== false,
-                skillIds: mySkillIds
-            };
-
+            const requestBody = { profileImageUrl: editProfileData.profileImageUrl || null, introduction: editProfileData.introduction || '', location: locationKey, latitude: coords.lat, longitude: coords.lng, hourlyRate: hRate, workStyle: editProfileData.workStyle || 'ONLINE', isActive: editProfileData.isActive !== false, skillIds: mySkillIds };
             await api.put('/v1/freelancers/me', requestBody);
             alert('정보가 업데이트 되었습니다.');
             setIsEditingProfile(false);
@@ -220,7 +217,6 @@ export default function FreelancerMyPage() {
         } catch (error: any) {
             const errorMsg = error.response?.data?.message || '모든 필수값을 확인해주세요.';
             setValidationError(errorMsg);
-            console.error(error);
         }
     };
 
@@ -232,11 +228,7 @@ export default function FreelancerMyPage() {
             await api.patch('/v1/freelancers/status', { isActive: newStatus });
             setProfile((prev: any) => ({ ...prev, isActive: newStatus }));
             setEditProfileData((prev: any) => ({ ...prev, isActive: newStatus }));
-        } catch (error) {
-            alert('상태 변경 실패');
-        } finally {
-            setIsTogglingStatus(false);
-        }
+        } catch (error) { alert('상태 변경 실패'); } finally { setIsTogglingStatus(false); }
     }
 
     const toggleSkill = (skillId: number) => {
@@ -255,16 +247,10 @@ export default function FreelancerMyPage() {
         formData.append('file', file);
         try {
             const { data } = await api.post('/images/profile', formData);
-            const newImageUrl = data.imageUrl;
-            setProfile((prev: any) => ({ ...prev, profileImageUrl: newImageUrl }));
-            setEditProfileData((prev: any) => ({ ...prev, profileImageUrl: newImageUrl }));
+            setProfile((prev: any) => ({ ...prev, profileImageUrl: data.imageUrl }));
+            setEditProfileData((prev: any) => ({ ...prev, profileImageUrl: data.imageUrl }));
             alert('프로필 이미지가 변경되었습니다.');
-        } catch (error: any) {
-            alert('프로필 업로드 실패');
-            console.error(error);
-        } finally {
-            setIsProfileUploading(false);
-        }
+        } catch (error: any) { alert('프로필 업로드 실패'); } finally { setIsProfileUploading(false); }
     };
 
     const handleThumbUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -276,32 +262,21 @@ export default function FreelancerMyPage() {
         try {
             const { data } = await api.post('/images/portfolio', formData);
             setPortfolioForm(prev => ({ ...prev, thumbnailUrl: data.imageUrl }));
-        } catch (error: any) {
-            alert('썸네일 업로드 실패');
-        } finally {
-            setIsThumbUploading(false);
-        }
+        } catch (error: any) { alert('썸네일 업로드 실패'); } finally { setIsThumbUploading(false); }
     };
 
     const handleBulkImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
         const remainingSlots = 10 - portfolioForm.portfolioImages.length;
-        if (files.length > remainingSlots) {
-            alert(`최대 ${remainingSlots}장만 더 업로드할 수 있습니다.`);
-            return;
-        }
+        if (files.length > remainingSlots) { alert(`최대 ${remainingSlots}장만 더 업로드할 수 있습니다.`); return; }
         setIsBulkUploading(true);
         const formData = new FormData();
         Array.from(files).forEach((file) => formData.append('files', file));
         try {
             const { data } = await api.post('/images/portfolios/bulk', formData);
             setPortfolioForm(prev => ({ ...prev, portfolioImages: [...prev.portfolioImages, ...data.imageUrls].slice(0, 10) }));
-        } catch (error: any) {
-            alert('다중 이미지 업로드 실패');
-        } finally {
-            setIsBulkUploading(false);
-        }
+        } catch (error: any) { alert('다중 이미지 업로드 실패'); } finally { setIsBulkUploading(false); }
     };
 
     const removePortfolioImage = (indexToRemove: number) => {
@@ -334,46 +309,22 @@ export default function FreelancerMyPage() {
             return;
         }
         try {
-            const requestBody = {
-                title: portfolioForm.title,
-                desc: portfolioForm.desc,
-                thumbnailUrl: portfolioForm.thumbnailUrl || null,
-                portfolioImages: portfolioForm.portfolioImages.length > 0 ? portfolioForm.portfolioImages : ["https://placehold.co/600x400?text=No+Image"],
-                skills: portfolioForm.skills
-            };
-            if (portfolioForm.id) {
-                await api.put(`/portfolios/${portfolioForm.id}`, requestBody);
-                alert('포트폴리오가 수정되었습니다.');
-            } else {
-                await api.post('/portfolios', requestBody);
-                alert('포트폴리오가 등록되었습니다.');
-            }
+            const requestBody = { title: portfolioForm.title, desc: portfolioForm.desc, thumbnailUrl: portfolioForm.thumbnailUrl || null, portfolioImages: portfolioForm.portfolioImages.length > 0 ? portfolioForm.portfolioImages : ["https://placehold.co/600x400?text=No+Image"], skills: portfolioForm.skills };
+            if (portfolioForm.id) { await api.put(`/portfolios/${portfolioForm.id}`, requestBody); alert('포트폴리오가 수정되었습니다.'); }
+            else { await api.post('/portfolios', requestBody); alert('포트폴리오가 등록되었습니다.'); }
             setIsPortfolioModalOpen(false);
             fetchPortfolios();
             setPortfolioForm(EMPTY_PORTFOLIO_FORM);
-            setPortfolioSkillSearchQuery('');
-        } catch (e) {
-            alert('상세 정보를 확인해주세요.');
-        }
+        } catch (e) { alert('상세 정보를 확인해주세요.'); }
     };
 
     const handleDeletePortfolio = async (id: number) => {
         if (!confirm("이 포트폴리오를 삭제하시겠습니까?")) return;
-        try {
-            await api.delete(`/portfolios/${id}`);
-            alert("포트폴리오가 삭제되었습니다.");
-            setSelectedPortfolio(null);
-            fetchPortfolios();
-        } catch (err) {
-            alert("포트폴리오 삭제에 실패했습니다.");
-        }
+        try { await api.delete(`/portfolios/${id}`); alert("포트폴리오가 삭제되었습니다."); setSelectedPortfolio(null); fetchPortfolios(); }
+        catch (err) { alert("포트폴리오 삭제에 실패했습니다."); }
     };
 
-    if (!authorized) return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#7A4FFF] font-black text-xl animate-pulse uppercase font-mono tracking-[0.2em]">
-            SYSTEM_AUTHORIZING...
-        </div>
-    );
+    if (!authorized) return <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#7A4FFF] font-black text-xl animate-pulse uppercase font-mono tracking-[0.2em]">SYSTEM_AUTHORIZING...</div>;
     if (!profile && !isEditingProfile) return null;
 
     return (
@@ -382,112 +333,35 @@ export default function FreelancerMyPage() {
                 <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px), linear-gradient(#000 0.5px, transparent 0.5px), linear-gradient(90deg, #000 0.5px, transparent 0.5px)', backgroundSize: '20px 20px, 100px 100px, 100px 100px' }} />
             </div>
 
-            {/* 🎯 [수정] 기존 MypageNavbar를 지우고 GlobalNavbar 적용 (navItems 제거) */}
             <GlobalNavbar user={user} profile={profile} />
 
-            {/* 🎯 레이아웃 뼈대: 그리드 [300px(사이드바) + 1fr(메인 콘텐츠)] */}
             <main className="max-w-7xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start relative z-10">
-                <MypageSidebar
-                    tabs={TABS}
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    accentColor="#7A4FFF"
-                />
+                <MypageSidebar tabs={TABS} activeTab={activeTab} setActiveTab={setActiveTab} accentColor="#7A4FFF" />
 
                 <div className="space-y-8 min-w-0">
-                    <motion.div
-                        key={activeTab}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                            duration: 0.3,
-                            ease: "easeOut"
-                        }}
-                        className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/50 min-h-[700px] w-full"
-                    >
+                    <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: "easeOut" }} className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/50 min-h-[700px] w-full">
                         {loading ? (
                             <div className="flex flex-col items-center justify-center h-64 gap-4">
                                 <div className="w-10 h-10 border-4 border-[#7A4FFF]/20 border-t-[#7A4FFF] rounded-full animate-spin" />
                             </div>
                         ) : (
                             <>
-                                {activeTab === 'profile' && (
-                                    <MypageProfileTab
-                                        profile={profile}
-                                        isEditingProfile={isEditingProfile}
-                                        setIsEditingProfile={setIsEditingProfile}
-                                        editProfileData={editProfileData}
-                                        setEditProfileData={setEditProfileData}
-                                        mySkillIds={mySkillIds}
-                                        toggleSkill={toggleSkill}
-                                        skillSearchQuery={skillSearchQuery}
-                                        setSkillSearchQuery={setSkillSearchQuery}
-                                        allGlobalSkills={allGlobalSkills}
-                                        handleProfileAndSkillUpdate={handleProfileAndSkillUpdate}
-                                        isProfileUploading={isProfileUploading}
-                                        profileFileInputRef={profileFileInputRef}
-                                        handleProfileImageUpload={handleProfileImageUpload}
-                                        handleToggleStatus={handleToggleStatus}
-                                        isTogglingStatus={isTogglingStatus}
-                                        validationError={validationError}
-                                        setValidationError={setValidationError}
-                                        setMySkillIds={setMySkillIds}
-                                    />
-                                )}
-                                {activeTab === 'portfolio' && (
-                                    <MypagePortfolioTab
-                                        portfolios={portfolios}
-                                        setIsPortfolioModalOpen={setIsPortfolioModalOpen}
-                                        setPortfolioForm={setPortfolioForm}
-                                        setPortfolioSkillSearchQuery={setPortfolioSkillSearchQuery}
-                                        setSelectedPortfolio={setSelectedPortfolio}
-                                        setActiveImageIndex={setActiveImageIndex}
-                                        emptyPortfolioForm={EMPTY_PORTFOLIO_FORM}
-                                    />
-                                )}
-                                {activeTab === 'reviews' && (
-                                    <MypageReviewTab reviews={reviews} profile={profile} />
-                                )}
-                                {activeTab === 'grade' && (
-                                    <MypageGradeTab profile={profile} />
-                                )}
-                                {activeTab === 'bookmarks' && (
-                                    <BookmarkTab />
-                                )}
+                                {activeTab === 'profile' && <MypageProfileTab profile={profile} isEditingProfile={isEditingProfile} setIsEditingProfile={setIsEditingProfile} editProfileData={editProfileData} setEditProfileData={setEditProfileData} mySkillIds={mySkillIds} toggleSkill={toggleSkill} skillSearchQuery={skillSearchQuery} setSkillSearchQuery={setSkillSearchQuery} allGlobalSkills={allGlobalSkills} handleProfileAndSkillUpdate={handleProfileAndSkillUpdate} isProfileUploading={isProfileUploading} profileFileInputRef={profileFileInputRef} handleProfileImageUpload={handleProfileImageUpload} handleToggleStatus={handleToggleStatus} isTogglingStatus={isTogglingStatus} validationError={validationError} setValidationError={setValidationError} setMySkillIds={setMySkillIds} />}
+                                {activeTab === 'portfolio' && <MypagePortfolioTab portfolios={portfolios} setIsPortfolioModalOpen={setIsPortfolioModalOpen} setPortfolioForm={setPortfolioForm} setPortfolioSkillSearchQuery={setPortfolioSkillSearchQuery} setSelectedPortfolio={setSelectedPortfolio} setActiveImageIndex={setActiveImageIndex} emptyPortfolioForm={EMPTY_PORTFOLIO_FORM} />}
+
+                                {/* 🎯 리뷰 탭 컴포넌트 (마스터 코드 유지) */}
+                                {activeTab === 'reviews' && <MypageReviewTab reviews={reviews} profile={profile} />}
+
+                                {activeTab === 'grade' && <MypageGradeTab profile={profile} />}
+                                {activeTab === 'bookmarks' && <BookmarkTab />}
                             </>
                         )}
                     </motion.div>
                 </div>
             </main>
 
-            <PortfolioFormModal
-                isOpen={isPortfolioModalOpen}
-                onClose={() => { setIsPortfolioModalOpen(false); setPortfolioForm(EMPTY_PORTFOLIO_FORM); setPortfolioSkillSearchQuery(''); }}
-                portfolioForm={portfolioForm}
-                setPortfolioForm={setPortfolioForm}
-                portfolioSkillSearchQuery={portfolioSkillSearchQuery}
-                setPortfolioSkillSearchQuery={setPortfolioSkillSearchQuery}
-                allGlobalSkills={allGlobalSkills}
-                isThumbUploading={isThumbUploading}
-                isBulkUploading={isBulkUploading}
-                thumbFileInputRef={thumbFileInputRef}
-                bulkFileInputRef={bulkFileInputRef}
-                handleThumbUpload={handleThumbUpload}
-                handleBulkImageUpload={handleBulkImageUpload}
-                removePortfolioImage={removePortfolioImage}
-                togglePortfolioSkill={togglePortfolioSkill}
-                handleSavePortfolio={handleSavePortfolio}
-            />
-
-            <PortfolioDetailModal
-                selectedPortfolio={selectedPortfolio}
-                setSelectedPortfolio={setSelectedPortfolio}
-                activeImageIndex={activeImageIndex}
-                setActiveImageIndex={setActiveImageIndex}
-                handleDeletePortfolio={handleDeletePortfolio}
-                setIsPortfolioModalOpen={setIsPortfolioModalOpen}
-                setPortfolioForm={setPortfolioForm}
-            />
+            <PortfolioFormModal isOpen={isPortfolioModalOpen} onClose={() => { setIsPortfolioModalOpen(false); setPortfolioForm(EMPTY_PORTFOLIO_FORM); setPortfolioSkillSearchQuery(''); }} portfolioForm={portfolioForm} setPortfolioForm={setPortfolioForm} portfolioSkillSearchQuery={portfolioSkillSearchQuery} setPortfolioSkillSearchQuery={setPortfolioSkillSearchQuery} allGlobalSkills={allGlobalSkills} isThumbUploading={isThumbUploading} isBulkUploading={isBulkUploading} thumbFileInputRef={thumbFileInputRef} bulkFileInputRef={bulkFileInputRef} handleThumbUpload={handleThumbUpload} handleBulkImageUpload={handleBulkImageUpload} removePortfolioImage={removePortfolioImage} togglePortfolioSkill={togglePortfolioSkill} handleSavePortfolio={handleSavePortfolio} />
+            <PortfolioDetailModal selectedPortfolio={selectedPortfolio} setSelectedPortfolio={setSelectedPortfolio} activeImageIndex={activeImageIndex} setActiveImageIndex={setActiveImageIndex} handleDeletePortfolio={handleDeletePortfolio} setIsPortfolioModalOpen={setIsPortfolioModalOpen} setPortfolioForm={setPortfolioForm} />
         </div>
     );
 }

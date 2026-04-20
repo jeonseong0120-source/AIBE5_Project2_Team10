@@ -118,6 +118,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/proposals", "/api/v1/proposals").hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers(HttpMethod.POST, "/api/proposals/with-standalone-project", "/api/v1/proposals/with-standalone-project").hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers(HttpMethod.GET, "/api/proposals/sent", "/api/v1/proposals/sent").hasAnyRole("CLIENT", "BOTH")
+
+                        // [결제] 결제 준비 및 승인: 클라이언트 전용
+                        .requestMatchers("/api/payments/**", "/api/v1/payments/**").hasAnyRole("CLIENT", "BOTH")
                         // [역제안] 받은 목록/상태 변경/문의하기: 프리랜서
                         .requestMatchers(HttpMethod.GET, "/api/proposals/received", "/api/v1/proposals/received").hasAnyRole("FREELANCER", "BOTH")
                         .requestMatchers(HttpMethod.PATCH, "/api/proposals/*/status", "/api/v1/proposals/*/status").hasAnyRole("FREELANCER", "BOTH")
