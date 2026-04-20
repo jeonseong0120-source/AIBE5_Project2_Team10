@@ -36,3 +36,26 @@ export async function createProject(body: CreateProjectBody): Promise<number> {
 export async function updateProject(projectId: number | string, body: CreateProjectBody): Promise<void> {
     await api.put(`/projects/${projectId}`, body);
 }
+
+// 🎯  매칭 결과 응답 데이터 타입
+export interface FreelancerMatch {
+    profileId: number;
+    nickname: string;
+    profileImageUrl: string | null;
+    introduction: string;
+    averageRating: number;
+    completedProjects: number;
+    skills: string[];
+    isActive: boolean;
+    matchingRate: number;
+    distance: number;   // 실시간 계산된 거리 (km)
+    latitude: number;   // 요원의 위도
+    longitude: number;  // 요원의 경도
+}
+
+// 🎯 [수정됨] 매칭 결과 API 호출 함수
+export async function getMatchingResults(projectId: number | string): Promise<FreelancerMatch[]> {
+    // 주의: 백엔드 API 주소에 맞게 baseURL 뒤의 경로를 설정
+    const { data } = await api.get<FreelancerMatch[]>(`/v1/matchings/projects/${projectId}?page=0&size=5`);
+    return data;
+}

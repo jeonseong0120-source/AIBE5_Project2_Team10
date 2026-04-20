@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "../lib/axios";
 import { notifyAuthChanged } from "../lib/authEvents";
-import Link from "next/link";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -36,7 +35,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="relative bg-white font-sans text-zinc-900 overflow-x-hidden">
+        <div className="relative bg-white font-sans text-zinc-900 overflow-x-hidden min-h-screen">
 
             {/* [고정 레이어] 설계도 그리드 & 메쉬 글로우 */}
             <div className="fixed inset-0 z-0 opacity-[0.4]"
@@ -44,33 +43,26 @@ export default function LoginPage() {
             <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] bg-[#7A4FFF] opacity-[0.05] blur-[120px] rounded-full z-0"></div>
             <div className="fixed bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-[#FF7D00] opacity-[0.05] blur-[120px] rounded-full z-0"></div>
 
-            {/* [배경 레이어] 코드 데코레이션 - 마스터 요청에 따라 300% 강화 */}
+            {/* [배경 레이어] 코드 데코레이션 */}
             <div className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-none opacity-[0.25] font-mono text-[10px] md:text-[12px] p-6 leading-relaxed">
-                {/* 상단: API & Security */}
                 <div className="absolute top-[3%] left-[2%] rotate-[-2deg] text-[#FF7D00]">
                     {`@RestController\npublic class MatchingController {\n  @PostMapping("/v1/match/ai")\n  public ResponseEntity<List<Agent>> getOptimalMatch(@RequestBody Request req) {\n    return service.calculate(req.getTags(), req.getLoc());\n  }\n}`}
                 </div>
                 <div className="absolute top-[8%] right-[5%] rotate-[4deg] text-[#7A4FFF]">
                     {`const useModeSwitch = create((set) => ({\n  mode: 'CLIENT',\n  toggle: () => set((state) => ({ mode: state.mode === 'CLIENT' ? 'FREELANCER' : 'CLIENT' })),\n}));`}
                 </div>
-
-                {/* 중단: DB & Spatial Index */}
                 <div className="absolute top-[25%] left-[5%] rotate-[8deg] text-zinc-300">
                     {`-- HYPER-LOCAL SPATIAL SEARCH OPTIMIZATION\nCREATE SPATIAL INDEX idx_user_location ON freelancer_profile(location);\nSELECT * FROM freelancer_profile \nWHERE MBRContains(ST_Buffer(POINT(126.67, 37.59), 5000), location);`}
                 </div>
                 <div className="absolute top-[35%] right-[2%] rotate-[-10deg] text-[#FF7D00]/50">
                     {`# INFRASTRUCTURE BLUEPRINT\nversion: '3.8'\nservices:\n  redis:\n    image: redis:alpine\n    ports: ["6379:6379"]\n  matching-engine:\n    build: ./ai-model`}
                 </div>
-
-                {/* 중앙: AI 로직 & 인터페이스 */}
                 <div className="absolute top-[50%] left-[2%] rotate-[-5deg] text-zinc-200">
                     {`interface AIPromptConfig {\n  model: "gpt-4-turbo";\n  temperature: 0.2;\n  system: "You are a talent matching assistant for DevNear. Find experts with skill similarity > 0.85";\n}`}
                 </div>
                 <div className="absolute top-[45%] right-[8%] rotate-[12deg] text-[#7A4FFF]/40">
                     {`// WEIGHTED RATING ALGORITHM\nconst finalRating = (allAvg, recentAvg) => {\n  const decayFactor = 0.7;\n  return (allAvg * decayFactor) + (recentAvg * (1 - decayFactor));\n};`}
                 </div>
-
-                {/* 하단: 실시간 통신 & Git */}
                 <div className="absolute bottom-[20%] left-[3%] rotate-[5deg] text-[#FF7D00]/30">
                     {`socket.on("message:send", (data) => {\n  const chat = new ChatEntity(data);\n  repository.save(chat);\n  broadcastTo(data.roomId, chat);\n});`}
                 </div>
@@ -82,24 +74,19 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            {/* [상단 네비게이션] (기본 유지) */}
-            <nav className="w-full py-5 px-10 bg-zinc-950 border-b border-zinc-800 flex justify-between items-center fixed top-0 left-0 z-50">
-                <div className="font-black text-2xl tracking-tighter cursor-pointer" onClick={() => router.push("/")}>
+            {/* 🎯 [중앙 로고] */}
+            <div className="relative z-20 w-full flex justify-center pt-16">
+                <div className="cursor-pointer group" onClick={() => router.push("/")}>
                     <img
-                        src="/devnear-logo.png" 
-                        alt="DevNear_Logo"
-                        className="h-8 w-auto object-contain inline-block mr-2" 
+                        src="/devnear-logo.png"
+                        alt="DevNear_Main_Logo"
+                        className="h-50 md:h-50 w-auto object-contain transition-transform group-hover:scale-105 duration-300"
                     />
-                    <span className="text-[#FF7D00]">Dev</span>
-                    <span className="text-[#7A4FFF]">Near</span>
                 </div>
-                <div className="flex gap-6 items-center">
-                    <Link href="/signup" className="text-white/70 text-sm font-bold hover:text-white transition-colors">Join Agent</Link>
-                </div>
-            </nav>
+            </div>
 
-            {/* [Section 1] Hero & Login (기존 텍스트 유지) */}
-            <section className="relative z-10 min-h-screen flex items-center justify-center pt-20 px-8">
+            {/* [Section 1] Hero & Login */}
+            <section className="relative z-10 min-h-[80vh] flex items-center justify-center px-8">
                 <div className="max-w-6xl w-full grid md:grid-cols-2 gap-16 items-center">
                     <div className="space-y-8">
                         <div className="flex items-center gap-2">
@@ -117,7 +104,7 @@ export default function LoginPage() {
                         </p>
                     </div>
 
-                    <div className="bg-white/95 p-10 md:p-14 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] rounded-[3rem] border border-zinc-100">
+                    <div className="bg-white/95 p-10 md:p-14 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] rounded-[3rem] border border-zinc-100 backdrop-blur-md">
                         <h2 className="text-3xl font-bold mb-2 tracking-tight">로그인</h2>
                         <form onSubmit={handleLogin} className="space-y-5 mt-8">
                             <div className="space-y-2">
@@ -144,7 +131,7 @@ export default function LoginPage() {
                 </div>
             </section>
 
-            {/* [Section 2] 가치 제안 (SaaS형 내용 보강) */}
+            {/* [Section 2] 가치 제안 */}
             <section className="relative z-10 min-h-screen flex items-center justify-center px-8 bg-zinc-50/50">
                 <div className="max-w-6xl w-full grid md:grid-cols-2 gap-20 items-center">
                     <div className="font-mono text-sm opacity-40 select-none">
@@ -170,7 +157,7 @@ export default function LoginPage() {
                 </div>
             </section>
 
-            {/* [Section 3] 지역 기반 매칭 (SaaS형 내용 보강) */}
+            {/* [Section 3] 지역 기반 매칭 */}
             <section className="relative z-10 min-h-screen flex items-center justify-center px-8 bg-white">
                 <div className="max-w-6xl w-full flex flex-col items-center text-center space-y-12">
                     <div className="flex items-center gap-2">
@@ -196,7 +183,7 @@ export default function LoginPage() {
                 </div>
             </section>
 
-            {/* [Section 4] 매칭 로직 (기획서 수식 반영) */}
+            {/* [Section 4] 매칭 로직 */}
             <section className="relative z-10 min-h-screen flex items-center justify-center px-8 bg-zinc-50/50">
                 <div className="max-w-5xl w-full text-center space-y-12">
                     <h2 className="text-5xl font-black tracking-tighter">데이터로 검증된 <br /><span className="text-[#FF7D00]">매칭 정밀도</span></h2>
@@ -220,7 +207,7 @@ const calculateMatchingScore = (agent, project) => {
                 </div>
             </section>
 
-            {/* Section 5: 등급 시스템 (기획서 상세 기준 반영) */}
+            {/* Section 5: 등급 시스템 */}
             <section className="relative z-10 min-h-screen flex items-center justify-center px-8">
                 <div className="max-w-6xl w-full text-center">
                     <h2 className="text-5xl font-black tracking-tighter mb-4">신뢰 기반의 <span className="text-[#7A4FFF]">등급 에코시스템</span></h2>
@@ -242,7 +229,7 @@ const calculateMatchingScore = (agent, project) => {
                 </div>
             </section>
 
-            {/* Final CTA (기존 유지) */}
+            {/* Final CTA */}
             <section className="relative z-10 py-32 px-8 text-center bg-zinc-950">
                 <div className="max-w-4xl mx-auto space-y-10 text-zinc-100">
                     <h2 className="text-6xl font-black tracking-tighter">
