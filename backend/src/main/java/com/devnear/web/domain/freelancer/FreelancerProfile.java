@@ -56,6 +56,15 @@ public class FreelancerProfile extends BaseTimeEntity {
     @Column(name = "completed_projects", nullable = false)
     private Integer completedProjects = 0;
 
+    @Column(name = "embedding_json", columnDefinition = "LONGTEXT")
+    private String embeddingJson;
+
+    @Column(name = "embedding_model", length = 64)
+    private String embeddingModel;
+
+    @Column(name = "embedding_dimensions")
+    private Integer embeddingDimensions;
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
@@ -150,5 +159,17 @@ public class FreelancerProfile extends BaseTimeEntity {
     // 리뷰 개수를 갱신하는 메서드
     public void updateReviewCount(Integer reviewCount) {
         this.reviewCount = reviewCount;
+    }
+
+    public void assignTextEmbedding(String json, String model, int dimensions) {
+        this.embeddingJson = json;
+        this.embeddingModel = model;
+        this.embeddingDimensions = dimensions;
+    }
+
+    public void clearTextEmbedding() {
+        this.embeddingJson = null;
+        this.embeddingModel = null;
+        this.embeddingDimensions = null;
     }
 }

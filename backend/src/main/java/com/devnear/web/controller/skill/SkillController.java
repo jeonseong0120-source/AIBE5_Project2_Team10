@@ -1,7 +1,10 @@
 package com.devnear.web.controller.skill;
 
 import com.devnear.web.dto.skill.SkillResponse;
+import com.devnear.web.dto.skill.SkillTagSuggestRequest;
+import com.devnear.web.dto.skill.SkillTagSuggestionResponse;
 import com.devnear.web.service.skill.SkillService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -68,5 +71,22 @@ public class SkillController {
     public ResponseEntity<Void> deleteSkill(@PathVariable Long skillId) {
         skillService.deleteSkill(skillId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 포트폴리오/공고 설명 텍스트 기반 스킬 태그 추천.
+     * - context: portfolio | project (옵션)
+     * - limit: 1~20 (기본 8)
+     */
+    @PostMapping("/suggest")
+    public ResponseEntity<List<SkillTagSuggestionResponse>> suggestTagsFromText(
+            @Valid @RequestBody SkillTagSuggestRequest request) {
+        return ResponseEntity.ok(
+                skillService.suggestTagsFromText(
+                        request.getText(),
+                        request.getLimit(),
+                        request.getContext()
+                )
+        );
     }
 }

@@ -95,6 +95,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/images/portfolio", "/api/images/portfolios/bulk").hasAnyRole("FREELANCER", "BOTH")
                         .requestMatchers(HttpMethod.POST, "/api/images/profile").authenticated()
 
+                        // [스킬 추천] 포트폴리오/공고 본문 기반 태그 추천: 클라이언트/프리랜서 공통
+                        .requestMatchers(HttpMethod.POST, "/api/skills/suggest", "/api/v1/skills/suggest")
+                        .hasAnyRole("CLIENT", "FREELANCER", "BOTH")
+
                         // 4. [권한] 클라이언트 전용 구역
                         .requestMatchers(HttpMethod.POST, "/api/projects", "/api/v1/projects").hasAnyRole("CLIENT", "BOTH")
                         .requestMatchers(HttpMethod.PUT, "/api/projects/**", "/api/v1/projects/**").hasAnyRole("CLIENT", "BOTH")

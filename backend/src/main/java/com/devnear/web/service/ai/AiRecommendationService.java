@@ -2,12 +2,10 @@ package com.devnear.web.service.ai;
 
 import com.devnear.web.domain.enums.ProjectListingKind;
 import com.devnear.web.domain.enums.ProjectStatus;
+import com.devnear.web.domain.enums.WorkStyle;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.freelancer.FreelancerSkill;
-import com.devnear.web.domain.portfolio.Portfolio;
-import com.devnear.web.domain.portfolio.PortfolioRepository;
-import com.devnear.web.domain.portfolio.PortfolioSkill;
 import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
 import com.devnear.web.dto.ai.RecommendedProjectResponse;
@@ -20,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -35,9 +35,8 @@ public class AiRecommendationService {
     private static final int MAX_TOP_N = 20;
 
     private final FreelancerProfileRepository freelancerProfileRepository;
-    private final PortfolioRepository portfolioRepository;
     private final ProjectRepository projectRepository;
-    private final GeminiEmbeddingClient geminiEmbeddingClient;
+    private final FreelancerEmbeddingService freelancerEmbeddingService;
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
@@ -47,19 +46,13 @@ public class AiRecommendationService {
         FreelancerProfile profile = freelancerProfileRepository.findByIdWithSkills(freelancerProfileId)
                 .orElseThrow(() -> new ResourceNotFoundException("프리랜서 프로필을 찾을 수 없습니다. id=" + freelancerProfileId));
 
-        String corpus = buildFreelancerCorpus(profile);
-        if (corpus.isBlank()) {
-            log.debug("Empty freelancer corpus for profileId={}", freelancerProfileId);
+        final double[] freelancerVector = loadFreelancerVector(profile);
+        if (freelancerVector.length == 0) {
             return List.of();
         }
 
-        final double[] freelancerVector;
-        try {
-            freelancerVector = geminiEmbeddingClient.embedText(corpus);
-        } catch (IllegalStateException e) {
-            log.warn("Recommendation skipped (Gemini): {}", e.getMessage());
-            return List.of();
-        }
+        Set<String> freelancerTags = extractFreelancerTags(profile);
+        double ratingBoost = normalizedRating(profile);
 
         List<Project> candidates = projectRepository.findByStatusAndEmbeddingJsonIsNotNull(
                 ProjectStatus.OPEN, ProjectListingKind.MARKETPLACE);
@@ -69,15 +62,24 @@ public class AiRecommendationService {
             if (p.getClientProfile().getUser().getId().equals(viewerUserId)) {
                 continue;
             }
+            if (!passesLocationStage(profile, p)) {
+                continue;
+            }
             if (p.getEmbeddingJson() == null || p.getEmbeddingJson().isBlank()) {
                 continue;
             }
             try {
                 double[] pv = objectMapper.readValue(p.getEmbeddingJson(), double[].class);
-                double sim = cosineSimilarity(freelancerVector, pv);
-                if (!Double.isNaN(sim)) {
-                    scored.add(new ScoredProject(p, sim));
+                double cosine = cosineSimilarity(freelancerVector, pv);
+                if (Double.isNaN(cosine)) {
+                    continue;
                 }
+                double vectorTagScore = clamp01(cosine);
+                double exactTagScore = jaccardSimilarity(freelancerTags, extractProjectTags(p));
+                // 재능 태그 유사도(벡터 + 태그 교집합) + 평점 보정
+                double tagScore = clamp01(vectorTagScore * 0.7 + exactTagScore * 0.3);
+                double finalScore = clamp01(tagScore + ratingBoost);
+                scored.add(new ScoredProject(p, finalScore));
             } catch (Exception e) {
                 log.debug("Skip project {} invalid embedding json", p.getId());
             }
@@ -90,47 +92,99 @@ public class AiRecommendationService {
                 .collect(Collectors.toList());
     }
 
-    private String buildFreelancerCorpus(FreelancerProfile profile) {
-        StringBuilder sb = new StringBuilder();
-        if (profile.getIntroduction() != null && !profile.getIntroduction().isBlank()) {
-            sb.append("소개: ").append(profile.getIntroduction().trim()).append('\n');
+    private double[] loadFreelancerVector(FreelancerProfile profile) {
+        if (profile.getEmbeddingJson() == null || profile.getEmbeddingJson().isBlank()) {
+            Long freelancerProfileId = profile.getId();
+            freelancerEmbeddingService.refreshEmbeddingForFreelancerId(freelancerProfileId);
+            profile = freelancerProfileRepository.findByIdWithSkills(freelancerProfileId)
+                    .orElseThrow(() -> new ResourceNotFoundException("프리랜서 프로필을 찾을 수 없습니다. id=" + freelancerProfileId));
         }
-        if (profile.getFreelancerSkills() != null) {
-            String skills = profile.getFreelancerSkills().stream()
-                    .map(FreelancerSkill::getSkill)
-                    .filter(s -> s != null && s.getName() != null)
-                    .map(s -> s.getName().trim())
-                    .filter(s -> !s.isEmpty())
-                    .distinct()
-                    .collect(Collectors.joining(", "));
-            if (!skills.isEmpty()) {
-                sb.append("보유 스킬: ").append(skills).append('\n');
-            }
+        if (profile.getEmbeddingJson() == null || profile.getEmbeddingJson().isBlank()) {
+            log.debug("Empty freelancer embedding for profileId={}", profile.getId());
+            return new double[0];
         }
-
-        Long userId = profile.getUser().getId();
-        List<Portfolio> portfolios = portfolioRepository.findByUserIdWithSkills(userId);
-        for (Portfolio pf : portfolios) {
-            sb.append("포트폴리오 제목: ").append(nullToEmpty(pf.getTitle())).append('\n');
-            sb.append("포트폴리오 설명: ").append(nullToEmpty(pf.getDesc())).append('\n');
-            if (pf.getPortfolioSkills() != null) {
-                String ps = pf.getPortfolioSkills().stream()
-                        .map(PortfolioSkill::getSkill)
-                        .filter(s -> s != null && s.getName() != null)
-                        .map(s -> s.getName().trim())
-                        .filter(s -> !s.isEmpty())
-                        .distinct()
-                        .collect(Collectors.joining(", "));
-                if (!ps.isEmpty()) {
-                    sb.append("포트폴리오 스킬: ").append(ps).append('\n');
-                }
-            }
+        try {
+            return objectMapper.readValue(profile.getEmbeddingJson(), double[].class);
+        } catch (Exception e) {
+            log.warn("Invalid freelancer embedding json profileId={}", profile.getId());
+            return new double[0];
         }
-        return sb.toString().trim();
     }
 
-    private static String nullToEmpty(String s) {
-        return s == null ? "" : s;
+    private static boolean passesLocationStage(FreelancerProfile profile, Project project) {
+        WorkStyle style = profile.getWorkStyle() == null ? WorkStyle.HYBRID : profile.getWorkStyle();
+
+        boolean onlineAllowed = style == WorkStyle.ONLINE || style == WorkStyle.HYBRID;
+        boolean offlineAllowed = style == WorkStyle.OFFLINE || style == WorkStyle.HYBRID;
+
+        boolean onlineMatch = onlineAllowed && project.isOnline();
+        boolean offlineMatch = offlineAllowed && project.isOffline()
+                && regionMatches(profile.getLocation(), project.getLocation());
+        return onlineMatch || offlineMatch;
+    }
+
+    private static boolean regionMatches(String freelancerRegion, String projectRegion) {
+        if (freelancerRegion == null || freelancerRegion.isBlank()) {
+            return true;
+        }
+        if (projectRegion == null || projectRegion.isBlank()) {
+            return false;
+        }
+        String f = freelancerRegion.replaceAll("\\s+", "").toLowerCase();
+        String p = projectRegion.replaceAll("\\s+", "").toLowerCase();
+        return p.contains(f) || f.contains(p);
+    }
+
+    private static Set<String> extractFreelancerTags(FreelancerProfile profile) {
+        if (profile.getFreelancerSkills() == null) {
+            return Set.of();
+        }
+        return profile.getFreelancerSkills().stream()
+                .map(FreelancerSkill::getSkill)
+                .filter(s -> s != null && s.getName() != null)
+                .map(s -> s.getName().trim().toLowerCase())
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+    }
+
+    private static Set<String> extractProjectTags(Project project) {
+        if (project.getProjectSkills() == null) {
+            return Set.of();
+        }
+        return project.getProjectSkills().stream()
+                .map(ps -> ps.getSkill())
+                .filter(s -> s != null && s.getName() != null)
+                .map(s -> s.getName().trim().toLowerCase())
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+    }
+
+    private static double jaccardSimilarity(Set<String> left, Set<String> right) {
+        if (left.isEmpty() || right.isEmpty()) {
+            return 0.0;
+        }
+        Set<String> union = new HashSet<>(left);
+        union.addAll(right);
+        if (union.isEmpty()) {
+            return 0.0;
+        }
+        Set<String> intersection = new HashSet<>(left);
+        intersection.retainAll(right);
+        return (double) intersection.size() / union.size();
+    }
+
+    private static double normalizedRating(FreelancerProfile profile) {
+        if (profile.getAverageRating() == null || profile.getAverageRating() <= 0) {
+            return 0.0;
+        }
+        // 평점은 보정 값으로 사용 (최대 +0.2)
+        return clamp01(profile.getAverageRating() / 5.0) * 0.2;
+    }
+
+    private static double clamp01(double value) {
+        if (value < 0.0) return 0.0;
+        if (value > 1.0) return 1.0;
+        return value;
     }
 
     private static double cosineSimilarity(double[] a, double[] b) {
