@@ -20,7 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.List;
 
 @Service
@@ -51,10 +52,16 @@ public class CommunityPostService {
             postPage = communityPostRepository.findAllByOrderByIdDesc(pageable);
         }
 
-        List<CommunityPostResponse> content = postPage.getContent().stream()
+        List<CommunityPost> posts = postPage.getContent();
+        Map<Long, String> nicknamesByUserId = userRepository.findAllById(
+                        posts.stream().map(CommunityPost::getAuthorId).distinct().toList()
+                ).stream()
+                .collect(Collectors.toMap(User::getId, User::getNickname));
+
+        List<CommunityPostResponse> content = posts.stream()
                 .map(post -> new CommunityPostResponse(
                         post,
-                        getNickname(post.getAuthorId()),
+                        nicknamesByUserId.getOrDefault(post.getAuthorId(), "알 수 없음"),
                         false
                 ))
                 .toList();
@@ -67,24 +74,20 @@ public class CommunityPostService {
                 postPage.getTotalPages()
         );
     }
+    
+     @Transactional
+        public CommunityPostResponse findById(Long postId, Long userId) {
+            communityPostRepository.incrementViewCount(postId);
+            CommunityPost post = getPost(postId);
 
-    @Transactional
-    public CommunityPostResponse findById(Long postId, Long userId) {
-     `@Transactional`
-     public CommunityPostResponse findById(Long postId, Long userId) {
-         communityPostRepository.incrementViewCount(postId);
-         CommunityPost post = getPost(postId);
+            boolean isLiked = false;
+            if (userId != null) {
+                isLiked = communityPostLikeRepository.existsByPostIdAndUserId(postId, userId);
+            }
 
-         boolean isLiked = false;
-        boolean isLiked = false;
-        if (userId != null) {
-            isLiked = communityPostLikeRepository.existsByPostIdAndUserId(postId, userId);
+            String nickname = getNickname(post.getAuthorId());
+            return new CommunityPostResponse(post, nickname, isLiked);
         }
-
-        String nickname = getNickname(post.getAuthorId());
-
-        return new CommunityPostResponse(post, nickname, isLiked);
-    }
 
     @Transactional
     public void update(Long postId, CommunityPostUpdateRequest request, Long userId) {
