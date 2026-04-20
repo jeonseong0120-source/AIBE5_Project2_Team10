@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/app/lib/axios';
-import { User, ChevronRight, Heart, ExternalLink } from 'lucide-react';
+import { User, ChevronRight, Heart, Star, Briefcase, Target } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 export default function BookmarkedFreelancers() {
     const router = useRouter();
@@ -13,9 +14,11 @@ export default function BookmarkedFreelancers() {
     useEffect(() => {
         const fetchBookmarks = async () => {
             try {
-                const res = await api.get('/v1/bookmarks');
-                setBookmarks(res.data.content || res.data || []);
+                const res = await api.get('/v1/bookmarks/freelancers?size=1000');
+                const data = res.data.content || res.data || [];
+                setBookmarks(data);
             } catch (err) {
+                console.error("북마크 로드 실패:", err);
                 setBookmarks([]);
             } finally {
                 setLoading(false);
@@ -24,38 +27,107 @@ export default function BookmarkedFreelancers() {
         fetchBookmarks();
     }, []);
 
-    if (loading) return <div className="h-40 flex items-center justify-center text-xs font-bold text-zinc-400 animate-pulse">데이터 로드 중...</div>;
+    if (loading) return (
+        <div className="h-60 flex flex-col items-center justify-center gap-4">
+            <div className="w-10 h-10 border-[3px] border-orange-100 border-t-[#FF7D00] rounded-full animate-spin" />
+            <p className="font-mono text-[9px] font-black text-zinc-400 uppercase tracking-[0.4em] animate-pulse">
+                Fetching_Master_List...
+            </p>
+        </div>
+    );
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-4"> {/* 🎯 세로로 쌓이되 가로로 넓게 */}
             {bookmarks.length === 0 ? (
-                <div className="col-span-full py-12 text-center bg-zinc-50/50 rounded-3xl border border-dashed border-zinc-200">
-                    <Heart className="w-6 h-6 text-zinc-200 mx-auto mb-3" />
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">No_Bookmarks_Found</p>
+                <div className="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-zinc-100 shadow-inner">
+                    <div className="w-16 h-16 bg-zinc-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Heart className="w-6 h-6 text-zinc-200" />
+                    </div>
+                    <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest font-mono">No_Bookmarked_Agents_In_Dossier</p>
                 </div>
             ) : (
-                bookmarks.map((bookmark) => (
-                    <div
-                        key={bookmark.freelancerId}
-                        onClick={() => router.push(`/freelancer/${bookmark.freelancerId}`)}
-                        className="flex items-center justify-between p-5 bg-white rounded-[2rem] border border-zinc-100 hover:border-[#FF7D00]/40 hover:shadow-xl hover:shadow-orange-100/30 transition-all cursor-pointer group"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center text-[#FF7D00] border border-zinc-100 shadow-sm overflow-hidden group-hover:scale-105 transition-transform">
-                                {bookmark.profileImageUrl ? (
-                                    <img src={bookmark.profileImageUrl} className="w-full h-full object-cover" />
-                                ) : <User size={20} />}
+                bookmarks.map((bookmark, idx) => {
+                    const targetId = bookmark.profileId || bookmark.freelancerId;
+
+                    return (
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.04 }}
+                            key={targetId}
+                            onClick={() => router.push(`/client/freelancers/${targetId}`)}
+                            className="group relative flex flex-col md:flex-row items-center gap-6 p-5 bg-white rounded-[2rem] border border-zinc-100 hover:border-[#FF7D00]/30 hover:shadow-[0_15px_40px_rgba(0,0,0,0.04)] transition-all cursor-pointer overflow-hidden"
+                        >
+                            {/* 1. 프로필 이미지 영역 (왼쪽 고정) */}
+                            <div className="relative shrink-0">
+                                <div className="w-20 h-20 md:w-24 md:h-24 rounded-[1.8rem] bg-zinc-50 p-1 border border-zinc-100 shadow-sm group-hover:scale-105 transition-transform duration-500">
+                                    <div className="w-full h-full rounded-[1.5rem] overflow-hidden">
+                                        {bookmark.profileImageUrl ? (
+                                            <img
+                                                src={bookmark.profileImageUrl}
+                                                alt={bookmark.nickname}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.currentTarget.src = 'https://ui-avatars.com/api/?background=F4F4F5&color=A1A1AA';
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-zinc-300">
+                                                <User size={32} />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                {/* 찜 배지 */}
+                                <div className="absolute -top-1 -left-1 w-7 h-7 bg-[#FF7D00] rounded-full shadow-lg flex items-center justify-center border-2 border-white">
+                                    <Heart size={12} className="fill-white text-white" />
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-sm font-black text-zinc-900 group-hover:text-[#FF7D00] transition-colors">{bookmark.nickname}</p>
-                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">{bookmark.mainSkill || 'Professional Developer'}</p>
+
+                            {/* 2. 정보 요약 영역 (가운데 유동적) */}
+                            <div className="flex-1 min-w-0 text-center md:text-left">
+                                <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
+                                    <h4 className="text-xl font-black text-zinc-900 group-hover:text-[#FF7D00] transition-colors tracking-tighter">
+                                        {bookmark.nickname}
+                                    </h4>
+                                    <div className="flex items-center justify-center md:justify-start gap-2">
+                                        <span className="px-2 py-0.5 bg-zinc-950 text-white text-[8px] font-black uppercase tracking-widest rounded-md font-mono">
+                                            Verified_Agent
+                                        </span>
+                                        <div className="flex items-center text-[#FF7D00] font-mono text-[10px] font-black">
+                                            <Star size={12} className="fill-current mr-1" />
+                                            4.9
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p className="text-sm font-medium text-zinc-500 line-clamp-1 italic pr-4">
+                                    &quot;{bookmark.introduction || '전략적인 파트너십을 위한 준비된 전문가 요원입니다.'}&quot;
+                                </p>
+
+                                <div className="mt-3 flex flex-wrap justify-center md:justify-start gap-4">
+                                    <div className="flex items-center text-[10px] font-bold text-zinc-400 font-mono uppercase tracking-tight">
+                                        <Target size={12} className="mr-1.5 text-zinc-300" /> ID: #{targetId}
+                                    </div>
+                                    <div className="flex items-center text-[10px] font-bold text-zinc-400 font-mono uppercase tracking-tight">
+                                        <Briefcase size={12} className="mr-1.5 text-zinc-300" /> 12 Projects
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div className="p-2 bg-zinc-50 rounded-full group-hover:bg-orange-50 transition-colors">
-                            <ChevronRight size={16} className="text-zinc-300 group-hover:text-[#FF7D00]" />
-                        </div>
-                    </div>
-                ))
+
+                            {/* 3. 액션 버튼 영역 (오른쪽 고정) */}
+                            <div className="shrink-0 flex items-center gap-3">
+                                <div className="hidden md:block h-10 w-[1px] bg-zinc-100 mx-2" />
+                                <div className="p-4 bg-zinc-50 rounded-[1.5rem] group-hover:bg-[#FF7D00] group-hover:text-white transition-all shadow-sm group-hover:shadow-orange-200">
+                                    <ChevronRight size={24} strokeWidth={3} />
+                                </div>
+                            </div>
+
+                            {/* 배경 장식 선 */}
+                            <div className="absolute bottom-0 left-0 h-[3px] w-0 bg-[#FF7D00] transition-all duration-500 group-hover:w-full opacity-30" />
+                        </motion.div>
+                    );
+                })
             )}
         </div>
     );
