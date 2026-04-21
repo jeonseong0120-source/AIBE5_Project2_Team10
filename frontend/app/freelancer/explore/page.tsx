@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
 
 // 🎯 [추가] 대통합 네비게이션 바 불러오기!
-import GlobalNavbar from '@/components/common/GlobalNavbar';
+import GlobalNavbar, { type UserData, type ProfileData } from '../../../components/common/GlobalNavbar';
 
 export default function FreelancerExplorePage() {
     const router = useRouter();
@@ -18,9 +18,9 @@ export default function FreelancerExplorePage() {
     const [authorized, setAuthorized] = useState(false);
 
     // 🎯 GlobalNavbar에 전달할 유저 정보 상태
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<UserData | null>(null);
     // 🎯 [추가] 사진(logoUrl 등) 데이터를 담을 프로필 상태
-    const [profile, setProfile] = useState<any>(null);
+    const [profile, setProfile] = useState<ProfileData | null>(null);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLocation, setSelectedLocation] = useState('');
@@ -104,6 +104,7 @@ export default function FreelancerExplorePage() {
         'Flutter',
         'GraphQL',
         'Tailwind CSS',
+        'Figma',
     ];
 
     useEffect(() => {
@@ -127,7 +128,8 @@ export default function FreelancerExplorePage() {
                     return;
                 }
 
-                setUser(res.data);
+                const normalizedRole = res.data.role?.replace("ROLE_", "") || "";
+                setUser({ ...res.data, role: normalizedRole as UserData['role'] });
                 setAuthorized(true);
             } catch (err) {
                 router.replace("/login");
@@ -216,7 +218,7 @@ export default function FreelancerExplorePage() {
             {/* Hero Section */}
             <header className="relative pt-24 pb-16 px-6 bg-white border-b border-zinc-100 overflow-hidden text-center">
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                     style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                    style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
                 <div className="absolute left-[-20px] bottom-4 opacity-5 hidden lg:block text-[#7A4FFF]">
                     <BarChart3 size={200} strokeWidth={0.5} />
@@ -227,6 +229,14 @@ export default function FreelancerExplorePage() {
 
                 <div className="max-w-4xl mx-auto relative z-10">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                        <div className="flex justify-center gap-6 text-[10px] text-zinc-400 mb-6 font-black font-mono tracking-[0.2em] uppercase">
+                            <div>ACTIVE_MISSIONS_{totalElements}</div>
+                            <span className="text-zinc-200">|</span>
+                            <div>SEOUL_NODES_ACTIVE</div>
+                            <span className="text-zinc-200">|</span>
+                            <div>MATCH_INDEX_OPTIMIZED</div>
+                        </div>
+
                         <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-zinc-900">
                             나에게 맞는 <span className="text-[#7A4FFF]">프로젝트</span>를 찾으세요.
                         </h1>
@@ -252,7 +262,7 @@ export default function FreelancerExplorePage() {
                 </div>
             </header>
 
-            <section className="relative z-10 max-w-6xl mx-auto px-6 md:px-10 pb-6">
+            <section className="relative z-10 max-w-7xl mx-auto px-8 pb-6">
                 <div className="rounded-[2rem] border border-purple-200/80 bg-gradient-to-br from-white via-purple-50/40 to-white p-8 md:p-10 shadow-xl shadow-purple-500/5">
                     <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                         <div>
@@ -314,7 +324,7 @@ export default function FreelancerExplorePage() {
                 </div>
             </section>
 
-            <main className="max-w-6xl mx-auto px-6 md:px-10 py-10 flex flex-col lg:flex-row gap-10">
+            <main className="max-w-7xl mx-auto px-8 py-10 flex flex-col lg:flex-row gap-10">
                 {/* 좌측 사이드바 필터 */}
                 <aside className="w-full lg:w-64 shrink-0 space-y-8">
                     <section>
@@ -323,9 +333,8 @@ export default function FreelancerExplorePage() {
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`flex-1 py-2.5 rounded-xl text-[11px] font-black transition-all ${
-                                        activeTab === tab ? 'bg-zinc-900 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-900'
-                                    }`}
+                                    className={`flex-1 py-2.5 rounded-xl text-[11px] font-black transition-all ${activeTab === tab ? 'bg-zinc-900 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-900'
+                                        }`}
                                 >
                                     {tab}
                                 </button>
@@ -347,9 +356,8 @@ export default function FreelancerExplorePage() {
                                 <button
                                     key={loc}
                                     onClick={() => setSelectedLocation(loc === selectedLocation ? '' : loc)}
-                                    className={`px-3 py-2 rounded-xl text-[11px] font-bold border transition-all ${
-                                        selectedLocation === loc ? 'border-[#7A4FFF] text-[#7A4FFF] bg-purple-50' : 'bg-white border-zinc-200 text-zinc-500 shadow-sm hover:border-zinc-300'
-                                    }`}
+                                    className={`px-3 py-2 rounded-xl text-[11px] font-bold border transition-all ${selectedLocation === loc ? 'border-[#7A4FFF] text-[#7A4FFF] bg-purple-50' : 'bg-white border-zinc-200 text-zinc-500 shadow-sm hover:border-zinc-300'
+                                        }`}
                                 >
                                     {loc}
                                 </button>
@@ -366,9 +374,8 @@ export default function FreelancerExplorePage() {
                                 <button
                                     key={tech}
                                     onClick={() => setSelectedTech(selectedTech === tech ? '' : tech)}
-                                    className={`px-3 py-2.5 rounded-xl text-[10px] font-bold text-left transition-all border ${
-                                        selectedTech === tech ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' : 'bg-white border-zinc-100 text-zinc-500 hover:border-zinc-300 shadow-sm'
-                                    }`}
+                                    className={`px-3 py-2.5 rounded-xl text-[10px] font-bold text-left transition-all border ${selectedTech === tech ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' : 'bg-white border-zinc-100 text-zinc-500 hover:border-zinc-300 shadow-sm'
+                                        }`}
                                 >
                                     {selectedTech === tech ? '● ' : '○ '} {tech}
                                 </button>
@@ -402,10 +409,16 @@ export default function FreelancerExplorePage() {
 
                 {/* 우측 공고 리스트 */}
                 <section className="flex-1">
-                    <div className="flex justify-between items-center mb-6 border-b border-zinc-100 pb-4">
-                        <p className="font-mono text-[11px] font-black text-zinc-900 uppercase tracking-tighter">
-                            Total_Missions: <span className="text-[#FF7D00] ml-1">{totalElements}</span>
-                        </p>
+                    <div className="flex justify-between items-center mb-6 border-b border-zinc-100 pb-6">
+                        <div>
+                            <div className="mb-1 flex items-center gap-2">
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#FF7D00] animate-pulse" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.35em] text-[#FF7D00] font-mono italic">live database</span>
+                            </div>
+                            <p className="font-mono text-xl font-black text-zinc-950 uppercase tracking-tighter">
+                                Total_Missions <span className="text-zinc-300 mx-1">/</span> <span className="text-[#FF7D00]">{totalElements}</span>
+                            </p>
+                        </div>
 
                         <div className="flex items-center gap-2 text-[10px] font-black uppercase font-mono text-zinc-400">
                             SORT:

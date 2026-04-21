@@ -66,14 +66,16 @@ public class FreelancerController {
     public ResponseEntity<List<FreelancerProfileResponse>> searchFreelancers(
             @RequestParam(required = false) String skill,
             @RequestParam(required = false) String region,
-            @RequestParam(required = false) String sort) {
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String workStyle) {
 
         // [수정] 프론트에서 빈 문자열("")을 보낼 때 500 쿼리 에러나 필터 누락이 생기지 않도록 null로 치환
         String safeSkill = (skill != null && skill.trim().isEmpty()) ? null : skill;
         String safeRegion = (region != null && region.trim().isEmpty()) ? null : region;
         String safeSort = (sort != null && sort.trim().isEmpty()) ? null : sort;
+        String safeWorkStyle = (workStyle != null && workStyle.trim().isEmpty()) ? null : workStyle;
 
-        return ResponseEntity.ok(freelancerService.searchFreelancers(safeSkill, safeRegion, safeSort));
+        return ResponseEntity.ok(freelancerService.searchFreelancers(safeSkill, safeRegion, safeSort, safeWorkStyle));
     }
 
     /**
