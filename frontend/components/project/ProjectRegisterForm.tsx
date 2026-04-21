@@ -7,6 +7,7 @@ import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
 import SkillTagSelector from "@/components/project/SkillTagSelector";
 import { DollarSign, MapPin, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import MatchingresultForm from "./MatchingresultForm";
 
 function tomorrowISODate(): string {
     const d = new Date();
@@ -35,6 +36,11 @@ export default function ProjectRegisterForm() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
+
+    // 🎯 [추가] 모달 제어 상태
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newProjectId, setNewProjectId] = useState<number | null>(null);
+
 
     const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim() ?? "";
     const submitLockRef = useRef(false);
@@ -87,14 +93,17 @@ export default function ProjectRegisterForm() {
         submitLockRef.current = true;
         setSubmitting(true);
         try {
-            // 1. 프로젝트 생성 API 호출
-            await createProject(payload);
+            const resultId = await createProject(payload);
 
-            // 🎯 [마스터! 핵심 수정 구간]
-            // 상세 페이지(/client/projects/${projectId})로 가는 기존 코드를 삭제하고
-            // 대시보드로 이동시키기 전에 데이터를 한 번 리프레시합니다.
             router.refresh();
-            router.push("/client/dashboard");
+            if (resultId) {
+
+                setNewProjectId(resultId);
+                setIsModalOpen(true);
+            } else {
+                alert("프로젝트가 등록되었습니다.");
+                router.push("/client/dashboard");
+            }
 
         } catch (err: any) {
             setError(err.response?.data?.message || "등록에 실패했습니다.");
@@ -106,22 +115,13 @@ export default function ProjectRegisterForm() {
 
     return (
         <div className="min-h-screen bg-zinc-50 relative overflow-hidden font-sans pb-20">
-            {/* 커서 글로우 애니메이션 */}
-            <div
-                className="pointer-events-none fixed left-0 top-0 z-0 h-[400px] w-[400px] rounded-full bg-[#FF7D00]/10 blur-[120px] will-change-transform"
-                style={{ transform: `translate(${cursor.x - 200}px, ${cursor.y - 200}px)` }}
-            />
+            <div className="pointer-events-none fixed left-0 top-0 z-0 h-[400px] w-[400px] rounded-full bg-[#FF7D00]/10 blur-[120px] will-change-transform" style={{ transform: `translate(${cursor.x - 200}px, ${cursor.y - 200}px)` }} />
 
-            {/* 상단 헤더 섹션 */}
             <section className="relative pt-16 pb-12 px-8 bg-white border-b border-zinc-200 overflow-hidden mb-10">
                 <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
                 <div className="max-w-xl mx-auto relative z-10">
                     <div className="flex items-center gap-4 mb-4">
-                        <button
-                            type="button"
-                            onClick={() => router.back()}
-                            className="p-2.5 bg-zinc-50 border border-zinc-100 rounded-xl text-zinc-400 hover:text-[#FF7D00] hover:border-[#FF7D00]/30 hover:bg-orange-50 transition-all group"
-                        >
+                        <button type="button" onClick={() => router.back()} className="p-2.5 bg-zinc-50 border border-zinc-100 rounded-xl text-zinc-400 hover:text-[#FF7D00] hover:border-[#FF7D00]/30 hover:bg-orange-50 transition-all group">
                             <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                         </button>
                         <div>
@@ -135,37 +135,32 @@ export default function ProjectRegisterForm() {
                 </div>
             </section>
 
-            {/* 메인 등록 폼 */}
             <form onSubmit={handleSubmit} className="mx-auto max-w-xl bg-white p-10 rounded-[2.5rem] shadow-xl border border-zinc-100 space-y-8 relative z-10">
                 {error && <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-bold animate-shake">{error}</div>}
 
                 <div className="space-y-6">
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Project_Title</label>
-                        <input required className="w-full rounded-2xl border border-zinc-100 bg-zinc-50 p-4 font-bold outline-none transition-[box-shadow,border-color] focus:ring-2 focus:ring-[#FF7D00]"
-                               value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="프로젝트명을 입력하세요" />
+                        <input required className="w-full rounded-2xl border border-zinc-100 bg-zinc-50 p-4 font-bold outline-none transition-[box-shadow,border-color] focus:ring-2 focus:ring-[#FF7D00]" value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="프로젝트명을 입력하세요" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Budget (₩)</label>
                             <div className="relative">
-                                <input type="number" required min="1" className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]"
-                                       value={budget} onChange={(e) => setBudget(e.target.value)} />
+                                <input type="number" required min="1" className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]" value={budget} onChange={(e) => setBudget(e.target.value)} />
                                 <DollarSign className="absolute right-4 top-1/2 -translate-y-1/2 text-[#FF7D00]" size={16} />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Deadline</label>
-                            <input type="date" required className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]"
-                                   value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+                            <input type="date" required className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
                         </div>
                     </div>
 
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Description</label>
-                        <textarea className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl min-h-[150px] outline-none focus:ring-2 focus:ring-[#FF7D00] text-sm font-medium resize-none"
-                                  value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="상세 내용을 입력하세요" />
+                        <textarea className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl min-h-[150px] outline-none focus:ring-2 focus:ring-[#FF7D00] text-sm font-medium resize-none" value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="상세 내용을 입력하세요" />
                     </div>
 
                     <div className="space-y-2">
@@ -183,12 +178,9 @@ export default function ProjectRegisterForm() {
                                     <div className="flex items-center gap-2"><MapPin size={14} className="text-[#FF7D00]" /><span className="text-[10px] font-black text-[#FF7D00] uppercase font-mono tracking-widest">Location_Setting</span></div>
 
                                     {kakaoJavascriptKey ? (
-                                        <KakaoLocationPicker javascriptKey={kakaoJavascriptKey} value={{ address: location, latitude: String(latitude), longitude: String(longitude) }}
-                                                             onChangeAction={(v) => { setLocation(v.address); setLatitude(String(v.latitude)); setLongitude(String(v.longitude)); }} />
+                                        <KakaoLocationPicker javascriptKey={kakaoJavascriptKey} value={{ address: location, latitude: String(latitude), longitude: String(longitude) }} onChangeAction={(v) => { setLocation(v.address); setLatitude(String(v.latitude)); setLongitude(String(v.longitude)); }} />
                                     ) : (
-                                        <div className="p-4 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100">
-                                            ⚠️ API 키를 확인해주세요.
-                                        </div>
+                                        <div className="p-4 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100">⚠️ API 키를 확인해주세요.</div>
                                     )}
                                 </div>
                             </motion.div>
@@ -206,11 +198,23 @@ export default function ProjectRegisterForm() {
                     </div>
                 </div>
 
-                <button type="submit" disabled={submitting || isSkillsLoading}
-                        className="w-full py-5 bg-zinc-950 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all shadow-xl shadow-zinc-200 active:scale-95 disabled:bg-zinc-200">
+                <button type="submit" disabled={submitting || isSkillsLoading} className="w-full py-5 bg-zinc-950 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all shadow-xl shadow-zinc-200 active:scale-95 disabled:bg-zinc-200">
                     {submitting || isSkillsLoading ? "Processing..." : "프로젝트 등록하기"}
                 </button>
             </form>
+
+            {/* 🎯 [ 모달 팝업 추가] */}
+            <AnimatePresence>
+                {isModalOpen && newProjectId && (
+                    <MatchingresultForm
+                        projectId={newProjectId}
+                        onClose={() => {
+                            setIsModalOpen(false);
+                            router.push("/client/dashboard"); // 닫으면 대시보드로 이동
+                        }}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }
