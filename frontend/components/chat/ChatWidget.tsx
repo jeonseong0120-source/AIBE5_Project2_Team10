@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { StompSubscription } from "@stomp/stompjs";
 import ChatWindow from "./ChatWindow";
 import {
@@ -15,19 +15,20 @@ import {
     subscribeChatRoom,
 } from "../../app/lib/chatSocket";
 import { getCurrentUserId } from "../../app/lib/auth";
+import { useChatStore } from "../../app/store/chatStore";
 import { ChatMessageResponse, ChatRoomResponse } from "../../types/chat";
 
 export default function ChatWidget() {
-    const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
     const [rooms, setRooms] = useState<ChatRoomResponse[]>([]);
-    const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
     const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
     const [loadingRooms, setLoadingRooms] = useState(false);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [sending, setSending] = useState(false);
+
+    const { isOpen, selectedRoomId, openChat, closeChat, setRoom } = useChatStore();
 
     const selectedRoomIdRef = useRef<number | null>(null);
     const latestMessageReqId = useRef(0);
@@ -41,7 +42,7 @@ export default function ChatWidget() {
         selectedRoomIdRef.current = selectedRoomId;
     }, [selectedRoomId]);
 
-    const fetchRooms = useCallback(async () => {
+    const fetchRooms = async () => {
         try {
             setLoadingRooms(true);
 
@@ -56,7 +57,7 @@ export default function ChatWidget() {
                     ? currentSelectedRoomId
                     : roomData[0]?.roomId ?? null;
 
-            setSelectedRoomId(nextSelectedRoomId);
+            setRoom(nextSelectedRoomId);
 
             if (nextSelectedRoomId === null) {
                 setMessages([]);
@@ -66,9 +67,9 @@ export default function ChatWidget() {
         } finally {
             setLoadingRooms(false);
         }
-    }, [selectedRoomId]);
+    };
 
-    const fetchMessages = useCallback(async (roomId: number) => {
+    const fetchMessages = async (roomId: number) => {
         const requestId = ++latestMessageReqId.current;
 
         try {
@@ -90,17 +91,17 @@ export default function ChatWidget() {
         } finally {
             setLoadingMessages(false);
         }
-    }, []);
+    };
 
     useEffect(() => {
         if (!isOpen) return;
         fetchRooms();
-    }, [isOpen, fetchRooms]);
+    }, [isOpen]);
 
     useEffect(() => {
         if (!isOpen || !selectedRoomId) return;
         fetchMessages(selectedRoomId);
-    }, [isOpen, selectedRoomId, fetchMessages]);
+    }, [isOpen, selectedRoomId]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -135,7 +136,10 @@ export default function ChatWidget() {
                             room.roomId === selectedRoomId
                                 ? {
                                     ...room,
-                                    lastMessage: newMessage.message,
+                                    lastMessage:
+                                        newMessage.content ??
+                                        newMessage.message ??
+                                        "",
                                     lastMessageTime: newMessage.createdAt,
                                     unreadCount: 0,
                                 }
@@ -158,11 +162,15 @@ export default function ChatWidget() {
     }, [isOpen, selectedRoomId]);
 
     const handleOpenToggle = () => {
-        setIsOpen((prev) => !prev);
+        if (isOpen) {
+            closeChat();
+        } else {
+            openChat();
+        }
     };
 
     const handleSelectRoom = (roomId: number) => {
-        setSelectedRoomId(roomId);
+        setRoom(roomId);
     };
 
     const handleSend = async () => {
@@ -179,8 +187,6 @@ export default function ChatWidget() {
             });
 
             setInput("");
-            await fetchMessages(selectedRoomId);
-            await fetchRooms();
         } catch (error) {
             console.error("메시지 전송 실패", error);
         } finally {
@@ -192,7 +198,7 @@ export default function ChatWidget() {
         <>
             <ChatWindow
                 isOpen={isOpen}
-                onClose={() => setIsOpen(false)}
+                onClose={closeChat}
                 rooms={rooms}
                 selectedRoomId={selectedRoomId}
                 onSelectRoom={handleSelectRoom}

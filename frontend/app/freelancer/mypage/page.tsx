@@ -82,14 +82,16 @@ function FreelancerMyPageContent() {
     const searchParams = useSearchParams();
     useEffect(() => {
         const tab = searchParams.get('tab');
+        const openToken = searchParams.get('_t');
         if (tab && TABS.some(t => t.id === tab)) {
             setActiveTab(tab);
-            // 포트폴리오 탭으로 올 경우 모달을 자동으로 엽니다.
-            if (tab === 'portfolio') {
+            // 포트폴리오 "추가" 딥링크는 _t가 있을 때만 1회성으로 모달 오픈
+            if (tab === 'portfolio' && openToken) {
                 setIsPortfolioModalOpen(true);
+                router.replace(`${pathname}?tab=portfolio`, { scroll: false });
             }
         }
-    }, [searchParams]);
+    }, [searchParams, router, pathname]);
 
     useEffect(() => {
         const init = async () => {
