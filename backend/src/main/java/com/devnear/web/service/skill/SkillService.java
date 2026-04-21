@@ -217,13 +217,18 @@ public class SkillService {
     /**
      * 본문(정규화)에 등장한 한글 별칭에 대응하는 카탈로그 영문 스킬명(정규화) 집합.
      * 문서 문자열을 바꾸지 않으며, {@link #scoreSkillForSuggest}에서 해당 스킬과 정확히 일치할 때만 가산합니다.
+     * <p>
+     * {@link #KR_SKILL_ALIASES_SORTED}는 한글 구절 길이 내림차순입니다. 매칭은 {@link #compact} 문자열에서 수행하고,
+     * 이미 수락한 구간과 겹치는 짧은 별칭(예: "자바" ⊂ "자바스크립트")은 무시합니다.
      */
-    private static LinkedHashSet<String> collectKoreanAliasEnglishHits(String normalizedDoc) {
+    static LinkedHashSet<String> collectKoreanAliasEnglishHits(String normalizedDoc) {
         LinkedHashSet<String> extras = new LinkedHashSet<>();
         if (normalizedDoc == null || normalizedDoc.isBlank()) {
             return extras;
         }
         String compactDoc = compact(normalizedDoc);
+        List<int[]> compactConsumed = new ArrayList<>();
+
         for (KrSkillAlias rule : KR_SKILL_ALIASES_SORTED) {
             if (!rule.docGuard().test(normalizedDoc)) {
                 continue;
@@ -232,14 +237,41 @@ public class SkillService {
             if (kr.isBlank()) {
                 continue;
             }
-            if (normalizedDoc.contains(kr) || compactDoc.contains(compact(kr))) {
-                String en = rule.englishSkillNormalized();
-                if (!en.isBlank()) {
+            String krCompact = compact(kr);
+            if (krCompact.isBlank()) {
+                continue;
+            }
+            String en = rule.englishSkillNormalized();
+            if (en.isBlank()) {
+                continue;
+            }
+            int from = 0;
+            while (from <= compactDoc.length() - krCompact.length()) {
+                int j = compactDoc.indexOf(krCompact, from);
+                if (j < 0) {
+                    break;
+                }
+                int end = j + krCompact.length();
+                if (!overlapsAnySpan(compactConsumed, j, end)) {
+                    compactConsumed.add(new int[]{j, end});
                     extras.add(en);
+                    from = j + 1;
+                } else {
+                    from = j + 1;
                 }
             }
         }
         return extras;
+    }
+
+    /** half-open {@code [start, end)} 구간이 기록된 구간들 중 하나와 겹치면 true */
+    private static boolean overlapsAnySpan(List<int[]> intervals, int start, int endExclusive) {
+        for (int[] iv : intervals) {
+            if (endExclusive > iv[0] && start < iv[1]) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -342,6 +374,8 @@ public class SkillService {
                 KrSkillAlias.of("데이터베이스 샤딩", "Database Sharding"),
                 KrSkillAlias.of("매칭 알고리즘", "Matching Algorithm"),
                 KrSkillAlias.of("솔리디티", "Solidity"),
+                /** "자바" 단독은 허용하되 "자바스크립트" 내부 부분 문자열로 Java 오인 방지(긴 구절이 먼저 소비) */
+                KrSkillAlias.of("자바스크립트", "JavaScript"),
                 KrSkillAlias.of("자바", "Java"),
                 KrSkillAlias.of("도커", "Docker"),
                 KrSkillAlias.of("레디스", "Redis"),
