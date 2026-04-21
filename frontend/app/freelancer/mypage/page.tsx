@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { User as UserIcon, Briefcase, Star, Award, Bookmark, CreditCard } from 'lucide-react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
@@ -41,7 +41,7 @@ const LOCATION_COORDS: Record<string, { lat: number, lng: number }> = {
 
 const EMPTY_PORTFOLIO_FORM = { id: null as number | null | undefined, title: '', desc: '', thumbnailUrl: '', portfolioImages: [] as string[], skills: [] as number[] };
 
-export default function FreelancerMyPage() {
+function FreelancerMyPageContent() {
     const router = useRouter();
     const pathname = usePathname();
     const [activeTab, setActiveTab] = useState('profile');
@@ -379,5 +379,19 @@ export default function FreelancerMyPage() {
             <PortfolioFormModal isOpen={isPortfolioModalOpen} onClose={() => { setIsPortfolioModalOpen(false); setPortfolioForm(EMPTY_PORTFOLIO_FORM); setPortfolioSkillSearchQuery(''); }} portfolioForm={portfolioForm} setPortfolioForm={setPortfolioForm} portfolioSkillSearchQuery={portfolioSkillSearchQuery} setPortfolioSkillSearchQuery={setPortfolioSkillSearchQuery} allGlobalSkills={allGlobalSkills} isThumbUploading={isThumbUploading} isBulkUploading={isBulkUploading} thumbFileInputRef={thumbFileInputRef} bulkFileInputRef={bulkFileInputRef} handleThumbUpload={handleThumbUpload} handleBulkImageUpload={handleBulkImageUpload} removePortfolioImage={removePortfolioImage} togglePortfolioSkill={togglePortfolioSkill} handleSavePortfolio={handleSavePortfolio} />
             <PortfolioDetailModal selectedPortfolio={selectedPortfolio} setSelectedPortfolio={setSelectedPortfolio} activeImageIndex={activeImageIndex} setActiveImageIndex={setActiveImageIndex} handleDeletePortfolio={handleDeletePortfolio} setIsPortfolioModalOpen={setIsPortfolioModalOpen} setPortfolioForm={setPortfolioForm} />
         </div>
+    );
+}
+
+export default function FreelancerMyPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex min-h-screen items-center justify-center bg-zinc-50 text-[#7A4FFF] font-black text-xl animate-pulse">
+                    LOADING...
+                </div>
+            }
+        >
+            <FreelancerMyPageContent />
+        </Suspense>
     );
 }
