@@ -105,7 +105,7 @@ export default function SkillTagSelector({
                 const byId = new Map(prev.map((skill) => [skill.skillId, skill]));
                 for (const skill of suggestions) {
                     byId.set(skill.skillId, {
-                        skillId: skill.skillId,s
+                        skillId: skill.skillId,
                         name: skill.name,
                         category: skill.category,
                     });
@@ -156,7 +156,7 @@ export default function SkillTagSelector({
                 <button
                     type="button"
                     onClick={() => void handleSuggestSkills()}
-                    disabled={isSuggesting}
+                    disabled={isSuggesting || loading}
                     className="rounded-lg border border-[#FF7D00]/40 bg-orange-50 px-3 py-2 text-xs font-black text-[#FF7D00] transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {isSuggesting ? "추출 중..." : "본문에서 스킬 자동추출"}
