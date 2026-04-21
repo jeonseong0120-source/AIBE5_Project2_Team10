@@ -176,7 +176,7 @@ export default function PortfolioDetailModal({
                                 </div>
                             </div>
                             {showCarousel && (
-                                <div className="flex shrink-0 justify-start gap-3 overflow-x-auto border-t border-zinc-200/50 bg-zinc-50/80 px-6 py-5 no-scrollbar">
+                                <div className="flex shrink-0 justify-center gap-3 overflow-x-auto border-t border-zinc-200/50 bg-zinc-50/80 px-6 py-5 no-scrollbar">
                                     {images.map((img: string, idx: number) => (
                                         <button
                                             type="button"
@@ -209,51 +209,53 @@ export default function PortfolioDetailModal({
                                             animate={{ opacity: 1, y: 0 }}
                                             className="mb-8 flex items-center justify-between"
                                         >
-                                            <button
-                                                onClick={() => {
-                                                    if (readOnly && fullProfileHref) {
-                                                        onClose();
-                                                        router.push(fullProfileHref);
-                                                    }
-                                                }}
-                                                className={`group flex items-center gap-4 text-left transition-all ${readOnly && fullProfileHref ? 'cursor-pointer hover:opacity-80 active:scale-95' : 'cursor-default'}`}
-                                            >
-                                                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border-2 border-white bg-zinc-100 shadow-lg ring-1 ring-zinc-100 group-hover:ring-[#7A4FFF]/50 transition-all">
+                                            <div className="flex items-center gap-4">
+                                                {/* 📸 Profile Image (Interactive) */}
+                                                <button
+                                                    onClick={() => {
+                                                        if (readOnly && fullProfileHref) {
+                                                            onClose();
+                                                            router.push(fullProfileHref);
+                                                        }
+                                                    }}
+                                                    className={`group relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-white bg-zinc-100 shadow-lg ring-1 ring-zinc-100 transition-all duration-500 ${readOnly && fullProfileHref ? 'cursor-pointer hover:scale-105 hover:shadow-purple-100 hover:ring-[#7A4FFF]/30' : 'cursor-default'}`}
+                                                >
                                                     <img 
                                                         src={authorProfileImage || 'https://ui-avatars.com/api/?name=User&background=F4F4F5&color=A1A1AA'} 
                                                         alt={authorNickname}
-                                                        className="h-full w-full object-cover"
+                                                        className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110"
                                                     />
-                                                </div>
+                                                    <div className="absolute inset-0 bg-[#7A4FFF]/0 transition-colors duration-500 group-hover:bg-[#7A4FFF]/5" />
+                                                </button>
+
                                                 <div className="flex flex-col gap-1.5">
+                                                    {/* 🎖 Grade Badge (Static) */}
                                                     <div className="flex items-center">
-                                                        <span className="rounded-full bg-[#7A4FFF] px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-[0.15em] shadow-lg shadow-purple-200 ring-1 ring-purple-100/20 group-hover:bg-black transition-colors">
+                                                        <span className="rounded-full bg-[#7A4FFF] px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-[0.15em] shadow-lg shadow-purple-200/50 ring-1 ring-purple-100/20">
                                                             {authorGradeName || 'EXPERT'}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center gap-2.5">
-                                                        <p className="text-base font-black text-zinc-900 tracking-tight group-hover:text-[#7A4FFF] transition-colors">{authorNickname || 'Unknown Artist'}</p>
+
+                                                    {/* 👤 Nickname (Interactive) */}
+                                                    <button
+                                                        onClick={() => {
+                                                            if (readOnly && fullProfileHref) {
+                                                                onClose();
+                                                                router.push(fullProfileHref);
+                                                            }
+                                                        }}
+                                                        className={`flex items-center gap-2.5 transition-all duration-300 ${readOnly && fullProfileHref ? 'cursor-pointer hover:text-[#7A4FFF] active:scale-95' : 'cursor-default'}`}
+                                                    >
+                                                        <p className="text-base font-black text-zinc-900 tracking-tight transition-colors">{authorNickname || 'Unknown Artist'}</p>
                                                         {authorRating != null && (
                                                             <div className="flex items-center gap-1">
                                                                 <Star size={12} fill="#7A4FFF" className="text-[#7A4FFF]" />
                                                                 <span className="text-sm font-black text-[#7A4FFF] font-mono">{authorRating.toFixed(1)}</span>
                                                             </div>
                                                         )}
-                                                    </div>
+                                                    </button>
                                                 </div>
-                                            </button>
-                                            
-                                            <button 
-                                                onClick={() => {
-                                                    const url = window.location.origin + (fullProfileHref || '');
-                                                    navigator.clipboard.writeText(url);
-                                                    alert('프로필 링크가 복사되었습니다.');
-                                                }}
-                                                className="p-2.5 rounded-xl bg-zinc-50 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors shadow-sm"
-                                                title="공유하기"
-                                            >
-                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                                            </button>
+                                            </div>
                                         </motion.div>
                                     )}
 
