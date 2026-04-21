@@ -142,7 +142,7 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
                         <motion.button
                             whileHover={{ scale: 1.02, translateY: -2 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => router.push(isClientPage ? "/client/projects/new" : "/freelancer/explore")}
+                            onClick={() => router.push(isClientPage ? "/client/projects/new" : "/freelancer/mypage?tab=portfolio")}
                             style={{ 
                                 background: buttonBg,
                                 boxShadow: `0 10px 20px -5px ${buttonShadow}`
@@ -155,8 +155,8 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
                                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 pointer-events-none"
                             />
                             
-                            {isClientPage ? <Plus size={15} /> : <Search size={15} />}
-                            <span className="relative z-10">{isClientPage ? "Hire Talent" : "Find Mission"}</span>
+                            <Plus size={15} />
+                            <span className="relative z-10">{isClientPage ? "Hire Talent" : "Add Portfolio"}</span>
                         </motion.button>
 
                         {/* 유저 프로필 (고정 크기) */}

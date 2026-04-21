@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { User as UserIcon, Briefcase, Star, Award, Bookmark, CreditCard } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { MAX_SELECTED_SKILLS } from '@/app/lib/skillLimits';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
@@ -43,6 +43,7 @@ const EMPTY_PORTFOLIO_FORM = { id: null as number | null | undefined, title: '',
 
 export default function FreelancerMyPage() {
     const router = useRouter();
+    const pathname = usePathname();
     const [activeTab, setActiveTab] = useState('profile');
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
@@ -77,6 +78,18 @@ export default function FreelancerMyPage() {
 
     // 🎯 중복 호출 방지를 위한 Ref
     const hasFetchedReviews = useRef(false);
+
+    useEffect(() => {
+        const query = new URLSearchParams(window.location.search);
+        const tab = query.get('tab');
+        if (tab && TABS.some(t => t.id === tab)) {
+            setActiveTab(tab);
+            // 포트폴리오 탭으로 올 경우 모달을 자동으로 엽니다.
+            if (tab === 'portfolio') {
+                setIsPortfolioModalOpen(true);
+            }
+        }
+    }, [pathname]);
 
     useEffect(() => {
         const init = async () => {
