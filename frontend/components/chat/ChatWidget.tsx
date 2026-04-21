@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { StompSubscription } from "@stomp/stompjs";
 import ChatWindow from "./ChatWindow";
 import {
@@ -20,7 +20,6 @@ import { ChatMessageResponse, ChatRoomResponse } from "../../types/chat";
 export default function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
-
     const [rooms, setRooms] = useState<ChatRoomResponse[]>([]);
     const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
     const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
@@ -42,7 +41,7 @@ export default function ChatWidget() {
         selectedRoomIdRef.current = selectedRoomId;
     }, [selectedRoomId]);
 
-    const fetchRooms = async () => {
+    const fetchRooms = useCallback(async () => {
         try {
             setLoadingRooms(true);
 
@@ -67,9 +66,9 @@ export default function ChatWidget() {
         } finally {
             setLoadingRooms(false);
         }
-    };
+    }, [selectedRoomId]);
 
-    const fetchMessages = async (roomId: number) => {
+    const fetchMessages = useCallback(async (roomId: number) => {
         const requestId = ++latestMessageReqId.current;
 
         try {
@@ -91,17 +90,17 @@ export default function ChatWidget() {
         } finally {
             setLoadingMessages(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         if (!isOpen) return;
         fetchRooms();
-    }, [isOpen]);
+    }, [isOpen, fetchRooms]);
 
     useEffect(() => {
         if (!isOpen || !selectedRoomId) return;
         fetchMessages(selectedRoomId);
-    }, [isOpen, selectedRoomId]);
+    }, [isOpen, selectedRoomId, fetchMessages]);
 
     useEffect(() => {
         if (!isOpen) return;

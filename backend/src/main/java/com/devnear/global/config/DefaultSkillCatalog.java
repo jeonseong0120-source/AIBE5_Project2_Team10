@@ -5,7 +5,7 @@ import com.devnear.web.domain.skill.Skill;
 import java.util.List;
 
 /**
- * 앱 기본 스킬 마스터(최대 50개) — {@link DataInitializer}, 벌크 데모 시드 등에서 공통 사용.
+ * 앱 기본 스킬 마스터 — {@link DataInitializer}, 벌크 데모 시드 등에서 공통 사용.
  */
 public final class DefaultSkillCatalog {
 
@@ -54,6 +54,12 @@ public final class DefaultSkillCatalog {
             new Entry("OAuth2", "Backend"),
             new Entry("Spring Security", "Backend"),
             new Entry("JPA", "Backend"),
+            new Entry("Querydsl", "Backend"),
+            new Entry("MSA", "Architecture"),
+            new Entry("SOLID", "Architecture"),
+            new Entry("Caching", "Backend"),
+            new Entry("Database Sharding", "Data"),
+            new Entry("Matching Algorithm", "AI"),
             new Entry("WebSocket", "Backend"),
             new Entry("Tailwind CSS", "Frontend"),
             new Entry("Sass", "Frontend"),

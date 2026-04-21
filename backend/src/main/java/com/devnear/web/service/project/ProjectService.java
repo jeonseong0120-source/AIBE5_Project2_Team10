@@ -1,14 +1,22 @@
 package com.devnear.web.service.project;
 
+import com.devnear.web.domain.application.ProjectApplicationRepository;
+import com.devnear.web.domain.bookmark.BookmarkProjectRepository;
+import com.devnear.web.domain.chat.ChatMessageRepository;
+import com.devnear.web.domain.chat.ChatRoomRepository;
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.enums.ProjectListingKind;
 import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
+import com.devnear.web.domain.payment.PaymentRepository;
 import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
 import com.devnear.web.domain.project.ProjectSearchCond;
 import com.devnear.web.domain.project.ProjectSkill;
+import com.devnear.web.domain.proposal.ProposalRepository;
+import com.devnear.web.domain.review.ClientReviewRepository;
+import com.devnear.web.domain.review.FreelancerReviewRepository;
 import com.devnear.web.domain.skill.Skill;
 import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
@@ -46,6 +54,14 @@ public class ProjectService {
     private final FreelancerGradeService freelancerGradeService;
     private final EntityManager em; // 🔍 직접 플러시를 위해 주입
     private final ProjectEmbeddingService projectEmbeddingService;
+    private final ProposalRepository proposalRepository;
+    private final ProjectApplicationRepository projectApplicationRepository;
+    private final BookmarkProjectRepository bookmarkProjectRepository;
+    private final ChatMessageRepository chatMessageRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final PaymentRepository paymentRepository;
+    private final ClientReviewRepository clientReviewRepository;
+    private final FreelancerReviewRepository freelancerReviewRepository;
 
     @Transactional
     public Long createProject(User user, ProjectRequest request) {
@@ -191,7 +207,41 @@ public class ProjectService {
     @Transactional
     public void deleteProject(User user, Long projectId) {
         Project project = findProjectAndValidateOwner(user, projectId);
+        Long id = project.getId();
+        deleteProjectDependents(id);
         projectRepository.delete(project);
+    }
+
+    /**
+     * {@code projects.project_id}를 FK로 참조하는 종속 행을 먼저 삭제합니다. DB에 {@code ON DELETE CASCADE}가
+     * 없거나 JPA에서 프로젝트에 매핑되지 않은 자식인 경우, 공고 삭제 전에 여기서 명시적으로 제거해야 합니다.
+     * <p>
+     * TODO: 새 테이블/엔티티가 {@code project_id}(또는 동일 의미의 컬럼)로 프로젝트를 참조하면
+     * 이 메서드에 해당 repository의 삭제 호출을 추가하고
+     * {@code com.devnear.web.service.project.ProjectServiceDeleteProjectIntegrationTest}를 함께 확장하세요.
+     * <p>
+     * 현재 제거 대상(순서 유지 — 메시지가 채팅방을 참조하므로 메시지를 먼저 삭제):
+     * {@link com.devnear.web.domain.chat.ChatMessage},
+     * {@link com.devnear.web.domain.chat.ChatRoom},
+     * {@link com.devnear.web.domain.proposal.Proposal},
+     * {@link com.devnear.web.domain.application.ProjectApplication},
+     * {@link com.devnear.web.domain.bookmark.BookmarkProject},
+     * {@link com.devnear.web.domain.payment.Payment},
+     * {@link com.devnear.web.domain.review.ClientReview},
+     * {@link com.devnear.web.domain.review.FreelancerReview}.
+     * {@link com.devnear.web.domain.project.ProjectSkill} 등 프로젝트 엔티티에 cascade된 자식은
+     * {@link ProjectRepository#delete(Object)} 시 JPA가 처리합니다.
+     */
+    private void deleteProjectDependents(Long projectId) {
+        chatMessageRepository.deleteByProjectId(projectId);
+        chatRoomRepository.deleteByProjectId(projectId);
+        proposalRepository.deleteByProjectId(projectId);
+        projectApplicationRepository.deleteByProjectId(projectId);
+        bookmarkProjectRepository.deleteByProjectId(projectId);
+        paymentRepository.deleteByProjectId(projectId);
+        clientReviewRepository.deleteByProjectId(projectId);
+        freelancerReviewRepository.deleteByProjectId(projectId);
+        em.flush();
     }
 
     @Transactional(readOnly = true)

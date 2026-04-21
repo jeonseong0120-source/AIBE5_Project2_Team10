@@ -3,8 +3,8 @@ package com.devnear.web.service.ai;
 import com.devnear.global.config.GeminiEmbeddingProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -22,7 +22,6 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class GeminiEmbeddingClient {
 
     private static final int MAX_CHARS = 14_000;
@@ -30,6 +29,15 @@ public class GeminiEmbeddingClient {
     private final RestClient geminiRestClient;
     private final GeminiEmbeddingProperties properties;
     private final ObjectMapper objectMapper;
+
+    public GeminiEmbeddingClient(
+            @Qualifier("geminiRestClient") RestClient geminiRestClient,
+            GeminiEmbeddingProperties properties,
+            ObjectMapper objectMapper) {
+        this.geminiRestClient = geminiRestClient;
+        this.properties = properties;
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * @throws IllegalStateException API 키 미설정

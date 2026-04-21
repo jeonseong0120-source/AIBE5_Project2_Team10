@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import FreelancerCard from '@/components/freelancer/FreelancerCard';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
@@ -19,10 +19,10 @@ export default function ClientDashboard() {
     const [authorized, setAuthorized] = useState(false);
 
     // 🎯 2. GlobalNavbar에 전달할 유저 정보 상태
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<Record<string, unknown> | null>(null);
 
     // 🎯 [추가] 사진(logoUrl) 데이터를 담을 프로필 상태
-    const [profile, setProfile] = useState<any>(null);
+    const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
 
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
@@ -63,7 +63,7 @@ export default function ClientDashboard() {
                 // 🎯 3. 정규화된 유저 정보 저장
                 setUser({ ...res.data, role: normalizedRole });
                 setAuthorized(true);
-            } catch (err) {
+            } catch {
                 router.replace("/login");
             }
         };
@@ -80,25 +80,25 @@ export default function ClientDashboard() {
         }
     }, [authorized]);
 
-    const fetchFreelancers = async () => {
+    const fetchFreelancers = useCallback(async () => {
         setLoading(true);
         try {
             const { data } = await api.get<ApiFreelancerDto[]>('/v1/freelancers', { params: filter });
             const mappedData = data.map(mapFreelancerDtoToProfile);
             setFreelancers(mappedData);
-        } catch (err) {
+        } catch {
             // quiet
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter]);
 
     // 🎯 [리뷰 반영] 프리랜서 목록만 필터 변경 시 호출
     useEffect(() => {
         if (authorized) {
             fetchFreelancers();
         }
-    }, [filter, authorized]);
+    }, [authorized, fetchFreelancers]);
 
     const presetSkills = ['Java', 'React', 'Spring Boot', 'Figma', 'Node.js', 'Python', 'AWS'];
 

@@ -45,3 +45,9 @@ kakao:
   maps:
     api-key: test
     rest-api-key: test
+
+# TossPaymentConfig — @Value placeholders (main app often supplies via .env)
+TOSS_PAYMENT_SECRET_KEY: test-toss-secret
+TOSS_PAYMENT_CLIENT_KEY: test-toss-client
+TOSS_PAYMENT_SUCCESS_URL: http://localhost:3000/payment/success
+TOSS_PAYMENT_FAIL_URL: http://localhost:3000/payment/fail

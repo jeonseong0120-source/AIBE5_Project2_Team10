@@ -26,4 +26,9 @@ public class GeminiEmbeddingProperties {
      * {@code embedContent}에 사용할 모델 id (경로에만 사용, body의 model 필드와 일치).
      */
     private String embeddingModel = "gemini-embedding-001";
+
+    /**
+     * {@code generateContent} 기반 스킬 태그 추출 등에 사용할 텍스트 생성 모델 id.
+     */
+    private String generationModel = "gemini-2.0-flash";
 }

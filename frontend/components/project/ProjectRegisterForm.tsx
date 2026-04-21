@@ -189,7 +189,12 @@ export default function ProjectRegisterForm() {
 
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Requirement</label>
-                        <SkillTagSelector selectedSkillIds={selectedSkillIds} onChangeAction={setSelectedSkillIds} />
+                        <SkillTagSelector
+                            selectedSkillIds={selectedSkillIds}
+                            onChangeAction={setSelectedSkillIds}
+                            suggestSourceText={detail}
+                            suggestContext="project"
+                        />
                     </div>
                 </div>
 
