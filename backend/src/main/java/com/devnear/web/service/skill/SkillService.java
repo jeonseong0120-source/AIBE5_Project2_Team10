@@ -112,8 +112,8 @@ public class SkillService {
         if (text.isBlank()) {
             return List.of();
         }
-        /** 휴리스틱·NLP 후보 축소: 한글 표기를 카탈로그 영문명과 동일한 정규화 토큰으로 덧붙입니다. */
-        String textForMatch = augmentDocumentWithKoreanSkillAliases(text);
+        /** 한글 별칭 → 카탈로그 영문명 정규화 문자열. 문서는 수정하지 않고 점수에만 반영합니다. */
+        LinkedHashSet<String> koreanAliasEnglishHits = collectKoreanAliasEnglishHits(text);
         int topN = limit == null ? 8 : Math.min(Math.max(1, limit), 20);
         List<Skill> allSkills = skillRepository.findAll();
         if (allSkills.isEmpty()) {
@@ -121,7 +121,7 @@ public class SkillService {
         }
         if (geminiSkillTagSuggestionClient.isConfigured()) {
             try {
-                List<Skill> catalog = catalogForNlp(textForMatch, allSkills);
+                List<Skill> catalog = catalogForNlp(text, allSkills, koreanAliasEnglishHits);
                 List<GeminiSkillPick> picks = geminiSkillTagSuggestionClient.suggestFromDocument(
                         rawText, context, catalog, topN);
                 if (!picks.isEmpty()) {
@@ -147,13 +147,14 @@ public class SkillService {
                 log.warn("NLP 스킬 추출 실패, 규칙 기반으로 대체: {}", e.getMessage());
             }
         }
-        return heuristicSuggestTagsFromText(textForMatch, allSkills, topN);
+        return heuristicSuggestTagsFromText(text, allSkills, topN, koreanAliasEnglishHits);
     }
 
     /**
      * NLP 프롬프트 길이 제한 — 후보가 많으면 문자열 매칭 점수로 상위만 골라 Gemini에 넘깁니다.
      */
-    private List<Skill> catalogForNlp(String normalizedDoc, List<Skill> allSkills) {
+    private List<Skill> catalogForNlp(String normalizedDoc, List<Skill> allSkills,
+                                      Set<String> koreanAliasEnglishHits) {
         if (allSkills.size() <= NLP_CATALOG_CAP) {
             return allSkills;
         }
@@ -163,7 +164,7 @@ public class SkillService {
             if (skillName.isBlank()) {
                 continue;
             }
-            double score = scoreSkill(normalizedDoc, skillName);
+            double score = scoreSkillForSuggest(normalizedDoc, skillName, koreanAliasEnglishHits);
             if (score > 0) {
                 scored.add(new ScoredSkill(skill, score));
             }
@@ -189,14 +190,15 @@ public class SkillService {
     }
 
     private List<SkillTagSuggestionResponse> heuristicSuggestTagsFromText(
-            String normalizedDoc, List<Skill> allSkills, int topN) {
+            String normalizedDoc, List<Skill> allSkills, int topN,
+            Set<String> koreanAliasEnglishHits) {
         List<ScoredSkill> scored = new ArrayList<>();
         for (Skill skill : allSkills) {
             String skillName = normalize(skill.getName());
             if (skillName.isBlank()) {
                 continue;
             }
-            double score = scoreSkill(normalizedDoc, skillName);
+            double score = scoreSkillForSuggest(normalizedDoc, skillName, koreanAliasEnglishHits);
             if (score > 0) {
                 scored.add(new ScoredSkill(skill, score));
             }
@@ -213,15 +215,15 @@ public class SkillService {
     private static final int SHORT_TOKEN_MAX_LEN = 2;
 
     /**
-     * 기본 스킬 카탈로그가 영문명 위주일 때, 본문의 한글 표기와 매칭되도록 동의어를 뒤에 붙입니다.
-     * (Gemini는 원문 rawText를 그대로 읽고, 이 보강은 휴리스틱·catalogForNlp 전용입니다.)
+     * 본문(정규화)에 등장한 한글 별칭에 대응하는 카탈로그 영문 스킬명(정규화) 집합.
+     * 문서 문자열을 바꾸지 않으며, {@link #scoreSkillForSuggest}에서 해당 스킬과 정확히 일치할 때만 가산합니다.
      */
-    private static String augmentDocumentWithKoreanSkillAliases(String normalizedDoc) {
-        if (normalizedDoc.isBlank()) {
-            return normalizedDoc;
+    private static LinkedHashSet<String> collectKoreanAliasEnglishHits(String normalizedDoc) {
+        LinkedHashSet<String> extras = new LinkedHashSet<>();
+        if (normalizedDoc == null || normalizedDoc.isBlank()) {
+            return extras;
         }
         String compactDoc = compact(normalizedDoc);
-        LinkedHashSet<String> extras = new LinkedHashSet<>();
         for (KrSkillAlias rule : KR_SKILL_ALIASES_SORTED) {
             if (!rule.docGuard().test(normalizedDoc)) {
                 continue;
@@ -237,10 +239,22 @@ public class SkillService {
                 }
             }
         }
-        if (extras.isEmpty()) {
-            return normalizedDoc;
+        return extras;
+    }
+
+    /**
+     * 문서 기반 {@link #scoreSkill}과 한글 별칭으로 유도된 영문 스킬명(정규화) 정확 일치를 합칩니다.
+     * 별칭 일치는 전체 정규화 스킬명이 {@code koreanAliasEnglishHits}에 포함될 때만 1.0을 부여합니다.
+     */
+    private static double scoreSkillForSuggest(String normalizedDoc, String skillNameNormalized,
+                                               Set<String> koreanAliasEnglishHits) {
+        double fromDoc = scoreSkill(normalizedDoc, skillNameNormalized);
+        if (koreanAliasEnglishHits != null
+                && !koreanAliasEnglishHits.isEmpty()
+                && koreanAliasEnglishHits.contains(skillNameNormalized)) {
+            return Math.max(fromDoc, 1.0);
         }
-        return normalizedDoc + " " + String.join(" ", extras);
+        return fromDoc;
     }
 
     private record KrSkillAlias(
