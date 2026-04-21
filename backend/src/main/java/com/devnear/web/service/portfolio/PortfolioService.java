@@ -190,7 +190,7 @@ public class PortfolioService {
             freelancerProfileRepository.findByUser_Id(user.getId())
                     .ifPresent(freelancerGradeService::refreshGrade);
         } catch (Exception e) {
-            log.warn("[PortfolioService] 등급 재계산 실패 (userId={}) - 포트폴리오 수정은 정상 완료: {}", user.getId(), e.getMessage());
+            log.warn("[PortfolioService] 등급 재계산 실패 (userId={}) - 포s트폴리오 수정은 정상 완료: {}", user.getId(), e.getMessage());
         }
     }
 
@@ -206,7 +206,6 @@ public class PortfolioService {
         FreelancerProfile profile = profileOpt.get();
         List<Portfolio> portfolios = portfolioRepository.findByUserIdWithSkills(userId);
         portfolios.sort(Comparator.comparing(Portfolio::getId));
-
         LinkedHashMap<Long, Skill> merged = new LinkedHashMap<>();
         for (Portfolio p : portfolios) {
             for (PortfolioSkill ps : p.getPortfolioSkills()) {
@@ -220,14 +219,6 @@ public class PortfolioService {
                 break;
             }
         }
-        for (FreelancerSkill fs : profile.getFreelancerSkills()) {
-            if (merged.size() >= MAX_FREELANCER_PROFILE_SKILLS) {
-                break;
-            }
-            Skill s = fs.getSkill();
-            merged.putIfAbsent(s.getId(), s);
-        }
-
         List<FreelancerSkill> links = merged.values().stream()
                 .map(skill -> FreelancerSkill.builder()
                         .freelancerProfile(profile)
@@ -238,7 +229,6 @@ public class PortfolioService {
         // 기존 행 DELETE를 먼저 flush한 뒤 새 행 INSERT를 반영한다.
         profile.updateSkills(null);
         freelancerProfileRepository.saveAndFlush(profile);
-
         profile.updateSkills(links);
         freelancerProfileRepository.saveAndFlush(profile);
     }

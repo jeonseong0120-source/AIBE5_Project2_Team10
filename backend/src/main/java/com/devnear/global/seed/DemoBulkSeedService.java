@@ -62,8 +62,8 @@ public class DemoBulkSeedService {
     private static final int CLIENTS = 20;
     /** 프리랜서 1인당 포트폴리오 개수 */
     private static final int PORTFOLIOS_PER_FREELANCER = 3;
-    /** 벌크 시드: 포트폴리오(및 이를 합친 프로필 시드)에 붙이는 스킬 태그 개수 — {@link com.devnear.web.dto.portfolio.PortfolioRequest} 상한과 맞춤 */
-    private static final int SEED_SKILLS_PER_ENTITY = 5;
+    /** 벌크 시드: 프리랜서 프로필에 합쳐 담을 최대 스킬 수 — {`@link` com.devnear.web.dto.freelancer.FreelancerProfileRequest} 상한과 맞춤 */
+    private static final int SEED_PROFILE_SKILLS_MAX = 50;
     /** 클라이언트 1인당 모집 공고 개수 */
     private static final int PROJECTS_PER_CLIENT = 3;
     private static final int PORTFOLIOS = FREELANCERS * PORTFOLIOS_PER_FREELANCER;
@@ -482,7 +482,7 @@ public class DemoBulkSeedService {
             names.add("Figma");
         }
         int fill = 0;
-        while (names.size() < SEED_SKILLS_PER_ENTITY && fill < DEFAULT_SKILL_NAMES_FOR_SEED.length * 2) {
+        while (names.size() < SEED_PROFILE_SKILLS_MAX && fill < DEFAULT_SKILL_NAMES_FOR_SEED.length * 2) {
             names.add(DEFAULT_SKILL_NAMES_FOR_SEED[(index + fill) % DEFAULT_SKILL_NAMES_FOR_SEED.length]);
             fill++;
         }
@@ -524,14 +524,14 @@ public class DemoBulkSeedService {
             }
         }
         List<Skill> picked = merged.values().stream()
-                .limit(SEED_SKILLS_PER_ENTITY)
+                .limit(SEED_PROFILE_SKILLS_MAX)
                 .collect(Collectors.toList());
-        if (picked.size() < SEED_SKILLS_PER_ENTITY) {
+        if (picked.size() < SEED_PROFILE_SKILLS_MAX) {
             String topic = TOPICS[freelancerIndex % TOPICS.length];
             LinkedHashSet<String> extra = buildSeedSkillNamesFromTopic(topic, freelancerIndex);
-            LinkedHashMap<Long, Skill> more = resolveSkillsFromNamesUpTo(extra, freelancerIndex, SEED_SKILLS_PER_ENTITY);
+            LinkedHashMap<Long, Skill> more = resolveSkillsFromNamesUpTo(extra, freelancerIndex, SEED_PROFILE_SKILLS_MAX);
             for (Skill s : more.values()) {
-                if (picked.size() >= SEED_SKILLS_PER_ENTITY) {
+                if (picked.size() >= SEED_PROFILE_SKILLS_MAX) {
                     break;
                 }
                 if (picked.stream().noneMatch(x -> x.getId().equals(s.getId()))) {
@@ -553,7 +553,7 @@ public class DemoBulkSeedService {
      */
     private void attachSeedPortfolioSkills(Portfolio portfolio, String topic, int index) {
         LinkedHashSet<String> names = buildSeedSkillNamesFromTopic(topic, index);
-        LinkedHashMap<Long, Skill> resolved = resolveSkillsFromNamesUpTo(names, index, SEED_SKILLS_PER_ENTITY);
+        LinkedHashMap<Long, Skill> resolved = resolveSkillsFromNamesUpTo(names, index, SEED_PROFILE_SKILLS_MAX);
         if (resolved.isEmpty()) {
             log.warn("[DemoBulkSeed] 포트폴리오 스킬을 DB에서 찾지 못했습니다. 요청 이름: {}", names);
             return;
