@@ -14,9 +14,13 @@ export function useSessionBootstrap() {
         try {
             setLoading(true);
             const userRes = await api.get("/v1/users/me");
-            setUser(userRes.data);
+            const userData = {
+                ...userRes.data,
+                role: (userRes.data.role || "").replace(/^ROLE_/, "")
+            };
+            setUser(userData);
             
-            const roles = userRes.data.role || "";
+            const roles = userData.role;
             const currentRole = getActiveRole();
 
             if (roles === "BOTH") {

@@ -143,7 +143,7 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
                         <motion.button
                             whileHover={{ scale: 1.02, translateY: -2 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => router.push(isClientPage ? "/client/projects/new" : "/freelancer/mypage?tab=portfolio")}
+                            onClick={() => router.push(isClientPage ? "/client/projects/new" : `/freelancer/mypage?tab=portfolio&_t=${Date.now()}`)}
                             style={{ 
                                 background: buttonBg,
                                 boxShadow: `0 10px 20px -5px ${buttonShadow}`
