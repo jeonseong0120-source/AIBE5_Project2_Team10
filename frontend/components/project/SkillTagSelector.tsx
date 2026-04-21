@@ -25,9 +25,26 @@ type SuggestedSkill = {
     score: number;
 };
 
+function mergeSkillItemsUnique(...lists: SkillItem[][]): SkillItem[] {
+    const byId = new Map<number, SkillItem>();
+    for (const list of lists) {
+        for (const s of list) {
+            if (Number.isFinite(s.skillId)) {
+                byId.set(s.skillId, {
+                    skillId: s.skillId,
+                    name: s.name,
+                    category: s.category,
+                });
+            }
+        }
+    }
+    return Array.from(byId.values());
+}
+
 export default function SkillTagSelector({
     selectedSkillIds,
     onChangeAction,
+    initialSkillNames = [],
     suggestSourceText = "",
     suggestContext = "project",
 }: Props) {
@@ -40,22 +57,97 @@ export default function SkillTagSelector({
     const [isSuggesting, setIsSuggesting] = useState(false);
     const [suggestError, setSuggestError] = useState<string | null>(null);
     const [suggestedSkills, setSuggestedSkills] = useState<SuggestedSkill[]>([]);
+    const initialCatalogLoadRef = useRef(true);
+
+    const selectedIdsKey = useMemo(
+        () =>
+            [...new Set(selectedSkillIds.filter((id) => Number.isFinite(id)))]
+                .sort((a, b) => a - b)
+                .join(","),
+        [selectedSkillIds]
+    );
+
+    const initialNamesKey = useMemo(
+        () =>
+            [...new Set((initialSkillNames ?? []).map((n) => n.trim().toLowerCase()).filter(Boolean))]
+                .sort()
+                .join("|"),
+        [initialSkillNames]
+    );
 
     useEffect(() => {
-        const fetchSkills = async () => {
-            setLoading(true);
+        let cancelled = false;
+        const run = async () => {
+            if (initialCatalogLoadRef.current) {
+                setLoading(true);
+            }
             setError(null);
             try {
-                const res = await api.get<SkillItem[]>("/v1/skills/default");
-                setAllSkills(res.data ?? []);
+                const defRes = await api.get<SkillItem[]>("/v1/skills/default");
+                if (cancelled) return;
+                const defaults = defRes.data ?? [];
+                const selectedIds = selectedIdsKey
+                    ? selectedIdsKey.split(",").map((x) => Number(x))
+                    : [];
+                const defaultIds = new Set(defaults.map((s) => s.skillId));
+                const missingSelected = selectedIds.filter((id) => !defaultIds.has(id));
+
+                const nameSet = new Set(
+                    initialNamesKey ? initialNamesKey.split("|") : []
+                );
+
+                const needFullCatalog =
+                    missingSelected.length > 0 || nameSet.size > 0;
+
+                let fromCatalog: SkillItem[] = [];
+                if (needFullCatalog) {
+                    const allRes = await api.get<SkillItem[]>("/v1/skills");
+                    if (cancelled) return;
+                    const all = allRes.data ?? [];
+                    const picked = new Map<number, SkillItem>();
+                    for (const s of all) {
+                        if (!Number.isFinite(s.skillId)) continue;
+                        if (missingSelected.includes(s.skillId)) {
+                            picked.set(s.skillId, {
+                                skillId: s.skillId,
+                                name: s.name,
+                                category: s.category,
+                            });
+                        }
+                    }
+                    if (nameSet.size > 0) {
+                        for (const s of all) {
+                            if (!Number.isFinite(s.skillId)) continue;
+                            const n = s.name.trim().toLowerCase();
+                            if (nameSet.has(n)) {
+                                picked.set(s.skillId, {
+                                    skillId: s.skillId,
+                                    name: s.name,
+                                    category: s.category,
+                                });
+                            }
+                        }
+                    }
+                    fromCatalog = Array.from(picked.values());
+                }
+
+                setAllSkills((prev) => mergeSkillItemsUnique(defaults, fromCatalog, prev));
             } catch {
-                setError("스킬 목록을 불러오지 못했습니다.");
+                if (!cancelled) {
+                    setError("스킬 목록을 불러오지 못했습니다.");
+                }
             } finally {
-                setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                    initialCatalogLoadRef.current = false;
+                }
             }
         };
-        void fetchSkills();
-    }, []);
+        void run();
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedIdsKey, initialNamesKey]);
 
     const filteredSkills = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -156,7 +248,7 @@ export default function SkillTagSelector({
                 <button
                     type="button"
                     onClick={() => void handleSuggestSkills()}
-                    disabled={isSuggesting || loading}
+                    disabled={isSuggesting}
                     className="rounded-lg border border-[#FF7D00]/40 bg-orange-50 px-3 py-2 text-xs font-black text-[#FF7D00] transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {isSuggesting ? "추출 중..." : "본문에서 스킬 자동추출"}

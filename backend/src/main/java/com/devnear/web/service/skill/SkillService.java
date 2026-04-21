@@ -125,11 +125,15 @@ public class SkillService {
                     Map<Long, Skill> byId = allSkills.stream()
                             .filter(s -> s.getId() != null)
                             .collect(Collectors.toMap(Skill::getId, Function.identity(), (a, b) -> a));
+                    Set<Long> seen = new LinkedHashSet<>();
                     List<SkillTagSuggestionResponse> nlp = new ArrayList<>();
                     for (GeminiSkillPick pick : picks) {
                         Skill sk = byId.get(pick.skillId());
-                        if (sk != null) {
+                        if (sk != null && seen.add(sk.getId())) {
                             nlp.add(SkillTagSuggestionResponse.of(sk, round3(pick.confidence())));
+                            if (nlp.size() >= topN) {
+                                break;
+                            }
                         }
                     }
                     if (!nlp.isEmpty()) {
