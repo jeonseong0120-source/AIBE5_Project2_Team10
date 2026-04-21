@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 interface ChatInputProps {
     value: string;
     onChange: (value: string) => void;
@@ -17,6 +19,8 @@ export default function ChatInput({
                                       sending = false,
                                       canSend = true,
                                   }: ChatInputProps) {
+    const [isComposing, setIsComposing] = useState(false);
+
     const placeholder = sending
         ? "전송 중..."
         : canSend
@@ -30,8 +34,10 @@ export default function ChatInput({
                     type="text"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
+                    onCompositionStart={() => setIsComposing(true)}
+                    onCompositionEnd={() => setIsComposing(false)}
                     onKeyDown={(e) => {
-                        if (e.key === "Enter" && !disabled) {
+                        if (e.key === "Enter" && !disabled && !isComposing) {
                             e.preventDefault();
                             onSend();
                         }
