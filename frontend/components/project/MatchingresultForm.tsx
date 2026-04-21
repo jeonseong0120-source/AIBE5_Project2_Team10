@@ -37,7 +37,6 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                 setProject(projectRes.data);
                 setAuthorized(true);
 
-                // 오프라인 프로젝트일 때만 지도 뷰를 기본으로 설정
                 if (projectRes.data.offline) {
                     setViewMode("map");
                 }
@@ -53,7 +52,6 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
         init();
     }, [projectId]);
 
-    // 🎯 [지능형 분석] 프로젝트 성격과 순위에 따른 매칭 사유 생성
     const getMatchReason = (f: FreelancerMatch, index: number) => {
         const isOffline = project?.offline;
         const skillMatchCount = f.skills?.length || 0;
@@ -66,7 +64,6 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                 : "원격 협업 환경에서 가장 높은 생산성을 기대할 수 있는 최우수 요원입니다.";
         }
 
-        // ✅ [Fix 1] f.skills 안전 접근 처리 (nullish coalescing 사용)
         if (f.matchingRate > 80 && skillMatchCount >= 2) {
             return `핵심 기술(${(f.skills ?? []).slice(0, 2).join(", ")})에 대한 숙련도가 매우 높습니다.`;
         }
@@ -86,7 +83,6 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
         return "본 프로젝트의 요구 조건에 부합하는 안정적인 역량을 갖춘 전문가입니다.";
     };
 
-    // 거리 포맷팅
     const formatDistance = (f: FreelancerMatch) => {
         if (!project?.offline) return "Remote Agent";
         const dist = f.distance;
@@ -94,62 +90,82 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
         return dist < 1 ? `${(dist * 1000).toFixed(0)}m` : `${dist.toFixed(1)}km`;
     };
 
-    // 🎯 [핵심] 카카오 맵 렌더링 (내 위치 마커 + 요원 마커)
+    // 🎯 [핵심] 카카오 맵 렌더링 (재시도 폴링 로직 적용)
     useEffect(() => {
-        const { kakao } = window as any;
-        // ✅ [Fix 2] 오버레이 추적을 위한 배열 선언
-        const overlays: any[] = [];
         let map: any = null;
+        const overlays: any[] = [];
+        let retryCount = 0;
+        const maxRetries = 30; // 0.1초씩 30번 = 최대 3초간 비서 대기
 
-        if (!loading && project?.offline && viewMode === "map" && freelancers.length > 0 && kakao && mapContainer.current) {
+        const drawMap = () => {
+            const kakao = (window as any).kakao;
 
-            // 내 프로젝트 위치를 중심으로 설정
-            const centerPos = new kakao.maps.LatLng(project.latitude, project.longitude);
-            const options = { center: centerPos, level: 5 };
-            map = new kakao.maps.Map(mapContainer.current, options);
+            // 1. 객체 체크 및 재시도 로직
+            if (!kakao || !kakao.maps) {
+                if (retryCount < maxRetries) {
+                    retryCount++;
+                    console.log(`[MatchingMap] 카카오 SDK 대기 중... (${retryCount}/${maxRetries})`);
+                    setTimeout(drawMap, 100); // 100ms 후 재시도
+                } else {
+                    console.error("[MatchingMap] 카카오 SDK 로드 실패: 시간을 초과했습니다.");
+                }
+                return;
+            }
 
-            // 1. 내 프로젝트(마스터) 위치 마커 - 오렌지색
-            const projectContent = `
-                <div style="
-                    background: #FF7D00; 
-                    color: white; 
-                    padding: 6px 12px; 
-                    border-radius: 12px; 
-                    font-weight: 900; 
-                    font-size: 11px; 
-                    border: 2px solid white; 
-                    box-shadow: 0 4px 15px rgba(255, 125, 0, 0.4); 
-                    transform: translateY(-10px);
-                    white-space: nowrap;
-                ">
-                    📍 내 프로젝트 위치
-                </div>
-            `;
-            const projectOverlay = new kakao.maps.CustomOverlay({
-                position: centerPos,
-                content: projectContent,
-                yAnchor: 1
-            });
-            projectOverlay.setMap(map);
-            overlays.push(projectOverlay); // ✅ 오버레이 저장
+            console.log("[MatchingMap] 카카오 SDK 감지 성공. 지도 초기화 시작.");
 
-            // 2. 프리랜서(요원) 위치 마커들 - 보라색 번호판
-            freelancers.forEach((f, index) => {
-                if (!f.latitude || !f.longitude) return;
-                const position = new kakao.maps.LatLng(f.latitude, f.longitude);
-                const content = `
-                    <div style="background: #7A4FFF; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; border: 2px solid white; box-shadow: 0 4px 10px rgba(122, 79, 255, 0.4); cursor: pointer;">
-                        ${index + 1}
+            if (!mapContainer.current) {
+                console.warn("[MatchingMap] 지도를 그릴 컨테이너(DOM)가 없습니다.");
+                return;
+            }
+
+            // SDK 내부 엔진 로드 보장
+            kakao.maps.load(() => {
+                console.log("[MatchingMap] kakao.maps.load 콜백 진입.");
+
+                const centerPos = new kakao.maps.LatLng(project.latitude, project.longitude);
+                const options = { center: centerPos, level: 5 };
+                map = new kakao.maps.Map(mapContainer.current, options);
+
+                // 1. 내 프로젝트 위치 마커
+                const projectContent = `
+                    <div style="background: #FF7D00; color: white; padding: 6px 12px; border-radius: 12px; font-weight: 900; font-size: 11px; border: 2px solid white; box-shadow: 0 4px 15px rgba(255, 125, 0, 0.4); transform: translateY(-10px); white-space: nowrap;">
+                        📍 내 프로젝트 위치
                     </div>
                 `;
-                const freelancerOverlay = new kakao.maps.CustomOverlay({ position, content, yAnchor: 1 });
-                freelancerOverlay.setMap(map);
-                overlays.push(freelancerOverlay); // ✅ 오버레이 저장
+                const projectOverlay = new kakao.maps.CustomOverlay({
+                    position: centerPos,
+                    content: projectContent,
+                    yAnchor: 1
+                });
+                projectOverlay.setMap(map);
+                overlays.push(projectOverlay);
+
+                // 2. 프리랜서(요원) 위치 마커들
+                freelancers.forEach((f, index) => {
+                    if (!f.latitude || !f.longitude) return;
+                    const position = new kakao.maps.LatLng(f.latitude, f.longitude);
+                    const content = `
+                        <div style="background: #7A4FFF; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; border: 2px solid white; box-shadow: 0 4px 10px rgba(122, 79, 255, 0.4); cursor: pointer;">
+                            ${index + 1}
+                        </div>
+                    `;
+                    const freelancerOverlay = new kakao.maps.CustomOverlay({ position, content, yAnchor: 1 });
+                    freelancerOverlay.setMap(map);
+                    overlays.push(freelancerOverlay);
+                });
+
+                console.log(`[MatchingMap] 오버레이 ${overlays.length}개 생성 완료.`);
             });
+        };
+
+        // 맵 뷰 모드이고 데이터가 준비되었을 때만 실행
+        if (!loading && project?.offline && viewMode === "map" && freelancers.length > 0) {
+            drawMap();
         }
 
-        // ✅ [Fix 2] Cleanup 함수: 언마운트되거나 의존성 변경 시 메모리 해제 및 DOM 정리
         return () => {
+            console.log("[MatchingMap] Cleanup 실행.");
             overlays.forEach(overlay => overlay.setMap(null));
             if (mapContainer.current) {
                 mapContainer.current.innerHTML = '';
@@ -160,14 +176,12 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
 
     if (!authorized) return null;
 
-    // 현재 지도 모드 상태인지 확인
     const isMapView = viewMode === "map" && project?.offline;
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6">
             <motion.div initial={{ y: 50, scale: 0.98 }} animate={{ y: 0, scale: 1 }} className="bg-[#FBFBFB] w-full max-w-7xl h-[90vh] rounded-[3rem] shadow-2xl relative border border-zinc-200 overflow-hidden flex flex-col">
 
-                {/* 헤더 영역 */}
                 <header className="bg-white px-8 py-5 border-b border-zinc-100 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-[#FF7D00]"><Star fill="currentColor" size={20} /></div>
@@ -190,14 +204,12 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                 </header>
 
                 <div className="flex-1 flex overflow-hidden">
-                    {/* 지도 영역 */}
                     {isMapView && (
                         <aside className="hidden lg:block w-[55%] p-6 animate-in fade-in duration-500">
                             <div ref={mapContainer} className="w-full h-full bg-zinc-50 rounded-[2.5rem] border border-zinc-100 shadow-inner relative overflow-hidden" />
                         </aside>
                     )}
 
-                    {/* 프리랜서 리스트 영역 */}
                     <main className={`flex-1 overflow-y-auto p-6 pt-4 space-y-4 transition-all duration-500 ${!isMapView ? "max-w-4xl mx-auto w-full" : ""}`}>
                         {loading ? (
                             <div className="flex flex-col items-center justify-center h-full gap-4">
@@ -214,8 +226,6 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                                     className={`bg-white rounded-[2rem] border border-zinc-100 hover:border-[#FF7D00]/30 transition-all shadow-sm hover:shadow-md group ${isMapView ? 'p-4' : 'p-6'}`}
                                 >
                                     <div className="flex items-center gap-4 lg:gap-6">
-
-                                        {/* 프로필 이미지 */}
                                         <div className="relative shrink-0">
                                             <div className={`absolute -top-1 -left-1 rounded-full flex items-center justify-center text-white font-black shadow-md z-10 ${isMapView ? 'w-6 h-6 text-[8px]' : 'w-7 h-7 text-[10px]'} ${index === 0 ? 'bg-[#FFAD00]' : 'bg-zinc-300'}`}>{index + 1}</div>
                                             <img
@@ -231,17 +241,14 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                                                 <div className="flex items-center gap-0.5 text-orange-400 font-bold text-xs"><Star size={12} className="fill-current" /> {f.averageRating}</div>
                                             </div>
 
-                                            {/* 지도 모드가 아닐 때만 스킬 태그 노출 */}
                                             {!isMapView && (
                                                 <div className="flex flex-wrap gap-1.5 mb-3">
-                                                    {/* ✅ [Fix 1] f.skills 안전 접근 처리 */}
                                                     {(f.skills ?? []).slice(0, 4).map(skill => (
                                                         <span key={skill} className="px-3 py-1 bg-indigo-50 text-[#7A4FFF] rounded-full text-[10px] font-bold border border-indigo-100/50">{skill}</span>
                                                     ))}
                                                 </div>
                                             )}
 
-                                            {/* AI 매칭 분석 위젯 */}
                                             <div className={`relative border-l-4 border-[#FF7D00] bg-gradient-to-r from-orange-50/50 to-transparent ${isMapView ? 'p-2.5 mb-2' : 'p-4 mb-3'} rounded-r-2xl`}>
                                                 <div className="flex items-start gap-2.5">
                                                     <Zap size={isMapView ? 12 : 14} className="text-[#FF7D00] mt-0.5 shrink-0 fill-current" />
