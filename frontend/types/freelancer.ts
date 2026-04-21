@@ -24,6 +24,7 @@ export interface FreelancerProfile {
     skills: Skill[];
     averageRating: number;
     completedProjects?: number;
+    gradeName?: string;
     // 🎯 속성 추가
     isBookmarked: boolean;
 }
@@ -42,6 +43,7 @@ export interface ApiFreelancerDto {
     skills: ApiSkill[];
     averageRating: number | null;
     completedProjects?: number;
+    gradeName?: string;
     // 🎯 [수정] 서버에서 내려주는 북마크 필드 추가 (camelCase, snakeCase 둘 다 대비)
     isBookmarked?: boolean;
     is_bookmarked?: boolean;
@@ -65,6 +67,7 @@ export function mapFreelancerDtoToProfile(dto: ApiFreelancerDto): FreelancerProf
         })) : [],
         averageRating: dto.averageRating ?? 0,
         completedProjects: dto.completedProjects ?? 0,
+        gradeName: dto.gradeName,
 
         // 🎯 [핵심 수정] 서버 데이터를 프론트엔드 속성에 연결!!
         // dto.isBookmarked 또는 dto.is_bookmarked 중 있는 값을 쓰고 없으면 false
