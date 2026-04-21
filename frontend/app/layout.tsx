@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 import ChatWidget from "@/components/chat/ChatWidget";
-import Script from "next/script";
+// import Script from "next/script"; // ❌ 제거
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -15,8 +15,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-    const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY;
-
     return (
         <html lang="ko" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
         <body className="min-h-full flex flex-col">
@@ -24,12 +22,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
             <ChatWidget />
         </NotificationProvider>
-
-
-        <Script
-            src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&libraries=services&autoload=false`}
-            strategy="afterInteractive"
-        />
         </body>
         </html>
     );
