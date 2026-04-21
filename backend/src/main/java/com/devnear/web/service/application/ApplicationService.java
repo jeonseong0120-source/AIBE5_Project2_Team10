@@ -25,9 +25,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.devnear.web.domain.proposal.ProposalRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +41,7 @@ public class ApplicationService {
     private final ProjectRepository projectRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final NotificationService notificationService;
+    private final ProposalRepository proposalRepository;
 
     /**
      * [FRE-04] 프리랜서가 특정 프로젝트에 지원서를 제출합니다.
@@ -52,8 +56,8 @@ public class ApplicationService {
         Project project = projectRepository.findByIdWithClientProfile(request.getProjectId())
                 .orElseThrow(() -> new IllegalArgumentException("지원하려는 프로젝트(공고)를 찾을 수 없습니다."));
 
-        if (project.getStatus() != ProjectStatus.OPEN) {
-            throw new IllegalStateException("현재 모집 중인 공고가 아닙니다. (지원 불가)");
+        if (project.getStatus() != ProjectStatus.OPEN || project.getFreelancerProfile() != null) {
+            throw new IllegalStateException("현재 모집 중이 아니거나 이미 매칭(결제 대기)이 완료된 공고입니다. (지원 불가)");
         }
 
         // 2.5 동일 계정(BOTH 등): 본인이 올린 공고에 프리랜서로 지원 불가
@@ -117,8 +121,24 @@ public class ApplicationService {
             throw new ProjectAccessDeniedException("해당 공고에 대한 권한이 없습니다.");
         }
 
-        return applicationRepository.findByProjectIdWithFreelancerSorted(projectId).stream()
+        // 1. 일반 지원자 목록 가져오기
+        List<ApplicantResponse> applications = applicationRepository.findByProjectIdWithFreelancerSorted(projectId).stream()
                 .map(ApplicantResponse::from)
+                .toList();
+
+        // 2. 역제안 대상자 목록 가져오기
+        List<ApplicantResponse> proposals = proposalRepository.findAllByProjectId(projectId).stream()
+                .map(ApplicantResponse::from)
+                .toList();
+
+        // 3. 병합 및 정렬 (역제안 대상자 상단 고정 -> 매칭률 내림차순)
+        List<ApplicantResponse> combined = new ArrayList<>();
+        combined.addAll(proposals);
+        combined.addAll(applications);
+
+        return combined.stream()
+                .sorted(Comparator.comparing(ApplicantResponse::getSource, Comparator.reverseOrder()) // PROPOSAL(P) > APPLICATION(A)
+                        .thenComparing(ApplicantResponse::getMatchingRate, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
     }
 
@@ -172,9 +192,8 @@ public class ApplicationService {
                     throw new ResourceConflictException("이미 다른 프리랜서와 매칭이 완료되었거나 모집 중인 공고가 아닙니다.");
                 }
 
-                // 3. 안전하게 할당 후 상태 변경
+                // 3. 안전하게 할당 후 상태 유지 (결제 후 진행중으로 변경됨)
                 project.assignFreelancer(application.getFreelancerProfile());
-                project.start();
 
             } catch (PessimisticLockingFailureException e) {
                 // 4. 누군가 이미 락을 선점해서 처리 중일 때의 예외 처리

@@ -30,6 +30,7 @@ public class FreelancerProfileResponse {
     private Double averageRating;
     private Integer reviewCount;
     private Integer completedProjects;
+    private Long balance;
     private List<SkillResponse> skills;
 
     public static FreelancerProfileResponse from(FreelancerProfile profile) {
@@ -61,6 +62,7 @@ public class FreelancerProfileResponse {
                 .averageRating(profile.getAverageRating())
                 .reviewCount(profile.getReviewCount())
                 .completedProjects(profile.getCompletedProjects())
+                .balance(profile.getBalance())
                 .skills(skillResponses)
                 .build();
     }

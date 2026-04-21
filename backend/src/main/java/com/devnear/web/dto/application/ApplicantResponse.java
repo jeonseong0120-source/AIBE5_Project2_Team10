@@ -17,7 +17,9 @@ import java.util.List;
 public class ApplicantResponse {
 
     private Long applicationId;
-    private ApplicationStatus status;
+    private Long proposalId;
+    private String source; // "APPLICATION" or "PROPOSAL"
+    private com.devnear.web.domain.enums.ApplicationStatus status;
     private Double matchingRate;
     private Integer bidPrice;
     private String message;
@@ -35,6 +37,7 @@ public class ApplicantResponse {
 
         return ApplicantResponse.builder()
                 .applicationId(app.getId())
+                .source("APPLICATION")
                 .status(app.getStatus())
                 .matchingRate(app.getMatchingRate())
                 .bidPrice(app.getBidPrice())
@@ -43,6 +46,29 @@ public class ApplicantResponse {
                 .freelancerId(app.getFreelancerProfile().getId())
                 .freelancerNickname(app.getFreelancerProfile().getUser().getNickname())
                 .freelancerProfileImageUrl(app.getFreelancerProfile().getUser().getProfileImageUrl())
+                .freelancerSkills(skills)
+                .build();
+    }
+
+    public static ApplicantResponse from(com.devnear.web.domain.proposal.Proposal proposal) {
+        List<SkillResponse> skills = proposal.getFreelancerProfile().getFreelancerSkills().stream()
+                .map(fs -> SkillResponse.from(fs.getSkill()))
+                .toList();
+
+        // 역제안은 명시적 매칭률 필드가 없을 수 있으므로 100% 혹은 계산된 값(필요시)을 넣습니다.
+        // 여기선 단순화하여 100% 또는 0으로 처리하거나, 프로젝트-프리랜서 기술 스택 비교 로직을 태울 수 있습니다.
+        return ApplicantResponse.builder()
+                .applicationId(proposal.getId()) // Populate applicationId for stable key in UI
+                .proposalId(proposal.getId())
+                .source("PROPOSAL")
+                .status(com.devnear.web.domain.enums.ApplicationStatus.valueOf(proposal.getStatus().name()))
+                .matchingRate(100.0) // 역제안은 클라이언트가 직접 뽑은 것이므로 기본 100으로 표시
+                .bidPrice(proposal.getOfferedPrice())
+                .message(proposal.getMessage())
+                .appliedAt(proposal.getCreatedAt())
+                .freelancerId(proposal.getFreelancerProfile().getId())
+                .freelancerNickname(proposal.getFreelancerProfile().getUser().getNickname())
+                .freelancerProfileImageUrl(proposal.getFreelancerProfile().getUser().getProfileImageUrl())
                 .freelancerSkills(skills)
                 .build();
     }
