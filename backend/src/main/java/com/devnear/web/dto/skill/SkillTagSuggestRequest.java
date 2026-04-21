@@ -4,13 +4,12 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 
 @Getter
 @Setter
 public class SkillTagSuggestRequest {
-
 
     @NotBlank(message = "text는 비어 있을 수 없습니다.")
     @Size(max = 8000, message = "text는 8000자를 초과할 수 없습니다.")
