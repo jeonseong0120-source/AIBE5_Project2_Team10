@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { PencilLine, Search } from "lucide-react";
+import { PencilLine, Search, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { getCommunityPosts } from "@/app/lib/communityApi";
 import type { CommunityPost } from "@/types/community";
 import CommunityPostCard from "@/components/community/CommunityPostCard";
+import GlobalNavbar from "@/components/common/GlobalNavbar";
+import { useSessionBootstrap } from "@/app/hooks/useSessionBootstrap";
 
 export default function CommunityPage() {
     const router = useRouter();
+    const { user, profile } = useSessionBootstrap();
 
     const [posts, setPosts] = useState<CommunityPost[]>([]);
     const [loading, setLoading] = useState(true);
@@ -20,6 +24,31 @@ export default function CommunityPage() {
     const [keywordInput, setKeywordInput] = useState("");
     const [keyword, setKeyword] = useState("");
     const [sort, setSort] = useState("latest");
+
+    const glowRef = useRef<HTMLDivElement>(null);
+    const cursorRef = useRef({ x: 0, y: 0 });
+    const rafRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        const updateGlow = () => {
+            if (glowRef.current) {
+                glowRef.current.style.transform = `translate(${cursorRef.current.x - 150}px, ${cursorRef.current.y - 150}px)`;
+            }
+            rafRef.current = requestAnimationFrame(updateGlow);
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            cursorRef.current = { x: e.clientX, y: e.clientY };
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        rafRef.current = requestAnimationFrame(updateGlow);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+        };
+    }, []);
 
     const fetchPosts = async () => {
         try {
@@ -63,119 +92,136 @@ export default function CommunityPage() {
     };
 
     return (
-        <div className="min-h-screen bg-zinc-50 pb-20">
-            {/* 상단 */}
-            <section className="border-b border-zinc-200 bg-white px-6 py-12 md:px-10">
+        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
+            {/* 배경 글로우 (Optimized with Ref & RAF) */}
+            <div
+                ref={glowRef}
+                className="pointer-events-none fixed left-0 top-0 z-0 h-[300px] w-[300px] rounded-full bg-[#7A4FFF]/10 blur-[120px] will-change-transform"
+            />
+
+            <GlobalNavbar user={user} profile={profile} />
+
+            {/* 헤더 섹션 */}
+            <header className="relative pt-24 pb-16 px-8 overflow-hidden max-w-6xl mx-auto">
+                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3 mb-6">
+                    <span className="w-12 h-[3px] bg-[#7A4FFF] rounded-full"></span>
+                    <span className="text-[11px] font-black text-[#7A4FFF] uppercase tracking-[0.4em] font-mono">커뮤니티 광장</span>
+                </motion.div>
+
+                <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <h1 className="text-5xl font-black tracking-tighter text-zinc-950">
+                            데브니어 <span className="text-zinc-400">커뮤니티</span>
+                        </h1>
+                        <p className="mt-4 text-sm font-medium text-zinc-500 max-w-md leading-relaxed">
+                            프리랜서와 클라이언트가 자유롭게 지식을 공유하고 소통하는 열린 공간입니다.
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={handleMoveWrite}
+                        className="group flex h-14 items-center justify-center gap-3 rounded-2xl bg-[#7A4FFF] px-8 text-sm font-black text-white transition-all hover:scale-105 hover:shadow-[0_10px_20px_-5px_rgba(122,79,255,0.3)] focus:outline-none focus:ring-4 focus:ring-[#7A4FFF]/20"
+                    >
+                        <PencilLine size={18} className="transition-transform group-hover:rotate-12" />
+                        새 글 작성하기
+                    </button>
+                </div>
+            </header>
+
+            {/* 검색 및 정렬 제어판 */}
+            <section className="px-8 pb-10">
                 <div className="mx-auto max-w-6xl">
-                    <div className="mb-2 flex items-center">
-                        <img
-                            src="/devnear-logo.png" 
-                            alt="DevNear_Logo"
-                            className="h-5 w-auto object-contain mr-1" 
-                        />
-                        <p className="text-sm font-bold text-[#FF7D00]">DevNear Community</p>
-                    </div>
-                    <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                        <div>
-                            <h1 className="text-4xl font-black tracking-tight text-zinc-900">
-                                커뮤니티
-                            </h1>
-                            <p className="mt-2 text-sm text-zinc-500">
-                                프리랜서와 클라이언트가 자유롭게 소통하는 공간입니다.
-                            </p>
-                        </div>
+                    <div className="rounded-[2.5rem] border border-zinc-200 bg-white/50 p-3 backdrop-blur-md shadow-xl">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                            <div className="flex flex-1 items-center gap-3 rounded-[1.5rem] border border-zinc-200 bg-white px-6 py-4 transition-all focus-within:border-[#7A4FFF]/50 focus-within:ring-4 focus-within:ring-[#7A4FFF]/5">
+                                <Search size={20} className="text-zinc-400" />
+                                <input
+                                    type="text"
+                                    value={keywordInput}
+                                    onChange={(e) => setKeywordInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") handleSearch();
+                                    }}
+                                    placeholder="무엇을 찾고 계신가요? 키워드를 입력해보세요."
+                                    className="w-full bg-transparent text-sm font-medium outline-none placeholder:text-zinc-400"
+                                />
+                            </div>
 
-                        <button
-                            onClick={handleMoveWrite}
-                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#FF7D00] px-5 py-3 text-sm font-bold text-white transition hover:brightness-110"
-                        >
-                            <PencilLine size={18} />
-                            글쓰기
-                        </button>
+                            <div className="flex items-center gap-3">
+                                <select
+                                    value={sort}
+                                    onChange={(e) => {
+                                        setPage(0);
+                                        setSort(e.target.value);
+                                    }}
+                                    className="h-14 rounded-[1.5rem] border border-zinc-200 bg-white px-6 text-xs font-black uppercase tracking-wider outline-none transition-all hover:border-zinc-300 focus:ring-2 focus:ring-[#7A4FFF]/20"
+                                >
+                                    <option value="latest">최신순</option>
+                                    <option value="likes">좋아요순</option>
+                                </select>
+
+                                <button
+                                    onClick={handleSearch}
+                                    className="h-14 rounded-[1.5rem] bg-zinc-950 px-8 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-zinc-800 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-zinc-950/20"
+                                >
+                                    검색
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* 검색/정렬 */}
-            <section className="px-6 py-8 md:px-10">
-                <div className="mx-auto max-w-6xl rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                        <div className="flex flex-1 items-center gap-2 rounded-2xl border border-zinc-200 px-4 py-3">
-                            <Search size={18} className="text-zinc-400" />
-                            <input
-                                type="text"
-                                value={keywordInput}
-                                onChange={(e) => setKeywordInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") handleSearch();
-                                }}
-                                placeholder="제목 또는 내용으로 검색"
-                                className="w-full bg-transparent text-sm outline-none"
-                            />
-                        </div>
-
-                        <select
-                            value={sort}
-                            onChange={(e) => {
-                                setPage(0);
-                                setSort(e.target.value);
-                            }}
-                            className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm outline-none"
-                        >
-                            <option value="latest">최신순</option>
-                            <option value="likes">좋아요순</option>
-                        </select>
-
-                        <button
-                            onClick={handleSearch}
-                            className="rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-zinc-800"
-                        >
-                            검색
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            {/* 목록 */}
-            <main className="px-6 md:px-10">
+            {/* 게시글 목록 메인 */}
+            <main className="px-8 relative z-10">
                 <div className="mx-auto max-w-6xl">
                     {loading ? (
-                        <div className="rounded-3xl border border-zinc-200 bg-white p-10 text-center text-zinc-500">
-                            게시글을 불러오는 중...
+                        <div className="flex flex-col items-center justify-center py-24 rounded-[3rem] border-2 border-dashed border-zinc-200 bg-white/40 backdrop-blur-sm shadow-inner">
+                            <Loader2 className="h-10 w-10 animate-spin text-[#7A4FFF] mb-4" />
+                            <p className="text-xs font-black text-zinc-400 uppercase tracking-widest font-mono animate-pulse">최신 글을 동기화 중입니다...</p>
                         </div>
                     ) : posts.length === 0 ? (
-                        <div className="rounded-3xl border border-zinc-200 bg-white p-10 text-center text-zinc-500">
-                            게시글이 없습니다.
+                        <div className="py-24 text-center rounded-[3rem] border-2 border-dashed border-zinc-200 bg-white/40 backdrop-blur-sm shadow-inner">
+                            <p className="text-xl font-black text-zinc-300 italic uppercase">작성된 게시글이 없습니다</p>
                         </div>
                     ) : (
-                        <div className="space-y-4">
-                            {posts.map((post) => (
-                                <CommunityPostCard
+                        <div className="space-y-6">
+                            {posts.map((post, idx) => (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }} 
+                                    animate={{ opacity: 1, y: 0 }} 
+                                    transition={{ delay: idx * 0.05 }}
                                     key={post.id}
-                                    post={post}
-                                    onClick={handleMoveDetail}
-                                />
+                                >
+                                    <CommunityPostCard
+                                        post={post}
+                                        onClick={handleMoveDetail}
+                                    />
+                                </motion.div>
                             ))}
                         </div>
                     )}
 
-                    <div className="mt-8 flex items-center justify-center gap-2">
+                    {/* 페이지네이션 */}
+                    <div className="mt-12 flex items-center justify-center gap-6">
                         <button
                             disabled={page === 0}
                             onClick={() => setPage((prev) => prev - 1)}
-                            className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                            className="flex h-12 w-24 items-center justify-center rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-tighter transition-all hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950/10"
                         >
                             이전
                         </button>
 
-                        <span className="px-3 text-sm text-zinc-600">
-              {totalPages === 0 ? 1 : page + 1} / {totalPages === 0 ? 1 : totalPages}
-            </span>
+                        <div className="flex h-12 items-center gap-2 rounded-xl bg-zinc-100 px-6 font-mono text-sm font-black text-zinc-500 shadow-inner">
+                            <span className="text-[#7A4FFF]">{totalPages === 0 ? 1 : page + 1}</span>
+                            <span className="opacity-30">/</span>
+                            <span>{totalPages === 0 ? 1 : totalPages}</span>
+                        </div>
 
                         <button
                             disabled={totalPages === 0 || page + 1 >= totalPages}
                             onClick={() => setPage((prev) => prev + 1)}
-                            className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                            className="flex h-12 w-24 items-center justify-center rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-tighter transition-all hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950/10"
                         >
                             다음
                         </button>

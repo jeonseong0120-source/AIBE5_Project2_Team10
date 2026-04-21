@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Eye, Heart, MessageSquare } from "lucide-react";
+import { ArrowLeft, Eye, Heart, MessageSquare, Loader2, Send, Edit, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { getAccessToken, getCurrentUserId } from "@/app/lib/auth";
 import {
     createCommunityComment,
@@ -15,12 +16,15 @@ import {
     updateCommunityComment,
 } from "@/app/lib/communityApi";
 import type { CommunityComment, CommunityPost } from "@/types/community";
+import GlobalNavbar from "@/components/common/GlobalNavbar";
+import { useSessionBootstrap } from "@/app/hooks/useSessionBootstrap";
 
 export default function CommunityDetailPage() {
     const params = useParams();
     const router = useRouter();
 
     const postId = Number(params.id);
+    const { user, profile, loading: sessionLoading } = useSessionBootstrap();
 
     const [post, setPost] = useState<CommunityPost | null>(null);
     const [comments, setComments] = useState<CommunityComment[]>([]);
@@ -37,6 +41,31 @@ export default function CommunityDetailPage() {
     const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
     const [editingCommentContent, setEditingCommentContent] = useState("");
     const [commentActionLoading, setCommentActionLoading] = useState(false);
+
+    const glowRef = useRef<HTMLDivElement>(null);
+    const cursorRef = useRef({ x: 0, y: 0 });
+    const rafRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        const updateGlow = () => {
+            if (glowRef.current) {
+                glowRef.current.style.transform = `translate(${cursorRef.current.x - 150}px, ${cursorRef.current.y - 150}px)`;
+            }
+            rafRef.current = requestAnimationFrame(updateGlow);
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            cursorRef.current = { x: e.clientX, y: e.clientY };
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        rafRef.current = requestAnimationFrame(updateGlow);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+        };
+    }, []);
 
     const fetchPostDetail = async () => {
         try {
@@ -56,7 +85,6 @@ export default function CommunityDetailPage() {
             setComments(data);
         } catch (error) {
             console.error("댓글 조회 실패:", error);
-            alert("댓글을 불러오지 못했습니다.");
         }
     };
 
@@ -70,19 +98,20 @@ export default function CommunityDetailPage() {
     };
 
     useEffect(() => {
-        if (Number.isNaN(postId)) return;
+        if (!params.id || Number.isNaN(Number(params.id))) {
+            setLoading(false);
+            router.push("/community");
+            return;
+        }
         fetchAll();
-    }, [postId]);
+    }, [params.id]);
 
     useEffect(() => {
         setCurrentUserId(getCurrentUserId());
     }, []);
 
-    const getToken = () => getAccessToken();
-
     const handleLikeToggle = async () => {
-        const token = getToken();
-
+        const token = getAccessToken();
         if (!token) {
             alert("로그인 후 좋아요가 가능합니다.");
             router.push("/login");
@@ -91,34 +120,16 @@ export default function CommunityDetailPage() {
 
         try {
             setLikeLoading(true);
-
             if (liked) {
                 const result = await unlikeCommunityPost(postId);
-
-                setPost((prev) =>
-                    prev
-                        ? {
-                            ...prev,
-                            likeCount: result.likeCount,
-                        }
-                        : prev
-                );
+                setPost((prev) => prev ? { ...prev, likeCount: result.likeCount } : prev);
                 setLiked(false);
             } else {
                 const result = await likeCommunityPost(postId);
-
-                setPost((prev) =>
-                    prev
-                        ? {
-                            ...prev,
-                            likeCount: result.likeCount,
-                        }
-                        : prev
-                );
+                setPost((prev) => prev ? { ...prev, likeCount: result.likeCount } : prev);
                 setLiked(true);
             }
         } catch (error) {
-            console.error("좋아요 처리 실패:", error);
             alert("좋아요 처리에 실패했습니다.");
         } finally {
             setLikeLoading(false);
@@ -126,8 +137,7 @@ export default function CommunityDetailPage() {
     };
 
     const handleCreateComment = async () => {
-        const token = getToken();
-
+        const token = getAccessToken();
         if (!token) {
             alert("로그인 후 댓글 작성이 가능합니다.");
             router.push("/login");
@@ -141,62 +151,27 @@ export default function CommunityDetailPage() {
 
         try {
             setCommentLoading(true);
-
-            await createCommunityComment({
-                postId,
-                content: commentContent,
-            });
-
+            await createCommunityComment({ postId, content: commentContent });
             setCommentContent("");
             await fetchComments();
-
-            setPost((prev) =>
-                prev
-                    ? {
-                        ...prev,
-                        commentCount: prev.commentCount + 1,
-                    }
-                    : prev
-            );
+            setPost((prev) => prev ? { ...prev, commentCount: prev.commentCount + 1 } : prev);
         } catch (error) {
-            console.error("댓글 등록 실패:", error);
             alert("댓글 등록에 실패했습니다.");
         } finally {
             setCommentLoading(false);
         }
     };
 
-    const handleMoveEdit = () => {
-        const token = getToken();
-
-        if (!token) {
-            alert("로그인 후 수정이 가능합니다.");
-            router.push("/login");
-            return;
-        }
-
-        router.push(`/community/${postId}/edit`);
-    };
+    const handleMoveEdit = () => router.push(`/community/${postId}/edit`);
 
     const handleDelete = async () => {
-        const token = getToken();
-
-        if (!token) {
-            alert("로그인 후 삭제가 가능합니다.");
-            router.push("/login");
-            return;
-        }
-
-        const confirmed = confirm("게시글을 삭제하시겠습니까?");
-        if (!confirmed) return;
-
+        if (!confirm("게시글을 삭제하시겠습니까?")) return;
         try {
             setDeleteLoading(true);
             await deleteCommunityPost(postId);
             alert("게시글이 삭제되었습니다.");
             router.push("/community");
         } catch (error) {
-            console.error("게시글 삭제 실패:", error);
             alert("게시글 삭제에 실패했습니다.");
         } finally {
             setDeleteLoading(false);
@@ -214,26 +189,16 @@ export default function CommunityDetailPage() {
     };
 
     const handleUpdateComment = async (commentId: number) => {
-        const token = getToken();
-
-        if (!token) {
-            alert("로그인 후 댓글 수정이 가능합니다.");
-            router.push("/login");
-            return;
-        }
-
         if (!editingCommentContent.trim()) {
             alert("댓글 내용을 입력해주세요.");
             return;
         }
-
         try {
             setCommentActionLoading(true);
             await updateCommunityComment(commentId, editingCommentContent);
             await fetchComments();
             cancelEditComment();
         } catch (error) {
-            console.error("댓글 수정 실패:", error);
             alert("댓글 수정에 실패했습니다.");
         } finally {
             setCommentActionLoading(false);
@@ -241,32 +206,13 @@ export default function CommunityDetailPage() {
     };
 
     const handleDeleteComment = async (commentId: number) => {
-        const token = getToken();
-
-        if (!token) {
-            alert("로그인 후 댓글 삭제가 가능합니다.");
-            router.push("/login");
-            return;
-        }
-
-        const confirmed = confirm("댓글을 삭제하시겠습니까?");
-        if (!confirmed) return;
-
+        if (!confirm("댓글을 삭제하시겠습니까?")) return;
         try {
             setCommentActionLoading(true);
             await deleteCommunityComment(commentId);
             await fetchComments();
-
-            setPost((prev) =>
-                prev
-                    ? {
-                        ...prev,
-                        commentCount: Math.max(prev.commentCount - 1, 0),
-                    }
-                    : prev
-            );
+            setPost((prev) => prev ? { ...prev, commentCount: Math.max(prev.commentCount - 1, 0) } : prev);
         } catch (error) {
-            console.error("댓글 삭제 실패:", error);
             alert("댓글 삭제에 실패했습니다.");
         } finally {
             setCommentActionLoading(false);
@@ -278,213 +224,186 @@ export default function CommunityDetailPage() {
         return dateString.replace("T", " ").slice(0, 16);
     };
 
-    if (Number.isNaN(postId)) {
+    const isInitialLoading = loading || (postId && sessionLoading);
+
+    if (isInitialLoading) {
         return (
-            <div className="min-h-screen bg-zinc-50 px-6 py-10 md:px-10">
-                <div className="mx-auto max-w-4xl rounded-3xl border border-zinc-200 bg-white p-10 text-center text-zinc-500">
-                    잘못된 접근입니다.
-                </div>
+            <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-black text-zinc-400 font-mono text-xs uppercase tracking-widest animate-pulse">
+                게시글 데이터를 동기화 중입니다...
             </div>
         );
     }
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-zinc-50 px-6 py-10 md:px-10">
-                <div className="mx-auto max-w-4xl rounded-3xl border border-zinc-200 bg-white p-10 text-center text-zinc-500">
-                    게시글을 불러오는 중...
-                </div>
-            </div>
-        );
-    }
-
-    if (!post) {
-        return (
-            <div className="min-h-screen bg-zinc-50 px-6 py-10 md:px-10">
-                <div className="mx-auto max-w-4xl rounded-3xl border border-zinc-200 bg-white p-10 text-center text-zinc-500">
-                    게시글을 찾을 수 없습니다.
-                </div>
-            </div>
-        );
-    }
+    if (!post) return null;
 
     const isMyPost = currentUserId !== null && post.authorId === currentUserId;
 
     return (
-        <div className="min-h-screen bg-zinc-50 px-6 py-10 md:px-10">
-            <div className="mx-auto max-w-4xl">
+        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
+            {/* 배경 글로우 */}
+            <div
+                ref={glowRef}
+                className="pointer-events-none fixed left-0 top-0 z-0 h-[300px] w-[300px] rounded-full bg-[#7A4FFF]/10 blur-[120px] will-change-transform"
+            />
+
+            <GlobalNavbar user={user} profile={profile} />
+
+            <div className="max-w-4xl mx-auto px-8 relative z-10 pt-12">
                 <button
                     onClick={() => router.push("/community")}
-                    className="mb-6 inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
+                    className="group mb-10 inline-flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white/80 backdrop-blur-md px-6 py-3 text-xs font-black uppercase tracking-widest text-zinc-500 transition-all hover:bg-white hover:text-zinc-950 shadow-sm"
                 >
-                    <ArrowLeft size={16} />
-                    목록으로
+                    <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
+                    목록으로 돌아가기
                 </button>
 
-                <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <div className="mb-4">
-                        <h1 className="text-3xl font-black tracking-tight text-zinc-900">
-                            {post.title}
-                        </h1>
+                {/* 메인 포스트 카드 */}
+                <motion.section 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-[2.5rem] border border-zinc-100 bg-white p-12 shadow-2xl"
+                >
+                    <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-4 mb-4">
+                                <span className="px-3 py-1 bg-zinc-50 border border-zinc-100 rounded-lg text-[10px] font-black text-zinc-400 font-mono uppercase tracking-widest">Post #{post.id}</span>
+                                <span className="text-[10px] font-black text-[#7A4FFF] bg-purple-50 px-2 py-1 rounded-lg border border-purple-100 uppercase tracking-widest">COMMUNITY</span>
+                            </div>
+                            <h1 className="text-4xl font-black tracking-tighter text-zinc-950 leading-tight">
+                                {post.title}
+                            </h1>
+                        </div>
 
-                        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-zinc-500">
-                            <span>{post.authorNickname || `작성자 #${post.authorId}`}</span>
-                            <span>{formatDate(post.createdAt)}</span>
+                        {isMyPost && (
+                            <div className="flex gap-2 shrink-0">
+                                <button onClick={handleMoveEdit} className="p-3 bg-zinc-50 text-zinc-400 hover:text-[#7A4FFF] hover:bg-purple-50 rounded-xl transition-all border border-zinc-100"><Edit size={18} /></button>
+                                <button onClick={handleDelete} disabled={deleteLoading} className="p-3 bg-zinc-50 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-zinc-100"><Trash2 size={18} /></button>
+                            </div>
+                        )}
+                    </div>
 
-                            <span className="inline-flex items-center gap-1">
-                <Eye size={15} />
-                                {post.viewCount}
-              </span>
-
-                            <span className="inline-flex items-center gap-1">
-                <Heart size={15} />
-                                {post.likeCount}
-              </span>
-
-                            <span className="inline-flex items-center gap-1">
-                <MessageSquare size={15} />
-                                {post.commentCount}
-              </span>
+                    <div className="flex items-center gap-4 mb-10 pb-10 border-b border-zinc-50">
+                        <div className="w-10 h-10 rounded-full bg-[#7A4FFF]/10 flex items-center justify-center font-black text-[#7A4FFF] text-sm">
+                            {post.authorNickname?.charAt(0) || "U"}
+                        </div>
+                        <div>
+                            <p className="text-sm font-black text-zinc-900">{post.authorNickname || `작성자 #${post.authorId}`}</p>
+                            <p className="text-[11px] font-bold text-zinc-400 font-mono uppercase tracking-wider">{formatDate(post.createdAt)}</p>
+                        </div>
+                        <div className="ml-auto flex items-center gap-6 text-[11px] font-black text-zinc-400 font-mono uppercase tracking-widest">
+                            <span className="flex items-center gap-2"><Eye size={16} className="text-zinc-300" /> {post.viewCount}</span>
+                            <span className="flex items-center gap-2"><Heart size={16} className="text-zinc-300" /> {post.likeCount}</span>
+                            <span className="flex items-center gap-2"><MessageSquare size={16} className="text-zinc-300" /> {post.commentCount}</span>
                         </div>
                     </div>
 
-                    <div className="min-h-[220px] whitespace-pre-wrap rounded-2xl bg-zinc-50 p-5 text-sm leading-7 text-zinc-700">
+                    <div className="min-h-[300px] whitespace-pre-wrap text-base font-medium leading-8 text-zinc-600">
                         {post.content}
                     </div>
 
-                    <div className="mt-6 flex flex-wrap justify-end gap-3">
+                    <div className="mt-12 flex justify-center pt-10 border-t border-zinc-50">
                         <button
                             onClick={handleLikeToggle}
                             disabled={likeLoading}
-                            className="rounded-xl bg-[#FF7D00] px-5 py-3 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-50"
+                            className={`flex items-center gap-3 rounded-full px-10 py-5 text-sm font-black uppercase tracking-[0.2em] transition-all shadow-xl font-mono ${liked ? 'bg-[#7A4FFF] text-white shadow-purple-200' : 'bg-white border-2 border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white hover:shadow-zinc-200'}`}
                         >
-                            {likeLoading ? "처리 중..." : liked ? "좋아요 취소" : "좋아요"}
+                            <Heart size={20} fill={liked ? "white" : "transparent"} className={liked ? "animate-bounce" : ""} />
+                            {liked ? "게시글이 좋습니다" : "게시글 추천하기"}
                         </button>
-
-                        {isMyPost && (
-                            <>
-                                <button
-                                    onClick={handleMoveEdit}
-                                    className="rounded-xl border border-zinc-300 px-5 py-3 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
-                                >
-                                    수정
-                                </button>
-
-                                <button
-                                    onClick={handleDelete}
-                                    disabled={deleteLoading}
-                                    className="rounded-xl bg-red-500 px-5 py-3 text-sm font-bold text-white hover:bg-red-600 disabled:opacity-50"
-                                >
-                                    {deleteLoading ? "삭제 중..." : "삭제"}
-                                </button>
-                            </>
-                        )}
                     </div>
-                </section>
+                </motion.section>
 
-                <section className="mt-8 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <h2 className="mb-5 text-xl font-black text-zinc-900">
-                        댓글 {comments.length}개
-                    </h2>
+                {/* 댓글 섹션 */}
+                <section className="mt-12">
+                    <div className="flex items-center gap-4 mb-8">
+                        <h2 className="text-2xl font-black tracking-tight text-zinc-950 uppercase font-mono">
+                            댓글 <span className="text-[#7A4FFF]">{comments.length}</span>
+                        </h2>
+                    </div>
 
-                    <div className="mb-6 rounded-2xl bg-zinc-50 p-4">
-            <textarea
-                value={commentContent}
-                onChange={(e) => setCommentContent(e.target.value)}
-                rows={4}
-                placeholder="댓글을 입력해주세요"
-                className="w-full resize-none rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-[#FF7D00]"
-            />
-
-                        <div className="mt-3 flex justify-end">
+                    {/* 댓글 입력창 */}
+                    <div className="mb-12 overflow-hidden rounded-[2.5rem] border border-zinc-200 bg-white/50 backdrop-blur-md shadow-xl">
+                        <textarea
+                            value={commentContent}
+                            onChange={(e) => setCommentContent(e.target.value)}
+                            rows={4}
+                            placeholder="이 게시글에 대한 마스터의 생각을 공유해주세요."
+                            className="w-full resize-none bg-transparent px-8 py-8 text-sm font-medium leading-relaxed outline-none placeholder:text-zinc-400"
+                        />
+                        <div className="flex justify-end p-4 bg-zinc-50/50 border-t border-zinc-100">
                             <button
                                 onClick={handleCreateComment}
                                 disabled={commentLoading}
-                                className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-zinc-800 disabled:opacity-50"
+                                className="flex items-center gap-3 rounded-[1.25rem] bg-zinc-950 px-8 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-zinc-800 disabled:opacity-50 shadow-lg"
                             >
-                                {commentLoading ? "등록 중..." : "댓글 등록"}
+                                <Send size={14} />
+                                {commentLoading ? "전송 중..." : "댓글 게시"}
                             </button>
                         </div>
                     </div>
 
-                    {comments.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-zinc-200 p-8 text-center text-sm text-zinc-500">
-                            아직 댓글이 없습니다.
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {comments.map((comment) => {
-                                const isMyComment =
-                                    currentUserId !== null && comment.authorId === currentUserId;
-                                const isEditing = editingCommentId === comment.id;
+                    <div className="space-y-6">
+                        <AnimatePresence>
+                            {comments.length === 0 ? (
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-24 text-center rounded-[2.5rem] border-2 border-dashed border-zinc-200 bg-white/40 backdrop-blur-sm shadow-inner text-zinc-300 font-black italic uppercase tracking-widest">
+                                    첫 번째 댓글의 주인공이 되어보세요
+                                </motion.div>
+                            ) : (
+                                comments.map((comment, idx) => {
+                                    const isMyComment = currentUserId !== null && comment.authorId === currentUserId;
+                                    const isEditing = editingCommentId === comment.id;
 
-                                return (
-                                    <div
-                                        key={comment.id}
-                                        className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4"
-                                    >
-                                        <div className="mb-2 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
-                                            <div className="flex flex-wrap items-center gap-3">
-                        <span>
-                          {comment.authorNickname || `작성자 #${comment.authorId}`}
-                        </span>
-                                                <span>{formatDate(comment.createdAt)}</span>
+                                    return (
+                                        <motion.div
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.05 }}
+                                            key={comment.id}
+                                            className="group rounded-[2rem] border border-zinc-100 bg-white p-8 shadow-md transition-all hover:border-[#7A4FFF]/20 hover:shadow-xl"
+                                        >
+                                            <div className="mb-6 flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-zinc-50 flex items-center justify-center font-black text-zinc-400 text-[10px]">
+                                                        {comment.authorNickname?.charAt(0) || "U"}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[12px] font-black text-zinc-900 leading-none mb-1">{comment.authorNickname || `User #${comment.authorId}`}</p>
+                                                        <p className="text-[10px] font-bold text-zinc-400 font-mono uppercase tracking-wider">{formatDate(comment.createdAt)}</p>
+                                                    </div>
+                                                </div>
+
+                                                {isMyComment && !isEditing && (
+                                                    <div className="flex gap-1 transition-opacity opacity-100 sm:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
+                                                        <button onClick={() => startEditComment(comment)} className="p-2 text-zinc-400 hover:text-[#7A4FFF] hover:bg-purple-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A4FFF]/30"><Edit size={14} /></button>
+                                                        <button onClick={() => handleDeleteComment(comment.id)} className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/30"><Trash2 size={14} /></button>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {isMyComment && !isEditing && (
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => startEditComment(comment)}
-                                                        disabled={commentActionLoading}
-                                                        className="text-xs font-medium text-zinc-600 hover:underline disabled:opacity-50"
-                                                    >
-                                                        수정
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteComment(comment.id)}
-                                                        disabled={commentActionLoading}
-                                                        className="text-xs font-medium text-red-500 hover:underline disabled:opacity-50"
-                                                    >
-                                                        삭제
-                                                    </button>
+                                            {isEditing ? (
+                                                <div className="space-y-4">
+                                                    <textarea
+                                                        value={editingCommentContent}
+                                                        onChange={(e) => setEditingCommentContent(e.target.value)}
+                                                        rows={3}
+                                                        className="w-full resize-none rounded-2xl border border-zinc-200 bg-zinc-50/50 p-6 text-sm font-medium outline-none focus:border-[#7A4FFF] focus:ring-4 focus:ring-[#7A4FFF]/5 transition-all"
+                                                    />
+                                                    <div className="flex justify-end gap-3">
+                                                        <button onClick={cancelEditComment} className="rounded-xl px-5 py-2 text-xs font-black uppercase text-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-400/30">취소</button>
+                                                        <button onClick={() => handleUpdateComment(comment.id)} disabled={commentActionLoading} className="rounded-xl bg-[#7A4FFF] px-6 py-2 text-xs font-black uppercase text-white shadow-lg shadow-purple-100 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30">저장</button>
+                                                    </div>
                                                 </div>
+                                            ) : (
+                                                <p className="whitespace-pre-wrap text-[14px] font-medium leading-7 text-zinc-600">
+                                                    {comment.content}
+                                                </p>
                                             )}
-                                        </div>
-
-                                        {isEditing ? (
-                                            <div className="space-y-3">
-                        <textarea
-                            value={editingCommentContent}
-                            onChange={(e) => setEditingCommentContent(e.target.value)}
-                            rows={3}
-                            className="w-full resize-none rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-[#FF7D00]"
-                        />
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        onClick={cancelEditComment}
-                                                        className="rounded-xl border border-zinc-300 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100"
-                                                    >
-                                                        취소
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleUpdateComment(comment.id)}
-                                                        disabled={commentActionLoading}
-                                                        className="rounded-xl bg-[#FF7D00] px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-                                                    >
-                                                        {commentActionLoading ? "수정 중..." : "저장"}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <p className="whitespace-pre-wrap text-sm leading-6 text-zinc-700">
-                                                {comment.content}
-                                            </p>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
+                                        </motion.div>
+                                    );
+                                })
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </section>
             </div>
         </div>

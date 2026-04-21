@@ -40,3 +40,22 @@ export function getCurrentUserId(): number | null {
 
     return null;
 }
+
+export function getActiveRole(): 'CLIENT' | 'FREELANCER' {
+    if (typeof window === "undefined") return 'FREELANCER';
+    try {
+        const role = localStorage.getItem("activeRole");
+        return (role === 'CLIENT' || role === 'FREELANCER') ? role : 'FREELANCER';
+    } catch {
+        return 'FREELANCER';
+    }
+}
+
+export function setActiveRole(role: 'CLIENT' | 'FREELANCER') {
+    if (typeof window === "undefined") return;
+    try {
+        localStorage.setItem("activeRole", role);
+    } catch {
+        // no-op
+    }
+}
