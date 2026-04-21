@@ -15,6 +15,9 @@ import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } f
 import GlobalNavbar from '@/components/common/GlobalNavbar';
 import FreelancerReviewModal from '@/components/review/FreelancerReviewModal';
 
+// 🎯 [추가] 자동 매칭  모달 임포트
+import MatchingresultForm from '@/components/project/MatchingresultForm';
+
 export default function ClientDashboardPage() {
     const router = useRouter();
     const [projects, setProjects] = useState<any[]>([]);
@@ -56,6 +59,10 @@ export default function ClientDashboardPage() {
     const [proposalSending, setProposalSending] = useState(false);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
     const [paymentProjectIdInFlight, setPaymentProjectIdInFlight] = useState<number | null>(null);
+
+    // 🎯 [추가] 자동 매칭 결과 모달 제어 상태
+    const [isMatchingModalOpen, setIsMatchingModalOpen] = useState(false);
+    const [selectedProjectIdForMatching, setSelectedProjectIdForMatching] = useState<number | null>(null);
 
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
@@ -336,7 +343,6 @@ export default function ClientDashboardPage() {
                 return;
             }
 
-            // 1. 보안을 위한 주문번호 생성 및 정보 세팅
             const orderId = `devnear_order_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
             const amount = Math.floor(project.budget || 0);
             const orderName = project.projectName || '프로젝트 결제';
@@ -353,15 +359,6 @@ export default function ClientDashboardPage() {
                 return;
             }
 
-            // 2. 백엔드 결제 준비 (Prepare) 호출 - 데이터 위변조 방지
-            console.log('Sending prepare request:', {
-                orderId,
-                amount,
-                orderName,
-                projectId: project.projectId,
-                apiUrl: '/v1/payments/prepare'
-            });
-
             await api.post('/v1/payments/prepare', {
                 orderId,
                 amount,
@@ -369,19 +366,15 @@ export default function ClientDashboardPage() {
                 projectId: project.projectId
             });
 
-            // 3. 토스 SDK 로드 및 결제창 띄우기
             const originalConsoleError = console.error;
             try {
-                // 토스 내부 기능 토글 에러({})가 Next.js 빨간 화면을 띄우지 않도록 한시적 차단
                 console.error = () => {};
-
                 const { loadTossPayments } = await import('@tosspayments/payment-sdk');
                 const tossPayments = await loadTossPayments(tossClientKey);
 
                 const successUrl = `${window.location.origin}/client/payment/success`;
                 const failUrl = `${window.location.origin}/client/payment/fail`;
 
-                // 기존의 토스페이먼츠 카드 결제창을 호출하여 다양한 결제 수단 제공
                 await tossPayments.requestPayment('카드', {
                     amount,
                     orderId,
@@ -391,30 +384,14 @@ export default function ClientDashboardPage() {
                     failUrl,
                 });
             } finally {
-                // 호출 완료 또는 예외 발생 시 즉시 원래의 console.error 복구
                 console.error = originalConsoleError;
             }
 
         } catch (err: any) {
-            const errorInfo = {
-                message: err?.message || err?.desc || 'No message provided',
-                code: err?.code,
-                status: err?.response?.status,
-                stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined
-            };
-            
-            // 개발 환경에서만 상세 에러 로그 출력
-            if (process.env.NODE_ENV === 'development') {
-                console.warn('Payment Notification (Handled):', errorInfo, err);
-            }
-            
-            // 토스페이먼츠 사용자 취소 또는 '취소되었습니다' 에러는 경고창을 띄우지 않음
             if (err?.code === 'USER_CANCEL' || err?.message?.includes('취소되었습니다')) {
-                console.log('사용자가 결제창을 닫았거나 결제가 취소되었습니다.');
                 setPaymentProjectIdInFlight(null);
                 return;
             }
-
             alert(err?.response?.data?.message || err?.message || err?.code || '결제 진행 중 오류가 발생했습니다.');
             setPaymentProjectIdInFlight(null);
         }
@@ -423,30 +400,9 @@ export default function ClientDashboardPage() {
     const handleDemoPayment = async (project: any, application: any) => {
         try {
             setPaymentProjectIdInFlight(project.projectId);
-            // 1. 보안을 위한 주문번호 생성 및 정보 세팅
             const orderId = `devnear_order_demo_${new Date().getTime()}_${Math.random().toString(36).substring(2, 8)}`;
             const amount = Math.floor(project.budget || 0);
             const orderName = project.projectName || '데모 프로젝트 결제';
-
-            if (!amount || amount <= 0) {
-                alert(`유효하지 않은 데모 결제 금액입니다: ${amount}`);
-                setPaymentProjectIdInFlight(null);
-                return;
-            }
-
-            if (!project.projectId) {
-                alert('프로젝트 ID를 찾을 수 없습니다.');
-                setPaymentProjectIdInFlight(null);
-                return;
-            }
-
-            // 2. 백엔드 결제 준비 (Prepare) 호출
-            console.log('Sending demo prepare request:', {
-                orderId,
-                amount,
-                orderName,
-                projectId: project.projectId
-            });
 
             await api.post('/v1/payments/prepare', {
                 orderId,
@@ -455,34 +411,20 @@ export default function ClientDashboardPage() {
                 projectId: project.projectId
             });
 
-            // 3. 시뮬레이션 오버레이 표시
             setIsPaymentProcessing(true);
-
-            // 4. 1.5초 후 가짜 성공 데이터와 함께 성공 페이지로 이동
             setTimeout(() => {
                 const mockPaymentKey = `mock_${new Date().getTime()}_${Math.random().toString(36).substring(2, 6)}`;
                 router.push(`/client/payment/success?paymentKey=${mockPaymentKey}&orderId=${orderId}&amount=${amount}`);
-                setPaymentProjectIdInFlight(null); // Cleanup in demo flow
+                setPaymentProjectIdInFlight(null);
             }, 1500);
 
         } catch (err: any) {
-             const errorInfo = {
-                message: err?.message || 'No message provided',
-                code: err?.code,
-                status: err?.response?.status,
-                stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined
-            };
-            if (process.env.NODE_ENV === 'development') {
-                console.warn('Demo Payment Notification (Handled):', errorInfo, err);
-            }
-            
             alert(err?.response?.data?.message || err?.message || err?.code || '데모 결제 준비 중 오류가 발생했습니다.');
             setPaymentProjectIdInFlight(null);
         }
     };
 
     if (!authorized || loading) return (
-
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#FF7D00] font-black text-xl animate-pulse uppercase font-mono">데이터 동기화 중...</div>
     );
 
@@ -500,10 +442,7 @@ export default function ClientDashboardPage() {
         .sort((a, b) => {
             const priorityA = statusPriority[a.status] || 4;
             const priorityB = statusPriority[b.status] || 4;
-
-            if (priorityA !== priorityB) {
-                return priorityA - priorityB;
-            }
+            if (priorityA !== priorityB) return priorityA - priorityB;
             return b.projectId - a.projectId;
         });
 
@@ -571,12 +510,7 @@ export default function ClientDashboardPage() {
                                                 <div className="flex items-center gap-5">
                                                     <div className="flex gap-2 px-4 border-x border-zinc-100">
                                                         {project.status === 'IN_PROGRESS' ? (
-                                                            <button
-                                                                onClick={() => handleCompleteProject(project)}
-                                                                className="px-6 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-[#FF7D00] transition-all uppercase tracking-widest font-mono shadow-md"
-                                                            >
-                                                                프로젝트 마감
-                                                            </button>
+                                                            <button onClick={() => handleCompleteProject(project)} className="px-6 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-[#FF7D00] transition-all uppercase tracking-widest font-mono shadow-md">프로젝트 마감</button>
                                                         ) : (
                                                             <>
                                                                 <button onClick={() => handleEditProjectClick(project.projectId)} className="p-4 text-zinc-300 hover:text-[#7A4FFF] transition-all"><Edit size={20} /></button>
@@ -584,9 +518,35 @@ export default function ClientDashboardPage() {
                                                             </>
                                                         )}
                                                     </div>
-                                                    <button onClick={() => handleViewApplicants(project)} className={`px-10 py-5 rounded-[1.5rem] font-black text-xs tracking-[0.2em] uppercase transition-all flex items-center gap-3 shadow-2xl font-mono ${isExpanded ? 'bg-[#FF7D00] text-white shadow-orange-200' : 'bg-zinc-950 text-white hover:bg-[#FF7D00]'}`}>
-                                                        <Users size={18} /> 지원자 확인 {projectApplicants.length > 0 && `(${projectApplicants.length})`}
-                                                    </button>
+
+                                                    {/* 🎯 [추가된 버튼] 자동 매칭 결과 확인용 */}
+                                                    <div className="flex items-center gap-3">
+                                                        {project.status === 'OPEN' && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedProjectIdForMatching(project.projectId);
+                                                                    setIsMatchingModalOpen(true);
+                                                                }}
+                                                                className="relative group px-8 py-5 bg-zinc-900 text-white rounded-[1.5rem] font-black text-xs tracking-[0.15em] uppercase transition-all duration-300 flex items-center gap-2 overflow-hidden shadow-2xl hover:shadow-[0_0_25px_rgba(255,125,0,0.3)] border border-white/5 hover:border-[#FF7D00]/50 active:scale-95 font-mono"
+                                                            >
+                                                                {/* 버튼 내부 그라데이션 광택 효과 */}
+                                                                <div className="absolute inset-0 bg-gradient-to-r from-[#FF7D00]/0 via-[#FF7D00]/5 to-[#FF7D00]/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+
+                                                                {/* 아이콘 및 텍스트 */}
+                                                                <Sparkles
+                                                                    size={16}
+                                                                    strokeWidth={2.5}
+                                                                    className="text-[#FF7D00] group-hover:rotate-12 transition-transform duration-300"
+                                                                />
+                                                                <span className="relative z-10 group-hover:text-[#FF7D00] transition-colors">
+            자동 매칭 결과
+        </span>
+                                                            </button>
+                                                        )}
+                                                        <button onClick={() => handleViewApplicants(project)} className={`px-10 py-5 rounded-[1.5rem] font-black text-xs tracking-[0.2em] uppercase transition-all flex items-center gap-3 shadow-2xl font-mono ${isExpanded ? 'bg-[#FF7D00] text-white shadow-orange-200' : 'bg-zinc-950 text-white hover:bg-[#FF7D00]'}`}>
+                                                            <Users size={18} /> 지원자 확인 {projectApplicants.length > 0 && `(${projectApplicants.length})`}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -635,21 +595,8 @@ export default function ClientDashboardPage() {
                                                                                             </div>
                                                                                             {app.status === 'ACCEPTED' && project.status === 'OPEN' && (
                                                                                                 <div className="flex flex-col gap-2 mt-2">
-                                                                                                    <button
-                                                                                                        onClick={() => handlePayment(project, app)}
-                                                                                                        disabled={paymentProjectIdInFlight === project.projectId}
-                                                                                                        className="w-full px-4 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-zinc-800 transition-all uppercase tracking-widest font-mono shadow-md disabled:opacity-50"
-                                                                                                    >
-                                                                                                        {paymentProjectIdInFlight === project.projectId ? '처리 중...' : '안전 결제하기'}
-                                                                                                    </button>
-                                                                                                    <button
-                                                                                                        onClick={() => handleDemoPayment(project, app)}
-                                                                                                        disabled={paymentProjectIdInFlight === project.projectId}
-                                                                                                        className="w-full px-4 py-3 bg-[#FF7D00] text-white rounded-xl text-[10px] font-black hover:bg-orange-600 transition-all uppercase tracking-widest font-mono shadow-[0_4px_15px_rgba(255,125,0,0.4)] flex items-center justify-center gap-2 disabled:opacity-50"
-                                                                                                    >
-                                                                                                        <Sparkles size={14} className={paymentProjectIdInFlight === project.projectId ? "" : "animate-pulse"} />
-                                                                                                        {paymentProjectIdInFlight === project.projectId ? '처리 중...' : '번개 데모 결제'}
-                                                                                                    </button>
+                                                                                                    <button onClick={() => handlePayment(project, app)} disabled={paymentProjectIdInFlight === project.projectId} className="w-full px-4 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-zinc-800 transition-all uppercase tracking-widest font-mono shadow-md disabled:opacity-50">{paymentProjectIdInFlight === project.projectId ? '처리 중...' : '안전 결제하기'}</button>
+                                                                                                    <button onClick={() => handleDemoPayment(project, app)} disabled={paymentProjectIdInFlight === project.projectId} className="w-full px-4 py-3 bg-[#FF7D00] text-white rounded-xl text-[10px] font-black hover:bg-orange-600 transition-all uppercase tracking-widest font-mono shadow-[0_4px_15px_rgba(255,125,0,0.4)] flex items-center justify-center gap-2 disabled:opacity-50"><Sparkles size={14} className={paymentProjectIdInFlight === project.projectId ? "" : "animate-pulse"} />{paymentProjectIdInFlight === project.projectId ? '처리 중...' : '번개 데모 결제'}</button>
                                                                                                 </div>
                                                                                             )}
                                                                                         </div>
@@ -672,6 +619,7 @@ export default function ClientDashboardPage() {
                     </motion.div>
                 )}
 
+                {/* 북마크 및 제안 탭 로직 (동일) */}
                 {activeMainTab === 'BOOKMARKS' && (
                     <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-12">
                         <div className="flex items-center justify-between mb-4">
@@ -706,17 +654,12 @@ export default function ClientDashboardPage() {
                     </motion.div>
                 )}
 
-                {/* 🎯 제안 현황 UI 렌더링 로직 추가 */}
                 {activeMainTab === 'PROPOSALS' && (
                     <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-12">
                         <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">제안 현황</h2>
-                                <p className="text-sm font-medium text-zinc-400">요원들에게 발송한 제안 내역입니다.</p>
-                            </div>
+                            <div><h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">제안 현황</h2><p className="text-sm font-medium text-zinc-400">요원들에게 발송한 제안 내역입니다.</p></div>
                             <span className="px-5 py-2 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#FF7D00]">전송된 제안: {sentProposals.length}건</span>
                         </div>
-
                         {proposalsLoading ? (
                             <div className="py-24 flex justify-center"><Loader2 className="animate-spin text-[#FF7D00] w-10 h-10" /></div>
                         ) : sentProposals.length === 0 ? (
@@ -726,21 +669,14 @@ export default function ClientDashboardPage() {
                                 {sentProposals.map((proposal, idx) => (
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={proposal.proposalId || idx} className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 hover:border-[#FF7D00] hover:shadow-xl transition-all relative">
                                         <div className="flex justify-between items-center mb-4">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${proposal.status === 'ACCEPTED' ? 'bg-green-50 text-green-500' : proposal.status === 'REJECTED' ? 'bg-red-50 text-red-500' : 'bg-zinc-100 text-zinc-500'}`}>
-                                                {proposal.status || '대기중'}
-                                            </span>
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${proposal.status === 'ACCEPTED' ? 'bg-green-50 text-green-500' : proposal.status === 'REJECTED' ? 'bg-red-50 text-red-500' : 'bg-zinc-100 text-zinc-500'}`}>{proposal.status || '대기중'}</span>
                                             <span className="text-xs text-zinc-400 font-mono">{new Date(proposal.createdAt || Date.now()).toLocaleDateString()}</span>
                                         </div>
                                         <h3 className="text-xl font-black text-zinc-900 mb-2 truncate">{proposal.projectName || proposal.positionTitle || '프로젝트 제안'}</h3>
                                         <p className="text-sm text-zinc-500 mb-6 line-clamp-2">"{proposal.message}"</p>
                                         <div className="flex items-center justify-between pt-6 border-t border-zinc-100">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400"><User size={16} /></div>
-                                                <span className="text-sm font-bold text-zinc-700">{proposal.freelancerName || '프리랜서'}</span>
-                                            </div>
-                                            <div className="text-lg font-black text-[#FF7D00] font-mono">
-                                                ₩{proposal.offeredPrice?.toLocaleString() || '0'}
-                                            </div>
+                                            <div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400"><User size={16} /></div><span className="text-sm font-bold text-zinc-700">{proposal.freelancerName || '프리랜서'}</span></div>
+                                            <div className="text-lg font-black text-[#FF7D00] font-mono">₩{proposal.offeredPrice?.toLocaleString() || '0'}</div>
                                         </div>
                                     </motion.div>
                                 ))}
@@ -750,95 +686,33 @@ export default function ClientDashboardPage() {
                 )}
             </main>
 
-            <FreelancerReviewModal
-                isOpen={isReviewModalOpen}
-                onClose={() => setIsReviewModalOpen(false)}
-                projectId={selectedProjectForReview?.projectId}
-                freelancerId={selectedProjectForReview?.freelancerId}
-                freelancerNickname={selectedProjectForReview?.freelancerNickname || "선택한 요원"}
-            />
+            <FreelancerReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} projectId={selectedProjectForReview?.projectId} freelancerId={selectedProjectForReview?.freelancerId} freelancerNickname={selectedProjectForReview?.freelancerNickname || "선택한 요원"} />
 
             <AnimatePresence>
-                {proposalModalOpen ? (
-                    <motion.div
-                        key="client-dashboard-proposal-modal"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm"
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, y: 24, scale: 0.98 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 24, scale: 0.98 }}
-                            className="w-full max-w-2xl"
-                        >
-                            <ProposalSendModal
-                                open
-                                targetName={proposalTargetFreelancer?.userName}
-                                mode={proposalMode}
-                                onChangeMode={setProposalMode}
-                                projects={proposalProjects}
-                                projectsLoading={proposalProjectsLoading}
-                                selectedProjectId={proposalProjectId}
-                                onChangeProjectId={setProposalProjectId}
-                                offeredPrice={proposalOfferedPrice}
-                                onChangeOfferedPrice={setProposalOfferedPrice}
-                                positionTitle={proposalPositionTitle}
-                                onChangePositionTitle={setProposalPositionTitle}
-                                workScope={proposalWorkScope}
-                                onChangeWorkScope={setProposalWorkScope}
-                                workingPeriod={proposalWorkingPeriod}
-                                onChangeWorkingPeriod={setProposalWorkingPeriod}
-                                message={proposalMessage}
-                                onChangeMessage={setProposalMessage}
-                                sending={proposalSending}
-                                onClose={closeProposalModal}
-                                onSend={handleSendProposal}
-                            />
+                {isMatchingModalOpen && selectedProjectIdForMatching && (
+                    <MatchingresultForm
+                        projectId={selectedProjectIdForMatching}
+                        onClose={() => setIsMatchingModalOpen(false)}
+                    />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {proposalModalOpen && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm">
+                        <motion.div initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 24, scale: 0.98 }} className="w-full max-w-2xl">
+                            <ProposalSendModal open targetName={proposalTargetFreelancer?.userName} mode={proposalMode} onChangeMode={setProposalMode} projects={proposalProjects} projectsLoading={proposalProjectsLoading} selectedProjectId={proposalProjectId} onChangeProjectId={setProposalProjectId} offeredPrice={proposalOfferedPrice} onChangeOfferedPrice={setProposalOfferedPrice} positionTitle={proposalPositionTitle} onChangePositionTitle={setProposalPositionTitle} workScope={proposalWorkScope} onChangeWorkScope={setProposalWorkScope} workingPeriod={proposalWorkingPeriod} onChangeWorkingPeriod={setProposalWorkingPeriod} message={proposalMessage} onChangeMessage={setProposalMessage} sending={proposalSending} onClose={closeProposalModal} onSend={handleSendProposal} />
                         </motion.div>
                     </motion.div>
-                ) : null}
+                )}
             </AnimatePresence>
-            {/* 결제 처리 중 시뮬레이션 오버레이 (데모 모드) */}
+
             <AnimatePresence>
                 {isPaymentProcessing && (
-                    <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/90 backdrop-blur-md"
-                    >
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/90 backdrop-blur-md">
                         <div className="flex flex-col items-center gap-10">
-                            <div className="relative">
-                                <motion.div 
-                                    animate={{ scale: [1, 1.2, 1] }} 
-                                    transition={{ duration: 2, repeat: Infinity }} 
-                                    className="w-32 h-32 rounded-full border-2 border-[#FF7D00]/30" 
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <Loader2 className="w-12 h-12 text-[#FF7D00] animate-spin" />
-                                </div>
-                                <motion.div 
-                                    className="absolute inset-0 rounded-full bg-[#FF7D00]/10"
-                                    animate={{ opacity: [0, 1, 0] }}
-                                    transition={{ duration: 1.5, repeat: Infinity }}
-                                />
-                            </div>
-                            <div className="flex flex-col items-center gap-3">
-                                <h3 className="text-3xl font-black text-white tracking-widest font-mono uppercase">Secure Escrow Processing</h3>
-                                <div className="flex gap-1.5">
-                                    {[0, 1, 2].map((i) => (
-                                        <motion.div 
-                                            key={i}
-                                            animate={{ opacity: [0.3, 1, 0.3] }}
-                                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                                            className="w-2 h-2 rounded-full bg-[#FF7D00]"
-                                        />
-                                    ))}
-                                </div>
-                                <p className="mt-4 text-zinc-400 font-black text-[10px] tracking-[0.4em] uppercase">안전한 에스크로 거래를 체결 중입니다</p>
-                            </div>
+                            <div className="relative"><motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-32 h-32 rounded-full border-2 border-[#FF7D00]/30" /><div className="absolute inset-0 flex items-center justify-center"><Loader2 className="w-12 h-12 text-[#FF7D00] animate-spin" /></div><motion.div className="absolute inset-0 rounded-full bg-[#FF7D00]/10" animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Infinity }} /></div>
+                            <div className="flex flex-col items-center gap-3"><h3 className="text-3xl font-black text-white tracking-widest font-mono uppercase">Secure Escrow Processing</h3><div className="flex gap-1.5">{[0, 1, 2].map((i) => (<motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }} className="w-2 h-2 rounded-full bg-[#FF7D00]"/>))}</div><p className="mt-4 text-zinc-400 font-black text-[10px] tracking-[0.4em] uppercase">안전한 에스크로 거래를 체결 중입니다</p></div>
                         </div>
                     </motion.div>
                 )}
