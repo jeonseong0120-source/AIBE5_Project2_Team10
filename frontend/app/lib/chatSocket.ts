@@ -15,11 +15,7 @@ function resolveChatSocketUrl(): string {
         return envUrl;
     }
 
-    if (typeof window !== "undefined") {
-        return `${window.location.origin}/ws-chat`;
-    }
-
-    return "http://localhost:8080/ws-chat";
+    return "http://127.0.0.1:8080/ws-chat";
 }
 
 export function connectChatSocket(onConnect?: () => void) {
