@@ -328,6 +328,10 @@ export default function FreelancerCard({ data }: Props) {
                         onClose={() => setPortfolioModal(null)}
                         readOnly
                         fullProfileHref={`/client/freelancers/${data.id}`}
+                        authorNickname={data.nickname}
+                        authorProfileImage={data.profileImageUrl}
+                        authorRating={data.averageRating}
+                        authorGradeName={data.gradeName}
                     />,
                     document.body
                 )}
