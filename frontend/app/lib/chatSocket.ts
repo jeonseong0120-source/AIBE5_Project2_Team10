@@ -8,13 +8,27 @@ function getAccessToken(): string | null {
     return localStorage.getItem("accessToken");
 }
 
+function resolveChatSocketUrl(): string {
+    const envUrl = process.env.NEXT_PUBLIC_WS_URL?.trim();
+
+    if (envUrl) {
+        return envUrl;
+    }
+
+    if (typeof window !== "undefined") {
+        return `${window.location.origin}/ws-chat`;
+    }
+
+    return "http://localhost:8080/ws-chat";
+}
+
 export function connectChatSocket(onConnect?: () => void) {
     if (client?.active) return client;
 
     const token = getAccessToken();
 
     client = new Client({
-        webSocketFactory: () => new SockJS("http://localhost:8080/ws-chat"),
+        webSocketFactory: () => new SockJS(resolveChatSocketUrl()),
         connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
         reconnectDelay: 5000,
         debug: () => {},
@@ -45,6 +59,7 @@ export function subscribeChatRoom(
     callback: (message: IMessage) => void
 ): StompSubscription | null {
     if (!client || !client.connected) return null;
+
     return client.subscribe(`/sub/chat/rooms/${roomId}`, callback);
 }
 
