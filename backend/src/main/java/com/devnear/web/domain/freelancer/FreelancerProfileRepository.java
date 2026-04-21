@@ -38,7 +38,7 @@ public interface FreelancerProfileRepository extends JpaRepository<FreelancerPro
            "LEFT JOIN FETCH fs.skill " +
            "WHERE fp.isActive = true " +
            "AND (:region IS NULL OR fp.location LIKE %:region%) " +
-           "AND (:workStyle IS NULL OR fp.workStyle = com.devnear.web.domain.enums.WorkStyle.HYBRID OR fp.workStyle = :workStyle) " +
+           "AND (:workStyle IS NULL OR (fp.workStyle = :workStyle OR fp.workStyle = com.devnear.web.domain.enums.WorkStyle.HYBRID)) " +
            "AND (:skill IS NULL OR EXISTS (" +
            "    SELECT 1 FROM FreelancerSkill sub_fs JOIN sub_fs.skill sub_s " +
            "    WHERE sub_fs.freelancerProfile = fp AND sub_s.name LIKE %:skill%" +

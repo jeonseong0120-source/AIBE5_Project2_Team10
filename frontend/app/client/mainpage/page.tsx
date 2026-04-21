@@ -307,33 +307,7 @@ export default function ClientDashboard() {
                         </div>
                     </section>
 
-                    {/* 4. 정렬 방식 */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase text-zinc-400 font-mono mb-4">
-                            <ArrowUpDown size={14} /> 정렬_기준
-                        </h3>
-                        <div className="space-y-1.5">
-                            {[
-                                { label: '최신등록순', value: 'id' },
-                                { label: '별점 높은순', value: 'rating' },
-                                { label: '리뷰 많은순', value: 'reviews' },
-                                { label: '경력 풍부순', value: 'projects' },
-                                { label: '낮은 시급순', value: 'rate' }
-                            ].map((item) => (
-                                <button
-                                    key={item.value}
-                                    onClick={() => setFilter({ ...filter, sort: item.value })}
-                                    className={`w-full text-left px-4 py-2.5 rounded-xl text-[11px] font-black tracking-tight transition-all ${
-                                        filter.sort === item.value 
-                                            ? 'bg-zinc-900 text-white shadow-md' 
-                                            : 'text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900'
-                                    }`}
-                                >
-                                    {filter.sort === item.value ? '● ' : '○ '} {item.label}
-                                </button>
-                            ))}
-                        </div>
-                    </section>
+
 
                     {/* 초기화 버튼 */}
                     {(filter.skill.length > 0 || filter.region !== '' || filter.workStyle !== '') && (
@@ -357,10 +331,23 @@ export default function ClientDashboard() {
                                 <span className="text-[10px] font-black uppercase tracking-[0.35em] text-[#FF7D00] font-mono italic">live database</span>
                             </div>
                             <h2 className="text-2xl font-black tracking-tight text-zinc-950 md:text-3xl uppercase font-mono">
-                                System_Agents <span className="text-zinc-300 ml-1">/</span> <span className="text-[#FF7D00] ml-1">{freelancers.length}</span>
+                                Total_Portfolios <span className="text-zinc-300 ml-1">/</span> <span className="text-[#FF7D00] ml-1">{freelancers.length}</span>
                             </h2>
                         </div>
-
+                        <div className="flex items-center gap-2 text-[10px] font-black uppercase font-mono text-zinc-400">
+                            SORT:
+                            <select
+                                className="bg-transparent text-zinc-900 outline-none cursor-pointer hover:text-[#FF7D00] transition-colors font-bold"
+                                value={filter.sort}
+                                onChange={(e) => setFilter({ ...filter, sort: e.target.value })}
+                            >
+                                <option value="id">LATEST (최신등록순)</option>
+                                <option value="rating">RATING (별점 높은순)</option>
+                                <option value="reviews">REVIEWS (리뷰 많은순)</option>
+                                <option value="projects">EXPERIENCE (경력 풍부순)</option>
+                                <option value="rate">RATE (낮은 시급순)</option>
+                            </select>
+                        </div>
                     </div>
 
                     {loading ? (
