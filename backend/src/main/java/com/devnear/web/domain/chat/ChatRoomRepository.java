@@ -4,6 +4,9 @@ import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.user.User;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,4 +23,8 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     // updatedAt 기준 최신순 정렬
     @EntityGraph(attributePaths = {"user1", "user2", "project"})
     List<ChatRoom> findAllByUser1OrUser2OrderByUpdatedAtDesc(User user1, User user2);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM ChatRoom c WHERE c.project.id = :projectId")
+    void deleteByProjectId(@Param("projectId") Long projectId);
 }

@@ -99,10 +99,12 @@ public class FreelancerService {
 
             // 2. 새 컬렉션을 채우고 다시 반영 (INSERT 쿼리 실행)
             profile.updateSkills(newFreelancerSkills);
-            return FreelancerProfileResponse.from(profileRepository.saveAndFlush(profile));
+            FreelancerProfile saved = profileRepository.saveAndFlush(profile);
+            return FreelancerProfileResponse.from(saved);
         }
 
-        return FreelancerProfileResponse.from(profileRepository.save(profile));
+        FreelancerProfile saved = profileRepository.save(profile);
+        return FreelancerProfileResponse.from(saved);
     }
 
     // [탐색] 조건에 맞는 프리랜서 목록 검색

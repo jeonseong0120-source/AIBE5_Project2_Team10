@@ -1,7 +1,10 @@
 package com.devnear.web.controller.skill;
 
 import com.devnear.web.dto.skill.SkillResponse;
+import com.devnear.web.dto.skill.SkillTagSuggestRequest;
+import com.devnear.web.dto.skill.SkillTagSuggestionResponse;
 import com.devnear.web.service.skill.SkillService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -68,5 +71,27 @@ public class SkillController {
     public ResponseEntity<Void> deleteSkill(@PathVariable Long skillId) {
         skillService.deleteSkill(skillId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 포트폴리오/공고 설명에서 스킬 태그 추천.
+     * GEMINI_API_KEY가 있으면 Gemini 자연어 추출을 우선 사용하고, 실패 시 규칙 기반(문자열 매칭)으로 대체합니다.
+     * - context: portfolio | project (옵션)
+     * - limit: 1~20 (기본 8)
+     */
+    @PostMapping("/suggest")
+    public ResponseEntity<List<SkillTagSuggestionResponse>> suggestTagsFromText(
+            @Valid @RequestBody SkillTagSuggestRequest request) {
+                final int safeLimit = Math.max(1, Math.min(
+                request.getLimit() == null ? 8 : request.getLimit(),
+                20
+        ));
+        return ResponseEntity.ok(
+                skillService.suggestTagsFromText(
+                        request.getText(),
+                        safeLimit,
+                        request.getContext()
+                )
+        );
     }
 }

@@ -77,7 +77,7 @@ public class FreelancerController {
     }
 
     /**
-     * 프리랜서 포트폴리오·프로필 텍스트와 모집 중 공고 임베딩의 유사도 기준 상위 프로젝트 추천 (Gemini).
+     * 모집 중 클라이언트 공고를 프로필 스킬 태그 매칭 우선으로 추천합니다.
      */
     @GetMapping("/{id}/recommended-projects")
     public ResponseEntity<List<RecommendedProjectResponse>> getRecommendedProjectsForFreelancer(

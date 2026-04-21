@@ -219,7 +219,13 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                     {/* 기술 스택 */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono flex items-center gap-2"><List className="w-3.5 h-3.5 text-[#FF7D00]" /> Tech_Stack</label>
-                        <SkillTagSelector selectedSkillIds={selectedSkillIds} onChangeAction={setSelectedSkillIds} initialSkillNames={initialData.skillNames} />
+                        <SkillTagSelector
+                            selectedSkillIds={selectedSkillIds}
+                            onChangeAction={setSelectedSkillIds}
+                            initialSkillNames={initialData.skillNames}
+                            suggestSourceText={detail}
+                            suggestContext="project"
+                        />
                     </div>
                 </div>
 

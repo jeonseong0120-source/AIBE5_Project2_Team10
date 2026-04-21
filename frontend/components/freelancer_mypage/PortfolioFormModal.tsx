@@ -1,6 +1,8 @@
 'use client';
 
 import { MAX_SELECTED_SKILLS } from '@/app/lib/skillLimits';
+import api from '@/app/lib/axios';
+import { useEffect, useState } from 'react';
 import type { ChangeEvent, Dispatch, RefObject, SetStateAction } from 'react';
 import { motion } from 'framer-motion';
 import { X, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
@@ -39,6 +41,12 @@ interface PortfolioFormModalProps {
     handleSavePortfolio: () => void;
 }
 
+type SuggestedSkill = {
+    skillId: number;
+    name: string;
+    score: number;
+};
+
 export default function PortfolioFormModal({
     isOpen,
     onClose,
@@ -57,6 +65,67 @@ export default function PortfolioFormModal({
     togglePortfolioSkill,
     handleSavePortfolio
 }: PortfolioFormModalProps) {
+    const [isSuggestingSkills, setIsSuggestingSkills] = useState(false);
+    const [suggestError, setSuggestError] = useState<string | null>(null);
+    const [suggestedSkills, setSuggestedSkills] = useState<SuggestedSkill[]>([]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setSuggestError(null);
+            setSuggestedSkills([]);
+            setIsSuggestingSkills(false);
+        }
+    }, [isOpen]);
+
+    const handleSuggestPortfolioSkills = async () => {
+        setSuggestError(null);
+        setSuggestedSkills([]);
+        const source = portfolioForm.desc?.trim() ?? '';
+        if (!source) {
+            setSuggestError('먼저 상세 설명을 입력해 주세요.');
+            return;
+        }
+        setIsSuggestingSkills(true);
+        try {
+            const { data } = await api.post<SuggestedSkill[]>('/v1/skills/suggest', {
+                text: source,
+                context: 'portfolio',
+                limit: Math.min(MAX_SELECTED_SKILLS, 20)
+            });
+            const suggestions = (data ?? []).filter((item) => Number.isFinite(item.skillId));
+            if (suggestions.length === 0) {
+                setSuggestError('추출된 추천 스킬이 없습니다.');
+                return;
+            }
+            setSuggestedSkills(suggestions);
+        } catch (err: unknown) {
+            const message =
+                typeof err === 'object' &&
+                err !== null &&
+                'response' in err &&
+                typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+                    ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+                    : null;
+            setSuggestError(message || '스킬 자동추출에 실패했습니다.');
+        } finally {
+            setIsSuggestingSkills(false);
+        }
+    };
+
+    const applySuggestedSkill = (skillId: number) => {
+        setPortfolioForm((prev) => {
+            if (prev.skills.includes(skillId)) {
+                setSuggestError('이미 선택된 기술입니다.');
+                return prev;
+            }
+            if (prev.skills.length >= MAX_SELECTED_SKILLS) {
+                setSuggestError(`사용 기술은 최대 ${MAX_SELECTED_SKILLS}개까지 선택할 수 있습니다.`);
+                return prev;
+            }
+            return { ...prev, skills: [...prev.skills, skillId] };
+        });
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -161,6 +230,43 @@ export default function PortfolioFormModal({
                             <div className="relative mt-2">
                                 <input className="w-full px-4 py-3 rounded-xl bg-zinc-50 border border-zinc-200 outline-none text-sm font-bold focus:border-[#FF7D00] shadow-sm transition-all focus:ring-2 focus:ring-[#FF7D00]/10" placeholder="기술 검색하여 추가..." value={portfolioSkillSearchQuery} onChange={e => setPortfolioSkillSearchQuery(e.target.value)} />
                             </div>
+                            <div className="flex items-center gap-2 mt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => void handleSuggestPortfolioSkills()}
+                                    disabled={isSuggestingSkills}
+                                    className="rounded-lg border border-[#7A4FFF]/40 bg-purple-50 px-3 py-2 text-[11px] font-black text-[#7A4FFF] transition hover:bg-purple-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {isSuggestingSkills ? '추출 중...' : 'overview에서 스킬 자동추출'}
+                                </button>
+                                {suggestError && <p className="text-[11px] font-semibold text-red-600">{suggestError}</p>}
+                            </div>
+                            {suggestedSkills.length > 0 && (
+                                <div className="rounded-lg border border-[#7A4FFF]/30 bg-purple-50/60 p-3">
+                                    <p className="mb-2 text-[11px] font-black text-[#7A4FFF]">추천 스킬 (클릭해서 추가)</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {suggestedSkills.map((skill) => {
+                                            const selected = portfolioForm.skills.includes(skill.skillId);
+                                            return (
+                                                <button
+                                                    key={`portfolio-suggested-skill-${skill.skillId}`}
+                                                    type="button"
+                                                    disabled={selected}
+                                                    onClick={() => applySuggestedSkill(skill.skillId)}
+                                                    className={`rounded-full border px-3 py-1 text-[11px] font-bold transition ${
+                                                        selected
+                                                            ? 'cursor-not-allowed border-zinc-200 bg-zinc-200 text-zinc-500'
+                                                            : 'border-[#7A4FFF]/40 bg-white text-[#7A4FFF] hover:bg-[#7A4FFF] hover:text-white'
+                                                    }`}
+                                                >
+                                                    {selected ? '선택됨 ' : '+ '}
+                                                    {skill.name}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                             <div className="flex flex-wrap gap-1.5 max-h-[260px] overflow-y-auto no-scrollbar p-2 bg-zinc-50 rounded-xl border border-zinc-100 shadow-inner">
                                 {allGlobalSkills
                                     .filter((s) => s.name.toLowerCase().includes(portfolioSkillSearchQuery.toLowerCase()))

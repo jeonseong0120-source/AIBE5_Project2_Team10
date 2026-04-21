@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -44,4 +45,8 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
             "GROUP BY chat_room_id",
             nativeQuery = true)
     List<Object[]> countUnreadByChatRoomIn(@Param("roomIds") List<Long> roomIds, @Param("meId") Long meId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM ChatMessage m WHERE m.chatRoom.project.id = :projectId")
+    void deleteByProjectId(@Param("projectId") Long projectId);
 }

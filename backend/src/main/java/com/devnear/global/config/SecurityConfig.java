@@ -56,7 +56,7 @@ public class SecurityConfig {
                         .requestMatchers("/ws-chat", "/ws-chat/**").permitAll()
                         .requestMatchers("/api/auth/**", "/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/login/**", "/oauth2/**").permitAll()
 
-                        // AI 추천: 모집 공고 임베딩 유사도 (Gemini 호출) — 클라이언트 전용 (아래 GET freelancers permitAll 보다 먼저 매칭)
+                        // AI 추천: 프리랜서 본인 공고 추천 (아래 GET freelancers permitAll 보다 먼저 매칭)
                         .requestMatchers(HttpMethod.GET,
                                 "/api/freelancers/*/recommended-projects",
                                 "/api/v1/freelancers/*/recommended-projects"
@@ -94,6 +94,10 @@ public class SecurityConfig {
                         // [Cloudinary] 이미지 업로드: 포트폴리오 이미지는 프리랜서, 프로필 이미지는 인증된 모든 사용자
                         .requestMatchers(HttpMethod.POST, "/api/images/portfolio", "/api/images/portfolios/bulk").hasAnyRole("FREELANCER", "BOTH")
                         .requestMatchers(HttpMethod.POST, "/api/images/profile").authenticated()
+
+                        // [스킬 추천] 포트폴리오/공고 본문 기반 태그 추천: 클라이언트/프리랜서 공통
+                        .requestMatchers(HttpMethod.POST, "/api/skills/suggest", "/api/v1/skills/suggest")
+                        .hasAnyRole("CLIENT", "FREELANCER", "BOTH")
 
                         // 4. [권한] 클라이언트 전용 구역
                         .requestMatchers(HttpMethod.POST, "/api/projects", "/api/v1/projects").hasAnyRole("CLIENT", "BOTH")
