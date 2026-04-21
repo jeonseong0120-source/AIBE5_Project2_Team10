@@ -208,17 +208,40 @@ public class ProjectService {
     public void deleteProject(User user, Long projectId) {
         Project project = findProjectAndValidateOwner(user, projectId);
         Long id = project.getId();
-        // FK 참조 행을 먼저 제거 (MySQL 등에서 projects 삭제 시 제약 위반 방지)
-        chatMessageRepository.deleteByProjectId(id);
-        chatRoomRepository.deleteByProjectId(id);
-        proposalRepository.deleteByProjectId(id);
-        projectApplicationRepository.deleteByProjectId(id);
-        bookmarkProjectRepository.deleteByProjectId(id);
-        paymentRepository.deleteByProjectId(id);
-        clientReviewRepository.deleteByProjectId(id);
-        freelancerReviewRepository.deleteByProjectId(id);
-        em.flush();
+        deleteProjectDependents(id);
         projectRepository.delete(project);
+    }
+
+    /**
+     * {@code projects.project_id}를 FK로 참조하는 종속 행을 먼저 삭제합니다. DB에 {@code ON DELETE CASCADE}가
+     * 없거나 JPA에서 프로젝트에 매핑되지 않은 자식인 경우, 공고 삭제 전에 여기서 명시적으로 제거해야 합니다.
+     * <p>
+     * TODO: 새 테이블/엔티티가 {@code project_id}(또는 동일 의미의 컬럼)로 프로젝트를 참조하면
+     * 이 메서드에 해당 repository의 삭제 호출을 추가하고
+     * {@code com.devnear.web.service.project.ProjectServiceDeleteProjectIntegrationTest}를 함께 확장하세요.
+     * <p>
+     * 현재 제거 대상(순서 유지 — 메시지가 채팅방을 참조하므로 메시지를 먼저 삭제):
+     * {@link com.devnear.web.domain.chat.ChatMessage},
+     * {@link com.devnear.web.domain.chat.ChatRoom},
+     * {@link com.devnear.web.domain.proposal.Proposal},
+     * {@link com.devnear.web.domain.application.ProjectApplication},
+     * {@link com.devnear.web.domain.bookmark.BookmarkProject},
+     * {@link com.devnear.web.domain.payment.Payment},
+     * {@link com.devnear.web.domain.review.ClientReview},
+     * {@link com.devnear.web.domain.review.FreelancerReview}.
+     * {@link com.devnear.web.domain.project.ProjectSkill} 등 프로젝트 엔티티에 cascade된 자식은
+     * {@link ProjectRepository#delete(Object)} 시 JPA가 처리합니다.
+     */
+    private void deleteProjectDependents(Long projectId) {
+        chatMessageRepository.deleteByProjectId(projectId);
+        chatRoomRepository.deleteByProjectId(projectId);
+        proposalRepository.deleteByProjectId(projectId);
+        projectApplicationRepository.deleteByProjectId(projectId);
+        bookmarkProjectRepository.deleteByProjectId(projectId);
+        paymentRepository.deleteByProjectId(projectId);
+        clientReviewRepository.deleteByProjectId(projectId);
+        freelancerReviewRepository.deleteByProjectId(projectId);
+        em.flush();
     }
 
     @Transactional(readOnly = true)

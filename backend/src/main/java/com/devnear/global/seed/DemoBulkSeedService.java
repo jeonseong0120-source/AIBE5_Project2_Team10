@@ -13,6 +13,7 @@ import com.devnear.web.domain.freelancer.FreelancerGradeRepository;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.portfolio.Portfolio;
+import com.devnear.web.domain.portfolio.PortfolioImage;
 import com.devnear.web.domain.portfolio.PortfolioRepository;
 import com.devnear.web.domain.portfolio.PortfolioSkill;
 import com.devnear.web.domain.project.Project;
@@ -20,6 +21,8 @@ import com.devnear.web.domain.project.ProjectRepository;
 import com.devnear.web.domain.project.ProjectSkill;
 import com.devnear.web.domain.skill.Skill;
 import com.devnear.web.domain.skill.SkillRepository;
+import com.devnear.web.domain.review.FreelancerReview;
+import com.devnear.web.domain.review.FreelancerReviewRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.service.ai.ProjectEmbeddingService;
@@ -30,10 +33,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 /**
@@ -128,6 +134,7 @@ public class DemoBulkSeedService {
     private final PlatformTransactionManager transactionManager;
     private final ProjectEmbeddingService projectEmbeddingService;
     private final GeminiEmbeddingProperties geminiEmbeddingProperties;
+    private final FreelancerReviewRepository freelancerReviewRepository;
 
     /**
      * DB 삽입은 짧은 트랜잭션으로 커밋한 뒤, 공고별 Gemini 임베딩은 트랜잭션 밖에서 호출합니다(외부 API·연결 점유 방지).
@@ -156,17 +163,23 @@ public class DemoBulkSeedService {
         }
         log.info("[DemoBulkSeed] 임베딩 시도 {}/{}건 완료", embedded, projectIds.size());
 
-        log.info("[DemoBulkSeed] 완료 — 클라이언트 {}, 프리랜서 {}, 포트폴리오 {}, 공고 {}. 비밀번호: {}",
+        log.info("[DemoBulkSeed] 완료 — 클라이언트 {}, 프리랜서 {}(등급·리뷰·이미지·완료건수 랜덤), 포트폴리오 {}(썸네일·갤러리), 공고 {}. 비밀번호: {}",
                 CLIENTS, FREELANCERS, PORTFOLIOS, PROJECTS, DEMO_PASSWORD);
     }
 
     /** 단일 트랜잭션: 사용자·프로필·포트폴리오·공고 행 삽입만 수행하고 생성된 공고 ID 목록을 반환합니다. */
     private List<Long> insertSeedRows() {
         ensureFreelancerGrades();
-        FreelancerGrade defaultGrade = freelancerGradeRepository.findByName("일반")
+        FreelancerGrade gradeGeneral = freelancerGradeRepository.findByName("일반")
                 .orElseThrow(() -> new IllegalStateException("FreelancerGrade '일반' 없음"));
+        FreelancerGrade gradeCert = freelancerGradeRepository.findByName("인증 프리랜서")
+                .orElseThrow(() -> new IllegalStateException("FreelancerGrade '인증 프리랜서' 없음"));
+        FreelancerGrade gradeTop = freelancerGradeRepository.findByName("TOP Talent")
+                .orElseThrow(() -> new IllegalStateException("FreelancerGrade 'TOP Talent' 없음"));
+        FreelancerGrade[] gradePool = {gradeGeneral, gradeCert, gradeTop};
 
         String encoded = passwordEncoder.encode(DEMO_PASSWORD);
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
 
         List<ClientProfile> clientProfiles = new ArrayList<>();
         for (int i = 1; i <= CLIENTS; i++) {
@@ -177,7 +190,7 @@ public class DemoBulkSeedService {
                     .name("데모 클라이언트 " + suffix)
                     .nickname("bulk_cl_" + suffix)
                     .phoneNumber("0109001" + String.format("%04d", i))
-                    .profileImageUrl(null)
+                    .profileImageUrl(picsumUrl("bulk-cl-avatar-" + suffix, 400, 400))
                     .role(Role.CLIENT)
                     .provider("bulk-seed")
                     .providerId("bulk-client-" + suffix)
@@ -191,29 +204,32 @@ public class DemoBulkSeedService {
                     .introduction("벌크 시드 클라이언트 " + i + " — 웹/앱 프로젝트를 자주 의뢰합니다.")
                     .homepageUrl("https://example.com/seed-client-" + suffix)
                     .phoneNum("021234" + String.format("%04d", i))
-                    .logoUrl(null)
+                    .logoUrl(picsumUrl("bulk-cl-logo-" + suffix, 320, 320))
                     .build();
             clientProfiles.add(clientProfileRepository.save(cp));
         }
 
         List<User> freelancerUsers = new ArrayList<>();
+        List<FreelancerProfile> freelancerProfiles = new ArrayList<>();
         for (int i = 1; i <= FREELANCERS; i++) {
             String suffix = String.format("%02d", i);
+            String avatarUrl = picsumUrl("bulk-fl-avatar-" + suffix, 400, 400);
             User user = userRepository.save(User.builder()
                     .email("bulk-demo-freelancer-" + suffix + "@local.test")
                     .password(encoded)
                     .name("데모 프리랜서 " + suffix)
                     .nickname("bulk_fl_" + suffix)
                     .phoneNumber("0108001" + String.format("%04d", i))
-                    .profileImageUrl(null)
+                    .profileImageUrl(avatarUrl)
                     .role(Role.FREELANCER)
                     .provider("bulk-seed")
                     .providerId("bulk-fl-" + suffix)
                     .build());
 
+            FreelancerGrade grade = gradePool[rnd.nextInt(gradePool.length)];
             FreelancerProfile fp = FreelancerProfile.builder()
                     .user(user)
-                    .profileImageUrl(null)
+                    .profileImageUrl(avatarUrl)
                     .introduction("풀스택·" + TOPICS[i % TOPICS.length] + " 경험. 원격/대면 모두 가능합니다.")
                     .location("서울")
                     .latitude(37.5 + i * 0.01)
@@ -221,23 +237,36 @@ public class DemoBulkSeedService {
                     .hourlyRate(50000 + i * 5000)
                     .workStyle(WorkStyle.HYBRID)
                     .isActive(true)
-                    .grade(defaultGrade)
+                    .grade(grade)
                     .build();
+            fp.updateCompletedProjects(rnd.nextInt(0, 26));
             freelancerProfileRepository.save(fp);
             freelancerUsers.add(user);
+            freelancerProfiles.add(fp);
         }
 
         for (int p = 0; p < PORTFOLIOS; p++) {
             User owner = freelancerUsers.get(p % freelancerUsers.size());
             String topic = TOPICS[p % TOPICS.length];
+            String thumb = picsumUrl("bulk-pf-thumb-" + p, 800, 450);
             Portfolio portfolio = Portfolio.builder()
                     .user(owner)
                     .title(topic + " 포트폴리오 #" + (p + 1))
                     .desc("역할: 리드 개발. 스택: Java, Spring, React. " + topic
                             + " 도메인에서 API 설계, DB 모델링, 배포 자동화까지 수행했습니다. (시드 데이터)")
-                    .thumbnailUrl(null)
+                    .thumbnailUrl(thumb)
                     .build();
             attachSeedPortfolioSkills(portfolio, topic, p);
+            portfolio.addPortfolioImage(PortfolioImage.builder()
+                    .portfolio(portfolio)
+                    .imageUrl(picsumUrl("bulk-pf-img-" + p + "-a", 1200, 800))
+                    .sortOrder(0)
+                    .build());
+            portfolio.addPortfolioImage(PortfolioImage.builder()
+                    .portfolio(portfolio)
+                    .imageUrl(picsumUrl("bulk-pf-img-" + p + "-b", 1200, 800))
+                    .sortOrder(1)
+                    .build());
             portfolioRepository.save(portfolio);
         }
 
@@ -264,7 +293,73 @@ public class DemoBulkSeedService {
             projectIds.add(saved.getId());
         }
 
+        seedFreelancerReviews(freelancerProfiles, clientProfiles, projectIds, rnd);
+
         return projectIds;
+    }
+
+    /** 프리랜서당 클라이언트 리뷰 약 3건 + 평균 평점 반영 (picsum 외부 이미지 없음) */
+    private void seedFreelancerReviews(List<FreelancerProfile> freelancers,
+                                       List<ClientProfile> clients,
+                                       List<Long> projectIds,
+                                       ThreadLocalRandom rnd) {
+        if (freelancers.isEmpty() || clients.isEmpty() || projectIds.isEmpty()) {
+            return;
+        }
+        final int reviewsPerFreelancer = 3;
+        for (int fi = 0; fi < freelancers.size(); fi++) {
+            FreelancerProfile fp = freelancers.get(fi);
+            BigDecimal sumAvg = BigDecimal.ZERO;
+            int written = 0;
+            for (int j = 0; j < reviewsPerFreelancer; j++) {
+                int pIdx = (fi * 11 + j * 19 + j * j) % projectIds.size();
+                long projectId = projectIds.get(pIdx);
+                ClientProfile reviewer = clients.get((fi + j) % clients.size());
+                if (freelancerReviewRepository.existsByProjectIdAndReviewerClientAndFreelancer(
+                        projectId, reviewer, fp)) {
+                    pIdx = (pIdx + 1) % projectIds.size();
+                    projectId = projectIds.get(pIdx);
+                }
+                if (freelancerReviewRepository.existsByProjectIdAndReviewerClientAndFreelancer(
+                        projectId, reviewer, fp)) {
+                    continue;
+                }
+                BigDecimal wq = rndScore(rnd);
+                BigDecimal dl = rndScore(rnd);
+                BigDecimal cm = rndScore(rnd);
+                BigDecimal ex = rndScore(rnd);
+                FreelancerReview review = FreelancerReview.builder()
+                        .projectId(projectId)
+                        .reviewerClient(reviewer)
+                        .freelancer(fp)
+                        .workQuality(wq)
+                        .deadline(dl)
+                        .communication(cm)
+                        .expertise(ex)
+                        .comment("벌크 시드 리뷰 #" + (j + 1) + ": 일정·커뮤니케이션 모두 만족스러웠습니다.")
+                        .build();
+                freelancerReviewRepository.save(review);
+                sumAvg = sumAvg.add(review.getAverageScore());
+                written++;
+            }
+            if (written > 0) {
+                double avg = sumAvg.divide(BigDecimal.valueOf(written), 2, RoundingMode.HALF_UP).doubleValue();
+                fp.updateAverageRating(avg);
+                fp.updateReviewCount(written);
+                freelancerProfileRepository.save(fp);
+            }
+        }
+    }
+
+    private static BigDecimal rndScore(ThreadLocalRandom rnd) {
+        double v = 3.0 + rnd.nextDouble() * 2.0;
+        return BigDecimal.valueOf(v).setScale(1, RoundingMode.HALF_UP);
+    }
+
+    /** picsum.photos 고정 시드 URL (CDN, 로컬 데모용) */
+    private static String picsumUrl(String seed, int w, int h) {
+        String s = seed.replaceAll("[^a-zA-Z0-9]", "");
+        return "https://picsum.photos/seed/" + s + "/" + w + "/" + h;
     }
 
     /**

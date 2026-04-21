@@ -7,6 +7,9 @@
 -- MySQL Workbench 등에서 Error 1175 (safe update mode) 가 나면 아래 SET 이 세션에서만 끕니다.
 -- (Preferences → SQL Editor → Safe Updates 를 끄는 것과 동일한 효과, 이 파일만으로 해결)
 --
+-- AUTO_INCREMENT: DELETE 만으로는 id 카운터가 줄지 않는 것이 MySQL 기본 동작입니다.
+-- 파일 맨 아래( COMMIT 이후 )에 각 테이블을 ''현재 MAX(pk)+1''로 맞추는 DDL이 있습니다. 로컬 DB 전용입니다.
+--
 -- 테이블명: ddl-auto 로 생긴 DB는 보통 스네이크 케이스(freelancer_profile, portfolio 등)입니다.
 -- SHOW TABLES 로 실제 이름을 확인한 뒤, 엔티티 @Table 과 다르면 이 스크립트의 테이블명만 바꿔 주세요.
 -- =============================================================================
@@ -210,3 +213,92 @@ WHERE email LIKE 'bulk-demo-%@local.test';
 SET SESSION sql_safe_updates = IFNULL(@__bulk_demo_seed_prev_safe, 1);
 
 COMMIT;
+
+-- =============================================================================
+-- AUTO_INCREMENT 재정렬 (DDL — 위 트랜잭션 밖에서 실행)
+-- 삭제 후에도 다음 INSERT id가 크게 이어지는 것을 줄이려면, ''남은 행의 최대 id + 1''로 맞춥니다.
+-- 테이블이 비어 있으면 다음 값은 1이 됩니다. 운영 DB에서는 신중히 사용하세요.
+-- =============================================================================
+SET @m := (SELECT IFNULL(MAX(chat_message_id), 0) + 1 FROM chat_messages);
+SET @s := CONCAT('ALTER TABLE chat_messages AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(chat_room_id), 0) + 1 FROM chat_rooms);
+SET @s := CONCAT('ALTER TABLE chat_rooms AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(application_id), 0) + 1 FROM applications);
+SET @s := CONCAT('ALTER TABLE applications AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(proposal_id), 0) + 1 FROM proposals);
+SET @s := CONCAT('ALTER TABLE proposals AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(bookmark_id), 0) + 1 FROM bookmarks_project);
+SET @s := CONCAT('ALTER TABLE bookmarks_project AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(bookmark_id), 0) + 1 FROM bookmarks_freelancer);
+SET @s := CONCAT('ALTER TABLE bookmarks_freelancer AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(freelancer_review_id), 0) + 1 FROM freelancer_review);
+SET @s := CONCAT('ALTER TABLE freelancer_review AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(client_review_id), 0) + 1 FROM client_review);
+SET @s := CONCAT('ALTER TABLE client_review AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(project_skill_id), 0) + 1 FROM project_skills);
+SET @s := CONCAT('ALTER TABLE project_skills AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(project_id), 0) + 1 FROM projects);
+SET @s := CONCAT('ALTER TABLE projects AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(portfolio_image_id), 0) + 1 FROM portfolio_image);
+SET @s := CONCAT('ALTER TABLE portfolio_image AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(portfolio_skill_id), 0) + 1 FROM portfolio_skill);
+SET @s := CONCAT('ALTER TABLE portfolio_skill AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(portfolio_id), 0) + 1 FROM portfolio);
+SET @s := CONCAT('ALTER TABLE portfolio AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(comment_id), 0) + 1 FROM community_comments);
+SET @s := CONCAT('ALTER TABLE community_comments AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(post_like_id), 0) + 1 FROM community_post_likes);
+SET @s := CONCAT('ALTER TABLE community_post_likes AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(post_id), 0) + 1 FROM community_posts);
+SET @s := CONCAT('ALTER TABLE community_posts AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(notification_id), 0) + 1 FROM notifications);
+SET @s := CONCAT('ALTER TABLE notifications AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(freelancer_skill_id), 0) + 1 FROM freelancer_skill);
+SET @s := CONCAT('ALTER TABLE freelancer_skill AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(freelancer_profile_id), 0) + 1 FROM freelancer_profile);
+SET @s := CONCAT('ALTER TABLE freelancer_profile AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(client_id), 0) + 1 FROM client_profile);
+SET @s := CONCAT('ALTER TABLE client_profile AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;
+
+SET @m := (SELECT IFNULL(MAX(user_id), 0) + 1 FROM users);
+SET @s := CONCAT('ALTER TABLE users AUTO_INCREMENT=', @m);
+PREPARE _ai FROM @s; EXECUTE _ai; DEALLOCATE PREPARE _ai;

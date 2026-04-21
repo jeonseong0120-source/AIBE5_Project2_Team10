@@ -148,7 +148,8 @@ public class AiRecommendationService {
 
         boolean onlineMatch = onlineAllowed && project.isOnline();
         boolean offlineMatch = offlineAllowed && project.isOffline()
-                && regionMatches(profile.getLocation(), project.getLocation());
+                && (project.getLocation() == null || project.getLocation().isBlank()
+                || regionMatches(profile.getLocation(), project.getLocation()));
         return onlineMatch || offlineMatch;
     }
 

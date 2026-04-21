@@ -82,10 +82,14 @@ public class SkillController {
     @PostMapping("/suggest")
     public ResponseEntity<List<SkillTagSuggestionResponse>> suggestTagsFromText(
             @Valid @RequestBody SkillTagSuggestRequest request) {
+                final int safeLimit = Math.max(1, Math.min(
+                request.getLimit() == null ? 8 : request.getLimit(),
+                20
+        ));
         return ResponseEntity.ok(
                 skillService.suggestTagsFromText(
                         request.getText(),
-                        request.getLimit(),
+                        safeLimit,
                         request.getContext()
                 )
         );

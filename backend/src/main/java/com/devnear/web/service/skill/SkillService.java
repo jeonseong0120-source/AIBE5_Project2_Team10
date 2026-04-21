@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -202,32 +203,86 @@ public class SkillService {
                 .collect(Collectors.toList());
     }
 
+    /** 짧은 스킬 토큰(1~2글자)은 문서 토큰과 완전 일치할 때만 매칭합니다. */
+    private static final int SHORT_TOKEN_MAX_LEN = 2;
+
     private static double scoreSkill(String text, String skillName) {
-        // 1) 전체 문자열 포함 매칭 (가장 강한 신호)
-        if (text.contains(skillName)) {
+        if (text.isBlank() || skillName.isBlank()) {
+            return 0.0;
+        }
+        List<String> docTokens = splitMatchTokens(text);
+        List<String> skillTokens = splitMatchTokens(skillName);
+        if (skillTokens.isEmpty()) {
+            return 0.0;
+        }
+
+        // 1) 정규화된 문서에서 스킬 이름이 연속 토큰으로 등장 (부분 문자열/다른 단어 내부 매칭 방지)
+        if (containsConsecutiveTokens(docTokens, skillTokens)) {
             return 1.0;
         }
 
         // 2) 약어/표기 변형 룰 (nextjs, springboot 같은 공백/기호 제거 케이스)
         String compactText = compact(text);
         String compactSkill = compact(skillName);
-        if (!compactSkill.isBlank() && compactText.contains(compactSkill)) {
-            return 0.9;
+        if (!compactSkill.isBlank()) {
+            if (compactSkill.length() <= SHORT_TOKEN_MAX_LEN) {
+                for (String docToken : docTokens) {
+                    if (compact(docToken).equals(compactSkill)) {
+                        return 0.9;
+                    }
+                }
+            } else if (compactText.contains(compactSkill)) {
+                return 0.9;
+            }
         }
 
-        // 3) 토큰 교집합 비율
-        String[] skillTokens = skillName.split("\\s+");
+        // 3) 토큰 교집합 비율 — 문서 토큰과 동일한 토큰만 카운트; 짧은 토큰도 동일 규칙(전체 단어 일치)
         int matched = 0;
         for (String token : skillTokens) {
-            if (token.isBlank()) continue;
-            if (text.contains(token)) {
+            if (docContainsSkillToken(docTokens, token)) {
                 matched++;
             }
         }
         if (matched == 0) {
             return 0.0;
         }
-        return 0.45 + 0.45 * ((double) matched / skillTokens.length);
+        return 0.45 + 0.45 * ((double) matched / skillTokens.size());
+    }
+
+    private static List<String> splitMatchTokens(String normalized) {
+        return Arrays.stream(normalized.split("\\s+"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
+    /** {@code phrase}가 {@code doc} 안에 연속 부분열로 등장하는지(토큰 단위, 대소문자는 이미 normalize됨). */
+    private static boolean containsConsecutiveTokens(List<String> doc, List<String> phrase) {
+        if (phrase.isEmpty() || phrase.size() > doc.size()) {
+            return false;
+        }
+        outer:
+        for (int i = 0; i <= doc.size() - phrase.size(); i++) {
+            for (int j = 0; j < phrase.size(); j++) {
+                if (!doc.get(i + j).equals(phrase.get(j))) {
+                    continue outer;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean docContainsSkillToken(List<String> docTokens, String skillToken) {
+        if (skillToken.isEmpty()) {
+            return false;
+        }
+        for (String docToken : docTokens) {
+            if (docToken.equals(skillToken)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String normalize(String value) {

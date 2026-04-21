@@ -2,7 +2,7 @@
 
 import { MAX_SELECTED_SKILLS } from '@/app/lib/skillLimits';
 import api from '@/app/lib/axios';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ChangeEvent, Dispatch, RefObject, SetStateAction } from 'react';
 import { motion } from 'framer-motion';
 import { X, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
@@ -68,6 +68,14 @@ export default function PortfolioFormModal({
     const [isSuggestingSkills, setIsSuggestingSkills] = useState(false);
     const [suggestError, setSuggestError] = useState<string | null>(null);
     const [suggestedSkills, setSuggestedSkills] = useState<SuggestedSkill[]>([]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setSuggestError(null);
+            setSuggestedSkills([]);
+            setIsSuggestingSkills(false);
+        }
+    }, [isOpen]);
 
     const handleSuggestPortfolioSkills = async () => {
         setSuggestError(null);
