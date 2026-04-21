@@ -20,3 +20,11 @@
     color: #18181b; /* 기본 글자색 (zinc-900) */
   }
 }
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
