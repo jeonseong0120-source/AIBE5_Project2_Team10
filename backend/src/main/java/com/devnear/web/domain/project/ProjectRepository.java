@@ -73,9 +73,11 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
     @Query("SELECT DISTINCT p FROM Project p " +
            "JOIN FETCH p.clientProfile cp " +
            "JOIN FETCH cp.user " +
-           "WHERE p.status = :status AND p.embeddingJson IS NOT NULL " +
+           "LEFT JOIN FETCH p.projectSkills ps " +
+           "LEFT JOIN FETCH ps.skill " +
+           "WHERE p.status = :status " +
            "AND (p.listingKind IS NULL OR p.listingKind = :marketplace)")
-    List<Project> findByStatusAndEmbeddingJsonIsNotNull(@Param("status") ProjectStatus status,
+    List<Project> findOpenMarketplaceProjectsWithSkills(@Param("status") ProjectStatus status,
                                                         @Param("marketplace") ProjectListingKind marketplace);
 
     /** 벌크 시드 클라이언트 공고 중 OPEN이면서 임베딩이 비어 있는 project id (기존 DB 보충용). */
@@ -85,4 +87,5 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
            "AND u.email LIKE 'bulk-demo-client%'")
     List<Long> findOpenBulkDemoProjectIdsMissingEmbedding(@Param("status") ProjectStatus status,
                                                           @Param("marketplace") ProjectListingKind marketplace);
+
 }

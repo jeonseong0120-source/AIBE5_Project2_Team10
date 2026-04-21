@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ChatWindow from "./ChatWindow";
 import {
     getChatMessages,
@@ -13,6 +13,7 @@ import { getCurrentUserId } from "../../app/lib/auth";
 export default function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
+    const latestMessageReqId = useRef(0);
     const currentUserId = getCurrentUserId();
     const [rooms, setRooms] = useState<ChatRoomResponse[]>([]);
     const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
@@ -21,7 +22,7 @@ export default function ChatWidget() {
     const [loadingRooms, setLoadingRooms] = useState(false);
     const [loadingMessages, setLoadingMessages] = useState(false);
 
-    const fetchRooms = async () => {
+    const fetchRooms = useCallback(async () => {
         try {
             setLoadingRooms(true);
             const roomData = await getChatRooms();
@@ -45,9 +46,9 @@ export default function ChatWidget() {
         } finally {
             setLoadingRooms(false);
         }
-    };
+    }, [selectedRoomId]);
 
-    const fetchMessages = async (roomId: number) => {
+    const fetchMessages = useCallback(async (roomId: number) => {
         const requestId = ++latestMessageReqId.current;
         try {
             setLoadingMessages(true);
@@ -65,17 +66,17 @@ export default function ChatWidget() {
         } finally {
             setLoadingMessages(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         if (!isOpen) return;
         fetchRooms();
-    }, [isOpen]);
+    }, [isOpen, fetchRooms]);
 
     useEffect(() => {
         if (!isOpen || !selectedRoomId) return;
         fetchMessages(selectedRoomId);
-    }, [isOpen, selectedRoomId]);
+    }, [isOpen, selectedRoomId, fetchMessages]);
 
     const handleOpenToggle = () => {
         setIsOpen((prev) => !prev);

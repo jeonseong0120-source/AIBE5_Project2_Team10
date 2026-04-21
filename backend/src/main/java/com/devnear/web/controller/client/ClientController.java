@@ -12,46 +12,45 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-    @Tag(name = "Client", description = "클라이언트(의뢰인) 프로필 관련 API")
-    @RestController
-    @RequestMapping("/api/client")
-    @RequiredArgsConstructor
-    public class ClientController {
+@Tag(name = "Client", description = "클라이언트(의뢰인) 프로필 관련 API")
+@RestController
+@RequestMapping("/api/client")
+@RequiredArgsConstructor
+public class ClientController {
 
-        private final ClientService clientService;
+    private final ClientService clientService;
 
-        @Operation(summary = "클라이언트 프로필 등록", description = "로그인한 유저의 기업/의뢰인 정보를 등록합니다.")
-        @PostMapping("/profile")
-        public ResponseEntity<Long> registerProfile(
-                @AuthenticationPrincipal User user,
-                @RequestBody @Valid ClientProfileRequest request) {
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(clientService.registerProfile(user, request)); // email 대신 user 직접 전달
-        }
-
-        @Operation(summary = "클라이언트 프로필 조회", description = "로그인한 유저 본인의 기업 프로필 정보를 가져옵니다.")
-        @GetMapping("/profile")
-        public ResponseEntity<ClientProfileResponse> getMyProfile(
-                @AuthenticationPrincipal User user) {
-            return ResponseEntity.ok(clientService.getMyProfile(user));
-        }
-
-        @Operation(summary = "클라이언트 프로필 수정", description = "로그인한 유저 본인의 기업 정보를 수정합니다.")
-        @PutMapping("/profile")
-        public ResponseEntity<Void> updateProfile(
-                @AuthenticationPrincipal User user,
-                @RequestBody @Valid ClientProfileRequest request) {
-            clientService.updateProfile(user, request);
-            return ResponseEntity.ok().build();
-        }
-
-        @Operation(summary = "클라이언트 프로필 삭제", description = "로그인한 유저의 클라이언트 프로필 정보를 삭제합니다.")
-        @DeleteMapping("/profile")
-        public ResponseEntity<Void> deleteProfile(
-                @AuthenticationPrincipal User user) {
-            clientService.deleteProfile(user);
-            return ResponseEntity.noContent().build();
-        }
+    @Operation(summary = "클라이언트 프로필 등록", description = "로그인한 유저의 기업/의뢰인 정보를 등록합니다.")
+    @PostMapping("/profile")
+    public ResponseEntity<Long> registerProfile(
+            @AuthenticationPrincipal User user,
+            @RequestBody @Valid ClientProfileRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(clientService.registerProfile(user, request)); // email 대신 user 직접 전달
     }
+
+    @Operation(summary = "클라이언트 프로필 조회", description = "로그인한 유저 본인의 기업 프로필 정보를 가져옵니다.")
+    @GetMapping("/profile")
+    public ResponseEntity<ClientProfileResponse> getMyProfile(
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(clientService.getMyProfile(user));
+    }
+
+    @Operation(summary = "클라이언트 프로필 수정", description = "로그인한 유저 본인의 기업 정보를 수정합니다.")
+    @PutMapping("/profile")
+    public ResponseEntity<Void> updateProfile(
+            @AuthenticationPrincipal User user,
+            @RequestBody @Valid ClientProfileRequest request) {
+        clientService.updateProfile(user, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "클라이언트 프로필 삭제", description = "로그인한 유저의 클라이언트 프로필 정보를 삭제합니다.")
+    @DeleteMapping("/profile")
+    public ResponseEntity<Void> deleteProfile(
+            @AuthenticationPrincipal User user) {
+        clientService.deleteProfile(user);
+        return ResponseEntity.noContent().build();
+    }
+}

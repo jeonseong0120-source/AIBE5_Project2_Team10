@@ -11,7 +11,6 @@ import com.devnear.web.dto.portfolio.PortfolioRequest;
 import com.devnear.web.dto.portfolio.PortfolioResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
-import com.devnear.web.service.ai.FreelancerEmbeddingService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +32,6 @@ public class PortfolioService {
     private final SkillRepository skillRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final FreelancerGradeService freelancerGradeService;
-    private final FreelancerEmbeddingService freelancerEmbeddingService;
 
     // [등록] POST /api/portfolios
     @Transactional
@@ -87,12 +85,6 @@ public class PortfolioService {
         } catch (Exception e) {
             log.warn("[PortfolioService] 등급 재계산 실패 (userId={}) - 포트폴리오 등록은 정상 완료: {}", user.getId(), e.getMessage());
         }
-        try {
-            freelancerProfileRepository.findByUser_Id(user.getId())
-                    .ifPresent(fp -> freelancerEmbeddingService.refreshEmbeddingForFreelancerId(fp.getId()));
-        } catch (Exception e) {
-            log.warn("[PortfolioService] 임베딩 갱신 실패 (userId={}) - 포트폴리오 등록은 정상 완료: {}", user.getId(), e.getMessage());
-        }
 
         return savedId;
     }
@@ -127,12 +119,6 @@ public class PortfolioService {
                     .ifPresent(freelancerGradeService::refreshGrade);
         } catch (Exception e) {
             log.warn("[PortfolioService] 등급 재계산 실패 (userId={}) - 포트폴리오 삭제는 정상 완료: {}", user.getId(), e.getMessage());
-        }
-        try {
-            freelancerProfileRepository.findByUser_Id(user.getId())
-                    .ifPresent(fp -> freelancerEmbeddingService.refreshEmbeddingForFreelancerId(fp.getId()));
-        } catch (Exception e) {
-            log.warn("[PortfolioService] 임베딩 갱신 실패 (userId={}) - 포트폴리오 삭제는 정상 완료: {}", user.getId(), e.getMessage());
         }
     }
 
@@ -189,12 +175,6 @@ public class PortfolioService {
                     .ifPresent(freelancerGradeService::refreshGrade);
         } catch (Exception e) {
             log.warn("[PortfolioService] 등급 재계산 실패 (userId={}) - 포트폴리오 수정은 정상 완료: {}", user.getId(), e.getMessage());
-        }
-        try {
-            freelancerProfileRepository.findByUser_Id(user.getId())
-                    .ifPresent(fp -> freelancerEmbeddingService.refreshEmbeddingForFreelancerId(fp.getId()));
-        } catch (Exception e) {
-            log.warn("[PortfolioService] 임베딩 갱신 실패 (userId={}) - 포트폴리오 수정은 정상 완료: {}", user.getId(), e.getMessage());
         }
     }
 }

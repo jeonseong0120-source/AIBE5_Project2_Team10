@@ -357,7 +357,8 @@ public class DemoBulkSeedService {
     }
 
     /**
-     * 예전에 시드만 하고 임베딩이 비어 있던 DB: GEMINI 키가 있으면 벌크 시드 공고에 임베딩만 채웁니다.
+     * 예전에 시드만 하고 임베딩이 비어 있던 DB:
+     * GEMINI 키가 있으면 벌크 시드 공고 임베딩을 보충합니다.
      */
     private void maybeBackfillBulkSeedEmbeddings() {
         if (geminiEmbeddingProperties.getApiKey() == null || geminiEmbeddingProperties.getApiKey().isBlank()) {

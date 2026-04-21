@@ -56,7 +56,7 @@ public class SecurityConfig {
                         .requestMatchers("/ws-chat", "/ws-chat/**").permitAll()
                         .requestMatchers("/api/auth/**", "/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/login/**", "/oauth2/**").permitAll()
 
-                        // AI 추천: 모집 공고 임베딩 유사도 (Gemini 호출) — 클라이언트 전용 (아래 GET freelancers permitAll 보다 먼저 매칭)
+                        // AI 추천: 프리랜서 본인 공고 추천 (아래 GET freelancers permitAll 보다 먼저 매칭)
                         .requestMatchers(HttpMethod.GET,
                                 "/api/freelancers/*/recommended-projects",
                                 "/api/v1/freelancers/*/recommended-projects"

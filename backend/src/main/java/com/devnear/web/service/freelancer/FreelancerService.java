@@ -9,7 +9,6 @@ import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.freelancer.FreelancerProfileRequest;
 import com.devnear.web.dto.freelancer.FreelancerProfileResponse;
-import com.devnear.web.service.ai.FreelancerEmbeddingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +36,6 @@ public class FreelancerService {
     private final FreelancerProfileRepository profileRepository;
     private final SkillRepository skillRepository;
     private final PortfolioRepository portfolioRepository;
-    private final FreelancerEmbeddingService freelancerEmbeddingService;
 
     // [조회] 내 프로필 상세 데이터 조회
     public FreelancerProfileResponse getMyProfile(User user) {
@@ -102,20 +100,10 @@ public class FreelancerService {
             // 2. 새 컬렉션을 채우고 다시 반영 (INSERT 쿼리 실행)
             profile.updateSkills(newFreelancerSkills);
             FreelancerProfile saved = profileRepository.saveAndFlush(profile);
-            try {
-                freelancerEmbeddingService.refreshEmbeddingForFreelancerId(saved.getId());
-            } catch (Exception e) {
-                // 임베딩 실패가 프로필 수정 트랜잭션을 깨지 않도록 보호
-            }
             return FreelancerProfileResponse.from(saved);
         }
 
         FreelancerProfile saved = profileRepository.save(profile);
-        try {
-            freelancerEmbeddingService.refreshEmbeddingForFreelancerId(saved.getId());
-        } catch (Exception e) {
-            // 임베딩 실패가 프로필 수정 트랜잭션을 깨지 않도록 보호
-        }
         return FreelancerProfileResponse.from(saved);
     }
 

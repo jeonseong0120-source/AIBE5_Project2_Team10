@@ -258,11 +258,11 @@ export default function FreelancerExplorePage() {
                         <div>
                             <div className="mb-2 flex items-center gap-2">
                                 <Sparkles className="text-[#7A4FFF]" size={20} />
-                                <span className="text-[10px] font-black uppercase tracking-[0.35em] text-[#7A4FFF] font-mono">Gemini similarity</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.35em] text-[#7A4FFF] font-mono">Client missions</span>
                             </div>
                             <h2 className="text-2xl font-black tracking-tight text-zinc-950 md:text-3xl">AI 추천 공고</h2>
                             <p className="mt-1 text-sm font-medium text-zinc-500">
-                                내 프로필·포트폴리오와 맞는 모집 중 공고를 유사도 순으로 보여줍니다.
+                                스킬 태그, 온·오프라인, 지역, 공고 예산(내 희망 시급 기준)을 함께 반영해 맞는 모집 공고를 정렬합니다.
                             </p>
                         </div>
                     </div>
@@ -284,7 +284,7 @@ export default function FreelancerExplorePage() {
                         </div>
                     ) : aiRecommendations.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-zinc-200 bg-white/60 px-6 py-10 text-center text-sm font-medium text-zinc-400">
-                            모집 중 공고에 Gemini 임베딩이 저장되어 있어야 합니다. 백엔드에 GEMINI_API_KEY를 두고, 클라이언트로 공고를 한 번 저장해 임베딩을 만든 뒤 다시 확인해 보세요. (벌크 시드 사용 시 최신 백엔드로 기동하면 시드 공고에 임베딩이 채워집니다.)
+                            표시할 모집 중 공고가 없습니다. 마켓에 등록된 공고가 있는지 확인하거나, 온·오프라인 조건에 맞는 공고가 있는지 살펴보세요.
                         </div>
                     ) : (
                         <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
