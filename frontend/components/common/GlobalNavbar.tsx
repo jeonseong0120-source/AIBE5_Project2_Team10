@@ -30,7 +30,7 @@ interface GlobalNavbarProps {
 export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const [currentMode, setCurrentMode] = useState<'CLIENT' | 'FREELANCER'>('FREELANCER');
+    const [currentMode, setCurrentMode] = useState<'CLIENT' | 'FREELANCER'>(getActiveRole());
 
     useEffect(() => {
         if (pathname?.startsWith('/client')) {
@@ -82,9 +82,10 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
             {/* 🎯 본문 라인과 일치시키기 위한 내부 컨테이너 (max-w-7xl) */}
             <div className="relative z-10 w-full max-w-7xl px-8 flex justify-between items-center">
                 {/* 좌측: 로고 (Pop-out 디자인 및 정밀 라인 정렬) */}
-                <div 
-                    className="cursor-pointer flex items-center group overflow-visible"
+                <button 
+                    className="cursor-pointer flex items-center group overflow-visible outline-none focus-visible:ring-4 focus-visible:ring-zinc-950/10 rounded-2xl transition-all"
                     onClick={() => router.push(isClientPage ? "/client/mainpage" : "/freelancer/explore")}
+                    aria-label="DevNear Home"
                 >
                     <div className="relative h-28 w-[400px] ml-[-40px]">
                         <img 
@@ -93,7 +94,7 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
                             className="h-full w-full object-contain object-left transition-all duration-300 group-hover:scale-105 group-hover:brightness-110"
                         />
                     </div>
-                </div>
+                </button>
 
                 {/* 우측: 메뉴 및 유저 세션 */}
                 <div className="flex gap-10 items-center">
@@ -160,10 +161,13 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
                         </motion.button>
 
                         {/* 유저 프로필 (고정 크기) */}
-                        <motion.div
-                            className="relative flex-shrink-0 w-11 h-11 rounded-[14px] overflow-hidden cursor-pointer shadow-lg border-2 border-white transition-all group"
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="relative flex-shrink-0 w-11 h-11 rounded-[14px] overflow-hidden cursor-pointer shadow-lg border-2 border-white transition-all group outline-none focus-visible:ring-4 focus-visible:ring-zinc-950/10"
                             style={{ backgroundColor: accentColor }}
                             onClick={() => router.push(isClientPage ? '/client/mypage' : '/freelancer/mypage')}
+                            aria-label="Open My Page"
                         >
                             <AnimatePresence mode="wait">
                                 {userImg ? (
@@ -186,7 +190,7 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
                                     </motion.div>
                                 )}
                             </AnimatePresence>
-                        </motion.div>
+                        </motion.button>
                     </div>
                 </div>
             </div>

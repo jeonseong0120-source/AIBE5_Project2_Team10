@@ -43,11 +43,19 @@ export function getCurrentUserId(): number | null {
 
 export function getActiveRole(): 'CLIENT' | 'FREELANCER' {
     if (typeof window === "undefined") return 'FREELANCER';
-    const role = localStorage.getItem("activeRole");
-    return (role === 'CLIENT' || role === 'FREELANCER') ? role : 'FREELANCER';
+    try {
+        const role = localStorage.getItem("activeRole");
+        return (role === 'CLIENT' || role === 'FREELANCER') ? role : 'FREELANCER';
+    } catch {
+        return 'FREELANCER';
+    }
 }
 
 export function setActiveRole(role: 'CLIENT' | 'FREELANCER') {
     if (typeof window === "undefined") return;
-    localStorage.setItem("activeRole", role);
-}
+    try {
+        localStorage.setItem("activeRole", role);
+    } catch {
+        // no-op
+    }
+}

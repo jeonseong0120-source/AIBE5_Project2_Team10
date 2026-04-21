@@ -1,23 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { PencilLine, Search, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import api from "@/app/lib/axios";
 import { getCommunityPosts } from "@/app/lib/communityApi";
 import type { CommunityPost } from "@/types/community";
 import CommunityPostCard from "@/components/community/CommunityPostCard";
 import GlobalNavbar from "@/components/common/GlobalNavbar";
-import { getActiveRole } from "@/app/lib/auth";
+import { useSessionBootstrap } from "@/app/hooks/useSessionBootstrap";
 
 export default function CommunityPage() {
     const router = useRouter();
+    const { user, profile } = useSessionBootstrap();
 
     const [posts, setPosts] = useState<CommunityPost[]>([]);
     const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState<any>(null);
-    const [profile, setProfile] = useState<any>(null);
 
     const [page, setPage] = useState(0);
     const [size] = useState(10);
@@ -26,6 +24,31 @@ export default function CommunityPage() {
     const [keywordInput, setKeywordInput] = useState("");
     const [keyword, setKeyword] = useState("");
     const [sort, setSort] = useState("latest");
+
+    const glowRef = useRef<HTMLDivElement>(null);
+    const cursorRef = useRef({ x: 0, y: 0 });
+    const rafRef = useRef<number>();
+
+    useEffect(() => {
+        const updateGlow = () => {
+            if (glowRef.current) {
+                glowRef.current.style.transform = `translate(${cursorRef.current.x - 150}px, ${cursorRef.current.y - 150}px)`;
+            }
+            rafRef.current = requestAnimationFrame(updateGlow);
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            cursorRef.current = { x: e.clientX, y: e.clientY };
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        rafRef.current = requestAnimationFrame(updateGlow);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        };
+    }, []);
 
     const fetchPosts = async () => {
         try {
@@ -41,37 +64,6 @@ export default function CommunityPage() {
     };
 
     useEffect(() => {
-        const checkUser = async () => {
-            try {
-                const res = await api.get("/v1/users/me");
-                setUser(res.data);
-                
-                const roles = res.data.role || "";
-                const currentRole = getActiveRole();
-
-                if (roles === "BOTH") {
-                    if (currentRole === "CLIENT") {
-                        const pRes = await api.get("/client/profile");
-                        setProfile(pRes.data);
-                    } else {
-                        const pRes = await api.get("/v1/freelancers/me");
-                        setProfile(pRes.data);
-                    }
-                } else if (roles === "CLIENT") {
-                    const pRes = await api.get("/client/profile");
-                    setProfile(pRes.data);
-                } else if (roles === "FREELANCER") {
-                    const pRes = await api.get("/v1/freelancers/me");
-                    setProfile(pRes.data);
-                }
-            } catch (err) {
-                // 비로그인 상태일 수 있음
-            }
-        };
-        checkUser();
-    }, []);
-
-    useEffect(() => {
         fetchPosts();
     }, [page, keyword, sort]);
 
@@ -79,13 +71,6 @@ export default function CommunityPage() {
         setPage(0);
         setKeyword(keywordInput.trim());
     };
-
-    const [cursor, setCursor] = useState({ x: 0, y: 0 });
-    useEffect(() => {
-        const move = (e: MouseEvent) => setCursor({ x: e.clientX, y: e.clientY });
-        window.addEventListener("mousemove", move);
-        return () => window.removeEventListener("mousemove", move);
-    }, []);
 
     const handleMoveWrite = () => {
         const token =
@@ -108,10 +93,10 @@ export default function CommunityPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
-            {/* 배경 글로우 */}
+            {/* 배경 글로우 (Optimized with Ref & RAF) */}
             <div
+                ref={glowRef}
                 className="pointer-events-none fixed left-0 top-0 z-0 h-[300px] w-[300px] rounded-full bg-[#7A4FFF]/10 blur-[120px] will-change-transform"
-                style={{ transform: `translate(${cursor.x - 150}px, ${cursor.y - 150}px)` }}
             />
 
             <GlobalNavbar user={user} profile={profile} />
@@ -135,7 +120,7 @@ export default function CommunityPage() {
 
                     <button
                         onClick={handleMoveWrite}
-                        className="group flex h-14 items-center justify-center gap-3 rounded-2xl bg-[#7A4FFF] px-8 text-sm font-black text-white transition-all hover:scale-105 hover:shadow-[0_10px_20px_-5px_rgba(122,79,255,0.3)]"
+                        className="group flex h-14 items-center justify-center gap-3 rounded-2xl bg-[#7A4FFF] px-8 text-sm font-black text-white transition-all hover:scale-105 hover:shadow-[0_10px_20px_-5px_rgba(122,79,255,0.3)] focus:outline-none focus:ring-4 focus:ring-[#7A4FFF]/20"
                     >
                         <PencilLine size={18} className="transition-transform group-hover:rotate-12" />
                         새 글 작성하기
@@ -169,7 +154,7 @@ export default function CommunityPage() {
                                         setPage(0);
                                         setSort(e.target.value);
                                     }}
-                                    className="h-14 rounded-[1.5rem] border border-zinc-200 bg-white px-6 text-xs font-black uppercase tracking-wider outline-none transition-all hover:border-zinc-300"
+                                    className="h-14 rounded-[1.5rem] border border-zinc-200 bg-white px-6 text-xs font-black uppercase tracking-wider outline-none transition-all hover:border-zinc-300 focus:ring-2 focus:ring-[#7A4FFF]/20"
                                 >
                                     <option value="latest">최신순</option>
                                     <option value="likes">좋아요순</option>
@@ -177,7 +162,7 @@ export default function CommunityPage() {
 
                                 <button
                                     onClick={handleSearch}
-                                    className="h-14 rounded-[1.5rem] bg-zinc-950 px-8 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-zinc-800 hover:shadow-lg"
+                                    className="h-14 rounded-[1.5rem] bg-zinc-950 px-8 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-zinc-800 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-zinc-950/20"
                                 >
                                     검색
                                 </button>
@@ -222,7 +207,7 @@ export default function CommunityPage() {
                         <button
                             disabled={page === 0}
                             onClick={() => setPage((prev) => prev - 1)}
-                            className="flex h-12 w-24 items-center justify-center rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-tighter transition-all hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
+                            className="flex h-12 w-24 items-center justify-center rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-tighter transition-all hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950/10"
                         >
                             이전
                         </button>
@@ -236,7 +221,7 @@ export default function CommunityPage() {
                         <button
                             disabled={totalPages === 0 || page + 1 >= totalPages}
                             onClick={() => setPage((prev) => prev + 1)}
-                            className="flex h-12 w-24 items-center justify-center rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-tighter transition-all hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
+                            className="flex h-12 w-24 items-center justify-center rounded-xl border border-zinc-200 bg-white text-xs font-black uppercase tracking-tighter transition-all hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950/10"
                         >
                             다음
                         </button>

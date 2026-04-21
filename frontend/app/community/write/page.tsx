@@ -4,54 +4,23 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PencilLine, Send, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import api from "@/app/lib/axios";
 import { createCommunityPost } from "@/app/lib/communityApi";
 import GlobalNavbar from "@/components/common/GlobalNavbar";
-import { getActiveRole } from "@/app/lib/auth";
+import { useSessionBootstrap } from "@/app/hooks/useSessionBootstrap";
 
 export default function CommunityWritePage() {
     const router = useRouter();
+    const { user, profile } = useSessionBootstrap();
 
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [loading, setLoading] = useState(false);
-    const [user, setUser] = useState<any>(null);
-    const [profile, setProfile] = useState<any>(null);
 
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
     useEffect(() => {
         const move = (e: MouseEvent) => setCursor({ x: e.clientX, y: e.clientY });
         window.addEventListener("mousemove", move);
         return () => window.removeEventListener("mousemove", move);
-    }, []);
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const res = await api.get("/v1/users/me");
-                setUser(res.data);
-                
-                const roles = res.data.role || "";
-                const currentRole = getActiveRole();
-
-                if (roles === "BOTH") {
-                    if (currentRole === "CLIENT") {
-                        const pRes = await api.get("/client/profile");
-                        setProfile(pRes.data);
-                    } else {
-                        const pRes = await api.get("/v1/freelancers/me");
-                        setProfile(pRes.data);
-                    }
-                } else if (roles === "CLIENT") {
-                    const pRes = await api.get("/client/profile");
-                    setProfile(pRes.data);
-                } else if (roles === "FREELANCER") {
-                    const pRes = await api.get("/v1/freelancers/me");
-                    setProfile(pRes.data);
-                }
-            } catch (err) {}
-        };
-        fetchUser();
     }, []);
 
     const handleSubmit = async () => {
@@ -143,7 +112,7 @@ export default function CommunityWritePage() {
                         <div className="flex items-center justify-end gap-4 pt-6 border-t border-zinc-50">
                             <button
                                 onClick={handleCancel}
-                                className="flex items-center gap-2 rounded-2xl px-8 py-4 text-xs font-black uppercase tracking-widest text-zinc-400 transition-all hover:text-zinc-600 font-mono"
+                                className="flex items-center gap-2 rounded-2xl px-8 py-4 text-xs font-black uppercase tracking-widest text-zinc-400 transition-all hover:text-zinc-600 font-mono focus:outline-none focus:ring-2 focus:ring-zinc-400/30"
                             >
                                 <X size={16} />
                                 작성 취소
@@ -152,7 +121,7 @@ export default function CommunityWritePage() {
                             <button
                                 onClick={handleSubmit}
                                 disabled={loading}
-                                className="flex items-center gap-3 rounded-[1.25rem] bg-zinc-950 px-10 py-4 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_10px_20px_-5px_rgba(122,79,255,0.4)] disabled:opacity-50 shadow-xl font-mono"
+                                className="flex items-center gap-3 rounded-[1.25rem] bg-zinc-950 px-10 py-4 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_10px_20px_-5px_rgba(122,79,255,0.4)] disabled:opacity-50 shadow-xl font-mono focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                             >
                                 {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                                 {loading ? "게시물 등록 중..." : "게시물 등록 완료"}

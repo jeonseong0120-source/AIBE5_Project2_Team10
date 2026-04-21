@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Eye, Heart, MessageSquare, Loader2, Send, Edit, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import api from "@/app/lib/axios";
-import { getAccessToken, getCurrentUserId, getActiveRole } from "@/app/lib/auth";
+import { getAccessToken, getCurrentUserId } from "@/app/lib/auth";
 import {
     createCommunityComment,
     deleteCommunityComment,
@@ -18,12 +17,14 @@ import {
 } from "@/app/lib/communityApi";
 import type { CommunityComment, CommunityPost } from "@/types/community";
 import GlobalNavbar from "@/components/common/GlobalNavbar";
+import { useSessionBootstrap } from "@/app/hooks/useSessionBootstrap";
 
 export default function CommunityDetailPage() {
     const params = useParams();
     const router = useRouter();
 
     const postId = Number(params.id);
+    const { user, profile, loading: sessionLoading } = useSessionBootstrap();
 
     const [post, setPost] = useState<CommunityPost | null>(null);
     const [comments, setComments] = useState<CommunityComment[]>([]);
@@ -36,8 +37,6 @@ export default function CommunityDetailPage() {
 
     const [liked, setLiked] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-    const [user, setUser] = useState<any>(null);
-    const [profile, setProfile] = useState<any>(null);
 
     const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
     const [editingCommentContent, setEditingCommentContent] = useState("");
@@ -50,32 +49,6 @@ export default function CommunityDetailPage() {
         window.addEventListener("mousemove", move);
         return () => window.removeEventListener("mousemove", move);
     }, []);
-
-    const fetchUser = async () => {
-        try {
-            const res = await api.get("/v1/users/me");
-            setUser(res.data);
-            
-            const roles = res.data.role || "";
-            const currentRole = getActiveRole();
-
-            if (roles === "BOTH") {
-                if (currentRole === "CLIENT") {
-                    const pRes = await api.get("/client/profile");
-                    setProfile(pRes.data);
-                } else {
-                    const pRes = await api.get("/v1/freelancers/me");
-                    setProfile(pRes.data);
-                }
-            } else if (roles === "CLIENT") {
-                const pRes = await api.get("/client/profile");
-                setProfile(pRes.data);
-            } else if (roles === "FREELANCER") {
-                const pRes = await api.get("/v1/freelancers/me");
-                setProfile(pRes.data);
-            }
-        } catch (err) {}
-    };
 
     const fetchPostDetail = async () => {
         try {
@@ -101,16 +74,20 @@ export default function CommunityDetailPage() {
     const fetchAll = async () => {
         try {
             setLoading(true);
-            await Promise.all([fetchPostDetail(), fetchComments(), fetchUser()]);
+            await Promise.all([fetchPostDetail(), fetchComments()]);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        if (Number.isNaN(postId)) return;
+        if (!params.id || Number.isNaN(Number(params.id))) {
+            setLoading(false);
+            router.push("/community");
+            return;
+        }
         fetchAll();
-    }, [postId]);
+    }, [params.id]);
 
     useEffect(() => {
         setCurrentUserId(getCurrentUserId());
@@ -230,7 +207,9 @@ export default function CommunityDetailPage() {
         return dateString.replace("T", " ").slice(0, 16);
     };
 
-    if (loading) {
+    const isInitialLoading = loading || (postId && sessionLoading);
+
+    if (isInitialLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-black text-zinc-400 font-mono text-xs uppercase tracking-widest animate-pulse">
                 게시글 데이터를 동기화 중입니다...
@@ -271,7 +250,7 @@ export default function CommunityDetailPage() {
                         <div className="flex-1">
                             <div className="flex items-center gap-4 mb-4">
                                 <span className="px-3 py-1 bg-zinc-50 border border-zinc-100 rounded-lg text-[10px] font-black text-zinc-400 font-mono uppercase tracking-widest">Post #{post.id}</span>
-                                <span className="text-[10px) font-black text-[#7A4FFF] bg-purple-50 px-2 py-1 rounded-lg border border-purple-100 uppercase tracking-widest">COMMUNITY</span>
+                                <span className="text-[10px] font-black text-[#7A4FFF] bg-purple-50 px-2 py-1 rounded-lg border border-purple-100 uppercase tracking-widest">COMMUNITY</span>
                             </div>
                             <h1 className="text-4xl font-black tracking-tighter text-zinc-950 leading-tight">
                                 {post.title}
@@ -377,9 +356,9 @@ export default function CommunityDetailPage() {
                                                 </div>
 
                                                 {isMyComment && !isEditing && (
-                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => startEditComment(comment)} className="p-2 text-zinc-400 hover:text-[#7A4FFF] hover:bg-purple-50 rounded-lg"><Edit size={14} /></button>
-                                                        <button onClick={() => handleDeleteComment(comment.id)} className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+                                                    <div className="flex gap-1 transition-opacity opacity-100 sm:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
+                                                        <button onClick={() => startEditComment(comment)} className="p-2 text-zinc-400 hover:text-[#7A4FFF] hover:bg-purple-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A4FFF]/30"><Edit size={14} /></button>
+                                                        <button onClick={() => handleDeleteComment(comment.id)} className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/30"><Trash2 size={14} /></button>
                                                     </div>
                                                 )}
                                             </div>
@@ -393,8 +372,8 @@ export default function CommunityDetailPage() {
                                                         className="w-full resize-none rounded-2xl border border-zinc-200 bg-zinc-50/50 p-6 text-sm font-medium outline-none focus:border-[#7A4FFF] focus:ring-4 focus:ring-[#7A4FFF]/5 transition-all"
                                                     />
                                                     <div className="flex justify-end gap-3">
-                                                        <button onClick={cancelEditComment} className="rounded-xl px-5 py-2 text-xs font-black uppercase text-zinc-400 hover:text-zinc-600">취소</button>
-                                                        <button onClick={() => handleUpdateComment(comment.id)} disabled={commentActionLoading} className="rounded-xl bg-[#7A4FFF] px-6 py-2 text-xs font-black uppercase text-white shadow-lg shadow-purple-100 disabled:opacity-50">저장</button>
+                                                        <button onClick={cancelEditComment} className="rounded-xl px-5 py-2 text-xs font-black uppercase text-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-400/30">취소</button>
+                                                        <button onClick={() => handleUpdateComment(comment.id)} disabled={commentActionLoading} className="rounded-xl bg-[#7A4FFF] px-6 py-2 text-xs font-black uppercase text-white shadow-lg shadow-purple-100 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-500/30">저장</button>
                                                     </div>
                                                 </div>
                                             ) : (

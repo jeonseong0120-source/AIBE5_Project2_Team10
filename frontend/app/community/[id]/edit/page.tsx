@@ -4,22 +4,21 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Send, X, Loader2, Save } from "lucide-react";
 import { motion } from "framer-motion";
-import api from "@/app/lib/axios";
 import { getCommunityPostDetail, updateCommunityPost } from "@/app/lib/communityApi";
-import { getActiveRole } from "@/app/lib/auth";
 import GlobalNavbar from "@/components/common/GlobalNavbar";
+import { useSessionBootstrap } from "@/app/hooks/useSessionBootstrap";
 
 export default function CommunityEditPage() {
     const params = useParams();
     const router = useRouter();
     const postId = Number(params.id);
 
+    const { user, profile, loading: sessionLoading } = useSessionBootstrap();
+
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [loading, setLoading] = useState(false);
     const [initLoading, setInitLoading] = useState(true);
-    const [user, setUser] = useState<any>(null);
-    const [profile, setProfile] = useState<any>(null);
 
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
     useEffect(() => {
@@ -28,36 +27,9 @@ export default function CommunityEditPage() {
         return () => window.removeEventListener("mousemove", move);
     }, []);
 
-    const fetchUserAndPost = async () => {
+    const fetchPost = async () => {
         try {
             setInitLoading(true);
-            
-            // Fetch User
-            try {
-                const uRes = await api.get("/v1/users/me");
-                setUser(uRes.data);
-
-                const roles = uRes.data.role || "";
-                const currentRole = getActiveRole();
-
-                if (roles === "BOTH") {
-                    if (currentRole === "CLIENT") {
-                        const pRes = await api.get("/client/profile");
-                        setProfile(pRes.data);
-                    } else {
-                        const pRes = await api.get("/v1/freelancers/me");
-                        setProfile(pRes.data);
-                    }
-                } else if (roles === "CLIENT") {
-                    const pRes = await api.get("/client/profile");
-                    setProfile(pRes.data);
-                } else if (roles === "FREELANCER") {
-                    const pRes = await api.get("/v1/freelancers/me");
-                    setProfile(pRes.data);
-                }
-            } catch (err) {}
-
-            // Fetch Post
             const data = await getCommunityPostDetail(postId);
             setTitle(data.title);
             setContent(data.content);
@@ -71,9 +43,13 @@ export default function CommunityEditPage() {
     };
 
     useEffect(() => {
-        if (!postId || Number.isNaN(postId)) return;
-        fetchUserAndPost();
-    }, [postId]);
+        if (!params.id || Number.isNaN(Number(params.id))) {
+            setInitLoading(false);
+            router.push("/community");
+            return;
+        }
+        fetchPost();
+    }, [params.id]);
 
     const handleSubmit = async () => {
         if (!title.trim()) {
@@ -103,7 +79,9 @@ export default function CommunityEditPage() {
         router.push(`/community/${postId}`);
     };
 
-    if (initLoading) {
+    const isInitialLoading = initLoading || (postId && sessionLoading);
+
+    if (isInitialLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-black text-zinc-400 font-mono text-xs uppercase tracking-widest animate-pulse">
                 게시글 정보를 복원 중입니다...
@@ -165,7 +143,7 @@ export default function CommunityEditPage() {
                         <div className="flex items-center justify-end gap-4 pt-6 border-t border-zinc-50">
                             <button
                                 onClick={handleCancel}
-                                className="flex items-center gap-2 rounded-2xl px-8 py-4 text-xs font-black uppercase tracking-widest text-zinc-400 transition-all hover:text-zinc-600 font-mono"
+                                className="flex items-center gap-2 rounded-2xl px-8 py-4 text-xs font-black uppercase tracking-widest text-zinc-400 transition-all hover:text-zinc-600 font-mono focus:outline-none focus:ring-2 focus:ring-zinc-400/30"
                             >
                                 <X size={16} />
                                 수정 취소
@@ -174,7 +152,7 @@ export default function CommunityEditPage() {
                             <button
                                 onClick={handleSubmit}
                                 disabled={loading}
-                                className="flex items-center gap-3 rounded-[1.25rem] bg-zinc-950 px-10 py-4 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_10px_20px_-5px_rgba(122,79,255,0.4)] disabled:opacity-50 shadow-xl font-mono"
+                                className="flex items-center gap-3 rounded-[1.25rem] bg-zinc-950 px-10 py-4 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_10px_20px_-5px_rgba(122,79,255,0.4)] disabled:opacity-50 shadow-xl font-mono focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                             >
                                 {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                                 {loading ? "변경 사항 저장 중..." : "수정 완료"}

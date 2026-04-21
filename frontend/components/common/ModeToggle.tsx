@@ -13,7 +13,7 @@ interface ModeToggleProps {
 export default function ModeToggle({ role }: ModeToggleProps) {
     const pathname = usePathname();
     const router = useRouter();
-    const [currentMode, setCurrentMode] = useState<'CLIENT' | 'FREELANCER'>('FREELANCER');
+    const [currentMode, setCurrentMode] = useState<'CLIENT' | 'FREELANCER'>(getActiveRole());
 
     useEffect(() => {
         if (pathname?.startsWith('/client')) {
@@ -43,13 +43,15 @@ export default function ModeToggle({ role }: ModeToggleProps) {
     };
 
     return (
-        <div
+        <button
             onClick={toggleMode}
-            className="relative flex items-center w-36 h-10 bg-zinc-100 rounded-full p-1 cursor-pointer shadow-inner border border-zinc-200 overflow-hidden"
+            aria-label={`Switch to ${isClientMode ? 'Freelancer' : 'Client'} mode`}
+            aria-pressed={isClientMode}
+            className="relative flex items-center w-36 h-10 bg-zinc-100 rounded-full p-1 cursor-pointer shadow-inner border border-zinc-200 overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20"
         >
             <motion.div
                 className={`absolute w-[calc(50%-4px)] h-[calc(100%-8px)] rounded-full shadow-md ${isClientMode ? 'bg-[#FF7D00]' : 'bg-[#7A4FFF]'}`}
-                animate={{ x: isClientMode ? 0 : '100%' }}
+                animate={{ x: isClientMode ? 4 : '100%' }} // Adjusted offset for button padding
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
             />
             <div className={`relative z-10 flex-1 flex items-center justify-center gap-1 text-[9px] font-black uppercase font-mono transition-colors ${isClientMode ? 'text-white' : 'text-zinc-400'}`}>
@@ -58,6 +60,6 @@ export default function ModeToggle({ role }: ModeToggleProps) {
             <div className={`relative z-10 flex-1 flex items-center justify-center gap-1 text-[9px] font-black uppercase font-mono transition-colors ${!isClientMode ? 'text-white' : 'text-zinc-400'}`}>
                 <MonitorPlay size={10} /> Free
             </div>
-        </div>
+        </button>
     );
 }
