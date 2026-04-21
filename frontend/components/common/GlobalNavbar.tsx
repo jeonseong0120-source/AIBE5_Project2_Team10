@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getActiveRole, setActiveRole } from '@/app/lib/auth';
 
 // 🎯 명확한 인터페이스 정의
-interface UserData {
+export interface UserData {
     role: 'CLIENT' | 'FREELANCER' | 'BOTH';
     nickname?: string;
     name?: string;
@@ -17,7 +17,7 @@ interface UserData {
     imageUrl?: string;
 }
 
-interface ProfileData {
+export interface ProfileData {
     logoUrl?: string;
     profileImageUrl?: string;
 }

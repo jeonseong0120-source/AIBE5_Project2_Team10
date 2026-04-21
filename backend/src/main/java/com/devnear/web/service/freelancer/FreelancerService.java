@@ -108,9 +108,9 @@ public class FreelancerService {
     }
 
     // [탐색] 조건에 맞는 프리랜서 목록 검색
-    public List<FreelancerProfileResponse> searchFreelancers(String skill, String region, String sort) {
-        // 지역 및 스킬 조건 필터링
-        List<FreelancerProfile> profiles = profileRepository.searchFreelancers(skill, region);
+    public List<FreelancerProfileResponse> searchFreelancers(String skill, String region, String sort, String workStyle) {
+        // 지역, 스킬, 근무 방식 조건 필터링
+        List<FreelancerProfile> profiles = profileRepository.searchFreelancers(skill, region, workStyle);
 
         // [수정] 500 에러 방지: 정렬 필드(rating, projects)가 null일 경우를 대비하여 안전한 비교 로직으로 수정
         Comparator<FreelancerProfile> comparator;

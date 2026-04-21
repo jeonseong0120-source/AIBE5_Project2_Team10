@@ -31,16 +31,23 @@ public interface FreelancerProfileRepository extends JpaRepository<FreelancerPro
            "WHERE fp.id = :id")
     Optional<FreelancerProfile> findByIdWithSkills(@Param("id") Long id);
 
-    // [API] 목록 탐색 필터링용 (skill, region)
+    // [API] 목록 탐색 필터링용 (skill, region, workStyle)
     // 활동중(isActive=true)인 사용자만 노출
     @Query("SELECT DISTINCT fp FROM FreelancerProfile fp " +
            "LEFT JOIN FETCH fp.freelancerSkills fs " +
            "LEFT JOIN FETCH fs.skill " +
            "WHERE fp.isActive = true " +
            "AND (:region IS NULL OR fp.location LIKE %:region%) " +
+           "AND (:workStyle IS NULL OR " +
+           "    (CAST(:workStyle AS string) = 'ONLINE' AND fp.workStyle IN (com.devnear.web.domain.enums.WorkStyle.ONLINE, com.devnear.web.domain.enums.WorkStyle.HYBRID)) OR " +
+           "    (CAST(:workStyle AS string) = 'OFFLINE' AND fp.workStyle IN (com.devnear.web.domain.enums.WorkStyle.OFFLINE, com.devnear.web.domain.enums.WorkStyle.HYBRID)) " +
+           ") " +
            "AND (:skill IS NULL OR EXISTS (" +
            "    SELECT 1 FROM FreelancerSkill sub_fs JOIN sub_fs.skill sub_s " +
            "    WHERE sub_fs.freelancerProfile = fp AND sub_s.name LIKE %:skill%" +
            "))")
-    List<FreelancerProfile> searchFreelancers(@Param("skill") String skill, @Param("region") String region);
+    List<FreelancerProfile> searchFreelancers(
+            @Param("skill") String skill, 
+            @Param("region") String region, 
+            @Param("workStyle") String workStyle);
 }
