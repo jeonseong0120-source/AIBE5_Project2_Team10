@@ -17,10 +17,6 @@ export interface ChatMessageResponse {
     read: boolean;
 }
 
-export interface ChatRoomCreateRequest {
-    targetUserId: number;
-}
-
 export interface ChatMessageSendRequest {
     roomId: number;
     message: string;

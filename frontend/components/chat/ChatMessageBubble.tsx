@@ -2,12 +2,14 @@ interface ChatMessageBubbleProps {
     message: string;
     time: string;
     isMine: boolean;
+    senderNickname?: string;
 }
 
 export default function ChatMessageBubble({
                                               message,
                                               time,
                                               isMine,
+                                              senderNickname,
                                           }: ChatMessageBubbleProps) {
     return (
         <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
@@ -16,6 +18,12 @@ export default function ChatMessageBubble({
                     isMine ? "items-end" : "items-start"
                 }`}
             >
+                {!isMine && senderNickname && (
+                    <span className="mb-1 px-1 text-[11px] text-gray-400">
+                        {senderNickname}
+                    </span>
+                )}
+
                 <div
                     className={`break-words rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
                         isMine
@@ -25,6 +33,7 @@ export default function ChatMessageBubble({
                 >
                     {message}
                 </div>
+
                 <span className="mt-1 px-1 text-[11px] text-gray-400">{time}</span>
             </div>
         </div>
