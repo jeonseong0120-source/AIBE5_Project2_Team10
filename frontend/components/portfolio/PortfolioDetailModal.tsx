@@ -115,17 +115,17 @@ export default function PortfolioDetailModal({
                         <div className="relative flex min-h-[45%] w-full shrink-0 flex-col bg-zinc-100 md:h-full md:w-[62%]">
                             <div className="flex flex-1 flex-col p-4 pb-3 md:p-6 md:pb-5">
                                 <div className="group relative flex flex-1 flex-col overflow-hidden rounded-2xl bg-white p-3 shadow-sm ring-1 ring-zinc-200/60">
-                                    <div className="relative flex-1 overflow-hidden rounded-xl bg-zinc-50/50">
+                                    <div className="relative flex-1 overflow-hidden rounded-xl bg-zinc-900">
                                         <AnimatePresence mode="wait">
                                             <motion.img
                                                 key={images[activeImageIndex] || 'fallback'}
-                                                initial={{ opacity: 0, x: 10 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                exit={{ opacity: 0, x: -10 }}
+                                                initial={{ opacity: 0, scale: 0.98 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 1.02 }}
                                                 transition={{ duration: 0.3 }}
                                                 src={mainSrc}
                                                 alt=""
-                                                className="absolute inset-2 h-[calc(100%-1rem)] w-[calc(100%-1rem)] rounded-lg object-cover md:inset-4 md:h-[calc(100%-2rem)] md:w-[calc(100%-2rem)] md:rounded-2xl"
+                                                className="h-full w-full object-contain"
                                             />
                                         </AnimatePresence>
 

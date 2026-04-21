@@ -213,11 +213,12 @@ export default function FreelancerCard({ data }: Props) {
 
                         {/* 🛠 Work Style Badge */}
                         <div className="absolute left-3 top-3 z-20 flex gap-1.5">
-                            <span className={`px-2 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase backdrop-blur-md border shadow-sm ${
+                            <span className={`px-2 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase backdrop-blur-md border shadow-sm flex items-center gap-1 ${
                                 data.workStyle === 'ONLINE' ? 'bg-zinc-950/80 text-white border-white/20' : 
                                 data.workStyle === 'OFFLINE' ? 'bg-white/90 text-zinc-900 border-zinc-200' : 
                                 'bg-[#FF7D00]/90 text-white border-[#FF7D00]/20'
                             }`}>
+                                <span className="text-[7px] opacity-60 font-black">STYLE:</span>
                                 {data.workStyle === 'ONLINE' ? '온라인' : data.workStyle === 'OFFLINE' ? '오프라인' : '하이브리드'}
                             </span>
                         </div>
@@ -261,23 +262,52 @@ export default function FreelancerCard({ data }: Props) {
                             </div>
                         )}
 
+                        {/* 👁️ VIEW PROFILE Overlay (Hover) */}
+                        <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-all duration-300">
+                            <motion.div 
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                whileHover={{ scale: 1.05 }}
+                                className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 shadow-2xl flex items-center gap-2 group/btn"
+                            >
+                                <span className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-white drop-shadow-md">Full_Profile</span>
+                                <div className="bg-[#7A4FFF] p-1 rounded-full text-white shadow-lg group-hover/btn:translate-x-0.5 transition-transform">
+                                    <ChevronRight size={12} strokeWidth={3} />
+                                </div>
+                            </motion.div>
+                        </div>
+
                         {/* Image overlay gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none opacity-60" />
                     </div>
 
                     <Link href={`/client/freelancers/${data.id}`} className="block">
                         <div className="p-5">
-                            <div className="mb-4 flex items-start justify-between gap-4">
-                                <div>
-                                    <h3 className="text-base font-black tracking-tight text-zinc-900 group-hover:text-[#FF7D00] transition-colors">{data.nickname}</h3>
-                                    <div className="mt-1 flex items-center gap-2">
-                                        <div className="flex items-center text-[11px] font-black text-[#FF7D00] bg-orange-50 px-1.5 py-0.5 rounded-md">
-                                            <Star size={10} fill="currentColor" className="mr-1" />
-                                            <span className="font-mono">{data.averageRating.toFixed(1)}</span>
+                            <div className="mb-4 flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    {/* 👤 Small Profile Avatar */}
+                                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 shadow-sm">
+                                        <img 
+                                            src={data.profileImageUrl || FALLBACK_IMAGE_URL} 
+                                            alt={data.nickname} 
+                                            className="h-full w-full object-cover shadow-inner"
+                                        />
+                                    </div>
+
+                                    <div className="min-w-0 flex flex-col items-start">
+                                        <div className="flex items-center gap-2 max-w-full">
+                                            <h3 className="truncate text-[15px] font-black tracking-tight text-zinc-900 group-hover:text-[#FF7D00] transition-colors">
+                                                {data.nickname}
+                                            </h3>
                                         </div>
-                                        <span className="text-[10px] font-black font-mono text-zinc-400 uppercase tracking-widest leading-none">
-                                            Pj_{data.completedProjects ?? 0}
-                                        </span>
+                                        <div className="mt-0.5 flex items-center gap-2">
+                                            <div className="flex items-center text-[10px] font-black text-[#FF7D00] bg-orange-50 px-1.5 py-0.5 rounded-md">
+                                                <Star size={10} fill="currentColor" className="mr-1" />
+                                                <span className="font-mono">{data.averageRating.toFixed(1)}</span>
+                                            </div>
+                                            <span className="shrink-0 rounded-md bg-[#7A4FFF]/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-[#7A4FFF] ring-1 ring-[#7A4FFF]/20">
+                                                {data.gradeName || 'EXPERT'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="text-right shrink-0">
@@ -286,7 +316,7 @@ export default function FreelancerCard({ data }: Props) {
                                 </div>
                             </div>
 
-                            <p className="mb-5 line-clamp-2 text-xs font-medium leading-relaxed text-zinc-500 h-8">
+                            <p className="mb-5 line-clamp-2 text-xs font-medium leading-[1.6] text-zinc-500 h-[2.4rem]">
                                 {data.introduction}
                             </p>
 
@@ -310,9 +340,6 @@ export default function FreelancerCard({ data }: Props) {
                                 <div className="flex items-center text-[10px] font-bold text-zinc-400 group-hover:text-zinc-600 transition-colors">
                                     <MapPin size={12} className="mr-1.5 text-zinc-300" />
                                     {data.location}
-                                </div>
-                                <div className="flex items-center gap-1 text-[10px] font-black uppercase font-mono text-[#7A4FFF] opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 tracking-widest">
-                                    Full_Profile <ChevronRight size={12} strokeWidth={3} />
                                 </div>
                             </div>
                         </div>
