@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.devnear.web.domain.project.QProject.project;
 import static io.jsonwebtoken.lang.Strings.hasText;
@@ -75,12 +77,23 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
         return project.projectSkills.any().skill.id.in(skillIds);
     }
 
-    /** 🎯 [수정] 모든 스택을 포함하는 프로젝트만 노출 (AND 필터) */
+    /** 🎯 [수정] 모든 스택을 포함하는 프로젝트만 노출 (AND 필터 + 입력값 정규화) */
     private BooleanExpression skillNamesAllMatch(List<String> skillNames) {
         if (skillNames == null || skillNames.isEmpty()) return null;
 
+        // 입력값 정규화: 트리밍, 빈 문자열 필터링, 대소문자 무시 중복 제거
+        List<String> cleanedNames = skillNames.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .map(String::toLowerCase) // 중복 제거를 위해 일단 소문자로 변환
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (cleanedNames.isEmpty()) return null;
+
         BooleanExpression expression = null;
-        for (String name : skillNames) {
+        for (String name : cleanedNames) {
             // 각 스킬이 존재하는지 체크하는 any()를 and로 엮으면 해당 스킬들이 모두 존재하는 프로젝트만 필터링됨
             BooleanExpression itemMatch = project.projectSkills.any().skill.name.equalsIgnoreCase(name);
             expression = (expression == null) ? itemMatch : expression.and(itemMatch);

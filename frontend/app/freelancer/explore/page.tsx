@@ -28,15 +28,31 @@ export default function FreelancerExplorePage() {
     const [activeTab, setActiveTab] = useState('전체');
     const [sort, setSort] = useState('createdAt');
     const [isSortOpen, setIsSortOpen] = useState(false);
-    const [cursor, setCursor] = useState({ x: 0, y: 0 });
-
+    
+    // 🔥 [최적화] 마우스 글로우 효과를 위한 Ref + rAF 방식 사용 (리렌더링 방지)
+    const glowRef = useRef<HTMLDivElement>(null);
+    const cursorRef = useRef({ x: 0, y: 0 });
+    const rafIdRef = useRef<number | null>(null);
 
     useEffect(() => {
-        const move = (e: MouseEvent) => {
-            setCursor({ x: e.clientX, y: e.clientY });
+        const handleMouseMove = (e: MouseEvent) => {
+            cursorRef.current = { x: e.clientX, y: e.clientY };
+            
+            if (rafIdRef.current === null) {
+                rafIdRef.current = requestAnimationFrame(() => {
+                    if (glowRef.current) {
+                        glowRef.current.style.transform = `translate(${cursorRef.current.x - 200}px, ${cursorRef.current.y - 200}px)`;
+                    }
+                    rafIdRef.current = null;
+                });
+            }
         };
-        window.addEventListener("mousemove", move);
-        return () => window.removeEventListener("mousemove", move);
+        
+        window.addEventListener("mousemove", handleMouseMove);
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+        };
     }, []);
 
     const [page, setPage] = useState(0);
@@ -188,20 +204,22 @@ export default function FreelancerExplorePage() {
         else setFetchingMore(true);
 
         try {
-            const onlineFilter = activeTab === '온라인' ? true : undefined;
-            const offlineFilter = activeTab === '오프라인' ? true : undefined;
+            const onlineFilter = activeTab === '온라인' ? 'true' : undefined;
+            const offlineFilter = activeTab === '오프라인' ? 'true' : undefined;
 
-            const params = {
-                keyword: searchQuery || undefined,
-                location: selectedLocation || undefined,
-                skill: selectedTechs.length > 0 ? selectedTechs : undefined,
-                online: onlineFilter,
-                offline: offlineFilter,
-                sort: sort === 'budget' ? 'budget,asc' : `${sort},desc`,
-                page: pageNum,
-                size: 10
-            };
-            const { data } = await api.get('/v1/projects', { params });
+            // 🎯 [최적화] URLSearchParams를 사용하여 skill=A&skill=B 형태로 반복 전달 (Axios 기본 배열 직렬화 해결)
+            const searchParams = new URLSearchParams();
+            if (searchQuery) searchParams.append('keyword', searchQuery);
+            if (selectedLocation) searchParams.append('location', selectedLocation);
+            selectedTechs.forEach(tech => searchParams.append('skill', tech));
+            if (onlineFilter) searchParams.append('online', onlineFilter);
+            if (offlineFilter) searchParams.append('offline', offlineFilter);
+            
+            searchParams.append('sort', sort === 'budget' ? 'budget,asc' : `${sort},desc`);
+            searchParams.append('page', pageNum.toString());
+            searchParams.append('size', '10');
+
+            const { data } = await api.get('/v1/projects', { params: searchParams });
 
             if (isLoadMore) setProjects(prev => [...prev, ...(data.content || [])]);
             else setProjects(data.content || []);
@@ -222,13 +240,18 @@ export default function FreelancerExplorePage() {
         setSearchQuery(''); setSelectedLocation(''); setSelectedTechs([]); setActiveTab('전체'); setSort('createdAt'); setPage(0);
     };
 
+    // 🎯 [분리] 프로필 데이터는 인증 직후 1회만 로드
     useEffect(() => {
         if (authorized) {
-            // 🎯 [추가] 사진을 가져오기 위해 프리랜서 프로필 API 호출! (클라이언트와 동일한 방식)
             api.get('/v1/freelancers/me')
                 .then(res => setProfile(res.data))
                 .catch(() => console.error("프로필 로드 실패"));
+        }
+    }, [authorized]);
 
+    // 🎯 [분리] 필터 변경 시 프로젝트 리스트만 갱신
+    useEffect(() => {
+        if (authorized) {
             setPage(0);
             const timeoutId = setTimeout(() => { fetchProjects(0, false); }, 300);
             return () => clearTimeout(timeoutId);
@@ -248,10 +271,11 @@ export default function FreelancerExplorePage() {
     return (
         <div className="min-h-screen bg-[#F9FAFB] text-zinc-900 pb-20 font-sans overflow-x-hidden relative">
 
-            {/* 🔥 커서 글로우 - 보라색/오렌지 믹스 */}
+            {/* 🔥 커서 글로우 - 보라색/오렌지 믹스 (glowRef 유지) */}
             <div
+                ref={glowRef}
                 className="pointer-events-none fixed left-0 top-0 z-0 h-[400px] w-[400px] rounded-full bg-gradient-to-br from-[#7A4FFF]/10 to-[#FF7D00]/10 blur-[120px] will-change-transform"
-                style={{ transform: `translate(${cursor.x - 200}px, ${cursor.y - 200}px)` }}
+                style={{ transform: 'translate(-200px, -200px)' }}
             />
 
             {/* 🎯 user 정보와 profile(사진 등) 정보를 통째로 넘겨줍니다! */}
