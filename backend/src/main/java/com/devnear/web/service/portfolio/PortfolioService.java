@@ -16,16 +16,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
+import com.devnear.web.domain.freelancer.FreelancerSkill;
 import com.devnear.web.service.freelancer.FreelancerGradeService;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PortfolioService {
+
+    /** {@link com.devnear.web.dto.freelancer.FreelancerProfileRequest} 스킬 상한과 동일 */
+    private static final int MAX_FREELANCER_PROFILE_SKILLS = 50;
 
     private static final Logger log = LoggerFactory.getLogger(PortfolioService.class);
     private final PortfolioRepository portfolioRepository;
@@ -78,6 +86,8 @@ public class PortfolioService {
         // 4. 저장 후 생성된 ID 반환
         Long savedId = portfolioRepository.save(portfolio).getId();
 
+        mergePortfolioSkillsIntoFreelancerProfile(user.getId());
+
         // 등급 재계산 (백그라운드 최선 시도 후 포트폴리오 작업에 영향없음)
         try {
             freelancerProfileRepository.findByUser_Id(user.getId())
@@ -112,6 +122,8 @@ public class PortfolioService {
 
         // 3. 권한 문제없으면 삭제 실행 (Cascade 속성으로 인해 딸려있던 기술스택 데이터도 알아서 날아감)
         portfolioRepository.delete(portfolio);
+
+        mergePortfolioSkillsIntoFreelancerProfile(user.getId());
 
         // 등급 재계산 (백그라운드 최선 시도 후 포트폴리오 작업에 영향없음)
         try {
@@ -169,6 +181,10 @@ public class PortfolioService {
                     .skill(skill)
                     .build());
         }
+
+        portfolioRepository.flush();
+        mergePortfolioSkillsIntoFreelancerProfile(user.getId());
+
         // 7. 등급 재계산 (백그라운드 최선 시도 후 포트폴리오 작업에 영향없음)
         try {
             freelancerProfileRepository.findByUser_Id(user.getId())
@@ -176,5 +192,54 @@ public class PortfolioService {
         } catch (Exception e) {
             log.warn("[PortfolioService] 등급 재계산 실패 (userId={}) - 포트폴리오 수정은 정상 완료: {}", user.getId(), e.getMessage());
         }
+    }
+
+    /**
+     * 내 포트폴리오들에 붙은 스킬을 합친 뒤, 아직 없는 기존 프로필 스킬을 뒤에 붙여 최대 {@value #MAX_FREELANCER_PROFILE_SKILLS}개로 맞춥니다.
+     * 프리랜서 프로필이 없으면 아무 것도 하지 않습니다.
+     */
+    private void mergePortfolioSkillsIntoFreelancerProfile(Long userId) {
+        Optional<FreelancerProfile> profileOpt = freelancerProfileRepository.findByUserIdWithSkills(userId);
+        if (profileOpt.isEmpty()) {
+            return;
+        }
+        FreelancerProfile profile = profileOpt.get();
+        List<Portfolio> portfolios = portfolioRepository.findByUserIdWithSkills(userId);
+        portfolios.sort(Comparator.comparing(Portfolio::getId));
+
+        LinkedHashMap<Long, Skill> merged = new LinkedHashMap<>();
+        for (Portfolio p : portfolios) {
+            for (PortfolioSkill ps : p.getPortfolioSkills()) {
+                if (merged.size() >= MAX_FREELANCER_PROFILE_SKILLS) {
+                    break;
+                }
+                Skill s = ps.getSkill();
+                merged.putIfAbsent(s.getId(), s);
+            }
+            if (merged.size() >= MAX_FREELANCER_PROFILE_SKILLS) {
+                break;
+            }
+        }
+        for (FreelancerSkill fs : profile.getFreelancerSkills()) {
+            if (merged.size() >= MAX_FREELANCER_PROFILE_SKILLS) {
+                break;
+            }
+            Skill s = fs.getSkill();
+            merged.putIfAbsent(s.getId(), s);
+        }
+
+        List<FreelancerSkill> links = merged.values().stream()
+                .map(skill -> FreelancerSkill.builder()
+                        .freelancerProfile(profile)
+                        .skill(skill)
+                        .build())
+                .collect(Collectors.toList());
+        // unique(freelancer_profile_id, skill_id) 충돌 방지:
+        // 기존 행 DELETE를 먼저 flush한 뒤 새 행 INSERT를 반영한다.
+        profile.updateSkills(null);
+        freelancerProfileRepository.saveAndFlush(profile);
+
+        profile.updateSkills(links);
+        freelancerProfileRepository.saveAndFlush(profile);
     }
 }

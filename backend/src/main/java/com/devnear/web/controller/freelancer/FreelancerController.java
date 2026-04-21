@@ -64,6 +64,7 @@ public class FreelancerController {
     // [조회] 프리랜서 목록 탐색 (필터 / 정렬 지원)
     @GetMapping
     public ResponseEntity<List<FreelancerProfileResponse>> searchFreelancers(
+            @AuthenticationPrincipal User user,
             @RequestParam(required = false) String skill,
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String sort,
@@ -74,8 +75,10 @@ public class FreelancerController {
         String safeRegion = (region != null && region.trim().isEmpty()) ? null : region;
         String safeSort = (sort != null && sort.trim().isEmpty()) ? null : sort;
         String safeWorkStyle = (workStyle != null && workStyle.trim().isEmpty()) ? null : workStyle;
+        Long excludeUserId = (user != null) ? user.getId() : null;
 
-        return ResponseEntity.ok(freelancerService.searchFreelancers(safeSkill, safeRegion, safeSort, safeWorkStyle));
+        return ResponseEntity.ok(freelancerService.searchFreelancers(
+                safeSkill, safeRegion, safeSort, safeWorkStyle, excludeUserId));
     }
 
     /**

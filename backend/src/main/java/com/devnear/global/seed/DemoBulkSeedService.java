@@ -12,6 +12,7 @@ import com.devnear.web.domain.freelancer.FreelancerGrade;
 import com.devnear.web.domain.freelancer.FreelancerGradeRepository;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
+import com.devnear.web.domain.freelancer.FreelancerSkill;
 import com.devnear.web.domain.portfolio.Portfolio;
 import com.devnear.web.domain.portfolio.PortfolioImage;
 import com.devnear.web.domain.portfolio.PortfolioRepository;
@@ -37,6 +38,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -60,6 +62,8 @@ public class DemoBulkSeedService {
     private static final int CLIENTS = 20;
     /** 프리랜서 1인당 포트폴리오 개수 */
     private static final int PORTFOLIOS_PER_FREELANCER = 3;
+    /** 벌크 시드: 포트폴리오(및 이를 합친 프로필 시드)에 붙이는 스킬 태그 개수 — {@link com.devnear.web.dto.portfolio.PortfolioRequest} 상한과 맞춤 */
+    private static final int SEED_SKILLS_PER_ENTITY = 5;
     /** 클라이언트 1인당 모집 공고 개수 */
     private static final int PROJECTS_PER_CLIENT = 3;
     private static final int PORTFOLIOS = FREELANCERS * PORTFOLIOS_PER_FREELANCER;
@@ -84,6 +88,18 @@ public class DemoBulkSeedService {
             new KoreanCitySpot("용인 기흥", 37.2752, 127.1156),
             new KoreanCitySpot("제주 시내", 33.4996, 126.5312),
     };
+
+    /**
+     * 프리랜서 거주 좌표: 시내 중심에서 대략 이 거리(미터) 도넛 안에 면적 균등 분포.
+     * (한 점에 몰리지 않도록 최소 반경을 둠)
+     */
+    private static final int FREELANCER_SEED_RADIUS_MIN_M = 200;
+    private static final int FREELANCER_SEED_RADIUS_MAX_M = 14_000;
+    /**
+     * 클라이언트 공고(근무·미팅 지역) 좌표: 해당 도시 중심 주변에 분산(미터).
+     */
+    private static final int PROJECT_SEED_RADIUS_MIN_M = 200;
+    private static final int PROJECT_SEED_RADIUS_MAX_M = 12_000;
 
     /** {@link com.devnear.global.config.DefaultSkillCatalog}와 동일한 이름이어야 조회됨 */
     private static final String[] DEFAULT_SKILL_NAMES_FOR_SEED = DefaultSkillCatalog.NAMES;
@@ -252,15 +268,16 @@ public class DemoBulkSeedService {
 
             FreelancerGrade grade = gradePool[rnd.nextInt(gradePool.length)];
             KoreanCitySpot home = KOREAN_MAJOR_CITIES[(i - 1) % KOREAN_MAJOR_CITIES.length];
-            double jitterLat = (rnd.nextDouble() - 0.5) * 0.06;
-            double jitterLon = (rnd.nextDouble() - 0.5) * 0.06;
+            double[] homeOff = randomOffsetDegreesAroundCenter(
+                    rnd, home.latitude(),
+                    FREELANCER_SEED_RADIUS_MIN_M, FREELANCER_SEED_RADIUS_MAX_M);
             FreelancerProfile fp = FreelancerProfile.builder()
                     .user(user)
                     .profileImageUrl(avatarUrl)
                     .introduction("풀스택·" + TOPICS[i % TOPICS.length] + " 경험. 원격/대면 모두 가능합니다.")
                     .location(home.label())
-                    .latitude(home.latitude() + jitterLat)
-                    .longitude(home.longitude() + jitterLon)
+                    .latitude(home.latitude() + homeOff[0])
+                    .longitude(home.longitude() + homeOff[1])
                     .hourlyRate(50000 + i * 5000)
                     .workStyle(WorkStyle.HYBRID)
                     .isActive(true)
@@ -275,6 +292,8 @@ public class DemoBulkSeedService {
         int portfolioSeq = 0;
         for (int fi = 0; fi < freelancerUsers.size(); fi++) {
             User owner = freelancerUsers.get(fi);
+            FreelancerProfile fp = freelancerProfiles.get(fi);
+            List<Portfolio> portfoliosThisUser = new ArrayList<>(PORTFOLIOS_PER_FREELANCER);
             for (int k = 0; k < PORTFOLIOS_PER_FREELANCER; k++) {
                 String topic = TOPICS[portfolioSeq % TOPICS.length];
                 String thumb = picsumUrl("bulk-pf-thumb-" + portfolioSeq, 800, 450);
@@ -297,8 +316,11 @@ public class DemoBulkSeedService {
                         .sortOrder(1)
                         .build());
                 portfolioRepository.save(portfolio);
+                portfoliosThisUser.add(portfolio);
                 portfolioSeq++;
             }
+            syncFreelancerProfileSkillsFromPortfolios(fp, portfoliosThisUser, fi);
+            freelancerProfileRepository.save(fp);
         }
 
         List<Long> projectIds = new ArrayList<>(PROJECTS);
@@ -308,8 +330,9 @@ public class DemoBulkSeedService {
             ClientProfile client = clientProfiles.get(ci);
             for (int k = 0; k < PROJECTS_PER_CLIENT; k++) {
                 KoreanCitySpot spot = KOREAN_MAJOR_CITIES[(ci * PROJECTS_PER_CLIENT + k) % KOREAN_MAJOR_CITIES.length];
-                double pJitterLat = (rnd.nextDouble() - 0.5) * 0.04;
-                double pJitterLon = (rnd.nextDouble() - 0.5) * 0.04;
+                double[] spotOff = randomOffsetDegreesAroundCenter(
+                        rnd, spot.latitude(),
+                        PROJECT_SEED_RADIUS_MIN_M, PROJECT_SEED_RADIUS_MAX_M);
                 String topic = TOPICS[projectSeq % TOPICS.length];
                 boolean offline = (projectSeq % 2 == 0);
                 Project project = Project.builder()
@@ -322,8 +345,8 @@ public class DemoBulkSeedService {
                         .online(true)
                         .offline(offline)
                         .location(spot.label())
-                        .latitude(spot.latitude() + pJitterLat)
-                        .longitude(spot.longitude() + pJitterLon)
+                        .latitude(spot.latitude() + spotOff[0])
+                        .longitude(spot.longitude() + spotOff[1])
                         .build();
                 attachSeedProjectSkills(project, topic, projectSeq);
                 Project saved = projectRepository.save(project);
@@ -395,6 +418,30 @@ public class DemoBulkSeedService {
         return BigDecimal.valueOf(v).setScale(1, RoundingMode.HALF_UP);
     }
 
+    /**
+     * 위도·경도 기준점(시내 중심 등) 주변에, 지도상 면적이 거의 균등하도록 점을 뿌립니다.
+     * {@code radius = sqrt(rMin² + U·(rMax² - rMin²))}, 방위각 균등.
+     *
+     * @return {@code [deltaLatitudeDeg, deltaLongitudeDeg]} — 기준점에 더하면 됨
+     */
+    private static double[] randomOffsetDegreesAroundCenter(ThreadLocalRandom rnd,
+                                                            double centerLatDeg,
+                                                            int minRadiusMeters,
+                                                            int maxRadiusMeters) {
+        double theta = rnd.nextDouble() * 2 * Math.PI;
+        double rMin = minRadiusMeters;
+        double rMax = maxRadiusMeters;
+        double radiusMeters = Math.sqrt(rMin * rMin + rnd.nextDouble() * (rMax * rMax - rMin * rMin));
+        double northM = radiusMeters * Math.cos(theta);
+        double eastM = radiusMeters * Math.sin(theta);
+        double latRad = Math.toRadians(centerLatDeg);
+        double metersPerDegLat = 111_320.0;
+        double metersPerDegLon = 111_320.0 * Math.cos(latRad);
+        double dLat = northM / metersPerDegLat;
+        double dLon = eastM / metersPerDegLon;
+        return new double[] { dLat, dLon };
+    }
+
     /** picsum.photos 고정 시드 URL (CDN, 로컬 데모용) */
     private static String picsumUrl(String seed, int w, int h) {
         String s = seed.replaceAll("[^a-zA-Z0-9]", "");
@@ -435,7 +482,7 @@ public class DemoBulkSeedService {
             names.add("Figma");
         }
         int fill = 0;
-        while (names.size() < 3 && fill < DEFAULT_SKILL_NAMES_FOR_SEED.length * 2) {
+        while (names.size() < SEED_SKILLS_PER_ENTITY && fill < DEFAULT_SKILL_NAMES_FOR_SEED.length * 2) {
             names.add(DEFAULT_SKILL_NAMES_FOR_SEED[(index + fill) % DEFAULT_SKILL_NAMES_FOR_SEED.length]);
             fill++;
         }
@@ -443,16 +490,75 @@ public class DemoBulkSeedService {
     }
 
     /**
+     * 시드용 스킬 이름 집합을 DB {@link Skill} 로 해석해 최대 {@code limit}개까지 채웁니다(중복 제거, 순서 유지).
+     */
+    private LinkedHashMap<Long, Skill> resolveSkillsFromNamesUpTo(LinkedHashSet<String> names, int salt, int limit) {
+        LinkedHashMap<Long, Skill> out = new LinkedHashMap<>();
+        for (String n : names) {
+            if (out.size() >= limit) {
+                break;
+            }
+            skillRepository.findByName(n).ifPresent(s -> out.putIfAbsent(s.getId(), s));
+        }
+        int fill = 0;
+        while (out.size() < limit && fill < DEFAULT_SKILL_NAMES_FOR_SEED.length * 4) {
+            String n = DEFAULT_SKILL_NAMES_FOR_SEED[(salt + fill) % DEFAULT_SKILL_NAMES_FOR_SEED.length];
+            skillRepository.findByName(n).ifPresent(s -> out.putIfAbsent(s.getId(), s));
+            fill++;
+        }
+        return out;
+    }
+
+    /**
+     * 같은 프리랜서의 포트폴리오에 붙은 스킬을 합쳐 프로필 스킬을 채웁니다(최대 {@value #SEED_SKILLS_PER_ENTITY}개).
+     * 포트폴리오에 없는 경우 토픽 기반 시드 이름으로 보충합니다.
+     */
+    private void syncFreelancerProfileSkillsFromPortfolios(FreelancerProfile fp,
+                                                         List<Portfolio> portfolios,
+                                                         int freelancerIndex) {
+        LinkedHashMap<Long, Skill> merged = new LinkedHashMap<>();
+        for (Portfolio p : portfolios) {
+            for (PortfolioSkill ps : p.getPortfolioSkills()) {
+                Skill s = ps.getSkill();
+                merged.putIfAbsent(s.getId(), s);
+            }
+        }
+        List<Skill> picked = merged.values().stream()
+                .limit(SEED_SKILLS_PER_ENTITY)
+                .collect(Collectors.toList());
+        if (picked.size() < SEED_SKILLS_PER_ENTITY) {
+            String topic = TOPICS[freelancerIndex % TOPICS.length];
+            LinkedHashSet<String> extra = buildSeedSkillNamesFromTopic(topic, freelancerIndex);
+            LinkedHashMap<Long, Skill> more = resolveSkillsFromNamesUpTo(extra, freelancerIndex, SEED_SKILLS_PER_ENTITY);
+            for (Skill s : more.values()) {
+                if (picked.size() >= SEED_SKILLS_PER_ENTITY) {
+                    break;
+                }
+                if (picked.stream().noneMatch(x -> x.getId().equals(s.getId()))) {
+                    picked.add(s);
+                }
+            }
+        }
+        List<FreelancerSkill> links = picked.stream()
+                .map(skill -> FreelancerSkill.builder()
+                        .freelancerProfile(fp)
+                        .skill(skill)
+                        .build())
+                .collect(Collectors.toList());
+        fp.updateSkills(links);
+    }
+
+    /**
      * 포트폴리오에 {@link PortfolioSkill} 연결 (마이페이지·프로필 API의 skills 배열과 동일).
      */
     private void attachSeedPortfolioSkills(Portfolio portfolio, String topic, int index) {
         LinkedHashSet<String> names = buildSeedSkillNamesFromTopic(topic, index);
-        List<Skill> skills = skillRepository.findByNameIn(new ArrayList<>(names));
-        if (skills.isEmpty()) {
+        LinkedHashMap<Long, Skill> resolved = resolveSkillsFromNamesUpTo(names, index, SEED_SKILLS_PER_ENTITY);
+        if (resolved.isEmpty()) {
             log.warn("[DemoBulkSeed] 포트폴리오 스킬을 DB에서 찾지 못했습니다. 요청 이름: {}", names);
             return;
         }
-        for (Skill skill : skills) {
+        for (Skill skill : resolved.values()) {
             portfolio.addPortfolioSkill(PortfolioSkill.builder()
                     .portfolio(portfolio)
                     .skill(skill)
