@@ -64,6 +64,8 @@ export default function FreelancerExplorePage() {
         projectName: string;
         similarityScore: number;
         budget: number;
+        companyName: string;
+        logoUrl: string;
     };
     const [aiRecommendations, setAiRecommendations] = useState<AiRecommendedProject[]>([]);
     const [aiRecLoading, setAiRecLoading] = useState(false);
@@ -422,14 +424,22 @@ export default function FreelancerExplorePage() {
                                                     {(p.similarityScore * 100).toFixed(0)}% MATCH
                                                 </span>
                                             </div>
-                                            <div className="w-8 h-8 rounded-full bg-zinc-50 flex items-center justify-center group-hover/card:bg-[#7A4FFF]/10 transition-colors duration-300">
-                                                <Activity size={14} className="text-zinc-300 group-hover/card:text-[#7A4FFF] transition-colors" />
+                                            {/* 🎯 AI PICK 로고 추가 */}
+                                            <div className="w-10 h-10 rounded-xl bg-white border border-zinc-100 p-1 shadow-sm overflow-hidden group-hover/card:border-[#7A4FFF]/30 transition-colors duration-300">
+                                                <img 
+                                                    src={p.logoUrl || `https://ui-avatars.com/api/?name=${p.companyName || 'C'}&background=F4F4F5&color=A1A1AA`} 
+                                                    alt={p.companyName}
+                                                    className="w-full h-full object-cover rounded-lg"
+                                                />
                                             </div>
                                         </div>
 
-                                        <h3 className="mb-6 text-sm font-black leading-tight text-zinc-900 line-clamp-2 min-h-[40px] group-hover/card:text-[#7A4FFF] transition-colors duration-300 relative z-10">
-                                            {p.projectName}
-                                        </h3>
+                                        <div className="mb-2">
+                                            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest font-mono mb-1">{p.companyName || '개인 클라이언트'}</p>
+                                            <h3 className="text-sm font-black leading-tight text-zinc-900 line-clamp-2 min-h-[40px] group-hover/card:text-[#7A4FFF] transition-colors duration-300 relative z-10">
+                                                {p.projectName}
+                                            </h3>
+                                        </div>
 
                                         <div className="mt-auto pt-5 border-t border-zinc-50 relative z-10">
                                             <div className="flex items-end justify-between mb-6">

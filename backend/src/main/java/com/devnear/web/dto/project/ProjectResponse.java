@@ -24,12 +24,14 @@ public class ProjectResponse {
     private String location;
     private Double latitude;
     private Double longitude;
+    private String logoUrl; // ✨ 클라이언트 로고 URL 추가
     private List<String> skills; // 연결된 기술 스택 이름 목록
 
     public static ProjectResponse from(Project project) {
         return ProjectResponse.builder()
                 .projectId(project.getId())
                 .companyName(project.getClientProfile().getCompanyName())
+                .logoUrl(project.getClientProfile().getLogoUrl()) // ✨ 매핑 추가
                 .projectName(project.getProjectName())
                 .budget(project.getBudget())
                 .deadline(project.getDeadline())
