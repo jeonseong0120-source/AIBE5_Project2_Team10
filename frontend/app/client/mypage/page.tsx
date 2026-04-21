@@ -10,7 +10,7 @@ import api from '../../lib/axios';
 
 import MypageSidebar from '@/components/layout/MypageSidebar';
 // 🎯 [수정 1] 기존 MypageNavbar 임포트 삭제 후 GlobalNavbar 임포트
-import GlobalNavbar from '@/components/common/GlobalNavbar';
+import GlobalNavbar, { type UserData, type ProfileData } from '@/components/common/GlobalNavbar';
 import ProjectsTab from '@/components/client_mypage/ProjectsTab';
 import SettingsTab from '@/components/client_mypage/SettingsTab';
 import BookmarkedFreelancers from '@/components/client_mypage/BookmarkedFreelancers';
@@ -37,6 +37,20 @@ interface ProjectDto {
     skills: string[];
 }
 
+function mapClientMyPageUserToNavbarUser(u: UserProfile): UserData {
+    const r = String(u.role).replace('ROLE_', '');
+    const role: UserData['role'] = r.includes('BOTH')
+        ? 'BOTH'
+        : r.includes('FREELANCER')
+            ? 'FREELANCER'
+            : 'CLIENT';
+    return {
+        role,
+        nickname: u.nickname,
+        name: u.name,
+    };
+}
+
 const TABS = [
     { id: 'settings', label: 'ACCOUNT SETTINGS', icon: UserCircle },
     { id: 'projects', label: 'MY PROJECTS', icon: Briefcase },
@@ -46,7 +60,7 @@ const TABS = [
 export default function ClientMyPage() {
     const router = useRouter();
     const [user, setUser] = useState<UserProfile | null>(null);
-    const [profile, setProfile] = useState<any>(null);
+    const [profile, setProfile] = useState<ProfileData | null>(null);
     const [projects, setProjects] = useState<ProjectDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
@@ -88,7 +102,7 @@ export default function ClientMyPage() {
                     api.get('/client/profile')
                 ]);
                 setProjects(projectsRes.data.content || projectsRes.data || []);
-                setProfile(profileRes.data);
+                setProfile(profileRes.data as ProfileData);
             } catch (err) {
                 console.error("데이터 로드 실패", err);
             } finally {
@@ -128,7 +142,7 @@ export default function ClientMyPage() {
             </div>
 
             {/* 🎯 [2. 수정] 기존 MypageNavbar를 지우고 GlobalNavbar로 대체! (navItems 배열은 삭제해도 되지만 유지했습니다) */}
-            <GlobalNavbar user={user} profile={profile} />
+            <GlobalNavbar user={user ? mapClientMyPageUserToNavbarUser(user) : null} profile={profile} />
 
             <main className="max-w-7xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 items-start relative z-10">
                 <MypageSidebar

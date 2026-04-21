@@ -56,10 +56,34 @@ public class DemoBulkSeedService {
     private static final String MARKER_EMAIL = "bulk-demo-freelancer-01@local.test";
     private static final String DEMO_PASSWORD = "BulkDemo1!";
 
-    private static final int FREELANCERS = 10;
-    private static final int CLIENTS = 10;
-    private static final int PORTFOLIOS = 50;
-    private static final int PROJECTS = 50;
+    private static final int FREELANCERS = 20;
+    private static final int CLIENTS = 20;
+    /** 프리랜서 1인당 포트폴리오 개수 */
+    private static final int PORTFOLIOS_PER_FREELANCER = 3;
+    /** 클라이언트 1인당 모집 공고 개수 */
+    private static final int PROJECTS_PER_CLIENT = 3;
+    private static final int PORTFOLIOS = FREELANCERS * PORTFOLIOS_PER_FREELANCER;
+    private static final int PROJECTS = CLIENTS * PROJECTS_PER_CLIENT;
+
+    /** 시드 공고·거주지 분산용 한국 주요 도시(대략 중심 좌표) */
+    private record KoreanCitySpot(String label, double latitude, double longitude) {
+    }
+
+    private static final KoreanCitySpot[] KOREAN_MAJOR_CITIES = {
+            new KoreanCitySpot("서울 강남", 37.4980, 127.0286),
+            new KoreanCitySpot("부산 해운대", 35.1631, 129.1636),
+            new KoreanCitySpot("대구 중구", 35.8714, 128.6014),
+            new KoreanCitySpot("인천 연수", 37.4100, 126.6788),
+            new KoreanCitySpot("광주 서구", 35.1520, 126.8903),
+            new KoreanCitySpot("대전 유성", 36.3623, 127.3845),
+            new KoreanCitySpot("울산 남구", 35.5384, 129.3114),
+            new KoreanCitySpot("세종 종촌", 36.4800, 127.2890),
+            new KoreanCitySpot("수원 영통", 37.2636, 127.0286),
+            new KoreanCitySpot("창원 성산", 35.2279, 128.6817),
+            new KoreanCitySpot("고양 일산", 37.6584, 126.8320),
+            new KoreanCitySpot("용인 기흥", 37.2752, 127.1156),
+            new KoreanCitySpot("제주 시내", 33.4996, 126.5312),
+    };
 
     /** {@link com.devnear.global.config.DefaultSkillCatalog}와 동일한 이름이어야 조회됨 */
     private static final String[] DEFAULT_SKILL_NAMES_FOR_SEED = DefaultSkillCatalog.NAMES;
@@ -163,8 +187,8 @@ public class DemoBulkSeedService {
         }
         log.info("[DemoBulkSeed] 임베딩 시도 {}/{}건 완료", embedded, projectIds.size());
 
-        log.info("[DemoBulkSeed] 완료 — 클라이언트 {}, 프리랜서 {}(등급·리뷰·이미지·완료건수 랜덤), 포트폴리오 {}(썸네일·갤러리), 공고 {}. 비밀번호: {}",
-                CLIENTS, FREELANCERS, PORTFOLIOS, PROJECTS, DEMO_PASSWORD);
+        log.info("[DemoBulkSeed] 완료 — 클라이언트 {}(공고 {}건/인), 프리랜서 {}(포트폴리오 {}건/인·등급·리뷰·이미지·완료건수 랜덤), 합계 공고 {}·포트폴리오 {}. 비밀번호: {}",
+                CLIENTS, PROJECTS_PER_CLIENT, FREELANCERS, PORTFOLIOS_PER_FREELANCER, PROJECTS, PORTFOLIOS, DEMO_PASSWORD);
     }
 
     /** 단일 트랜잭션: 사용자·프로필·포트폴리오·공고 행 삽입만 수행하고 생성된 공고 ID 목록을 반환합니다. */
@@ -227,13 +251,16 @@ public class DemoBulkSeedService {
                     .build());
 
             FreelancerGrade grade = gradePool[rnd.nextInt(gradePool.length)];
+            KoreanCitySpot home = KOREAN_MAJOR_CITIES[(i - 1) % KOREAN_MAJOR_CITIES.length];
+            double jitterLat = (rnd.nextDouble() - 0.5) * 0.06;
+            double jitterLon = (rnd.nextDouble() - 0.5) * 0.06;
             FreelancerProfile fp = FreelancerProfile.builder()
                     .user(user)
                     .profileImageUrl(avatarUrl)
                     .introduction("풀스택·" + TOPICS[i % TOPICS.length] + " 경험. 원격/대면 모두 가능합니다.")
-                    .location("서울")
-                    .latitude(37.5 + i * 0.01)
-                    .longitude(127.0 + i * 0.01)
+                    .location(home.label())
+                    .latitude(home.latitude() + jitterLat)
+                    .longitude(home.longitude() + jitterLon)
                     .hourlyRate(50000 + i * 5000)
                     .workStyle(WorkStyle.HYBRID)
                     .isActive(true)
@@ -245,52 +272,64 @@ public class DemoBulkSeedService {
             freelancerProfiles.add(fp);
         }
 
-        for (int p = 0; p < PORTFOLIOS; p++) {
-            User owner = freelancerUsers.get(p % freelancerUsers.size());
-            String topic = TOPICS[p % TOPICS.length];
-            String thumb = picsumUrl("bulk-pf-thumb-" + p, 800, 450);
-            Portfolio portfolio = Portfolio.builder()
-                    .user(owner)
-                    .title(topic + " 포트폴리오 #" + (p + 1))
-                    .desc("역할: 리드 개발. 스택: Java, Spring, React. " + topic
-                            + " 도메인에서 API 설계, DB 모델링, 배포 자동화까지 수행했습니다. (시드 데이터)")
-                    .thumbnailUrl(thumb)
-                    .build();
-            attachSeedPortfolioSkills(portfolio, topic, p);
-            portfolio.addPortfolioImage(PortfolioImage.builder()
-                    .portfolio(portfolio)
-                    .imageUrl(picsumUrl("bulk-pf-img-" + p + "-a", 1200, 800))
-                    .sortOrder(0)
-                    .build());
-            portfolio.addPortfolioImage(PortfolioImage.builder()
-                    .portfolio(portfolio)
-                    .imageUrl(picsumUrl("bulk-pf-img-" + p + "-b", 1200, 800))
-                    .sortOrder(1)
-                    .build());
-            portfolioRepository.save(portfolio);
+        int portfolioSeq = 0;
+        for (int fi = 0; fi < freelancerUsers.size(); fi++) {
+            User owner = freelancerUsers.get(fi);
+            for (int k = 0; k < PORTFOLIOS_PER_FREELANCER; k++) {
+                String topic = TOPICS[portfolioSeq % TOPICS.length];
+                String thumb = picsumUrl("bulk-pf-thumb-" + portfolioSeq, 800, 450);
+                Portfolio portfolio = Portfolio.builder()
+                        .user(owner)
+                        .title(topic + " 포트폴리오 #" + (portfolioSeq + 1))
+                        .desc("역할: 리드 개발. 스택: Java, Spring, React. " + topic
+                                + " 도메인에서 API 설계, DB 모델링, 배포 자동화까지 수행했습니다. (시드 데이터)")
+                        .thumbnailUrl(thumb)
+                        .build();
+                attachSeedPortfolioSkills(portfolio, topic, portfolioSeq);
+                portfolio.addPortfolioImage(PortfolioImage.builder()
+                        .portfolio(portfolio)
+                        .imageUrl(picsumUrl("bulk-pf-img-" + portfolioSeq + "-a", 1200, 800))
+                        .sortOrder(0)
+                        .build());
+                portfolio.addPortfolioImage(PortfolioImage.builder()
+                        .portfolio(portfolio)
+                        .imageUrl(picsumUrl("bulk-pf-img-" + portfolioSeq + "-b", 1200, 800))
+                        .sortOrder(1)
+                        .build());
+                portfolioRepository.save(portfolio);
+                portfolioSeq++;
+            }
         }
 
         List<Long> projectIds = new ArrayList<>(PROJECTS);
         LocalDate baseDeadline = LocalDate.now().plusMonths(2);
-        for (int j = 0; j < PROJECTS; j++) {
-            ClientProfile client = clientProfiles.get(j % clientProfiles.size());
-            String topic = TOPICS[j % TOPICS.length];
-            Project project = Project.builder()
-                    .clientProfile(client)
-                    .projectName(topic + " 모집 #" + (j + 1))
-                    .budget(3_000_000 + j * 100_000)
-                    .deadline(baseDeadline.plusDays(j % 60))
-                    .detail("모집 개요(시드): " + topic + " 관련 기능 개발. REST API, 단위 테스트, 코드 리뷰, 문서화 포함."
-                            + " 우대: TypeScript, 클라우드 경험. 일정 협의 가능.")
-                    .online(true)
-                    .offline(j % 3 == 0)
-                    .location(j % 3 == 0 ? "서울 강남" : null)
-                    .latitude(j % 3 == 0 ? 37.498 : null)
-                    .longitude(j % 3 == 0 ? 127.028 : null)
-                    .build();
-            attachSeedProjectSkills(project, topic, j);
-            Project saved = projectRepository.save(project);
-            projectIds.add(saved.getId());
+        int projectSeq = 0;
+        for (int ci = 0; ci < clientProfiles.size(); ci++) {
+            ClientProfile client = clientProfiles.get(ci);
+            for (int k = 0; k < PROJECTS_PER_CLIENT; k++) {
+                KoreanCitySpot spot = KOREAN_MAJOR_CITIES[(ci * PROJECTS_PER_CLIENT + k) % KOREAN_MAJOR_CITIES.length];
+                double pJitterLat = (rnd.nextDouble() - 0.5) * 0.04;
+                double pJitterLon = (rnd.nextDouble() - 0.5) * 0.04;
+                String topic = TOPICS[projectSeq % TOPICS.length];
+                boolean offline = (projectSeq % 2 == 0);
+                Project project = Project.builder()
+                        .clientProfile(client)
+                        .projectName(topic + " 모집 #" + (projectSeq + 1))
+                        .budget(3_000_000 + projectSeq * 100_000)
+                        .deadline(baseDeadline.plusDays(projectSeq % 60))
+                        .detail("모집 개요(시드): " + topic + " 관련 기능 개발. REST API, 단위 테스트, 코드 리뷰, 문서화 포함."
+                                + " 우대: TypeScript, 클라우드 경험. 일정 협의 가능. 근무·미팅 지역: " + spot.label() + ".")
+                        .online(true)
+                        .offline(offline)
+                        .location(spot.label())
+                        .latitude(spot.latitude() + pJitterLat)
+                        .longitude(spot.longitude() + pJitterLon)
+                        .build();
+                attachSeedProjectSkills(project, topic, projectSeq);
+                Project saved = projectRepository.save(project);
+                projectIds.add(saved.getId());
+                projectSeq++;
+            }
         }
 
         seedFreelancerReviews(freelancerProfiles, clientProfiles, projectIds, rnd);
