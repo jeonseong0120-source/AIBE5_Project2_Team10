@@ -14,6 +14,7 @@ import {
     disconnectChatSocket,
     subscribeChatRoom,
 } from "../../app/lib/chatSocket";
+import { getCurrentUserId } from "../../app/lib/auth";
 import { ChatMessageResponse, ChatRoomResponse } from "../../types/chat";
 
 export default function ChatWidget() {
@@ -23,29 +24,41 @@ export default function ChatWidget() {
     const [rooms, setRooms] = useState<ChatRoomResponse[]>([]);
     const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
     const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
     const [loadingRooms, setLoadingRooms] = useState(false);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [sending, setSending] = useState(false);
 
+    const selectedRoomIdRef = useRef<number | null>(null);
     const latestMessageReqId = useRef(0);
     const subscriptionRef = useRef<StompSubscription | null>(null);
 
-    // 필요하면 실제 current user id를 연결
-    const currentUserId: number | null = null;
+    useEffect(() => {
+        setCurrentUserId(getCurrentUserId());
+    }, []);
+
+    useEffect(() => {
+        selectedRoomIdRef.current = selectedRoomId;
+    }, [selectedRoomId]);
 
     const fetchRooms = async () => {
         try {
             setLoadingRooms(true);
+
             const roomData = await getChatRooms();
             setRooms(roomData);
+
+            const currentSelectedRoomId = selectedRoomIdRef.current;
+
             const nextSelectedRoomId =
-                selectedRoomId !== null &&
-                roomData.some((room) => room.roomId === selectedRoomId)
-                    ? selectedRoomId
+                currentSelectedRoomId !== null &&
+                roomData.some((room) => room.roomId === currentSelectedRoomId)
+                    ? currentSelectedRoomId
                     : roomData[0]?.roomId ?? null;
 
             setSelectedRoomId(nextSelectedRoomId);
+
             if (nextSelectedRoomId === null) {
                 setMessages([]);
             }
@@ -136,12 +149,10 @@ export default function ChatWidget() {
             });
         };
 
-        const socket = connectChatSocket(subscribe);
-          if (socket.connected) {
-              subscribe();
-          }
+        const timer = setTimeout(subscribe, 300);
 
         return () => {
+            clearTimeout(timer);
             subscriptionRef.current?.unsubscribe();
             subscriptionRef.current = null;
         };
