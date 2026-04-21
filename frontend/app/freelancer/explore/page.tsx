@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
 
 // 🎯 [추가] 대통합 네비게이션 바 불러오기!
-import GlobalNavbar, { UserData, ProfileData } from '@/components/common/GlobalNavbar';
+import GlobalNavbar, { type UserData, type ProfileData } from '../../../components/common/GlobalNavbar';
 
 export default function FreelancerExplorePage() {
     const router = useRouter();
@@ -218,7 +218,7 @@ export default function FreelancerExplorePage() {
             {/* Hero Section */}
             <header className="relative pt-24 pb-16 px-6 bg-white border-b border-zinc-100 overflow-hidden text-center">
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                     style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                    style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
                 <div className="absolute left-[-20px] bottom-4 opacity-5 hidden lg:block text-[#7A4FFF]">
                     <BarChart3 size={200} strokeWidth={0.5} />
@@ -333,9 +333,8 @@ export default function FreelancerExplorePage() {
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`flex-1 py-2.5 rounded-xl text-[11px] font-black transition-all ${
-                                        activeTab === tab ? 'bg-zinc-900 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-900'
-                                    }`}
+                                    className={`flex-1 py-2.5 rounded-xl text-[11px] font-black transition-all ${activeTab === tab ? 'bg-zinc-900 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-900'
+                                        }`}
                                 >
                                     {tab}
                                 </button>
@@ -357,9 +356,8 @@ export default function FreelancerExplorePage() {
                                 <button
                                     key={loc}
                                     onClick={() => setSelectedLocation(loc === selectedLocation ? '' : loc)}
-                                    className={`px-3 py-2 rounded-xl text-[11px] font-bold border transition-all ${
-                                        selectedLocation === loc ? 'border-[#7A4FFF] text-[#7A4FFF] bg-purple-50' : 'bg-white border-zinc-200 text-zinc-500 shadow-sm hover:border-zinc-300'
-                                    }`}
+                                    className={`px-3 py-2 rounded-xl text-[11px] font-bold border transition-all ${selectedLocation === loc ? 'border-[#7A4FFF] text-[#7A4FFF] bg-purple-50' : 'bg-white border-zinc-200 text-zinc-500 shadow-sm hover:border-zinc-300'
+                                        }`}
                                 >
                                     {loc}
                                 </button>
@@ -376,9 +374,8 @@ export default function FreelancerExplorePage() {
                                 <button
                                     key={tech}
                                     onClick={() => setSelectedTech(selectedTech === tech ? '' : tech)}
-                                    className={`px-3 py-2.5 rounded-xl text-[10px] font-bold text-left transition-all border ${
-                                        selectedTech === tech ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' : 'bg-white border-zinc-100 text-zinc-500 hover:border-zinc-300 shadow-sm'
-                                    }`}
+                                    className={`px-3 py-2.5 rounded-xl text-[10px] font-bold text-left transition-all border ${selectedTech === tech ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' : 'bg-white border-zinc-100 text-zinc-500 hover:border-zinc-300 shadow-sm'
+                                        }`}
                                 >
                                     {selectedTech === tech ? '● ' : '○ '} {tech}
                                 </button>
