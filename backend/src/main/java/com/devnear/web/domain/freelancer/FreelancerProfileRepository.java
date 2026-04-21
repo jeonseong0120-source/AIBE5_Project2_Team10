@@ -9,7 +9,7 @@ import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import java.util.List;
 
-public interface FreelancerProfileRepository extends JpaRepository<FreelancerProfile, Long> {
+public interface FreelancerProfileRepository extends JpaRepository<FreelancerProfile, Long>, FreelancerProfileRepositoryCustom {
     
     Optional<FreelancerProfile> findByUser_Id(Long userId);
 
