@@ -1,6 +1,7 @@
 package com.devnear.web.domain.application;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -38,4 +39,7 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
             "WHERE a.id = :applicationId")
     Optional<ProjectApplication> findByIdWithProjectAndClient(@Param("applicationId") Long applicationId);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM ProjectApplication a WHERE a.project.id = :projectId")
+    void deleteByProjectId(@Param("projectId") Long projectId);
 }

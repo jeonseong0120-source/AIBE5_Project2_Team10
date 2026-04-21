@@ -66,8 +66,10 @@ cloudinary:
   api-secret: ${CLOUDINARY_API_SECRET}
   upload-folder: ${CLOUDINARY_UPLOAD_FOLDER:devnear}
 
-# Google Gemini (텍스트 임베딩 — 프로젝트 공고 벡터화 / AI 추천)
+# Google Gemini (임베딩 + 스킬 태그 NLP 추출)
 gemini:
   api-key: ${GEMINI_API_KEY:}
   base-url: https://generativelanguage.googleapis.com/v1beta
   embedding-model: gemini-embedding-001
+  # POST /skills/suggest 시 문서→스킬 매핑에 사용 (미설정 시 규칙 기반만 사용)
+  generation-model: gemini-2.0-flash

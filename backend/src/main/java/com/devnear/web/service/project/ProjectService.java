@@ -1,14 +1,22 @@
 package com.devnear.web.service.project;
 
+import com.devnear.web.domain.application.ProjectApplicationRepository;
+import com.devnear.web.domain.bookmark.BookmarkProjectRepository;
+import com.devnear.web.domain.chat.ChatMessageRepository;
+import com.devnear.web.domain.chat.ChatRoomRepository;
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.enums.ProjectListingKind;
 import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
+import com.devnear.web.domain.payment.PaymentRepository;
 import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
 import com.devnear.web.domain.project.ProjectSearchCond;
 import com.devnear.web.domain.project.ProjectSkill;
+import com.devnear.web.domain.proposal.ProposalRepository;
+import com.devnear.web.domain.review.ClientReviewRepository;
+import com.devnear.web.domain.review.FreelancerReviewRepository;
 import com.devnear.web.domain.skill.Skill;
 import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
@@ -46,6 +54,14 @@ public class ProjectService {
     private final FreelancerGradeService freelancerGradeService;
     private final EntityManager em; // 🔍 직접 플러시를 위해 주입
     private final ProjectEmbeddingService projectEmbeddingService;
+    private final ProposalRepository proposalRepository;
+    private final ProjectApplicationRepository projectApplicationRepository;
+    private final BookmarkProjectRepository bookmarkProjectRepository;
+    private final ChatMessageRepository chatMessageRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final PaymentRepository paymentRepository;
+    private final ClientReviewRepository clientReviewRepository;
+    private final FreelancerReviewRepository freelancerReviewRepository;
 
     @Transactional
     public Long createProject(User user, ProjectRequest request) {
@@ -191,6 +207,17 @@ public class ProjectService {
     @Transactional
     public void deleteProject(User user, Long projectId) {
         Project project = findProjectAndValidateOwner(user, projectId);
+        Long id = project.getId();
+        // FK 참조 행을 먼저 제거 (MySQL 등에서 projects 삭제 시 제약 위반 방지)
+        chatMessageRepository.deleteByProjectId(id);
+        chatRoomRepository.deleteByProjectId(id);
+        proposalRepository.deleteByProjectId(id);
+        projectApplicationRepository.deleteByProjectId(id);
+        bookmarkProjectRepository.deleteByProjectId(id);
+        paymentRepository.deleteByProjectId(id);
+        clientReviewRepository.deleteByProjectId(id);
+        freelancerReviewRepository.deleteByProjectId(id);
+        em.flush();
         projectRepository.delete(project);
     }
 

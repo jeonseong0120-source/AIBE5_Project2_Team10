@@ -3,6 +3,7 @@ package com.devnear.web.domain.proposal;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -55,4 +56,8 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
            "JOIN FETCH fp.user " +
            "WHERE p.id = :proposalId")
     Optional<Proposal> findByIdForInquiry(@Param("proposalId") Long proposalId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM Proposal p WHERE p.project.id = :projectId")
+    void deleteByProjectId(@Param("projectId") Long projectId);
 }

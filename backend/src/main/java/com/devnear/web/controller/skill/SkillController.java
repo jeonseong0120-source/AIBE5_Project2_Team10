@@ -74,7 +74,8 @@ public class SkillController {
     }
 
     /**
-     * 포트폴리오/공고 설명 텍스트 기반 스킬 태그 추천.
+     * 포트폴리오/공고 설명에서 스킬 태그 추천.
+     * GEMINI_API_KEY가 있으면 Gemini 자연어 추출을 우선 사용하고, 실패 시 규칙 기반(문자열 매칭)으로 대체합니다.
      * - context: portfolio | project (옵션)
      * - limit: 1~20 (기본 8)
      */
