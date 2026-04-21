@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.devnear.web.domain.freelancer.QFreelancerProfile.freelancerProfile;
@@ -31,37 +32,45 @@ public class MatchingService {
 
         Page<Tuple> matchingResults = freelancerProfileRepository.findOptimalFreelancersForProject(project, pageable);
 
-        return matchingResults.getContent().stream().map(tuple -> {
-            // 🎯 [방어] 인덱스보다 QType 객체나 Number.class를 사용하는 것이 훨씬 안전합니다.
-            FreelancerProfile profile = tuple.get(freelancerProfile);
+        return matchingResults.getContent().stream()
+                .map(tuple -> {
+                    // ✅ [Fix] 프로필 객체 자체의 null 여부를 먼저 확인합니다.
+                    FreelancerProfile profile = tuple.get(freelancerProfile);
+                    if (profile == null) return null;
 
-            // QueryDSL/MySQL 결과는 Double이 아닐 수 있으므로 Number로 받아서 변환합니다.
-            Number scoreNum = tuple.get(1, Number.class);
-            Double score = (scoreNum != null) ? scoreNum.doubleValue() : 0.0;
+                    // 숫자는 Number.class를 통해 안전하게 형변환 (기존 로직 유지 및 강화)
+                    Number scoreNum = tuple.get(1, Number.class);
+                    Double score = (scoreNum != null) ? scoreNum.doubleValue() : 0.0;
 
-            Number distNum = tuple.get(2, Number.class);
-            Double distance = (distNum != null) ? distNum.doubleValue() : 0.0;
+                    Number distNum = tuple.get(2, Number.class);
+                    Double distance = (distNum != null) ? distNum.doubleValue() : 0.0;
 
-            int matchingRate = (int) Math.round(score * 100);
+                    int matchingRate = (int) Math.round(score * 100);
 
-            List<String> skillNames = profile.getFreelancerSkills().stream()
-                    .map(fs -> fs.getSkill().getName())
-                    .collect(Collectors.toList());
+                    // ✅ [Fix] 스킬 리스트 null 가드 적용
+                    List<String> skillNames = (profile.getFreelancerSkills() == null)
+                            ? List.of()
+                            : profile.getFreelancerSkills().stream()
+                            .filter(fs -> fs.getSkill() != null) // 스킬 객체 자체의 null 체크 추가
+                            .map(fs -> fs.getSkill().getName())
+                            .collect(Collectors.toList());
 
-            return FreelancerMatchingResponse.builder()
-                    .profileId(profile.getId())
-                    .nickname(profile.getUser() != null ? profile.getUser().getNickname() : "알 수 없는 요원")
-                    .profileImageUrl(profile.getProfileImageUrl())
-                    .introduction(profile.getIntroduction())
-                    .averageRating(profile.getAverageRating())
-                    .completedProjects(profile.getCompletedProjects())
-                    .skills(skillNames)
-                    .isActive(profile.getIsActive())
-                    .matchingRate(matchingRate)
-                    .distance(distance)
-                    .latitude(profile.getLatitude())
-                    .longitude(profile.getLongitude())
-                    .build();
-        }).collect(Collectors.toList());
+                    return FreelancerMatchingResponse.builder()
+                            .profileId(profile.getId())
+                            .nickname(profile.getUser() != null ? profile.getUser().getNickname() : "알 수 없는 요원")
+                            .profileImageUrl(profile.getProfileImageUrl())
+                            .introduction(profile.getIntroduction() != null ? profile.getIntroduction() : "")
+                            .averageRating(profile.getAverageRating() != null ? profile.getAverageRating() : 0.0)
+                            .completedProjects(profile.getCompletedProjects() != null ? profile.getCompletedProjects() : 0)
+                            .skills(skillNames)
+                            .isActive(Boolean.TRUE.equals(profile.getIsActive())) // Null-safe boolean 처리
+                            .matchingRate(matchingRate)
+                            .distance(distance)
+                            .latitude(profile.getLatitude())
+                            .longitude(profile.getLongitude())
+                            .build();
+                })
+                .filter(Objects::nonNull) // ✅ 프로필이 null인 경우 결과 리스트에서 제외 (skip)
+                .collect(Collectors.toList());
     }
 }

@@ -66,8 +66,9 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                 : "원격 협업 환경에서 가장 높은 생산성을 기대할 수 있는 최우수 요원입니다.";
         }
 
+        // ✅ [Fix 1] f.skills 안전 접근 처리 (nullish coalescing 사용)
         if (f.matchingRate > 80 && skillMatchCount >= 2) {
-            return `핵심 기술(${f.skills.slice(0, 2).join(", ")})에 대한 숙련도가 매우 높습니다.`;
+            return `핵심 기술(${(f.skills ?? []).slice(0, 2).join(", ")})에 대한 숙련도가 매우 높습니다.`;
         }
 
         if (f.averageRating >= 4.8 || f.completedProjects >= 5) {
@@ -96,12 +97,16 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
     // 🎯 [핵심] 카카오 맵 렌더링 (내 위치 마커 + 요원 마커)
     useEffect(() => {
         const { kakao } = window as any;
+        // ✅ [Fix 2] 오버레이 추적을 위한 배열 선언
+        const overlays: any[] = [];
+        let map: any = null;
+
         if (!loading && project?.offline && viewMode === "map" && freelancers.length > 0 && kakao && mapContainer.current) {
 
             // 내 프로젝트 위치를 중심으로 설정
             const centerPos = new kakao.maps.LatLng(project.latitude, project.longitude);
             const options = { center: centerPos, level: 5 };
-            const map = new kakao.maps.Map(mapContainer.current, options);
+            map = new kakao.maps.Map(mapContainer.current, options);
 
             // 1. 내 프로젝트(마스터) 위치 마커 - 오렌지색
             const projectContent = `
@@ -120,11 +125,13 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                     📍 내 프로젝트 위치
                 </div>
             `;
-            new kakao.maps.CustomOverlay({
+            const projectOverlay = new kakao.maps.CustomOverlay({
                 position: centerPos,
                 content: projectContent,
                 yAnchor: 1
-            }).setMap(map);
+            });
+            projectOverlay.setMap(map);
+            overlays.push(projectOverlay); // ✅ 오버레이 저장
 
             // 2. 프리랜서(요원) 위치 마커들 - 보라색 번호판
             freelancers.forEach((f, index) => {
@@ -135,9 +142,20 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                         ${index + 1}
                     </div>
                 `;
-                new kakao.maps.CustomOverlay({ position, content, yAnchor: 1 }).setMap(map);
+                const freelancerOverlay = new kakao.maps.CustomOverlay({ position, content, yAnchor: 1 });
+                freelancerOverlay.setMap(map);
+                overlays.push(freelancerOverlay); // ✅ 오버레이 저장
             });
         }
+
+        // ✅ [Fix 2] Cleanup 함수: 언마운트되거나 의존성 변경 시 메모리 해제 및 DOM 정리
+        return () => {
+            overlays.forEach(overlay => overlay.setMap(null));
+            if (mapContainer.current) {
+                mapContainer.current.innerHTML = '';
+            }
+            map = null;
+        };
     }, [loading, freelancers, project, viewMode]);
 
     if (!authorized) return null;
@@ -179,7 +197,7 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                         </aside>
                     )}
 
-                    {/* 프리랜서 리스트 영역: 지도 뷰일 때 max-w 해제 및 슬림 클래스 적용 */}
+                    {/* 프리랜서 리스트 영역 */}
                     <main className={`flex-1 overflow-y-auto p-6 pt-4 space-y-4 transition-all duration-500 ${!isMapView ? "max-w-4xl mx-auto w-full" : ""}`}>
                         {loading ? (
                             <div className="flex flex-col items-center justify-center h-full gap-4">
@@ -197,7 +215,7 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                                 >
                                     <div className="flex items-center gap-4 lg:gap-6">
 
-                                        {/* 프로필 이미지 (지도 뷰일 때 살짝 작게) */}
+                                        {/* 프로필 이미지 */}
                                         <div className="relative shrink-0">
                                             <div className={`absolute -top-1 -left-1 rounded-full flex items-center justify-center text-white font-black shadow-md z-10 ${isMapView ? 'w-6 h-6 text-[8px]' : 'w-7 h-7 text-[10px]'} ${index === 0 ? 'bg-[#FFAD00]' : 'bg-zinc-300'}`}>{index + 1}</div>
                                             <img
@@ -216,13 +234,14 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                                             {/* 지도 모드가 아닐 때만 스킬 태그 노출 */}
                                             {!isMapView && (
                                                 <div className="flex flex-wrap gap-1.5 mb-3">
-                                                    {f.skills.slice(0, 4).map(skill => (
+                                                    {/* ✅ [Fix 1] f.skills 안전 접근 처리 */}
+                                                    {(f.skills ?? []).slice(0, 4).map(skill => (
                                                         <span key={skill} className="px-3 py-1 bg-indigo-50 text-[#7A4FFF] rounded-full text-[10px] font-bold border border-indigo-100/50">{skill}</span>
                                                     ))}
                                                 </div>
                                             )}
 
-                                            {/* 🎯 [강조 UI] AI 매칭 분석 위젯 - 가독성 업그레이드 */}
+                                            {/* AI 매칭 분석 위젯 */}
                                             <div className={`relative border-l-4 border-[#FF7D00] bg-gradient-to-r from-orange-50/50 to-transparent ${isMapView ? 'p-2.5 mb-2' : 'p-4 mb-3'} rounded-r-2xl`}>
                                                 <div className="flex items-start gap-2.5">
                                                     <Zap size={isMapView ? 12 : 14} className="text-[#FF7D00] mt-0.5 shrink-0 fill-current" />
@@ -235,14 +254,12 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                                                 </div>
                                             </div>
 
-                                            {/* 하단 메타 정보 */}
                                             <div className="flex items-center gap-1.5 text-zinc-400 text-[10px] font-bold font-mono uppercase">
                                                 {project?.offline ? <MapPin size={10} /> : <Globe size={10} className="text-[#7A4FFF]" />}
                                                 {formatDistance(f)}
                                             </div>
                                         </div>
 
-                                        {/* 매칭 점수 & 버튼 (지도 모드일 때 콤팩트하게) */}
                                         <div className="flex flex-col items-end gap-2 shrink-0">
                                             <div className="text-right">
                                                 <div className={`text-[#FF7D00] font-black tracking-tighter ${isMapView ? 'text-base' : 'text-xl'}`}>⚡ {f.matchingRate}%</div>

@@ -4,6 +4,7 @@ import com.devnear.web.domain.project.Project;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.*;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.devnear.web.domain.freelancer.QFreelancerProfile.freelancerProfile;
+import static com.devnear.web.domain.freelancer.QFreelancerSkill.freelancerSkill;
 
 @RequiredArgsConstructor
 public class FreelancerProfileRepositoryImpl implements FreelancerProfileRepositoryCustom {
@@ -35,10 +37,14 @@ public class FreelancerProfileRepositoryImpl implements FreelancerProfileReposit
         if (projectSkillIds.isEmpty()) {
             skillMatchScore = Expressions.asNumber(0.0);
         } else {
-            NumberExpression<Double> skillCountSubQuery = Expressions.numberTemplate(Double.class,
-                    "(SELECT cast(count(fs.id) as double) FROM FreelancerSkill fs WHERE fs.freelancerProfile = {0} AND fs.skill.id IN ({1}))",
-                    freelancerProfile, projectSkillIds);
-            skillMatchScore = skillCountSubQuery.divide((double) projectSkillIds.size()).multiply(0.5);
+            skillMatchScore = Expressions.asNumber(
+                            JPAExpressions.select(freelancerSkill.count())
+                                    .from(freelancerSkill)
+                                    .where(freelancerSkill.freelancerProfile.eq(freelancerProfile)
+                                            .and(freelancerSkill.skill.id.in(projectSkillIds)))
+                    ).castToNum(Double.class)
+                    .divide((double) projectSkillIds.size())
+                    .multiply(0.5);
         }
 
         // 3. 평점 점수 (가중치 30%)
@@ -49,8 +55,7 @@ public class FreelancerProfileRepositoryImpl implements FreelancerProfileReposit
                 "LEAST(cast({0} as double), 10.0)", freelancerProfile.completedProjects);
         NumberExpression<Double> experienceScore = experienceRaw.divide(10.0).multiply(0.2);
 
-        // 🎯 [지능형 추가] 프로필 성실도 보너스
-        // 스킬이 하나라도 있거나, 자기소개가 있으면 미세한 점수(0.01)를 부여해 유령 계정(0점)을 이기게 합니다.
+        // 🎯 프로필 성실도 보너스
         NumberExpression<Double> profileBonus = new CaseBuilder()
                 .when(freelancerProfile.introduction.isNotNull().and(freelancerProfile.introduction.ne("")))
                 .then(0.005)
@@ -60,7 +65,7 @@ public class FreelancerProfileRepositoryImpl implements FreelancerProfileReposit
                         .then(0.005)
                         .otherwise(0.0));
 
-        // 5. 총합 매칭 점수 (보너스 포함)
+        // 5. 총합 매칭 점수
         NumberExpression<Double> totalMatchingScore = skillMatchScore.add(ratingScore).add(experienceScore).add(profileBonus);
 
         // 6. 거리 계산 (ST_Distance_Sphere)
@@ -71,10 +76,11 @@ public class FreelancerProfileRepositoryImpl implements FreelancerProfileReposit
                     freelancerProfile.longitude, freelancerProfile.latitude,
                     project.getLongitude(), project.getLatitude());
 
+            // ✅ [Fix] 좌표가 null인 경우 0.0이 아닌 센티널 값(1e7)을 반환하여 오해 방지
             distanceExpression = new CaseBuilder()
                     .when(freelancerProfile.longitude.isNotNull().and(freelancerProfile.latitude.isNotNull()))
                     .then(rawDistance.divide(1000.0))
-                    .otherwise(Expressions.asNumber(0.0));
+                    .otherwise(Expressions.asNumber(10000000.0));
         } else {
             distanceExpression = Expressions.asNumber(0.0);
         }
@@ -85,16 +91,15 @@ public class FreelancerProfileRepositoryImpl implements FreelancerProfileReposit
                 .from(freelancerProfile)
                 .where(
                         isActiveFreelancer(),
-                        locationCondition(project)
+                        locationCondition(project) // ✅ 하단 필터 로직 개선됨
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .orderBy(
-                        // 🎯 [정렬 조건 강화] 동점자 발생 시 처리 순서
-                        new OrderSpecifier<>(com.querydsl.core.types.Order.DESC, totalMatchingScore), // 1. 매칭률+성실도
-                        freelancerProfile.averageRating.desc(), // 2. 평점
-                        freelancerProfile.completedProjects.desc(), // 3. 경험(프로젝트 수)
-                        freelancerProfile.id.desc() // 4. 최신 가입자 (안정적 정렬 보장)
+                        new OrderSpecifier<>(com.querydsl.core.types.Order.DESC, totalMatchingScore),
+                        freelancerProfile.averageRating.desc(),
+                        freelancerProfile.completedProjects.desc(),
+                        freelancerProfile.id.desc()
                 )
                 .fetch();
 
@@ -119,6 +124,10 @@ public class FreelancerProfileRepositoryImpl implements FreelancerProfileReposit
                 "ST_Distance_Sphere(POINT({0}, {1}), POINT({2}, {3}))",
                 freelancerProfile.longitude, freelancerProfile.latitude,
                 project.getLongitude(), project.getLatitude());
-        return dist.loe(10000.0);
+
+        // ✅ [Fix] 오프라인 검색 시 요원의 좌표가 반드시 존재해야 함 (Option B 적용)
+        return dist.loe(10000.0)
+                .and(freelancerProfile.latitude.isNotNull())
+                .and(freelancerProfile.longitude.isNotNull());
     }
 }
