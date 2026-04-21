@@ -175,10 +175,13 @@ export default function FreelancerCard({ data }: Props) {
 
     return (
         <>
-            <div className="relative p-0.5">
+            <div className="relative group">
+                {/* ✨ Decorative background glow on hover */}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-[#FF7D00] to-[#7A4FFF] rounded-[1.5rem] opacity-0 group-hover:opacity-20 blur transition duration-500" />
+                
                 <motion.div
-                    whileHover={{ y: -6 }}
-                    className="group relative overflow-hidden rounded-[1.25rem] border border-zinc-200/90 bg-white p-3 shadow-sm transition-shadow duration-300 hover:shadow-xl"
+                    whileHover={{ y: -8 }}
+                    className="relative overflow-hidden rounded-[1.4rem] border border-zinc-200/80 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-2xl hover:border-zinc-300"
                 >
                     <div
                         role="button"
@@ -194,7 +197,7 @@ export default function FreelancerCard({ data }: Props) {
                                 void openPortfolioDetail();
                             }
                         }}
-                        className="group/carousel relative block h-[11.7rem] w-full cursor-pointer overflow-hidden rounded-xl bg-gradient-to-br from-zinc-100 to-zinc-200 text-left outline-none ring-1 ring-zinc-200/60 focus-visible:ring-2 focus-visible:ring-[#7A4FFF] focus-visible:ring-offset-2 sm:h-[12.6rem] md:h-[13.5rem]"
+                        className="group/carousel relative block h-[12rem] w-full cursor-pointer overflow-hidden bg-zinc-100 text-left outline-none"
                         aria-label="포트폴리오 상세 보기"
                     >
                         <img
@@ -205,92 +208,110 @@ export default function FreelancerCard({ data }: Props) {
                                     e.currentTarget.src = FALLBACK_IMAGE_URL;
                                 }
                             }}
-                            className="pointer-events-none h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                            className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                         />
 
-                        {/* 🎯 [리뷰 반영] 북마크 버튼 - 접근성 속성 추가 */}
+                        {/* 🛠 Work Style Badge */}
+                        <div className="absolute left-3 top-3 z-20 flex gap-1.5">
+                            <span className={`px-2 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase backdrop-blur-md border shadow-sm ${
+                                data.workStyle === 'ONLINE' ? 'bg-zinc-950/80 text-white border-white/20' : 
+                                data.workStyle === 'OFFLINE' ? 'bg-white/90 text-zinc-900 border-zinc-200' : 
+                                'bg-[#FF7D00]/90 text-white border-[#FF7D00]/20'
+                            }`}>
+                                {data.workStyle}
+                            </span>
+                        </div>
+
+                        {/* 🎯 Heart Button */}
                         <button
                             type="button"
                             onClick={handleBookmarkToggle}
                             disabled={bookmarkLoading}
-                            aria-label={isBookmarked ? 'Unbookmark freelancer' : 'Bookmark freelancer'}
-                            aria-pressed={isBookmarked}
-                            className={`absolute right-2.5 top-2.5 z-30 flex h-9 w-9 items-center justify-center rounded-full border shadow-lg transition-all active:scale-90 ${
+                            className={`absolute right-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full border shadow-xl transition-all active:scale-90 ${
                                 isBookmarked
-                                    ? 'bg-white border-red-100 text-red-500'
-                                    : 'bg-zinc-950/80 border-white/20 text-white hover:bg-white hover:text-red-500'
+                                    ? 'bg-white border-red-50 text-red-500'
+                                    : 'bg-zinc-950/60 backdrop-blur-md border-white/20 text-white hover:bg-white hover:text-red-500'
                             }`}
                         >
-                            <Heart
-                                size={18}
-                                className={isBookmarked ? "fill-current" : ""}
-                            />
+                            <Heart size={18} className={isBookmarked ? "fill-current" : ""} />
                         </button>
 
                         {portfolioLoading && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-[2px]">
-                                <Loader2 className="h-8 w-8 animate-spin text-[#7A4FFF]" aria-hidden />
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-[2px] z-40">
+                                <Loader2 className="h-8 w-8 animate-spin text-[#FF7D00]" />
                             </div>
                         )}
 
                         {showArrows && (
-                            <>
+                            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2 opacity-0 group-hover/carousel:opacity-100 transition-opacity z-20">
                                 <button
-                                    type="button"
-                                    aria-label="이전 포트폴리오"
                                     onClick={goPrev}
-                                    className="pointer-events-auto absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200/80 bg-white/95 text-zinc-800 shadow-md opacity-0 group-hover/carousel:opacity-95 transition-opacity hover:bg-white hover:opacity-100"
+                                    className="h-8 w-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm border border-zinc-200 shadow-md hover:bg-white transition-colors"
                                 >
-                                    <ChevronLeft size={20} strokeWidth={2.5} />
+                                    <ChevronLeft size={16} strokeWidth={3} />
                                 </button>
                                 <button
-                                    type="button"
-                                    aria-label="다음 포트폴리오"
                                     onClick={goNext}
-                                    className="pointer-events-auto absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200/80 bg-white/95 text-zinc-800 shadow-md opacity-0 group-hover/carousel:opacity-95 transition-opacity hover:bg-white hover:opacity-100"
+                                    className="h-8 w-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm border border-zinc-200 shadow-md hover:bg-white transition-colors"
                                 >
-                                    <ChevronRight size={20} strokeWidth={2.5} />
+                                    <ChevronRight size={16} strokeWidth={3} />
                                 </button>
-                            </>
+                            </div>
                         )}
+
+                        {/* Image overlay gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                     </div>
 
-                    <Link href={`/client/freelancers/${data.id}`} className="mt-1 block cursor-pointer">
-                        <div className="flex min-h-[12.5rem] flex-col px-2 pb-6 pt-5 sm:min-h-[13rem] md:min-h-[13.5rem]">
-                            <div className="mb-3 flex items-center justify-between">
-                                <h3 className="font-bold tracking-tight text-zinc-900">{data.nickname}</h3>
-
-                                <div className="flex items-center text-sm font-bold text-[#FF7D00]">
-                                    <Star size={14} fill="currentColor" />
-                                    <span className="ml-1 font-mono">{data.averageRating.toFixed(1)}</span>
+                    <Link href={`/client/freelancers/${data.id}`} className="block">
+                        <div className="p-5">
+                            <div className="mb-4 flex items-start justify-between gap-4">
+                                <div>
+                                    <h3 className="text-base font-black tracking-tight text-zinc-900 group-hover:text-[#FF7D00] transition-colors">{data.nickname}</h3>
+                                    <div className="mt-1 flex items-center gap-2">
+                                        <div className="flex items-center text-[11px] font-black text-[#FF7D00] bg-orange-50 px-1.5 py-0.5 rounded-md">
+                                            <Star size={10} fill="currentColor" className="mr-1" />
+                                            <span className="font-mono">{data.averageRating.toFixed(1)}</span>
+                                        </div>
+                                        <span className="text-[10px] font-black font-mono text-zinc-400 uppercase tracking-widest leading-none">
+                                            Pj_{data.completedProjects ?? 0}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                    <div className="text-[13px] font-black text-zinc-900 font-mono tracking-tighter italic">₩{data.hourlyRate.toLocaleString()}</div>
+                                    <div className="text-[9px] font-black text-zinc-400 font-mono uppercase tracking-widest mt-0.5">per_hour</div>
                                 </div>
                             </div>
 
-                            <p className="mb-4 line-clamp-3 text-xs leading-relaxed text-zinc-500">{data.introduction}</p>
+                            <p className="mb-5 line-clamp-2 text-xs font-medium leading-relaxed text-zinc-500 h-8">
+                                {data.introduction}
+                            </p>
 
-                            <div className="mb-4 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
-                                {data.skills.slice(0, 8).map((skill) => (
+                            <div className="flex flex-wrap gap-1.5 mb-6">
+                                {data.skills.slice(0, 5).map((skill) => (
                                     <span
                                         key={skill.id}
-                                        className="rounded-md border border-orange-100 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold font-mono uppercase text-[#FF7D00]"
+                                        className="px-2 py-1 rounded-md bg-zinc-50 border border-zinc-100 text-[9px] font-black font-mono uppercase text-zinc-500 tracking-wider hover:bg-zinc-100 transition-colors"
                                     >
-                                    {skill.name}
-                                </span>
+                                        {skill.name}
+                                    </span>
                                 ))}
-                                {data.skills.length > 8 && (
-                                    <span className="rounded-md border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] font-black font-mono text-zinc-500">
-                                    +{data.skills.length - 8}
-                                </span>
+                                {data.skills.length > 5 && (
+                                    <span className="px-2 py-1 rounded-md bg-zinc-50 border border-zinc-100 text-[9px] font-black font-mono text-zinc-300">
+                                        +{data.skills.length - 5}
+                                    </span>
                                 )}
                             </div>
 
-                            <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-4 text-xs font-mono font-bold text-zinc-500">
-                                <div className="flex items-center">
-                                    <MapPin size={12} className="mr-1 text-zinc-400" />
+                            <div className="flex items-center justify-between border-t border-zinc-100 pt-4">
+                                <div className="flex items-center text-[10px] font-bold text-zinc-400 group-hover:text-zinc-600 transition-colors">
+                                    <MapPin size={12} className="mr-1.5 text-zinc-300" />
                                     {data.location}
                                 </div>
-
-                                <div className="text-[#7A4FFF]">₩{data.hourlyRate.toLocaleString()}</div>
+                                <div className="flex items-center gap-1 text-[10px] font-black uppercase font-mono text-[#7A4FFF] opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 tracking-widest">
+                                    Full_Profile <ChevronRight size={12} strokeWidth={3} />
+                                </div>
                             </div>
                         </div>
                     </Link>

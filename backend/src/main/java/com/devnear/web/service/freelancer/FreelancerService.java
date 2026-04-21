@@ -109,8 +109,16 @@ public class FreelancerService {
 
     // [탐색] 조건에 맞는 프리랜서 목록 검색
     public List<FreelancerProfileResponse> searchFreelancers(String skill, String region, String sort, String workStyle) {
+        // String -> enum 변환 (필터링 정확도 향상)
+        com.devnear.web.domain.enums.WorkStyle workStyleEnum = null;
+        if (workStyle != null && !workStyle.isEmpty()) {
+            try {
+                workStyleEnum = com.devnear.web.domain.enums.WorkStyle.valueOf(workStyle.toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+
         // 지역, 스킬, 근무 방식 조건 필터링
-        List<FreelancerProfile> profiles = profileRepository.searchFreelancers(skill, region, workStyle);
+        List<FreelancerProfile> profiles = profileRepository.searchFreelancers(skill, region, workStyleEnum);
 
         // [수정] 500 에러 방지: 정렬 필드(rating, projects)가 null일 경우를 대비하여 안전한 비교 로직으로 수정
         Comparator<FreelancerProfile> comparator;
@@ -118,6 +126,10 @@ public class FreelancerService {
             comparator = Comparator.comparing(FreelancerProfile::getAverageRating, Comparator.nullsLast(Comparator.reverseOrder()));
         } else if ("projects".equalsIgnoreCase(sort)) {
             comparator = Comparator.comparing(FreelancerProfile::getCompletedProjects, Comparator.nullsLast(Comparator.reverseOrder()));
+        } else if ("reviews".equalsIgnoreCase(sort)) {
+            comparator = Comparator.comparing(FreelancerProfile::getReviewCount, Comparator.nullsLast(Comparator.reverseOrder()));
+        } else if ("rate".equalsIgnoreCase(sort)) {
+            comparator = Comparator.comparing(FreelancerProfile::getHourlyRate, Comparator.nullsLast(Comparator.naturalOrder()));
         } else {
             comparator = Comparator.comparing(FreelancerProfile::getId, Comparator.reverseOrder());
         }

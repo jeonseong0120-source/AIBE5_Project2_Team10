@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import FreelancerCard from '@/components/freelancer/FreelancerCard';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
 import api from '../../lib/axios';
-import { Search, MapPin, SlidersHorizontal } from 'lucide-react';
+import { Search, MapPin, SlidersHorizontal, ArrowUpDown, Sparkles, Briefcase } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // 🎯 1. 대통합 네비게이션 바 불러오기
@@ -141,25 +141,11 @@ export default function ClientDashboard() {
 
                 <div className="max-w-4xl mx-auto relative z-10">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                        <div className="flex justify-center gap-6 text-[10px] text-zinc-400 mb-6 font-black font-mono tracking-[0.2em] uppercase text-center">
-                            <div>ACTIVE_FREELANCERS_11,280</div>
-                            <span className="text-zinc-200">|</span>
-                            <div>AVAILABLE_NODES_98%</div>
-                            <span className="text-zinc-200">|</span>
-                            <div>RESPONSE_INDEX_3.5H</div>
-                        </div>
-
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 text-zinc-900 leading-tight">
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-10 text-zinc-900 leading-tight">
                             나에게 맞는 <span className="text-[#FF7D00]">파트너</span>를 찾으세요.
                         </h1>
 
-                        <div className="flex items-center justify-center gap-2 mb-10">
-                            <span className="h-[1px] w-8 bg-zinc-200" />
-                            <p className="text-zinc-400 text-[10px] font-mono tracking-[0.2em] uppercase">
-                                Expert_Database_Registry_v4.2
-                            </p>
-                            <span className="h-[1px] w-8 bg-zinc-200" />
-                        </div>
+
                     </motion.div>
 
                     {/* Simple Search Input - freelancer/explore와 동일 규격 */}
@@ -180,12 +166,17 @@ export default function ClientDashboard() {
             </header>
 
             {/* MAIN CONTENT AREA - Sidebar + List (Alignment with Navbar max-w-7xl) */}
-            <main className="max-w-7xl mx-auto px-8 py-12 flex flex-col lg:flex-row gap-10">
+            <main className="max-w-7xl mx-auto px-8 py-12 flex flex-col lg:flex-row gap-12">
                 
-                {/* 🎯 LEFT SIDEBAR - freelancer/explore 스타일 이식 */}
-                <aside className="w-full lg:w-64 shrink-0 space-y-8">
-                    {/* 상단 탭: 근무 방식 필터 */}
+                {/* 🎯 LEFT SIDEBAR - Sticky & Optimized UI */}
+                <aside className="w-full lg:w-72 shrink-0 space-y-10">
+                    <div className="sticky top-28 space-y-10">
+                    
+                    {/* 1. 상단 탭: 근무 방식 필터 */}
                     <section>
+                        <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase mb-4 text-zinc-400 font-mono">
+                            <Briefcase size={14} /> 협업_근무_방식
+                        </h3>
                         <div className="flex bg-white p-1 rounded-2xl border border-zinc-200 shadow-sm overflow-x-auto no-scrollbar">
                             {[
                                 { label: '전체', value: '' },
@@ -205,35 +196,10 @@ export default function ClientDashboard() {
                         </div>
                     </section>
 
-                    {/* 지역 필터 */}
+                    {/* 2. 기술 스택 필터 (그리드 형태) - 가장 중요한 필터이므로 상단 배치 */}
                     <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase text-zinc-400 font-mono">
-                                <MapPin size={14} /> 활동_지역
-                            </h3>
-                            {filter.region && (
-                                <button onClick={() => setFilter({...filter, region: ''})} className="text-[10px] text-[#FF7D00] font-bold underline underline-offset-4">초기화</button>
-                            )}
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                            {['서울', '경기', '인천', '부산', '대구', '원격'].map(loc => (
-                                <button
-                                    key={loc}
-                                    onClick={() => setFilter({ ...filter, region: filter.region === loc ? '' : loc })}
-                                    className={`px-3 py-2 rounded-xl text-[11px] font-bold border transition-all ${
-                                        filter.region === loc ? 'border-[#FF7D00] text-[#FF7D00] bg-orange-50' : 'bg-white border-zinc-200 text-zinc-500 shadow-sm hover:border-zinc-300'
-                                    }`}
-                                >
-                                    {loc}
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* 기술 스택 필터 (그리드 형태) */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase mb-4 text-zinc-400 font-mono text-center">
-                             전문_기술_스택
+                        <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase mb-4 text-zinc-400 font-mono">
+                            <Sparkles size={14} /> 전문_기술_스택
                         </h3>
                         <div className="grid grid-cols-2 gap-2">
                             {presetSkills.map(s => {
@@ -248,14 +214,81 @@ export default function ClientDashboard() {
                                                 setFilter({ ...filter, skill: [...filter.skill, s] });
                                             }
                                         }}
-                                        className={`px-3 py-2.5 rounded-xl text-[10px] font-bold text-left transition-all border ${
-                                            isSelected ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' : 'bg-white border-zinc-100 text-zinc-500 hover:border-zinc-300 shadow-sm'
+                                        className={`group flex items-center justify-between px-3 py-2.5 rounded-xl text-[10px] font-black transition-all border ${
+                                            isSelected 
+                                                ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' 
+                                                : 'bg-white border-zinc-100 text-zinc-400 hover:border-zinc-300 hover:text-zinc-900'
                                         }`}
                                     >
-                                        {isSelected ? '● ' : '○ '} {s}
+                                        {s}
+                                        <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-[#FF7D00]' : 'bg-transparent group-hover:bg-zinc-200'}`} />
                                     </button>
                                 );
                             })}
+                        </div>
+                    </section>
+
+                    {/* 3. 활동 지역 필터 - 대한민국 전체 지역 (3열 컴팩트 그리드) */}
+                    <section>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase text-zinc-400 font-mono">
+                                <MapPin size={14} /> 활동_지역
+                            </h3>
+                            {filter.region && (
+                                <span className="text-[9px] font-black text-[#FF7D00] font-mono animate-pulse">FILTER_ACTIVE</span>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                            {[
+                                '전국', '서울', '경기', '인천', '부산', '대구', 
+                                '대전', '광주', '울산', '세종', '강원', '충북', 
+                                '충남', '전북', '전남', '경북', '경남', '제주'
+                            ].map(loc => (
+                                <button
+                                    key={loc}
+                                    onClick={() => setFilter({ ...filter, region: loc === '전국' ? '' : (filter.region === loc ? '' : loc) })}
+                                    className={`group flex flex-col items-center justify-center py-2 rounded-lg text-[9px] font-black transition-all border ${
+                                        (loc === '전국' && filter.region === '') || filter.region === loc
+                                            ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' 
+                                            : 'bg-white border-zinc-100 text-zinc-400 hover:border-zinc-300 hover:text-zinc-900'
+                                    }`}
+                                >
+                                    {loc}
+                                    <div className={`mt-1 w-1 h-1 rounded-full ${
+                                        (loc === '전국' && filter.region === '') || filter.region === loc
+                                            ? 'bg-[#FF7D00]' 
+                                            : 'bg-transparent group-hover:bg-zinc-200'
+                                    }`} />
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* 4. 정렬 방식 */}
+                    <section>
+                        <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase text-zinc-400 font-mono mb-4">
+                            <ArrowUpDown size={14} /> 정렬_기준
+                        </h3>
+                        <div className="space-y-1.5">
+                            {[
+                                { label: '최신등록순', value: 'id' },
+                                { label: '별점 높은순', value: 'rating' },
+                                { label: '리뷰 많은순', value: 'reviews' },
+                                { label: '경력 풍부순', value: 'projects' },
+                                { label: '낮은 시급순', value: 'rate' }
+                            ].map((item) => (
+                                <button
+                                    key={item.value}
+                                    onClick={() => setFilter({ ...filter, sort: item.value })}
+                                    className={`w-full text-left px-4 py-2.5 rounded-xl text-[11px] font-black tracking-tight transition-all ${
+                                        filter.sort === item.value 
+                                            ? 'bg-zinc-900 text-white shadow-md' 
+                                            : 'text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900'
+                                    }`}
+                                >
+                                    {filter.sort === item.value ? '● ' : '○ '} {item.label}
+                                </button>
+                            ))}
                         </div>
                     </section>
 
@@ -269,6 +302,7 @@ export default function ClientDashboard() {
                             필터_설정_초기화
                         </button>
                     )}
+                    </div>
                 </aside>
 
                 {/* 🎯 RIGHT LIST AREA */}
@@ -284,18 +318,6 @@ export default function ClientDashboard() {
                             </h2>
                         </div>
 
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase font-mono text-zinc-400">
-                            SORT:
-                            <select 
-                                className="bg-transparent text-zinc-900 outline-none cursor-pointer hover:text-[#FF7D00] transition-colors"
-                                value={filter.sort}
-                                onChange={(e) => setFilter({ ...filter, sort: e.target.value })}
-                            >
-                                <option value="id">LATEST</option>
-                                <option value="rating">RATING</option>
-                                <option value="experience">EXPERIENCE</option>
-                            </select>
-                        </div>
                     </div>
 
                     {loading ? (
@@ -319,7 +341,7 @@ export default function ClientDashboard() {
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                         >
                             {freelancers.map((freelancer, index) => (
                                 <motion.div

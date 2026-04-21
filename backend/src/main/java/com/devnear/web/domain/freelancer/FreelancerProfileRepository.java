@@ -38,10 +38,7 @@ public interface FreelancerProfileRepository extends JpaRepository<FreelancerPro
            "LEFT JOIN FETCH fs.skill " +
            "WHERE fp.isActive = true " +
            "AND (:region IS NULL OR fp.location LIKE %:region%) " +
-           "AND (:workStyle IS NULL OR " +
-           "    (CAST(:workStyle AS string) = 'ONLINE' AND fp.workStyle IN (com.devnear.web.domain.enums.WorkStyle.ONLINE, com.devnear.web.domain.enums.WorkStyle.HYBRID)) OR " +
-           "    (CAST(:workStyle AS string) = 'OFFLINE' AND fp.workStyle IN (com.devnear.web.domain.enums.WorkStyle.OFFLINE, com.devnear.web.domain.enums.WorkStyle.HYBRID)) " +
-           ") " +
+           "AND (:workStyle IS NULL OR str(fp.workStyle) = 'HYBRID' OR str(fp.workStyle) = str(:workStyle)) " +
            "AND (:skill IS NULL OR EXISTS (" +
            "    SELECT 1 FROM FreelancerSkill sub_fs JOIN sub_fs.skill sub_s " +
            "    WHERE sub_fs.freelancerProfile = fp AND sub_s.name LIKE %:skill%" +
@@ -49,5 +46,5 @@ public interface FreelancerProfileRepository extends JpaRepository<FreelancerPro
     List<FreelancerProfile> searchFreelancers(
             @Param("skill") String skill, 
             @Param("region") String region, 
-            @Param("workStyle") String workStyle);
+            @Param("workStyle") com.devnear.web.domain.enums.WorkStyle workStyle);
 }
