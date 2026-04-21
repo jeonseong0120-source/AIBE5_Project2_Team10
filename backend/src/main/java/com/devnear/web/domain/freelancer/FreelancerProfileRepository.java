@@ -37,6 +37,7 @@ public interface FreelancerProfileRepository extends JpaRepository<FreelancerPro
            "LEFT JOIN FETCH fp.freelancerSkills fs " +
            "LEFT JOIN FETCH fs.skill " +
            "WHERE fp.isActive = true " +
+           "AND (:excludeUserId IS NULL OR fp.user.id <> :excludeUserId) " +
            "AND (:region IS NULL OR fp.location LIKE %:region%) " +
            "AND (:workStyle IS NULL OR (fp.workStyle = :workStyle OR fp.workStyle = com.devnear.web.domain.enums.WorkStyle.HYBRID)) " +
            "AND (:skill IS NULL OR EXISTS (" +
@@ -44,7 +45,8 @@ public interface FreelancerProfileRepository extends JpaRepository<FreelancerPro
            "    WHERE sub_fs.freelancerProfile = fp AND sub_s.name LIKE %:skill%" +
            "))")
     List<FreelancerProfile> searchFreelancers(
-            @Param("skill") String skill, 
-            @Param("region") String region, 
-            @Param("workStyle") com.devnear.web.domain.enums.WorkStyle workStyle);
+            @Param("skill") String skill,
+            @Param("region") String region,
+            @Param("workStyle") com.devnear.web.domain.enums.WorkStyle workStyle,
+            @Param("excludeUserId") Long excludeUserId);
 }
