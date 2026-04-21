@@ -186,6 +186,7 @@ export default function ChatWidget() {
     const handleSelectRoom = async (roomId: number) => {
         setRoom(roomId);
         setInput("");
+        setMessages([]);
 
         try {
             await markChatAsRead(roomId);
