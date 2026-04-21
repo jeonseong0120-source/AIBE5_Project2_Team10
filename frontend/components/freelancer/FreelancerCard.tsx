@@ -14,9 +14,10 @@ import PortfolioDetailModal, {
 
 interface Props {
     data: FreelancerProfile;
+    initialIsBookmarked?: boolean;
 }
 
-export default function FreelancerCard({ data }: Props) {
+export default function FreelancerCard({ data, initialIsBookmarked = false }: Props) {
     const FALLBACK_IMAGE_URL =
         'https://ui-avatars.com/api/?name=Agent&background=F4F4F5&color=A1A1AA&size=150';
 
@@ -35,35 +36,21 @@ export default function FreelancerCard({ data }: Props) {
     const portfolioFetchLock = useRef(false);
     const [portalReady, setPortalReady] = useState(false);
 
-    // 🎯 [추가] 북마크 상태 및 로딩 (상세 페이지와 동일한 로직)
-    const [isBookmarked, setIsBookmarked] = useState(false);
+    // 🎯 [개선] 부모로부터 전달받은 초기 상태 사용
+    const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
     const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
     useEffect(() => {
         setPortalReady(true);
     }, []);
 
-    // 🎯 [핵심] 카드 로드 시 찜 목록을 가져와서 현재 프리랜서가 있는지 대조 (배신 방지 로직)
+    // prop 변화 시 동기화 (필요시)
+    useEffect(() => {
+        setIsBookmarked(initialIsBookmarked);
+    }, [initialIsBookmarked]);
+
     useEffect(() => {
         setSlideIndex(0);
-
-        const checkBookmarkStatus = async () => {
-            const token = typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null;
-            if (!token) return;
-
-            try {
-                // 상세 페이지와 동일하게 size=1000으로 전체 목록 확인
-                const res = await api.get('/v1/bookmarks/freelancers?size=1000');
-                const bookmarkList = res.data.content || [];
-                // 현재 카드 데이터의 id(profileId)가 목록에 있는지 확인
-                const isMarked = bookmarkList.some((b: any) => Number(b.profileId) === Number(data.id));
-                setIsBookmarked(isMarked);
-            } catch (e) {
-                console.error("Card Bookmark Check Failed:", e);
-            }
-        };
-
-        checkBookmarkStatus();
     }, [data.id]);
 
     // 🎯 [추가] 북마크 토글 핸들러
@@ -305,7 +292,7 @@ export default function FreelancerCard({ data }: Props) {
                                                 <span className="font-mono">{data.averageRating.toFixed(1)}</span>
                                             </div>
                                             <span className="shrink-0 rounded-md bg-[#7A4FFF]/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-[#7A4FFF] ring-1 ring-[#7A4FFF]/20">
-                                                {data.gradeName || 'EXPERT'}
+                                                {data.gradeName || '일반'}
                                             </span>
                                         </div>
                                     </div>

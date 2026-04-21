@@ -232,7 +232,7 @@ export default function PortfolioDetailModal({
                                                     {/* 🎖 Grade Badge (Static) */}
                                                     <div className="flex items-center">
                                                         <span className="rounded-full bg-[#7A4FFF] px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-[0.15em] shadow-lg shadow-purple-200/50 ring-1 ring-purple-100/20">
-                                                            {authorGradeName || 'EXPERT'}
+                                                            {authorGradeName || '일반'}
                                                         </span>
                                                     </div>
 

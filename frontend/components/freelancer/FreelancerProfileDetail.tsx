@@ -11,6 +11,7 @@ import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '
 import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
 import type { PortfolioDetailShape } from '@/components/portfolio/PortfolioDetailModal';
 import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } from '@/components/proposal/ProposalSendModal';
+import { useNotifications } from '@/components/notifications/notificationContext';
 
 export type FreelancerProfileDetailVariant = 'freelancer' | 'client';
 
@@ -58,6 +59,7 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
     const [workScope, setWorkScope] = useState('');
     const [workingPeriod, setWorkingPeriod] = useState('');
     const [isSendingProposal, setIsSendingProposal] = useState(false);
+    const { setToast } = useNotifications();
 
     // --- 🎯 북마크(하트) 상태 및 로딩 (참고하신 프리랜서 방식 적용) ---
     const [isBookmarked, setIsBookmarked] = useState(false);
@@ -122,6 +124,9 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
             // 409 Conflict 발생 시 이미 등록된 것이므로 찜 상태 유지
             if (err.response?.status === 409) {
                 setIsBookmarked(true);
+            } else {
+                console.error("Bookmark toggle failed:", err);
+                setToast("찜 처리 중 에러가 발생했습니다. 잠시 후 다시 시도해주세요.");
             }
         } finally {
             setBookmarkLoading(false);
@@ -345,7 +350,7 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                                         {/* 🎖 Grade Badge */}
                                         <div className="flex justify-center md:justify-start">
                                             <span className="rounded-full bg-[#7A4FFF] px-2.5 py-0.5 text-[9px] font-black text-white uppercase tracking-[0.15em] shadow-lg shadow-purple-200 ring-1 ring-purple-100/20">
-                                                {freelancer.gradeName || 'EXPERT'}
+                                                {freelancer.gradeName || '일반'}
                                             </span>
                                         </div>
                                         <h1 className="text-3xl font-black tracking-tight text-center md:text-left">{freelancer.nickname}</h1>
@@ -484,7 +489,18 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
             )}
 
             {/* 모달 포탈 처리 */}
-            {portalReady && selectedPortfolio != null && createPortal(<PortfolioDetailModal portfolio={selectedPortfolio} readOnly onClose={() => setSelectedPortfolio(null)} />, document.body)}
+            {portalReady && selectedPortfolio != null && createPortal(
+                <PortfolioDetailModal 
+                    portfolio={selectedPortfolio} 
+                    readOnly 
+                    onClose={() => setSelectedPortfolio(null)} 
+                    authorNickname={freelancer.nickname}
+                    authorProfileImage={freelancer.profileImageUrl}
+                    authorRating={freelancer.averageRating}
+                    authorGradeName={freelancer.gradeName}
+                />, 
+                document.body
+            )}
 
             {portalReady && viewerIsClient && isProposalModalOpen && createPortal(
                 <AnimatePresence>
