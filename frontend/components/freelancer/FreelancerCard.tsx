@@ -218,7 +218,7 @@ export default function FreelancerCard({ data }: Props) {
                                 data.workStyle === 'OFFLINE' ? 'bg-white/90 text-zinc-900 border-zinc-200' : 
                                 'bg-[#FF7D00]/90 text-white border-[#FF7D00]/20'
                             }`}>
-                                {data.workStyle}
+                                {data.workStyle === 'ONLINE' ? '온라인' : data.workStyle === 'OFFLINE' ? '오프라인' : '하이브리드'}
                             </span>
                         </div>
 
@@ -227,6 +227,8 @@ export default function FreelancerCard({ data }: Props) {
                             type="button"
                             onClick={handleBookmarkToggle}
                             disabled={bookmarkLoading}
+                            aria-label={isBookmarked ? "관심 프리랜서 해제" : "관심 프리랜서 추가"}
+                            aria-pressed={isBookmarked}
                             className={`absolute right-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full border shadow-xl transition-all active:scale-90 ${
                                 isBookmarked
                                     ? 'bg-white border-red-50 text-red-500'

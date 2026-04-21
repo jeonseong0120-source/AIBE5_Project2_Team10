@@ -230,11 +230,11 @@ export default function FreelancerExplorePage() {
                 <div className="max-w-4xl mx-auto relative z-10">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                         <div className="flex justify-center gap-6 text-[10px] text-zinc-400 mb-6 font-black font-mono tracking-[0.2em] uppercase">
-                            <div>ACTIVE_MISSIONS_2,481</div>
+                            <div>ACTIVE_MISSIONS_{totalElements}</div>
                             <span className="text-zinc-200">|</span>
                             <div>SEOUL_NODES_ACTIVE</div>
                             <span className="text-zinc-200">|</span>
-                            <div>MATCH_INDEX_0.98</div>
+                            <div>MATCH_INDEX_OPTIMIZED</div>
                         </div>
 
                         <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-zinc-900">

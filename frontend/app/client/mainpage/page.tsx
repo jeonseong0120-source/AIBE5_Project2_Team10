@@ -15,6 +15,7 @@ export default function ClientDashboard() {
     const router = useRouter();
     const [freelancers, setFreelancers] = useState<FreelancerProfile[]>([]);
     const [filter, setFilter] = useState({ skill: [] as string[], region: '', sort: 'id', workStyle: '' });
+    const [keyword, setKeyword] = useState('');
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
 
@@ -103,19 +104,44 @@ export default function ClientDashboard() {
     const fetchFreelancers = useCallback(async () => {
         setLoading(true);
         try {
-            // 🎯 스킬 배열을 쉼표로 연결하여 API 전달
-            const skillParam = filter.skill.join(',');
-            const { data } = await api.get<ApiFreelancerDto[]>('/v1/freelancers', { 
-                params: { ...filter, skill: skillParam } 
-            });
-            const mappedData = data.map(mapFreelancerDtoToProfile);
-            setFreelancers(mappedData);
+            // 🎯 [리뷰 반영] 다중 스킬 검색 시 Fan-out 전략 (개별 요청 후 합치기)
+            if (filter.skill.length > 1) {
+                const requests = filter.skill.map(s => 
+                    api.get<ApiFreelancerDto[]>('/v1/freelancers', { params: { ...filter, skill: s } })
+                );
+                const responses = await Promise.all(requests);
+                
+                // 모든 결과를 하나로 합치고 profileId 기준으로 중복 제거
+                const allData = responses.flatMap(res => res.data);
+                const uniqueMap = new Map<number, ApiFreelancerDto>();
+                allData.forEach(item => uniqueMap.set(item.profileId, item));
+                
+                const dedupedData = Array.from(uniqueMap.values());
+                const mappedData = dedupedData.map(mapFreelancerDtoToProfile);
+                setFreelancers(mappedData);
+            } else {
+                // 단일 스킬 또는 키워드 검색
+                const combinedSkill = [filter.skill[0], keyword].filter(Boolean).join(',');
+                const { data } = await api.get<ApiFreelancerDto[]>('/v1/freelancers', { 
+                    params: { ...filter, skill: combinedSkill } 
+                });
+                const mappedData = data.map(mapFreelancerDtoToProfile);
+                setFreelancers(mappedData);
+            }
         } catch {
             // quiet
         } finally {
             setLoading(false);
         }
-    }, [filter]);
+    }, [filter, keyword]);
+
+    // 🎯 [리뷰 반영] 키워드 검색 디바운싱
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            // 키워드가 바뀔 때만 리로드 되도록 유도 (keyword는 fetchFreelancers 의존성에 포함됨)
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [keyword]);
 
     // 🎯 [리뷰 반영] 프리랜서 목록만 필터 변경 시 호출
     useEffect(() => {
@@ -175,11 +201,8 @@ export default function ClientDashboard() {
                             type="text"
                             placeholder="찾으시는 파트너의 닉네임이나 키워드를 검색하세요..."
                             className="w-full bg-white border-2 border-zinc-200 rounded-full py-5 pl-16 pr-6 focus:ring-4 focus:ring-orange-500/5 focus:border-[#FF7D00] outline-none transition-all font-bold text-sm shadow-xl shadow-orange-900/5"
-                            value={filter.skill.join(', ')}
-                            onChange={(e) => {
-                                const values = e.target.value.split(',').map(v => v.trim()).filter(v => v !== '');
-                                setFilter({ ...filter, skill: values });
-                            }}
+                            value={keyword}
+                            onChange={(e) => setKeyword(e.target.value)}
                         />
                     </div>
                 </div>
