@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
+import com.devnear.web.domain.enums.PaymentStatus;
+
+import java.util.Collection;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -28,5 +31,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @QueryHints({@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000")})
     @Query("SELECT p FROM Payment p WHERE p.orderId = :orderId")
     Optional<Payment> findByOrderIdForUpdate(@Param("orderId") String orderId);
+
+    /**
+     * 배정된 프리랜서 기준: {@code terminalStatuses} 이외의 결제가 하나라도 있으면 true.
+     */
+    boolean existsByProject_FreelancerProfile_IdAndStatusNotIn(Long freelancerProfileId,
+                                                             Collection<PaymentStatus> terminalStatuses);
 }
 

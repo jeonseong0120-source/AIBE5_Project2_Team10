@@ -101,5 +101,19 @@ public class ClientProfile extends BaseTimeEntity {
     public void updateRating(BigDecimal rating) {
         this.rating = rating;
     }
+
+    /**
+     * 탈퇴 후에도 리뷰 FK를 유지하기 위해 행은 남기고 사업자/연락처 등 식별 정보를 제거합니다.
+     * {@code rating}, {@code totalProjects} 등 집계는 유지합니다.
+     */
+    public void anonymizeForWithdrawal() {
+        this.companyName = "[탈퇴한 회원]";
+        this.representativeName = null;
+        this.bn = "W" + String.format("%019d", this.id);
+        this.introduction = null;
+        this.homepageUrl = null;
+        this.phoneNum = null;
+        this.logoUrl = null;
+    }
 }
 

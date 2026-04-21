@@ -1,5 +1,6 @@
 package com.devnear.web.domain.application;
 
+import com.devnear.web.domain.enums.ApplicationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -42,4 +43,11 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM ProjectApplication a WHERE a.project.id = :projectId")
     void deleteByProjectId(@Param("projectId") Long projectId);
+
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM ProjectApplication a " +
+           "JOIN a.project p WHERE p.clientProfile.id = :clientId AND a.status = :status")
+    boolean existsByProjectClientProfile_IdAndApplicationStatus(@Param("clientId") Long clientId,
+                                                                @Param("status") ApplicationStatus status);
+
+    boolean existsByFreelancerProfile_IdAndStatus(Long freelancerProfileId, ApplicationStatus status);
 }

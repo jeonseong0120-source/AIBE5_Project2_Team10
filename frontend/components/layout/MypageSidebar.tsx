@@ -1,8 +1,9 @@
 'use client';
 
-import { X, LogOut } from 'lucide-react';
+import { LogOut, UserX } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { logout } from '@/app/lib/authEvents';
+import api from '@/app/lib/axios';
 import { motion } from 'framer-motion';
 
 interface MypageSidebarProps {
@@ -14,6 +15,20 @@ interface MypageSidebarProps {
 
 export default function MypageSidebar({ tabs, activeTab, setActiveTab, accentColor = '#FF7D00' }: MypageSidebarProps) {
     const router = useRouter();
+    const handleWithdraw = async () => {
+        const confirmed = confirm('정말 회원 탈퇴하시겠습니까?\n탈퇴 후에는 계정을 복구할 수 없습니다.');
+        if (!confirmed) return;
+
+        try {
+            await api.delete('/v1/users/me/account');
+            alert('회원 탈퇴가 완료되었습니다.');
+            logout();
+            router.push('/login');
+        } catch (error: any) {
+            const message = error?.response?.data?.message || '회원 탈퇴에 실패했습니다. 조건을 확인해주세요.';
+            alert(message);
+        }
+    };
 
     return (
         <aside className="space-y-6 lg:sticky lg:top-[136px] lg:self-start">
@@ -57,6 +72,13 @@ export default function MypageSidebar({ tabs, activeTab, setActiveTab, accentCol
                 >
                     <LogOut size={16} />
                     SIGN_OUT
+                </button>
+                <button
+                    onClick={handleWithdraw}
+                    className="w-full mt-2 flex items-center gap-3 p-4 hover:bg-rose-50 rounded-xl transition-all duration-300 text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase font-mono tracking-widest"
+                >
+                    <UserX size={16} />
+                    WITHDRAW
                 </button>
             </div>
 
