@@ -39,9 +39,6 @@ export default function ChatWidget() {
             setLoadingRooms(true);
             const roomData = await getChatRooms();
             setRooms(roomData);
-
-            const roomData = await getChatRooms();
-            setRooms(roomData);
             const nextSelectedRoomId =
                 selectedRoomId !== null &&
                 roomData.some((room) => room.roomId === selectedRoomId)
@@ -139,10 +136,12 @@ export default function ChatWidget() {
             });
         };
 
-        const timer = setTimeout(subscribe, 300);
+        const socket = connectChatSocket(subscribe);
+          if (socket.connected) {
+              subscribe();
+          }
 
         return () => {
-            clearTimeout(timer);
             subscriptionRef.current?.unsubscribe();
             subscriptionRef.current = null;
         };
