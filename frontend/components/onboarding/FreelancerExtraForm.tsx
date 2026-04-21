@@ -1,9 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import api from "../../app/lib/axios";
 import { MAX_SELECTED_SKILLS } from "@/app/lib/skillLimits";
+// 🎯 카카오 맵 위치 피커 임포트
+import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
+import { MapPin } from "lucide-react";
 
 interface FreelancerExtraFormProps {
     freelancerData: {
@@ -20,6 +23,9 @@ interface FreelancerExtraFormProps {
 
 export default function FreelancerExtraForm({ freelancerData, setFreelancerData }: FreelancerExtraFormProps) {
     const [availableSkills, setAvailableSkills] = useState<{skillId: number, name: string, category: string}[]>([]);
+
+    // 환경변수에서 카카오 키 로드 (마스터의 설정에 맞게 확인해주세요!)
+    const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim() ?? "";
 
     useEffect(() => {
         const fetchSkills = async () => {
@@ -38,26 +44,19 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
         const newSkills = cur.includes(skillId)
             ? cur.filter((id) => id !== skillId)
             : cur.length >= MAX_SELECTED_SKILLS
-              ? cur
-              : [...cur, skillId];
+                ? cur
+                : [...cur, skillId];
         setFreelancerData({ ...freelancerData, skillIds: newSkills });
     };
 
-    // 🔍 [추가] 숫자 포맷팅 함수 (1000 -> 1,000)
     const formatNumber = (num: number) => {
         return num.toLocaleString("ko-KR");
     };
 
-    // 🔍 [추가] 입력값 변경 핸들러
     const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // 숫자 이외의 문자 제거
         const value = e.target.value.replace(/[^0-9]/g, "");
         const numValue = value ? parseInt(value) : 0;
-
-        setFreelancerData({
-            ...freelancerData,
-            hourlyRate: numValue
-        });
+        setFreelancerData({ ...freelancerData, hourlyRate: numValue });
     };
 
     return (
@@ -86,26 +85,51 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                    {/* 활동 지역 */}
-                    <div className="space-y-1">
-                        <label htmlFor="location-input" className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Location</label>
-                        <input
-                            id="location-input"
-                            value={freelancerData.location}
-                            onChange={(e) => setFreelancerData({ ...freelancerData, location: e.target.value })}
-                            placeholder="예: 서울시 강남구"
-                            className="w-full p-3 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-2 focus:ring-[#7A4FFF] outline-none transition-all text-sm"
-                        />
+                {/* 활동 지역 설정 (카카오 맵 통합) */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest">Location</label>
+                        {freelancerData.location && (
+                            <span className="text-[10px] font-bold text-[#7A4FFF] bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100 animate-fade-in">
+                                {freelancerData.location}
+                             </span>
+                        )}
                     </div>
 
-                    {/* 🔍 [수정] 희망 시급: 직접 입력 및 콤마 포맷팅 적용 */}
+                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-3">
+                        {kakaoJavascriptKey ? (
+                            <KakaoLocationPicker
+                                javascriptKey={kakaoJavascriptKey}
+                                value={{
+                                    address: freelancerData.location,
+                                    latitude: String(freelancerData.latitude),
+                                    longitude: String(freelancerData.longitude)
+                                }}
+                                onChangeAction={(v) => {
+                                    setFreelancerData({
+                                        ...freelancerData,
+                                        location: v.address,
+                                        latitude: Number(v.latitude),
+                                        longitude: Number(v.longitude)
+                                    });
+                                }}
+                            />
+                        ) : (
+                            <div className="p-4 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100 flex items-center gap-2">
+                                ⚠️ 카카오 API 키가 설정되지 않았습니다. (.env 확인 필요)
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                    {/* 희망 시급 */}
                     <div className="space-y-1">
                         <label htmlFor="hourly-rate-input" className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Hourly Rate (₩) *</label>
                         <div className="relative">
                             <input
                                 id="hourly-rate-input"
-                                type="text" // 콤마 표시를 위해 text로 변경
+                                type="text"
                                 value={formatNumber(freelancerData.hourlyRate)}
                                 onChange={handlePriceChange}
                                 placeholder="0"
@@ -127,7 +151,7 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                                 onClick={() => setFreelancerData({ ...freelancerData, workStyle: style })}
                                 className={`flex-1 p-2 rounded-xl text-[10px] font-bold transition-all border ${
                                     freelancerData.workStyle === style
-                                        ? "bg-zinc-900 text-white border-zinc-900"
+                                        ? "bg-zinc-900 text-white border-zinc-900 shadow-md"
                                         : "bg-white text-zinc-400 border-zinc-100 hover:border-zinc-300"
                                 }`}
                             >
@@ -137,7 +161,7 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                     </div>
                 </div>
 
-                {/* 기술 스택 선택 */}
+                {/* 기술 스택 선택 (기존 로직 유지) */}
                 <div className="space-y-2">
                     <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest">
                         Tech Stacks * (1–{MAX_SELECTED_SKILLS}){" "}
@@ -160,8 +184,8 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                                             on
                                                 ? "cursor-pointer border-[#7A4FFF] bg-[#7A4FFF] text-white shadow-md"
                                                 : atCap
-                                                  ? "cursor-not-allowed border-zinc-100 bg-zinc-100 text-zinc-300"
-                                                  : "cursor-pointer border-zinc-100 bg-white text-zinc-500 hover:bg-zinc-100"
+                                                    ? "cursor-not-allowed border-zinc-100 bg-zinc-100 text-zinc-300"
+                                                    : "cursor-pointer border-zinc-100 bg-white text-zinc-500 hover:bg-zinc-100"
                                         }`}
                                     >
                                         {skill.name}
