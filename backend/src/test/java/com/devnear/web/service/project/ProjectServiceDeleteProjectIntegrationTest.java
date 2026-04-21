@@ -43,6 +43,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
+/**
++ * 공고 삭제 시 종속 행 제거 검증.
+ * {@link ProjectService#deleteProjectDependents} 주석 참조: 새 종속 테이블 추가 시 이 테스트도 확장해야 합니다.
+ */
+
 class ProjectServiceDeleteProjectIntegrationTest {
 
     @Autowired

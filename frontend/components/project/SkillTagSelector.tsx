@@ -101,6 +101,17 @@ export default function SkillTagSelector({
                 setSuggestError("추출된 추천 스킬이 없습니다.");
                 return;
             }
+            setAllSkills((prev) => {
+                const byId = new Map(prev.map((skill) => [skill.skillId, skill]));
+                for (const skill of suggestions) {
+                    byId.set(skill.skillId, {
+                        skillId: skill.skillId,s
+                        name: skill.name,
+                        category: skill.category,
+                    });
+                }
+                return Array.from(byId.values());
+            });
             setSuggestedSkills(suggestions);
         } catch (e: unknown) {
             const message =

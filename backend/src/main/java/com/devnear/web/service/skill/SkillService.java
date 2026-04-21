@@ -104,18 +104,17 @@ public class SkillService {
         skillRepository.deleteById(skillId);
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public List<SkillTagSuggestionResponse> suggestTagsFromText(String rawText, Integer limit, String context) {
         String text = normalize(rawText);
         if (text.isBlank()) {
             return List.of();
         }
         int topN = limit == null ? 8 : Math.min(Math.max(1, limit), 20);
-
         List<Skill> allSkills = skillRepository.findAll();
         if (allSkills.isEmpty()) {
             return List.of();
         }
-
         if (geminiSkillTagSuggestionClient.isConfigured()) {
             try {
                 List<Skill> catalog = catalogForNlp(text, allSkills);
@@ -140,7 +139,6 @@ public class SkillService {
                 log.warn("NLP 스킬 추출 실패, 규칙 기반으로 대체: {}", e.getMessage());
             }
         }
-
         return heuristicSuggestTagsFromText(text, allSkills, topN);
     }
 

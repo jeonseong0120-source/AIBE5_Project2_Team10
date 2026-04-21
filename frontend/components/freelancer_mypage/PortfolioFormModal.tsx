@@ -113,14 +113,17 @@ export default function PortfolioFormModal({
     };
 
     const applySuggestedSkill = (skillId: number) => {
-        if (portfolioForm.skills.includes(skillId)) {
-            return;
-        }
-        if (portfolioForm.skills.length >= MAX_SELECTED_SKILLS) {
-            setSuggestError(`사용 기술은 최대 ${MAX_SELECTED_SKILLS}개까지 선택할 수 있습니다.`);
-            return;
-        }
-        setPortfolioForm((prev) => ({ ...prev, skills: [...prev.skills, skillId] }));
+        setPortfolioForm((prev) => {
+            if (prev.skills.includes(skillId)) {
+                setSuggestError('이미 선택된 기술입니다.');
+                return prev;
+            }
+            if (prev.skills.length >= MAX_SELECTED_SKILLS) {
+                setSuggestError(`사용 기술은 최대 ${MAX_SELECTED_SKILLS}개까지 선택할 수 있습니다.`);
+                return prev;
+            }
+            return { ...prev, skills: [...prev.skills, skillId] };
+        });
     };
 
     if (!isOpen) return null;
