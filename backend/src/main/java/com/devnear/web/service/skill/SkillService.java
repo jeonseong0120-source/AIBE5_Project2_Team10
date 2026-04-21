@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -111,6 +112,8 @@ public class SkillService {
         if (text.isBlank()) {
             return List.of();
         }
+        /** 한글 별칭 → 카탈로그 영문명 정규화 문자열. 문서는 수정하지 않고 점수에만 반영합니다. */
+        LinkedHashSet<String> koreanAliasEnglishHits = collectKoreanAliasEnglishHits(text);
         int topN = limit == null ? 8 : Math.min(Math.max(1, limit), 20);
         List<Skill> allSkills = skillRepository.findAll();
         if (allSkills.isEmpty()) {
@@ -118,7 +121,7 @@ public class SkillService {
         }
         if (geminiSkillTagSuggestionClient.isConfigured()) {
             try {
-                List<Skill> catalog = catalogForNlp(text, allSkills);
+                List<Skill> catalog = catalogForNlp(text, allSkills, koreanAliasEnglishHits);
                 List<GeminiSkillPick> picks = geminiSkillTagSuggestionClient.suggestFromDocument(
                         rawText, context, catalog, topN);
                 if (!picks.isEmpty()) {
@@ -144,13 +147,14 @@ public class SkillService {
                 log.warn("NLP 스킬 추출 실패, 규칙 기반으로 대체: {}", e.getMessage());
             }
         }
-        return heuristicSuggestTagsFromText(text, allSkills, topN);
+        return heuristicSuggestTagsFromText(text, allSkills, topN, koreanAliasEnglishHits);
     }
 
     /**
      * NLP 프롬프트 길이 제한 — 후보가 많으면 문자열 매칭 점수로 상위만 골라 Gemini에 넘깁니다.
      */
-    private List<Skill> catalogForNlp(String normalizedDoc, List<Skill> allSkills) {
+    private List<Skill> catalogForNlp(String normalizedDoc, List<Skill> allSkills,
+                                      Set<String> koreanAliasEnglishHits) {
         if (allSkills.size() <= NLP_CATALOG_CAP) {
             return allSkills;
         }
@@ -160,7 +164,7 @@ public class SkillService {
             if (skillName.isBlank()) {
                 continue;
             }
-            double score = scoreSkill(normalizedDoc, skillName);
+            double score = scoreSkillForSuggest(normalizedDoc, skillName, koreanAliasEnglishHits);
             if (score > 0) {
                 scored.add(new ScoredSkill(skill, score));
             }
@@ -186,14 +190,15 @@ public class SkillService {
     }
 
     private List<SkillTagSuggestionResponse> heuristicSuggestTagsFromText(
-            String normalizedDoc, List<Skill> allSkills, int topN) {
+            String normalizedDoc, List<Skill> allSkills, int topN,
+            Set<String> koreanAliasEnglishHits) {
         List<ScoredSkill> scored = new ArrayList<>();
         for (Skill skill : allSkills) {
             String skillName = normalize(skill.getName());
             if (skillName.isBlank()) {
                 continue;
             }
-            double score = scoreSkill(normalizedDoc, skillName);
+            double score = scoreSkillForSuggest(normalizedDoc, skillName, koreanAliasEnglishHits);
             if (score > 0) {
                 scored.add(new ScoredSkill(skill, score));
             }
@@ -208,6 +213,187 @@ public class SkillService {
 
     /** 짧은 스킬 토큰(1~2글자)은 문서 토큰과 완전 일치할 때만 매칭합니다. */
     private static final int SHORT_TOKEN_MAX_LEN = 2;
+
+    /**
+     * 본문(정규화)에 등장한 한글 별칭에 대응하는 카탈로그 영문 스킬명(정규화) 집합.
+     * 문서 문자열을 바꾸지 않으며, {@link #scoreSkillForSuggest}에서 해당 스킬과 정확히 일치할 때만 가산합니다.
+     * <p>
+     * {@link #KR_SKILL_ALIASES_SORTED}는 한글 구절 길이 내림차순입니다. 매칭은 {@link #compact} 문자열에서 수행하고,
+     * 이미 수락한 구간과 겹치는 짧은 별칭(예: "자바" ⊂ "자바스크립트")은 무시합니다.
+     */
+    static LinkedHashSet<String> collectKoreanAliasEnglishHits(String normalizedDoc) {
+        LinkedHashSet<String> extras = new LinkedHashSet<>();
+        if (normalizedDoc == null || normalizedDoc.isBlank()) {
+            return extras;
+        }
+        String compactDoc = compact(normalizedDoc);
+        List<int[]> compactConsumed = new ArrayList<>();
+
+        for (KrSkillAlias rule : KR_SKILL_ALIASES_SORTED) {
+            if (!rule.docGuard().test(normalizedDoc)) {
+                continue;
+            }
+            String kr = rule.koreanPhrase();
+            if (kr.isBlank()) {
+                continue;
+            }
+            String krCompact = compact(kr);
+            if (krCompact.isBlank()) {
+                continue;
+            }
+            String en = rule.englishSkillNormalized();
+            if (en.isBlank()) {
+                continue;
+            }
+            int from = 0;
+            while (from <= compactDoc.length() - krCompact.length()) {
+                int j = compactDoc.indexOf(krCompact, from);
+                if (j < 0) {
+                    break;
+                }
+                int end = j + krCompact.length();
+                if (!overlapsAnySpan(compactConsumed, j, end)) {
+                    compactConsumed.add(new int[]{j, end});
+                    extras.add(en);
+                    from = j + 1;
+                } else {
+                    from = j + 1;
+                }
+            }
+        }
+        return extras;
+    }
+
+    /** half-open {@code [start, end)} 구간이 기록된 구간들 중 하나와 겹치면 true */
+    private static boolean overlapsAnySpan(List<int[]> intervals, int start, int endExclusive) {
+        for (int[] iv : intervals) {
+            if (endExclusive > iv[0] && start < iv[1]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 문서 기반 {@link #scoreSkill}과 한글 별칭으로 유도된 영문 스킬명(정규화) 정확 일치를 합칩니다.
+     * 별칭 일치는 전체 정규화 스킬명이 {@code koreanAliasEnglishHits}에 포함될 때만 1.0을 부여합니다.
+     */
+    private static double scoreSkillForSuggest(String normalizedDoc, String skillNameNormalized,
+                                               Set<String> koreanAliasEnglishHits) {
+        double fromDoc = scoreSkill(normalizedDoc, skillNameNormalized);
+        if (koreanAliasEnglishHits != null
+                && !koreanAliasEnglishHits.isEmpty()
+                && koreanAliasEnglishHits.contains(skillNameNormalized)) {
+            return Math.max(fromDoc, 1.0);
+        }
+        return fromDoc;
+    }
+
+    private record KrSkillAlias(
+            String koreanPhrase,
+            String englishSkillNormalized,
+            Predicate<String> docGuard
+    ) {
+        static KrSkillAlias of(String koreanRaw, String englishSkillName) {
+            return new KrSkillAlias(
+                    normalize(koreanRaw),
+                    normalize(englishSkillName),
+                    doc -> true
+            );
+        }
+
+        static KrSkillAlias ofUnlessDocContains(String koreanRaw, String englishSkillName, String unlessDocSubstring) {
+            String unless = normalize(unlessDocSubstring);
+            String unlessCompact = compact(unless);
+            return new KrSkillAlias(
+                    normalize(koreanRaw),
+                    normalize(englishSkillName),
+                    doc -> unless.isEmpty() || (!doc.contains(unless) && !compact(doc).contains(unlessCompact))
+            );
+        }
+    }
+
+    /**
+     * 긴 한글 구절을 먼저 두면, 짧은 구절이 부분 문자열로 오탐하는 경우를 줄입니다.
+     */
+    private static final KrSkillAlias[] KR_SKILL_ALIASES_SORTED = buildKrSkillAliasesSorted();
+
+    private static KrSkillAlias[] buildKrSkillAliasesSorted() {
+        List<KrSkillAlias> rules = new ArrayList<>(List.of(
+                KrSkillAlias.of("스프링 부트", "Spring Boot"),
+                KrSkillAlias.of("스프링부트", "Spring Boot"),
+                KrSkillAlias.ofUnlessDocContains("리액트", "React", "리액트 네이티브"),
+                KrSkillAlias.of("리액트 네이티브", "React Native"),
+                KrSkillAlias.of("리액트네이티브", "React Native"),
+                KrSkillAlias.of("타입스크립트", "TypeScript"),
+                KrSkillAlias.of("넥스트js", "Next.js"),
+                KrSkillAlias.of("넥스트.js", "Next.js"),
+                KrSkillAlias.of("노드js", "Node.js"),
+                KrSkillAlias.of("노드.js", "Node.js"),
+                KrSkillAlias.of("파이썬", "Python"),
+                KrSkillAlias.of("쿠버네티스", "Kubernetes"),
+                KrSkillAlias.of("깃허브 액션", "GitHub Actions"),
+                KrSkillAlias.of("깃허브액션", "GitHub Actions"),
+                KrSkillAlias.of("스프링 시큐리티", "Spring Security"),
+                KrSkillAlias.of("그래큐엘", "GraphQL"),
+                KrSkillAlias.of("포스트그레스큐엘", "PostgreSQL"),
+                KrSkillAlias.of("포스트그레스", "PostgreSQL"),
+                KrSkillAlias.of("마이에스큐엘", "MySQL"),
+                KrSkillAlias.of("마이에스큐", "MySQL"),
+                KrSkillAlias.of("몽고디비", "MongoDB"),
+                KrSkillAlias.of("엘라스틱서치", "Elasticsearch"),
+                KrSkillAlias.of("아파치 카프카", "Apache Kafka"),
+                KrSkillAlias.of("카프카", "Apache Kafka"),
+                KrSkillAlias.of("래빗엠큐", "RabbitMQ"),
+                KrSkillAlias.of("아파치 스파크", "Apache Spark"),
+                KrSkillAlias.of("익스프레스", "Express.js"),
+                KrSkillAlias.of("네스트js", "NestJS"),
+                KrSkillAlias.of("네스트.js", "NestJS"),
+                KrSkillAlias.of("뷰js", "Vue.js"),
+                KrSkillAlias.of("뷰.js", "Vue.js"),
+                KrSkillAlias.of("앵귤러", "Angular"),
+                KrSkillAlias.of("스위프트", "Swift"),
+                KrSkillAlias.of("플러터", "Flutter"),
+                KrSkillAlias.of("장고", "Django"),
+                KrSkillAlias.of("패스트api", "FastAPI"),
+                KrSkillAlias.of("코틀린", "Kotlin"),
+                KrSkillAlias.of("고랭", "Go"),
+                KrSkillAlias.of("테라폼", "Terraform"),
+                KrSkillAlias.of("젠킨스", "Jenkins"),
+                KrSkillAlias.of("리눅스", "Linux"),
+                KrSkillAlias.of("엔진엑스", "Nginx"),
+                KrSkillAlias.of("웹소켓", "WebSocket"),
+                KrSkillAlias.of("제이피에이", "JPA"),
+                KrSkillAlias.of("쿼리dsl", "Querydsl"),
+                KrSkillAlias.of("쿼리 디에스엘", "Querydsl"),
+                KrSkillAlias.of("마이크로서비스", "MSA"),
+                KrSkillAlias.of("마이크로 서비스", "MSA"),
+                KrSkillAlias.of("솔리드", "SOLID"),
+                KrSkillAlias.of("캐싱", "Caching"),
+                KrSkillAlias.of("샤딩", "Database Sharding"),
+                KrSkillAlias.of("데이터베이스 샤딩", "Database Sharding"),
+                KrSkillAlias.of("매칭 알고리즘", "Matching Algorithm"),
+                KrSkillAlias.of("솔리디티", "Solidity"),
+                /** "자바" 단독은 허용하되 "자바스크립트" 내부 부분 문자열로 Java 오인 방지(긴 구절이 먼저 소비) */
+                KrSkillAlias.of("자바스크립트", "JavaScript"),
+                KrSkillAlias.of("자바", "Java"),
+                KrSkillAlias.of("도커", "Docker"),
+                KrSkillAlias.of("레디스", "Redis"),
+                KrSkillAlias.of("에이더블유에스", "AWS"),
+                KrSkillAlias.of("지피알씨", "gRPC"),
+                KrSkillAlias.of("파이어베이스", "Firebase"),
+                KrSkillAlias.of("오쓰", "OAuth2"),
+                KrSkillAlias.of("오쓰2", "OAuth2"),
+                KrSkillAlias.of("제스트", "Jest"),
+                KrSkillAlias.of("사이프레스", "Cypress"),
+                KrSkillAlias.of("스토리북", "Storybook"),
+                KrSkillAlias.of("사스", "Sass"),
+                KrSkillAlias.of("테일윈드", "Tailwind CSS"),
+                KrSkillAlias.of("웹팩", "Webpack")
+        ));
+        rules.sort(Comparator.comparingInt((KrSkillAlias r) -> r.koreanPhrase().length()).reversed());
+        return rules.toArray(KrSkillAlias[]::new);
+    }
 
     private static double scoreSkill(String text, String skillName) {
         if (text.isBlank() || skillName.isBlank()) {

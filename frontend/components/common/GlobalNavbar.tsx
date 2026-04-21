@@ -8,7 +8,7 @@ import { Search, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getActiveRole, setActiveRole } from '@/app/lib/auth';
 
-// 🎯 명확한 인터페이스 정의
+// 🎯 명확한 인터페이스 정의 (페이지에서 GlobalNavbar props와 동일하게 맞출 때 import)
 export interface UserData {
     role: 'CLIENT' | 'FREELANCER' | 'BOTH';
     nickname?: string;

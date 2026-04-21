@@ -9,7 +9,7 @@ import { Search, MapPin, SlidersHorizontal, ArrowUpDown, Sparkles, Briefcase } f
 import { motion } from 'framer-motion';
 
 // 🎯 1. 대통합 네비게이션 바 불러오기
-import GlobalNavbar, { UserData, ProfileData } from '@/components/common/GlobalNavbar';
+import GlobalNavbar, { type UserData, type ProfileData } from '@/components/common/GlobalNavbar';
 
 export default function ClientDashboard() {
     const router = useRouter();
@@ -47,21 +47,41 @@ export default function ClientDashboard() {
                 const res = await api.get("/v1/users/me");
 
                 // 🎯 [리뷰 반영] Role 정규화: ROLE_BOTH -> BOTH (GlobalNavbar 대응)
-                const normalizedRole = res.data.role?.replace("ROLE_", "") || "";
+                const raw = res.data as Record<string, unknown>;
+                const normalizedRoles = String(raw.role ?? '')
+                    .split(',')
+                    .map((v) => v.trim().replace(/^ROLE_/, ''))
+                    .filter(Boolean);
 
-                if (normalizedRole === "GUEST") {
+                if (normalizedRoles.includes("GUEST")) {
                     router.replace("/onboarding");
                     return;
                 }
 
-                if (normalizedRole === "FREELANCER") {
+                if (
+                    normalizedRoles.includes("FREELANCER") &&
+                    !normalizedRoles.includes("CLIENT") &&
+                    !normalizedRoles.includes("BOTH")
+                ) {
                     alert("해당 대시보드는 클라이언트 전용 화면입니다.");
                     router.replace("/");
                     return;
                 }
 
-                // 🎯 3. 정규화된 유저 정보 저장
-                setUser({ ...res.data, role: normalizedRole as UserData['role'] });
+                const navbarRole: UserData['role'] =
+                    normalizedRoles.includes('BOTH') ? 'BOTH' : 'CLIENT';
+
+                const profileImg =
+                    (typeof raw.profileImage === 'string' ? raw.profileImage : undefined)
+                    ?? (typeof raw.profileImageUrl === 'string' ? raw.profileImageUrl : undefined);
+
+                setUser({
+                    role: navbarRole,
+                    nickname: typeof raw.nickname === 'string' ? raw.nickname : undefined,
+                    name: typeof raw.name === 'string' ? raw.name : undefined,
+                    profileImage: profileImg,
+                    imageUrl: typeof raw.imageUrl === 'string' ? raw.imageUrl : undefined,
+                });
                 setAuthorized(true);
             } catch {
                 router.replace("/login");
@@ -75,7 +95,7 @@ export default function ClientDashboard() {
     useEffect(() => {
         if (authorized) {
             api.get('/client/profile')
-                .then(res => setProfile(res.data))
+                .then(res => setProfile(res.data as ProfileData))
                 .catch(() => {});
         }
     }, [authorized]);
