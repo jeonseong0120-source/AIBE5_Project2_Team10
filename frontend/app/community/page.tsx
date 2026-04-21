@@ -27,7 +27,7 @@ export default function CommunityPage() {
 
     const glowRef = useRef<HTMLDivElement>(null);
     const cursorRef = useRef({ x: 0, y: 0 });
-    const rafRef = useRef<number>();
+    const rafRef = useRef<number | null>(null);
 
     useEffect(() => {
         const updateGlow = () => {
@@ -46,7 +46,7 @@ export default function CommunityPage() {
 
         return () => {
             window.removeEventListener("mousemove", handleMouseMove);
-            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+            if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
         };
     }, []);
 

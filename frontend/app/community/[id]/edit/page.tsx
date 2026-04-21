@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Send, X, Loader2, Save } from "lucide-react";
 import { motion } from "framer-motion";
@@ -20,14 +20,32 @@ export default function CommunityEditPage() {
     const [loading, setLoading] = useState(false);
     const [initLoading, setInitLoading] = useState(true);
 
-    const [cursor, setCursor] = useState({ x: 0, y: 0 });
+    const glowRef = useRef<HTMLDivElement>(null);
+    const cursorRef = useRef({ x: 0, y: 0 });
+    const rafRef = useRef<number | null>(null);
+
     useEffect(() => {
-        const move = (e: MouseEvent) => setCursor({ x: e.clientX, y: e.clientY });
-        window.addEventListener("mousemove", move);
-        return () => window.removeEventListener("mousemove", move);
+        const updateGlow = () => {
+            if (glowRef.current) {
+                glowRef.current.style.transform = `translate(${cursorRef.current.x - 150}px, ${cursorRef.current.y - 150}px)`;
+            }
+            rafRef.current = requestAnimationFrame(updateGlow);
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            cursorRef.current = { x: e.clientX, y: e.clientY };
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        rafRef.current = requestAnimationFrame(updateGlow);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+        };
     }, []);
 
-    const fetchPost = async () => {
+    const fetchUserAndPost = async () => {
         try {
             setInitLoading(true);
             const data = await getCommunityPostDetail(postId);
@@ -43,13 +61,14 @@ export default function CommunityEditPage() {
     };
 
     useEffect(() => {
-        if (!params.id || Number.isNaN(Number(params.id))) {
+        // postId 유효성 검색 및 로딩 상태 처리
+        if (!params.id || Number.isNaN(postId)) {
             setInitLoading(false);
             router.push("/community");
             return;
         }
-        fetchPost();
-    }, [params.id]);
+        fetchUserAndPost();
+    }, [postId, router, params.id]);
 
     const handleSubmit = async () => {
         if (!title.trim()) {
@@ -93,8 +112,8 @@ export default function CommunityEditPage() {
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
             {/* 배경 글로우 */}
             <div
+                ref={glowRef}
                 className="pointer-events-none fixed left-0 top-0 z-0 h-[300px] w-[300px] rounded-full bg-[#7A4FFF]/10 blur-[120px] will-change-transform"
-                style={{ transform: `translate(${cursor.x - 150}px, ${cursor.y - 150}px)` }}
             />
 
             <GlobalNavbar user={user} profile={profile} />

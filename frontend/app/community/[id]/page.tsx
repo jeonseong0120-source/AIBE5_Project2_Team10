@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Eye, Heart, MessageSquare, Loader2, Send, Edit, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,12 +42,29 @@ export default function CommunityDetailPage() {
     const [editingCommentContent, setEditingCommentContent] = useState("");
     const [commentActionLoading, setCommentActionLoading] = useState(false);
 
-    const [cursor, setCursor] = useState({ x: 0, y: 0 });
+    const glowRef = useRef<HTMLDivElement>(null);
+    const cursorRef = useRef({ x: 0, y: 0 });
+    const rafRef = useRef<number | null>(null);
 
     useEffect(() => {
-        const move = (e: MouseEvent) => setCursor({ x: e.clientX, y: e.clientY });
-        window.addEventListener("mousemove", move);
-        return () => window.removeEventListener("mousemove", move);
+        const updateGlow = () => {
+            if (glowRef.current) {
+                glowRef.current.style.transform = `translate(${cursorRef.current.x - 150}px, ${cursorRef.current.y - 150}px)`;
+            }
+            rafRef.current = requestAnimationFrame(updateGlow);
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            cursorRef.current = { x: e.clientX, y: e.clientY };
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        rafRef.current = requestAnimationFrame(updateGlow);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+        };
     }, []);
 
     const fetchPostDetail = async () => {
@@ -225,8 +242,8 @@ export default function CommunityDetailPage() {
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
             {/* 배경 글로우 */}
             <div
+                ref={glowRef}
                 className="pointer-events-none fixed left-0 top-0 z-0 h-[300px] w-[300px] rounded-full bg-[#7A4FFF]/10 blur-[120px] will-change-transform"
-                style={{ transform: `translate(${cursor.x - 150}px, ${cursor.y - 150}px)` }}
             />
 
             <GlobalNavbar user={user} profile={profile} />
