@@ -258,10 +258,11 @@ public class SkillService {
 
         static KrSkillAlias ofUnlessDocContains(String koreanRaw, String englishSkillName, String unlessDocSubstring) {
             String unless = normalize(unlessDocSubstring);
+            String unlessCompact = compact(unless);
             return new KrSkillAlias(
                     normalize(koreanRaw),
                     normalize(englishSkillName),
-                    doc -> unless.isEmpty() || !doc.contains(unless)
+                    doc -> unless.isEmpty() || (!doc.contains(unless) && !compact(doc).contains(unlessCompact))
             );
         }
     }

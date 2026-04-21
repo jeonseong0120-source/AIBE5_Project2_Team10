@@ -48,21 +48,28 @@ export default function ClientDashboard() {
 
                 // 🎯 [리뷰 반영] Role 정규화: ROLE_BOTH -> BOTH (GlobalNavbar 대응)
                 const raw = res.data as Record<string, unknown>;
-                const normalizedRole = String(raw.role ?? '').replace("ROLE_", "");
+                const normalizedRoles = String(raw.role ?? '')
+                    .split(',')
+                    .map((v) => v.trim().replace(/^ROLE_/, ''))
+                    .filter(Boolean);
 
-                if (normalizedRole === "GUEST") {
+                if (normalizedRoles.includes("GUEST")) {
                     router.replace("/onboarding");
                     return;
                 }
 
-                if (normalizedRole === "FREELANCER") {
+                if (
+                    normalizedRoles.includes("FREELANCER") &&
+                    !normalizedRoles.includes("CLIENT") &&
+                    !normalizedRoles.includes("BOTH")
+                ) {
                     alert("해당 대시보드는 클라이언트 전용 화면입니다.");
                     router.replace("/");
                     return;
                 }
 
                 const navbarRole: UserData['role'] =
-                    normalizedRole === 'BOTH' ? 'BOTH' : 'CLIENT';
+                    normalizedRoles.includes('BOTH') ? 'BOTH' : 'CLIENT';
 
                 const profileImg =
                     (typeof raw.profileImage === 'string' ? raw.profileImage : undefined)

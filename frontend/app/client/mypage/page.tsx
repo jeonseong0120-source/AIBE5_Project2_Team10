@@ -38,12 +38,16 @@ interface ProjectDto {
 }
 
 function mapClientMyPageUserToNavbarUser(u: UserProfile): UserData {
-    const r = String(u.role).replace('ROLE_', '');
-    const role: UserData['role'] = r.includes('BOTH')
-        ? 'BOTH'
-        : r.includes('FREELANCER')
-            ? 'FREELANCER'
-            : 'CLIENT';
+        const roles = String(u.role)
+                .split(',')
+            .map((v) => v.trim().replace(/^ROLE_/, ''))
+            .filter(Boolean);
+        const hasClient = roles.includes('CLIENT');
+        const hasFreelancer = roles.includes('FREELANCER');
+        const role: UserData['role'] =
+                roles.includes('BOTH') || (hasClient && hasFreelancer)
+                    ? 'BOTH'
+                        : 'CLIENT';
     return {
         role,
         nickname: u.nickname,
