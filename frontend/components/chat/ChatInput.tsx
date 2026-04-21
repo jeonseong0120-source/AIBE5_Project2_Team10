@@ -33,6 +33,7 @@ export default function ChatInput({
                 <input
                     type="text"
                     value={value}
+                    maxLength={500}
                     onChange={(e) => onChange(e.target.value)}
                     onCompositionStart={() => setIsComposing(true)}
                     onCompositionEnd={() => setIsComposing(false)}

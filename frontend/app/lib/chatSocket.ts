@@ -43,6 +43,33 @@ export function connectChatSocket(onConnect?: () => void) {
     return client;
 }
 
+export async function ensureChatSocketConnected(): Promise<Client> {
+    if (client?.connected) return client;
+
+    return new Promise((resolve, reject) => {
+        const socketClient = connectChatSocket();
+
+        const timeout = setTimeout(() => {
+            reject(new Error("채팅 소켓 연결 시간 초과"));
+        }, 5000);
+
+        const originalOnConnect = socketClient.onConnect;
+        const originalOnWebSocketError = socketClient.onWebSocketError;
+
+        socketClient.onConnect = (frame) => {
+            clearTimeout(timeout);
+            originalOnConnect?.(frame);
+            resolve(socketClient);
+        };
+
+        socketClient.onWebSocketError = (event) => {
+            clearTimeout(timeout);
+            originalOnWebSocketError?.(event);
+            reject(new Error("채팅 소켓 연결 실패"));
+        };
+    });
+}
+
 export function disconnectChatSocket() {
     if (client) {
         client.deactivate();
