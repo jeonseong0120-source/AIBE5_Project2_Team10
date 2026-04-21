@@ -1,10 +1,12 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
 import ModeToggle from '@/components/common/ModeToggle';
 import { Search, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getActiveRole, setActiveRole } from '@/app/lib/auth';
 
 // 🎯 명확한 인터페이스 정의
 interface UserData {
@@ -28,8 +30,21 @@ interface GlobalNavbarProps {
 export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
     const pathname = usePathname();
     const router = useRouter();
+    const [currentMode, setCurrentMode] = useState<'CLIENT' | 'FREELANCER'>('FREELANCER');
 
-    const isClientPage = pathname?.startsWith('/client');
+    useEffect(() => {
+        if (pathname?.startsWith('/client')) {
+            setActiveRole('CLIENT');
+            setCurrentMode('CLIENT');
+        } else if (pathname?.startsWith('/freelancer')) {
+            setActiveRole('FREELANCER');
+            setCurrentMode('FREELANCER');
+        } else {
+            setCurrentMode(getActiveRole());
+        }
+    }, [pathname]);
+
+    const isClientPage = currentMode === 'CLIENT';
     const accentColor = isClientPage ? '#FF7D00' : '#7A4FFF';
     const buttonBg = isClientPage 
         ? 'linear-gradient(135deg, #FF7D00 0%, #FF9E45 100%)' 
@@ -50,7 +65,9 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
             { label: 'COMMUNITY', path: '/community' },
         ];
 
-    const userImg = profile?.logoUrl || profile?.profileImageUrl || user?.profileImage || user?.imageUrl;
+    const userImg = isClientPage 
+        ? (profile?.logoUrl || user?.profileImage || user?.imageUrl)
+        : (profile?.profileImageUrl || user?.profileImage || user?.imageUrl);
     const userName = user?.nickname || user?.name || (isClientPage ? 'C' : 'F');
 
     return (

@@ -3,6 +3,8 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Briefcase, MonitorPlay } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { getActiveRole, setActiveRole } from '@/app/lib/auth';
 
 interface ModeToggleProps {
     role?: string;
@@ -11,15 +13,33 @@ interface ModeToggleProps {
 export default function ModeToggle({ role }: ModeToggleProps) {
     const pathname = usePathname();
     const router = useRouter();
+    const [currentMode, setCurrentMode] = useState<'CLIENT' | 'FREELANCER'>('FREELANCER');
+
+    useEffect(() => {
+        if (pathname?.startsWith('/client')) {
+            setActiveRole('CLIENT');
+            setCurrentMode('CLIENT');
+        } else if (pathname?.startsWith('/freelancer')) {
+            setActiveRole('FREELANCER');
+            setCurrentMode('FREELANCER');
+        } else {
+            setCurrentMode(getActiveRole());
+        }
+    }, [pathname]);
 
     // 🎯 BOTH 권한이 아니면 아예 숨김
     if (role !== 'BOTH') return null;
 
-    const isClientMode = pathname?.startsWith('/client');
+    const isClientMode = currentMode === 'CLIENT';
 
     const toggleMode = () => {
-        if (isClientMode) router.push('/freelancer/dashboard');
-        else router.push('/client/dashboard');
+        if (isClientMode) {
+            setActiveRole('FREELANCER');
+            router.push('/freelancer/dashboard');
+        } else {
+            setActiveRole('CLIENT');
+            router.push('/client/dashboard');
+        }
     };
 
     return (
