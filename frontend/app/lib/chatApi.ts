@@ -27,11 +27,7 @@ export async function markChatAsRead(roomId: number): Promise<void> {
 export async function sendChatMessage(
     body: ChatMessageSendRequest
 ): Promise<void> {
-    const client = connectChatSocket();
-
-    if (!client.connected) {
-        throw new Error("채팅 서버에 연결되지 않았습니다.");
-    }
+    const client = await ensureChatSocketConnected();
 
     client.publish({
         destination: "/pub/chat/send",
