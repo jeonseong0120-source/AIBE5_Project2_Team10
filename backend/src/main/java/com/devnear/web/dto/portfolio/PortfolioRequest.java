@@ -29,6 +29,6 @@ public class PortfolioRequest {
 
     @NotNull(message = "스킬 목록(skills) 파라미터는 필수입니다.")
     @NotEmpty(message = "최소 1개 이상의 스킬을 등록해야 합니다.")
-    @Size(min = 1, max = 50, message = "포트폴리오 스킬은 1개 이상 50개 이하로 선택해 주세요.")
+    @Size(min = 1, max = 5, message = "포트폴리오 스킬은 1개 이상 5개 이하로 선택해 주세요.")
     private List<@NotNull @Min(1) Long> skills;
 }

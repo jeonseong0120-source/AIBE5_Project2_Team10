@@ -21,9 +21,10 @@ export default function ClientDashboard() {
 
     // 🎯 2. GlobalNavbar에 전달할 유저 정보 상태
     const [user, setUser] = useState<UserData | null>(null);
-
-    // 🎯 [추가] 사진(logoUrl) 데이터를 담을 프로필 상태
     const [profile, setProfile] = useState<ProfileData | null>(null);
+
+    // 🎯 [개선] 북마크 상태를 중앙에서 관리 (Set 사용)
+    const [bookmarkedIds, setBookmarkedIds] = useState<Set<number>>(new Set());
 
     const [cursor, setCursor] = useState({ x: 0, y: 0 });
 
@@ -92,12 +93,20 @@ export default function ClientDashboard() {
         checkAccess();
     }, [router]);
 
-    // 🎯 [리뷰 반영] 프로필 호출을 필터 의존성에서 분리하여 세션 스코프로 한 번만 실행
     useEffect(() => {
         if (authorized) {
             api.get('/client/profile')
                 .then(res => setProfile(res.data as ProfileData))
                 .catch(() => {});
+
+            // 🎯 [개선] 북마크 아이디 목록 한 번에 가져오기
+            api.get('/v1/bookmarks/freelancers?size=1000')
+                .then(res => {
+                    const list = res.data.content || [];
+                    const ids = new Set<number>(list.map((b: any) => Number(b.profileId)));
+                    setBookmarkedIds(ids);
+                })
+                .catch(err => console.error("Failed to fetch bookmarks:", err));
         }
     }, [authorized]);
 
@@ -380,7 +389,10 @@ export default function ClientDashboard() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
                                 >
-                                    <FreelancerCard data={freelancer} />
+                                    <FreelancerCard 
+                                        data={freelancer} 
+                                        initialIsBookmarked={bookmarkedIds.has(Number(freelancer.id))}
+                                    />
                                 </motion.div>
                             ))}
                         </motion.div>

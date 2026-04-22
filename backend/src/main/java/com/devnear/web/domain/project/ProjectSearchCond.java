@@ -9,8 +9,10 @@ import java.util.List;
 public class ProjectSearchCond {
     private String keyword;
     private List<Long> skillIds;
+    private List<String> skillNames;
     private ProjectStatus status;
     private Boolean online;
     private Boolean offline;
     private String location;
+    private Long excludeOwnerUserId;
 }

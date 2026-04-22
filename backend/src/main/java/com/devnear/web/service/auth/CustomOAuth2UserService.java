@@ -1,6 +1,7 @@
 package com.devnear.web.service.auth;
 
 import com.devnear.web.domain.enums.Role;
+import com.devnear.web.domain.enums.UserStatus;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -56,7 +57,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String sub = (String) attributes.get("sub");
 
         return userRepository.findByEmail(email)
-                .map(entity -> entity.update(name, picture, registrationId, sub))
+                .map(entity -> {
+                    if (entity.getStatus() == UserStatus.WITHDRAWN) {
+                        throw new InternalAuthenticationServiceException("탈퇴한 계정입니다.");
+                    }
+                    return entity.update(name, picture, registrationId, sub);
+                })
                 .orElseGet(() -> {
                     // [보고] 닉네임 자동 생성 시 중복 방지 로직 추가
                     String safeNickname = generateUniqueNickname();

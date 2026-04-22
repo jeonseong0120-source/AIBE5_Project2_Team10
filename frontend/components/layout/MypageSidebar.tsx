@@ -1,10 +1,9 @@
 'use client';
 
-import { X, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { logout } from '@/app/lib/authEvents';
 import { motion } from 'framer-motion';
-
 interface MypageSidebarProps {
     tabs: { id: string, label: string, icon: any }[];
     activeTab: string;

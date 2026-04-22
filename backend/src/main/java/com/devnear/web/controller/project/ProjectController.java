@@ -3,6 +3,7 @@ package com.devnear.web.controller.project;
 import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.enums.Role;
 import com.devnear.web.domain.user.User;
+import java.util.List;
 import org.springframework.lang.Nullable;
 import com.devnear.web.dto.project.ProjectRequest;
 import com.devnear.web.dto.project.ProjectResponse;
@@ -69,7 +70,7 @@ public class ProjectController {
             @Nullable @LoginUser User viewer,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
-            @RequestParam(required = false) String skill,
+            @RequestParam(required = false, name = "skill") List<String> skills,
             @RequestParam(required = false) Boolean online,
             @RequestParam(required = false) Boolean offline,
             @RequestParam(required = false) Boolean excludeOwn,
@@ -77,7 +78,7 @@ public class ProjectController {
 
         Long excludeOwnerUserId = resolveExcludeOwnerUserId(viewer, excludeOwn);
         Page<ProjectResponse> responses = projectService.searchProjects(
-                keyword, location, skill, online, offline, excludeOwnerUserId, pageable);
+                keyword, location, skills, online, offline, excludeOwnerUserId, pageable);
         return ResponseEntity.ok(responses);
     }
 

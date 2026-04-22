@@ -1,5 +1,6 @@
 package com.devnear.web.domain.proposal;
 
+import com.devnear.web.domain.enums.ProposalStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -60,4 +61,8 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM Proposal p WHERE p.project.id = :projectId")
     void deleteByProjectId(@Param("projectId") Long projectId);
+
+    boolean existsByClientProfile_IdAndStatus(Long clientProfileId, ProposalStatus status);
+
+    boolean existsByFreelancerProfile_IdAndStatus(Long freelancerProfileId, ProposalStatus status);
 }

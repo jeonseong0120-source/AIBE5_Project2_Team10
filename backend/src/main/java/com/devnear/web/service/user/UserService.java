@@ -3,6 +3,7 @@ package com.devnear.web.service.user;
 import com.devnear.global.auth.JwtTokenProvider;
 import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.enums.Role;
+import com.devnear.web.domain.enums.UserStatus;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.freelancer.FreelancerSkill;
@@ -64,8 +65,11 @@ public class UserService {
     @CacheEvict(value = "users", key = "#email") // 👈 [추가] 권한 승격 시 캐시 삭제!
     @Transactional
     public TokenResponse onboarding(String email, OnboardingRequest request) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailForUpdate(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
+            throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
+        }
 
         if (!Objects.equals(user.getNickname(), request.getNickname()) &&
                 userRepository.existsByNickname(request.getNickname())) {
@@ -132,8 +136,11 @@ public class UserService {
     @CacheEvict(value = "users", key = "#email") // 👈 [추가] 프로필 이미지 변경 시에도 캐시 삭제
     @Transactional
     public void updateProfileImage(String email, String newImageUrl) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailForUpdate(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
+            throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
+        }
         user.updateProfileImageUrl(newImageUrl);
     }
 }

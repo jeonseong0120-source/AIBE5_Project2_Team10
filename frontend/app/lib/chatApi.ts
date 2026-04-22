@@ -2,8 +2,10 @@ import api from "./axios";
 import type {
     ChatMessageResponse,
     ChatMessageSendRequest,
+    ChatRoomCreateResponse,
     ChatRoomResponse,
 } from "../../types/chat";
+import { ensureChatSocketConnected } from "./chatSocket";
 
 export async function getChatRooms(): Promise<ChatRoomResponse[]> {
     const { data } = await api.get<ChatRoomResponse[]>("/chat/rooms");
@@ -25,12 +27,23 @@ export async function markChatAsRead(roomId: number): Promise<void> {
 
 export async function sendChatMessage(
     body: ChatMessageSendRequest
-): Promise<ChatMessageResponse> {
-    const { data } = await api.post<ChatMessageResponse>(
-        `/chat/rooms/${body.roomId}/messages`,
-        {
-            message: body.message,
-        }
-    );
+): Promise<void> {
+    const client = await ensureChatSocketConnected();
+
+    client.publish({
+        destination: "/pub/chat/send",
+        body: JSON.stringify({
+            roomId: body.roomId,
+            content: body.message,
+        }),
+    });
+}
+
+export async function createOrGetChatRoom(
+    targetUserId: number
+): Promise<ChatRoomCreateResponse> {
+    const { data } = await api.post<ChatRoomCreateResponse>("/chat/rooms", {
+        targetUserId,
+    });
     return data;
 }

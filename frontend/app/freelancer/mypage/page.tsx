@@ -10,6 +10,7 @@ import { NotificationBell } from '@/components/notifications/NotificationProvide
 
 // New Components
 import MypageSidebar from '@/components/layout/MypageSidebar';
+import MypageWithdrawFooter from '@/components/layout/MypageWithdrawFooter';
 import GlobalNavbar from '@/components/common/GlobalNavbar';
 import MypageProfileTab from '@/components/freelancer_mypage/MypageProfileTab';
 import MypagePortfolioTab from '@/components/freelancer_mypage/MypagePortfolioTab';
@@ -82,14 +83,16 @@ function FreelancerMyPageContent() {
     const searchParams = useSearchParams();
     useEffect(() => {
         const tab = searchParams.get('tab');
+        const openToken = searchParams.get('_t');
         if (tab && TABS.some(t => t.id === tab)) {
             setActiveTab(tab);
-            // 포트폴리오 탭으로 올 경우 모달을 자동으로 엽니다.
-            if (tab === 'portfolio') {
+            // 포트폴리오 "추가" 딥링크는 _t가 있을 때만 1회성으로 모달 오픈
+            if (tab === 'portfolio' && openToken) {
                 setIsPortfolioModalOpen(true);
+                router.replace(`${pathname}?tab=portfolio`, { scroll: false });
             }
         }
-    }, [searchParams]);
+    }, [searchParams, router, pathname]);
 
     useEffect(() => {
         const init = async () => {
@@ -354,13 +357,13 @@ function FreelancerMyPageContent() {
                 <MypageSidebar tabs={TABS} activeTab={activeTab} setActiveTab={setActiveTab} accentColor="#7A4FFF" />
 
                 <div className="space-y-8 min-w-0">
-                    <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: "easeOut" }} className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/50 min-h-[700px] w-full">
+                    <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: "easeOut" }} className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/50 min-h-[780px] w-full flex flex-col">
                         {loading ? (
-                            <div className="flex flex-col items-center justify-center h-64 gap-4">
+                            <div className="flex min-h-0 flex-1 flex-col items-center justify-center min-h-[320px] gap-4">
                                 <div className="w-10 h-10 border-4 border-[#7A4FFF]/20 border-t-[#7A4FFF] rounded-full animate-spin" />
                             </div>
                         ) : (
-                            <>
+                            <div className="min-h-0 flex-1 w-full">
                                 {activeTab === 'profile' && <MypageProfileTab profile={profile} isEditingProfile={isEditingProfile} setIsEditingProfile={setIsEditingProfile} editProfileData={editProfileData} setEditProfileData={setEditProfileData} mySkillIds={mySkillIds} toggleSkill={toggleSkill} skillSearchQuery={skillSearchQuery} setSkillSearchQuery={setSkillSearchQuery} allGlobalSkills={allGlobalSkills} handleProfileAndSkillUpdate={handleProfileAndSkillUpdate} isProfileUploading={isProfileUploading} profileFileInputRef={profileFileInputRef} handleProfileImageUpload={handleProfileImageUpload} handleToggleStatus={handleToggleStatus} isTogglingStatus={isTogglingStatus} validationError={validationError} setValidationError={setValidationError} setMySkillIds={setMySkillIds} />}
                                 {activeTab === 'portfolio' && <MypagePortfolioTab portfolios={portfolios} setIsPortfolioModalOpen={setIsPortfolioModalOpen} setPortfolioForm={setPortfolioForm} setPortfolioSkillSearchQuery={setPortfolioSkillSearchQuery} setSelectedPortfolio={setSelectedPortfolio} setActiveImageIndex={setActiveImageIndex} emptyPortfolioForm={EMPTY_PORTFOLIO_FORM} />}
 
@@ -370,8 +373,9 @@ function FreelancerMyPageContent() {
                                 {activeTab === 'grade' && <MypageGradeTab profile={profile} />}
                                 {activeTab === 'bookmarks' && <BookmarkTab />}
                                 {activeTab === 'settlement' && <MypageSettlementTab profile={profile} />}
-                            </>
+                            </div>
                         )}
+                        <MypageWithdrawFooter />
                     </motion.div>
                 </div>
             </main>
