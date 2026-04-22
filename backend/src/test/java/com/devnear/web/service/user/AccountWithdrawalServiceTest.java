@@ -61,7 +61,7 @@ class AccountWithdrawalServiceTest {
     @Test
     void alreadyWithdrawnUserThrows() {
         User user = org.mockito.Mockito.mock(User.class);
-        when(userRepository.findByEmail("x@test.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmailForUpdate("x@test.com")).thenReturn(Optional.of(user));
         when(user.getStatus()).thenReturn(UserStatus.WITHDRAWN);
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
@@ -73,7 +73,7 @@ class AccountWithdrawalServiceTest {
     void clientWithBlockingProjectThrows() {
         User user = org.mockito.Mockito.mock(User.class);
         ClientProfile clientProfile = org.mockito.Mockito.mock(ClientProfile.class);
-        when(userRepository.findByEmail("client@test.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmailForUpdate("client@test.com")).thenReturn(Optional.of(user));
         when(user.getStatus()).thenReturn(UserStatus.ACTIVE);
         when(user.getRole()).thenReturn(Role.CLIENT);
         when(user.getClientProfile()).thenReturn(clientProfile);
@@ -89,7 +89,7 @@ class AccountWithdrawalServiceTest {
     void freelancerWithPositiveBalanceThrows() {
         User user = org.mockito.Mockito.mock(User.class);
         FreelancerProfile freelancerProfile = org.mockito.Mockito.mock(FreelancerProfile.class);
-        when(userRepository.findByEmail("freelancer@test.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmailForUpdate("freelancer@test.com")).thenReturn(Optional.of(user));
         when(user.getStatus()).thenReturn(UserStatus.ACTIVE);
         when(user.getRole()).thenReturn(Role.FREELANCER);
         when(user.getFreelancerProfile()).thenReturn(freelancerProfile);
@@ -108,7 +108,7 @@ class AccountWithdrawalServiceTest {
         FreelancerProfile freelancerProfile = org.mockito.Mockito.mock(FreelancerProfile.class);
         Portfolio pf = org.mockito.Mockito.mock(Portfolio.class);
 
-        when(userRepository.findByEmail("both@test.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmailForUpdate("both@test.com")).thenReturn(Optional.of(user));
         when(user.getStatus()).thenReturn(UserStatus.ACTIVE);
         when(user.getRole()).thenReturn(Role.BOTH);
         when(user.getId()).thenReturn(7L);
@@ -133,7 +133,7 @@ class AccountWithdrawalServiceTest {
         verify(portfolioRepository).deleteAll(any());
         verify(clientProfile).anonymizeForWithdrawal();
         verify(freelancerProfile).scrubPersonalDataForWithdrawal();
-        verify(user).markWithdrawnAndAnonymize("withdrawn-u7@account-withdrawn.invalid", "encoded");
+        verify(user).markWithdrawnAndAnonymize("withdrawn-u7@account-withdrawn.invalid", "withdrawn-u7", "encoded");
         verify(userRepository, never()).save(any());
     }
 }

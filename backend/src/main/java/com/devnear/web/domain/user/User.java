@@ -110,11 +110,11 @@ public class User extends BaseTimeEntity implements UserDetails {
     /**
      * 회원탈퇴: 로그인 불가·PII 제거. 프로필/리뷰 등 연관 엔티티는 서비스에서 별도 스크럽합니다.
      */
-    public void markWithdrawnAndAnonymize(String uniqueEmail, String encodedPasswordPlaceholder) {
+    public void markWithdrawnAndAnonymize(String uniqueEmail, String uniqueNickname, String encodedPasswordPlaceholder) {
         this.email = uniqueEmail;
         this.password = encodedPasswordPlaceholder;
         this.name = "탈퇴한 사용자";
-        this.nickname = "withdrawn_" + this.id;
+        this.nickname = uniqueNickname;
         this.phoneNumber = null;
         this.profileImageUrl = null;
         this.provider = null;

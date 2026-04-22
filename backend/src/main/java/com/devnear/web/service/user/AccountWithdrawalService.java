@@ -43,7 +43,7 @@ public class AccountWithdrawalService {
 
     @Transactional
     public void withdrawByEmail(String email) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailForUpdate(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
         if (user.getStatus() == UserStatus.WITHDRAWN) {
             throw new IllegalStateException("이미 탈퇴 처리된 계정입니다.");
@@ -85,12 +85,17 @@ public class AccountWithdrawalService {
         }
 
         String placeholderEmail = buildWithdrawnEmail(user.getId());
+        String placeholderNickname = buildWithdrawnNickname(user.getId());
         String encodedPassword = passwordEncoder.encode("WITHDRAWN_" + UUID.randomUUID());
-        user.markWithdrawnAndAnonymize(placeholderEmail, encodedPassword);
+        user.markWithdrawnAndAnonymize(placeholderEmail, placeholderNickname, encodedPassword);
     }
 
     private static String buildWithdrawnEmail(long userId) {
         return "withdrawn-u" + userId + "@account-withdrawn.invalid";
+    }
+
+    private static String buildWithdrawnNickname(long userId) {
+        return "withdrawn-u" + userId;
     }
 
     private void assertClientMayWithdraw(Long clientProfileId) {

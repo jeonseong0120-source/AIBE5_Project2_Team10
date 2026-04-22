@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { logout } from '@/app/lib/authEvents';
 import api from '@/app/lib/axios';
 import { motion } from 'framer-motion';
-
+import { useState } from 'react';
 interface MypageSidebarProps {
     tabs: { id: string, label: string, icon: any }[];
     activeTab: string;
@@ -15,11 +15,14 @@ interface MypageSidebarProps {
 
 export default function MypageSidebar({ tabs, activeTab, setActiveTab, accentColor = '#FF7D00' }: MypageSidebarProps) {
     const router = useRouter();
+    const [isWithdrawing, setIsWithdrawing] = useState(false);
     const handleWithdraw = async () => {
+        if (isWithdrawing) return;
         const confirmed = confirm('정말 회원 탈퇴하시겠습니까?\n탈퇴 후에는 계정을 복구할 수 없습니다.');
         if (!confirmed) return;
 
         try {
+            setIsWithdrawing(true);
             await api.delete('/v1/users/me/account');
             alert('회원 탈퇴가 완료되었습니다.');
             logout();
@@ -27,6 +30,7 @@ export default function MypageSidebar({ tabs, activeTab, setActiveTab, accentCol
         } catch (error: any) {
             const message = error?.response?.data?.message || '회원 탈퇴에 실패했습니다. 조건을 확인해주세요.';
             alert(message);
+            setIsWithdrawing(false);
         }
     };
 
@@ -75,10 +79,10 @@ export default function MypageSidebar({ tabs, activeTab, setActiveTab, accentCol
                 </button>
                 <button
                     onClick={handleWithdraw}
-                    className="w-full mt-2 flex items-center gap-3 p-4 hover:bg-rose-50 rounded-xl transition-all duration-300 text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase font-mono tracking-widest"
+                    className="w-full mt-2 flex items-center gap-3 p-4 hover:bg-rose-50 rounded-xl transition-all duration-300 text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase font-mono tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <UserX size={16} />
-                    WITHDRAW
+                    {isWithdrawing ? 'WITHDRAWING...' : 'WITHDRAW'}
                 </button>
             </div>
 

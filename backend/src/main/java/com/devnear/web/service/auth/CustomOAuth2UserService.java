@@ -1,6 +1,7 @@
 package com.devnear.web.service.auth;
 
 import com.devnear.web.domain.enums.Role;
+import com.devnear.web.domain.enums.UserStatus;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -69,7 +70,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         return userRepository.findByEmail(email)
-                .map(entity -> entity.update(name, picture, registrationId, sub))
+                .map(entity -> {
+                    if (entity.getStatus() == UserStatus.WITHDRAWN) {
+                        throw new InternalAuthenticationServiceException("탈퇴한 계정입니다.");
+                    }
+                    return entity.update(name, picture, registrationId, sub);
+                })
                 .orElseGet(() -> {
                     // [보고] 닉네임 중복 방지 및 길이 초과 방지를 위해 무작위 UUID 기반 닉네임 생성
                     String safeNickname = "user_" + UUID.randomUUID().toString().substring(0, 8);
