@@ -53,18 +53,18 @@ class NotificationServiceIntegrationTest {
 
         assertThat(notificationRepository.countUnreadByUserId(user.getId())).isEqualTo(1);
 
-        NotificationInboxResponse inbox = notificationService.getInbox(user, PageRequest.of(0, 10));
+        NotificationInboxResponse inbox = notificationService.getInbox(user.getId(), PageRequest.of(0, 10));
         assertThat(inbox.unreadCount()).isEqualTo(1);
         assertThat(inbox.content()).hasSize(1);
         assertThat(inbox.content().get(0).title()).isEqualTo("새 공고 지원");
         assertThat(inbox.content().get(0).read()).isFalse();
 
         Long id = inbox.content().get(0).notificationId();
-        notificationService.markNotificationRead(user, id);
+        notificationService.markNotificationRead(user.getId(), id);
 
         Notification persisted = notificationRepository.findById(id).orElseThrow();
         assertThat(persisted.isRead()).isTrue();
-        assertThat(notificationService.getInbox(user, PageRequest.of(0, 10)).unreadCount()).isEqualTo(0);
+        assertThat(notificationService.getInbox(user.getId(), PageRequest.of(0, 10)).unreadCount()).isEqualTo(0);
     }
 
     @Test
@@ -84,13 +84,13 @@ class NotificationServiceIntegrationTest {
         Long id = notificationRepository.findByUser_IdOrderByCreatedAtDesc(user.getId(), PageRequest.of(0, 1))
                 .getContent().get(0).getId();
 
-        assertThat(notificationService.getInbox(user, PageRequest.of(0, 10), true).content()).hasSize(1);
+        assertThat(notificationService.getInbox(user.getId(), PageRequest.of(0, 10), true).content()).hasSize(1);
 
-        notificationService.markNotificationRead(user, id);
+        notificationService.markNotificationRead(user.getId(), id);
         notificationRepository.flush();
 
-        assertThat(notificationService.getInbox(user, PageRequest.of(0, 10), true).content()).isEmpty();
-        assertThat(notificationService.getInbox(user, PageRequest.of(0, 10), false).content()).hasSize(1);
+        assertThat(notificationService.getInbox(user.getId(), PageRequest.of(0, 10), true).content()).isEmpty();
+        assertThat(notificationService.getInbox(user.getId(), PageRequest.of(0, 10), false).content()).hasSize(1);
     }
 
     @Test
@@ -119,7 +119,7 @@ class NotificationServiceIntegrationTest {
         Long nid = notificationRepository.findByUser_IdOrderByCreatedAtDesc(a.getId(), PageRequest.of(0, 1))
                 .getContent().get(0).getId();
 
-        assertThatThrownBy(() -> notificationService.markNotificationRead(b, nid))
+        assertThatThrownBy(() -> notificationService.markNotificationRead(b.getId(), nid))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 }

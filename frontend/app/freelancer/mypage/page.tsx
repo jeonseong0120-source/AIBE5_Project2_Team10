@@ -376,7 +376,7 @@ function FreelancerMyPageContent() {
                                 {activeTab === 'notifications' && <MypageNotificationsTab accentColor="#7A4FFF" />}
                             </div>
                         )}
-                        <MypageWithdrawFooter />
+                        {!loading && activeTab === 'profile' ? <MypageWithdrawFooter /> : null}
                     </motion.div>
                 </div>
             </main>

@@ -98,6 +98,20 @@ public class User extends BaseTimeEntity implements UserDetails {
         this.notifyCommunityComments = notifyCommunityComments;
     }
 
+    /**
+     * {@code findByEmailForUpdate} 등으로 User만 잠그면 역방향 OneToOne이 비어 있을 수 있습니다.
+     * 이때 flush 시 {@code orphanRemoval}으로 프로필이 삭제되면 타인의 찜 등 FK가 깨질 수 있어,
+     * 저장소에서 읽은 프로필로 필드를 맞춥니다.
+     */
+    public void attachManagedProfiles(ClientProfile clientProfile, FreelancerProfile freelancerProfile) {
+        if (clientProfile != null) {
+            this.clientProfile = clientProfile;
+        }
+        if (freelancerProfile != null) {
+            this.freelancerProfile = freelancerProfile;
+        }
+    }
+
     public User update(String name, String profileImageUrl, String provider, String providerId) {
         this.name = name;
         this.profileImageUrl = profileImageUrl;

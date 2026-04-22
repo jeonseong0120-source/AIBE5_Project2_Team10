@@ -184,7 +184,7 @@ export default function ClientMyPage() {
                             )}
                             {activeTab === 'notifications' && <MypageNotificationsTab accentColor="#FF7D00" />}
                         </div>
-                        <MypageWithdrawFooter />
+                        {activeTab === 'settings' ? <MypageWithdrawFooter /> : null}
                     </motion.div>
                 </div>
             </main>

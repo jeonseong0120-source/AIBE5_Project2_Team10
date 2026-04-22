@@ -81,7 +81,6 @@ export type NotificationsContextValue = {
     loading: boolean;
     panelRef: RefObject<HTMLDivElement | null>;
     onRowClick: (n: InboxNotification) => Promise<void>;
-    onDismissClick: (n: InboxNotification) => Promise<void>;
     setToast: Dispatch<SetStateAction<string | null>>;
 };
 
@@ -293,27 +292,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         [router],
     );
 
-    const onDismissClick = useCallback(async (n: InboxNotification) => {
-        if (n.read) {
-            setItems((prev) => prev.filter((x) => x.notificationId !== n.notificationId));
-            return;
-        }
-        try {
-            await api.patch(`/v1/notifications/${n.notificationId}/read`);
-            setUnreadCount((c) => Math.max(0, c - 1));
-            setItems((prev) => prev.filter((x) => x.notificationId !== n.notificationId));
-        } catch (err) {
-            let msg = "읽음 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.";
-            if (isAxiosError(err)) {
-                const data = err.response?.data as { message?: string } | undefined;
-                if (data?.message && typeof data.message === "string") {
-                    msg = data.message;
-                }
-            }
-            setToast(msg);
-        }
-    }, []);
-
     const showBell = Boolean(me && me.role !== "GUEST");
 
     const value = useMemo<NotificationsContextValue>(
@@ -326,10 +304,9 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
             loading,
             panelRef,
             onRowClick,
-            onDismissClick,
             setToast,
         }),
-        [showBell, open, unreadCount, items, loading, onRowClick, onDismissClick, setToast],
+        [showBell, open, unreadCount, items, loading, onRowClick, setToast],
     );
 
     return (

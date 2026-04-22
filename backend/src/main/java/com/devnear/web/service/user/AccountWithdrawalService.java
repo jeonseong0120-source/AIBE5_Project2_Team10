@@ -7,8 +7,11 @@ import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.enums.ProposalStatus;
 import com.devnear.web.domain.enums.Role;
 import com.devnear.web.domain.enums.UserStatus;
-import com.devnear.web.domain.payment.PaymentRepository;
+import com.devnear.web.domain.client.ClientProfile;
+import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
+import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
+import com.devnear.web.domain.payment.PaymentRepository;
 import com.devnear.web.domain.portfolio.Portfolio;
 import com.devnear.web.domain.portfolio.PortfolioRepository;
 import com.devnear.web.domain.project.ProjectRepository;
@@ -34,6 +37,8 @@ public class AccountWithdrawalService {
             List.of(PaymentStatus.SETTLED, PaymentStatus.CANCELED);
 
     private final UserRepository userRepository;
+    private final ClientProfileRepository clientProfileRepository;
+    private final FreelancerProfileRepository freelancerProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final ProjectRepository projectRepository;
     private final ProposalRepository proposalRepository;
@@ -51,6 +56,10 @@ public class AccountWithdrawalService {
         if (user.getRole() == Role.GUEST) {
             throw new IllegalStateException("온보딩을 완료한 뒤에만 회원 탈퇴를 할 수 있습니다.");
         }
+
+        ClientProfile loadedClient = clientProfileRepository.findByUser_Id(user.getId()).orElse(null);
+        FreelancerProfile loadedFreelancer = freelancerProfileRepository.findByUser_Id(user.getId()).orElse(null);
+        user.attachManagedProfiles(loadedClient, loadedFreelancer);
 
         boolean asClient = user.getRole() == Role.CLIENT || user.getRole() == Role.BOTH;
         boolean asFreelancer = user.getRole() == Role.FREELANCER || user.getRole() == Role.BOTH;

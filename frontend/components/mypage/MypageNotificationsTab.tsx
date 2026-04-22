@@ -3,7 +3,7 @@
 import api from "@/app/lib/axios";
 import type { InboxNotification } from "@/components/notifications/NotificationProvider";
 import { isAxiosError } from "axios";
-import { MessageSquare, X } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -76,45 +76,6 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
         }
     };
 
-    const markRead = useCallback(async (n: InboxNotification) => {
-        await api.patch(`/v1/notifications/${n.notificationId}/read`);
-        setUnreadCount((c) => Math.max(0, c - 1));
-        setItems((prev) =>
-            prev.map((x) => (x.notificationId === n.notificationId ? { ...x, read: true } : x)),
-        );
-    }, []);
-
-    const extractErrorMessage = (err: unknown, fallback: string) => {
-        if (isAxiosError(err)) {
-            const data = err.response?.data as { message?: string } | undefined;
-            if (data?.message && typeof data.message === "string") return data.message;
-        }
-        return fallback;
-    };
-
-    const onDismiss = async (n: InboxNotification) => {
-        if (n.read) {
-            setItems((prev) => prev.filter((x) => x.notificationId !== n.notificationId));
-            return;
-        }
-        try {
-            await api.patch(`/v1/notifications/${n.notificationId}/read`);
-            setUnreadCount((c) => Math.max(0, c - 1));
-            setItems((prev) =>
-                prev.map((x) => (x.notificationId === n.notificationId ? { ...x, read: true } : x)),
-            );
-        } catch (err) {
-            let msg = "읽음 처리에 실패했습니다.";
-            if (isAxiosError(err)) {
-                const data = err.response?.data as { message?: string } | undefined;
-                if (data?.message && typeof data.message === "string") {
-                    msg = data.message;
-                }
-            }
-            setToast(msg);
-        }
-    };
-
     const onRow = async (n: InboxNotification) => {
         if (!n.read) {
             try {
@@ -161,6 +122,10 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
                     {unreadCount > 0 ? (
                         <span className="ml-2 font-semibold text-zinc-800">미읽음 {unreadCount}건</span>
                     ) : null}
+                </p>
+                <p className="mt-3 rounded-xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-xs leading-relaxed text-amber-950">
+                    알림은 생성일 기준 <strong>30일이 지나면 자동으로 삭제</strong>됩니다. 목록에서 항목을 누르면 읽음 처리되며,
+                    이동할 링크가 있으면 해당 페이지로 이동합니다.
                 </p>
             </div>
 
@@ -212,14 +177,14 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
                         {items.map((n) => (
                             <li key={n.notificationId}>
                                 <div
-                                    className={`flex items-start gap-2 px-5 py-4 text-left text-sm ${
+                                    className={`px-5 py-4 text-left text-sm ${
                                         n.read ? "text-zinc-500" : "bg-orange-50/30 text-zinc-900"
                                     }`}
                                 >
                                     <button
                                         type="button"
                                         onClick={() => void onRow(n)}
-                                        className="flex flex-1 flex-col gap-0.5 text-left transition hover:opacity-85"
+                                        className="flex w-full flex-col gap-0.5 text-left transition hover:opacity-85"
                                     >
                                         <span className="font-semibold">{n.title}</span>
                                         {n.message ? (
@@ -229,14 +194,6 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
                                             {n.createdAt ? new Date(n.createdAt).toLocaleString() : ""}
                                             {n.read ? " · 읽음" : ""}
                                         </span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => void onDismiss(n)}
-                                        className="rounded-md p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
-                                        aria-label="알림 닫기"
-                                    >
-                                        <X className="h-4 w-4" />
                                     </button>
                                 </div>
                             </li>

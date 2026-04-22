@@ -2,6 +2,7 @@ package com.devnear.web.service.user;
 
 import com.devnear.web.domain.application.ProjectApplicationRepository;
 import com.devnear.web.domain.client.ClientProfile;
+import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.enums.ApplicationStatus;
 import com.devnear.web.domain.enums.PaymentStatus;
 import com.devnear.web.domain.enums.ProjectStatus;
@@ -9,6 +10,7 @@ import com.devnear.web.domain.enums.ProposalStatus;
 import com.devnear.web.domain.enums.Role;
 import com.devnear.web.domain.enums.UserStatus;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
+import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.payment.PaymentRepository;
 import com.devnear.web.domain.portfolio.Portfolio;
 import com.devnear.web.domain.portfolio.PortfolioRepository;
@@ -43,6 +45,10 @@ class AccountWithdrawalServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
+    private ClientProfileRepository clientProfileRepository;
+    @Mock
+    private FreelancerProfileRepository freelancerProfileRepository;
+    @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
     private ProjectRepository projectRepository;
@@ -74,8 +80,11 @@ class AccountWithdrawalServiceTest {
         User user = org.mockito.Mockito.mock(User.class);
         ClientProfile clientProfile = org.mockito.Mockito.mock(ClientProfile.class);
         when(userRepository.findByEmailForUpdate("client@test.com")).thenReturn(Optional.of(user));
+        when(user.getId()).thenReturn(101L);
         when(user.getStatus()).thenReturn(UserStatus.ACTIVE);
         when(user.getRole()).thenReturn(Role.CLIENT);
+        when(clientProfileRepository.findByUser_Id(101L)).thenReturn(Optional.of(clientProfile));
+        when(freelancerProfileRepository.findByUser_Id(101L)).thenReturn(Optional.empty());
         when(user.getClientProfile()).thenReturn(clientProfile);
         when(clientProfile.getId()).thenReturn(10L);
         when(projectRepository.existsByClientProfile_IdAndStatusIn(anyLong(), anyCollection())).thenReturn(true);
@@ -90,8 +99,11 @@ class AccountWithdrawalServiceTest {
         User user = org.mockito.Mockito.mock(User.class);
         FreelancerProfile freelancerProfile = org.mockito.Mockito.mock(FreelancerProfile.class);
         when(userRepository.findByEmailForUpdate("freelancer@test.com")).thenReturn(Optional.of(user));
+        when(user.getId()).thenReturn(102L);
         when(user.getStatus()).thenReturn(UserStatus.ACTIVE);
         when(user.getRole()).thenReturn(Role.FREELANCER);
+        when(clientProfileRepository.findByUser_Id(102L)).thenReturn(Optional.empty());
+        when(freelancerProfileRepository.findByUser_Id(102L)).thenReturn(Optional.of(freelancerProfile));
         when(user.getFreelancerProfile()).thenReturn(freelancerProfile);
         when(freelancerProfile.getId()).thenReturn(99L);
         when(freelancerProfile.getBalance()).thenReturn(1000L);
@@ -112,6 +124,8 @@ class AccountWithdrawalServiceTest {
         when(user.getStatus()).thenReturn(UserStatus.ACTIVE);
         when(user.getRole()).thenReturn(Role.BOTH);
         when(user.getId()).thenReturn(7L);
+        when(clientProfileRepository.findByUser_Id(7L)).thenReturn(Optional.of(clientProfile));
+        when(freelancerProfileRepository.findByUser_Id(7L)).thenReturn(Optional.of(freelancerProfile));
         when(user.getClientProfile()).thenReturn(clientProfile);
         when(user.getFreelancerProfile()).thenReturn(freelancerProfile);
         when(clientProfile.getId()).thenReturn(11L);
