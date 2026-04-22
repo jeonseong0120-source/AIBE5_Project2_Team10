@@ -215,7 +215,7 @@ export default function ProjectDetailPage() {
     const disableApplication = isApplied || !isProjectOpen;
 
     return (
-        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-32 relative overflow-hidden font-sans">
+        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-32 relative overflow-x-hidden font-sans">
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div
                     className="absolute inset-0 opacity-[0.05]"
