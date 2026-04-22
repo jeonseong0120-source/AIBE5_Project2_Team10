@@ -22,9 +22,12 @@ export function connectChatSocket(onConnect?: () => void) {
 
     client = new Client({
         webSocketFactory: () => new SockJS(resolveChatSocketUrl()),
-        connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
         reconnectDelay: 5000,
         debug: () => {},
+        beforeConnect: () => {
+            const t = getAccessToken();
+            client!.connectHeaders = t ? { Authorization: `Bearer ${t}` } : {};
+            },
         onConnect: () => {
             onConnect?.();
         },
@@ -78,15 +81,15 @@ export function disconnectChatSocket() {
         client.deactivate();
         client = null;
     }
+    connectingPromise = null;
 }
 
-export function subscribeChatRoom(
+export async function subscribeChatRoom(
     roomId: number,
     callback: (message: IMessage) => void
-): StompSubscription | null {
-    if (!client || !client.connected) return null;
-
-    return client.subscribe(`/sub/chat/rooms/${roomId}`, callback);
+    ): Promise<StompSubscription> {
+const c = await ensureChatSocketConnected();
+return c.subscribe(`/sub/chat/rooms/${roomId}`, callback);
 }
 
 export function isChatSocketConnected() {
