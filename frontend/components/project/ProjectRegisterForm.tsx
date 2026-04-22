@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createProject, type CreateProjectBody } from "@/app/lib/projectApi";
 import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
 import SkillTagSelector from "@/components/project/SkillTagSelector";
+import { MAX_PROJECT_SKILLS } from "@/app/lib/skillLimits";
 import { DollarSign, MapPin, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MatchingresultForm from "./MatchingresultForm";
@@ -66,6 +67,9 @@ export default function ProjectRegisterForm() {
 
         if (!online && !offline) return setError("근무 방식은 하나 이상 선택해 주세요.");
         if (Number(budget) < 1) return setError("예산은 1원 이상이어야 합니다.");
+        if (selectedSkillIds.length > MAX_PROJECT_SKILLS) {
+            return setError(`기술 스택은 최대 ${MAX_PROJECT_SKILLS}개까지 선택할 수 있습니다.`);
+        }
 
         const payload: CreateProjectBody = {
             projectName: projectName.trim(),
@@ -194,6 +198,7 @@ export default function ProjectRegisterForm() {
                             onChangeAction={setSelectedSkillIds}
                             suggestSourceText={detail}
                             suggestContext="project"
+                            maxSelected={MAX_PROJECT_SKILLS}
                         />
                     </div>
                 </div>
