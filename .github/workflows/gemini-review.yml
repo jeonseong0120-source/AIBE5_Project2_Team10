@@ -1,4 +1,4 @@
-name: "AI Code Review"
+name: AI Code Review
 
 on:
   pull_request:
@@ -13,13 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: AI Reviewer
-        uses: anc95/ChatGPT-CodeReview@v1
+      - name: AI Review
+        uses: anc95/ChatGPT-CodeReview@main
         with:
-          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
-          model: "gpt-4o-mini"
-          language: "Korean"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
