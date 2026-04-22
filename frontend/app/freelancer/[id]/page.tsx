@@ -15,5 +15,5 @@ export default function FreelancerDetailPage() {
         );
     }
 
-    return <FreelancerProfileDetail profileId={profileId} variant="client" />;
+    return <FreelancerProfileDetail profileId={profileId} variant="freelancer" />;
 }
