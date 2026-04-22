@@ -45,6 +45,12 @@ public class Payment extends BaseTimeEntity {
     @JoinColumn(name = "project_id")
     private Project project; // 연관된 프로젝트
 
+    @Column(name = "application_id")
+    private Long applicationId; // 수락할 지원서 또는 제안서 ID
+
+    @Column(name = "source")
+    private String source; // "APPLICATION" 또는 "PROPOSAL"
+
     // 결제 완료 처리
     public void confirm(String paymentKey, String method) {
         // 이미 완료된 경우 (멱등성 처리)

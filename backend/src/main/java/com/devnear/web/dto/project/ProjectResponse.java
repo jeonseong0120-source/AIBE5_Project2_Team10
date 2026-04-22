@@ -26,6 +26,7 @@ public class ProjectResponse {
     private Double longitude;
     private String logoUrl; // ✨ 클라이언트 로고 URL 추가
     private List<String> skills; // 연결된 기술 스택 이름 목록
+    private Long applicationCount; // ✨ 지원자 수 추가
 
     public static ProjectResponse from(Project project) {
         return ProjectResponse.builder()
@@ -45,6 +46,28 @@ public class ProjectResponse {
                 .skills(project.getProjectSkills().stream()
                         .map(ps -> ps.getSkill().getName())
                         .collect(Collectors.toList()))
+                .applicationCount(0L) // 기본값, 필요 시 서비스에서 채움
+                .build();
+    }
+
+    public static ProjectResponse from(Project project, Long applicationCount) {
+        ProjectResponse response = from(project);
+        return ProjectResponse.builder()
+                .projectId(response.getProjectId())
+                .companyName(response.getCompanyName())
+                .projectName(response.getProjectName())
+                .budget(response.getBudget())
+                .deadline(response.getDeadline())
+                .detail(response.getDetail())
+                .status(response.getStatus())
+                .online(response.isOnline())
+                .offline(response.isOffline())
+                .location(response.getLocation())
+                .latitude(response.getLatitude())
+                .longitude(response.getLongitude())
+                .logoUrl(response.getLogoUrl())
+                .skills(response.getSkills())
+                .applicationCount(applicationCount)
                 .build();
     }
 }

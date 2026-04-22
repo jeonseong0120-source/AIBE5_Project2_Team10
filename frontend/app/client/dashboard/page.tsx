@@ -7,7 +7,8 @@ import { NotificationBell } from '@/components/notifications/NotificationProvide
 import {
     User, Users, CheckCircle, XCircle, Edit, Trash2,
     Calendar, DollarSign, Activity, ChevronRight,
-    Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, Clock, ArrowUpRight, Plus, RefreshCcw
+    Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, Clock, ArrowUpRight, Plus, RefreshCcw, Search,
+    CreditCard, ShieldCheck, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } from '@/components/proposal/ProposalSendModal';
@@ -17,6 +18,7 @@ import FreelancerReviewModal from '@/components/review/FreelancerReviewModal';
 
 // 🎯 [추가] 자동 매칭  모달 임포트
 import MatchingresultForm from '@/components/project/MatchingresultForm';
+import ClientProjectCard from '@/components/project/ClientProjectCard';
 
 export default function ClientDashboardPage() {
     const router = useRouter();
@@ -38,6 +40,7 @@ export default function ClientDashboardPage() {
     const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
     const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
+    const [sortOrder, setSortOrder] = useState<'DESC' | 'ASC'>('DESC');
     const [applicantsByProject, setApplicantsByProject] = useState<{ [key: number]: any[] }>({});
     const [loadingApplicants, setLoadingApplicants] = useState<{ [key: number]: boolean }>({});
     const [applicantsErrorByProject, setApplicantsErrorByProject] = useState<{ [key: number]: boolean }>({});
@@ -96,6 +99,16 @@ export default function ClientDashboardPage() {
             const { data } = await api.get('/v1/projects/me');
             const projectArray = data.content || data || [];
             setProjects(projectArray);
+            
+            // 프로젝트별 지원자 정보를 미리 로드하여 수락된 제안이 있는지 확인
+            projectArray.forEach(async (p: any) => {
+                if (p.status === 'OPEN') {
+                    try {
+                        const res = await api.get(`/projects/${p.projectId}/applications`);
+                        setApplicantsByProject(prev => ({ ...prev, [p.projectId]: res.data }));
+                    } catch (e) {}
+                }
+            });
         } catch (err) { console.error("로드 실패", err); } finally { setLoading(false); }
     };
 
@@ -276,10 +289,23 @@ export default function ClientDashboardPage() {
     const handleEditProjectClick = (projectId: number) => router.push(`/client/projects/${projectId}/edit`);
 
     const handleCompleteProject = async (project: any) => {
-        const acceptedApp = applicantsByProject[project.projectId]?.find(a => a.status === 'ACCEPTED');
+        let currentApplicants = applicantsByProject[project.projectId];
+
+        // 지원자 목록이 로드되지 않은 경우 자동으로 로드 시도
+        if (!currentApplicants || currentApplicants.length === 0) {
+            try {
+                const { data } = await api.get(`/projects/${project.projectId}/applications`);
+                currentApplicants = data;
+                setApplicantsByProject(prev => ({ ...prev, [project.projectId]: data }));
+            } catch (err) {
+                console.error("지원자 목록 로드 실패:", err);
+            }
+        }
+
+        const acceptedApp = currentApplicants?.find(a => a.status === 'ACCEPTED');
 
         if (!acceptedApp) {
-            alert("수락된 지원자 정보를 찾을 수 없습니다. '지원자 확인' 버튼을 눌러 목록을 로드한 뒤 다시 시도해주세요!");
+            alert("수락된 지원자 정보를 찾을 수 없습니다. 프로젝트 진행을 위해 먼저 파트너를 수락해주세요.");
             return;
         }
 
@@ -297,6 +323,7 @@ export default function ClientDashboardPage() {
 
             setIsReviewModalOpen(true);
             fetchMyProjects();
+            setFilterStatus('COMPLETED'); // 완료 후 '마감됨' 탭으로 이동
         } catch (err) {
             alert('완료 처리 실패 (상태를 확인해주세요)');
         }
@@ -322,9 +349,14 @@ export default function ClientDashboardPage() {
     };
 
     const handleApplicationStatus = async (applicationId: number, status: 'ACCEPTED' | 'REJECTED') => {
+        if (status === 'ACCEPTED') {
+            alert('결제를 완료하시면 자동으로 수락 처리됩니다.');
+            return;
+        }
+
         try {
             await api.patch(`/applications/${applicationId}/status`, { status });
-            alert(`지원자가 ${status === 'ACCEPTED' ? '수락' : '거절'} 처리되었습니다.`);
+            alert(`지원자가 거절 처리되었습니다.`);
             fetchMyProjects();
             if (selectedProjectForApplicant) {
                 const { data } = await api.get(`/projects/${selectedProjectForApplicant.projectId}/applications`);
@@ -363,7 +395,9 @@ export default function ClientDashboardPage() {
                 orderId,
                 amount,
                 orderName,
-                projectId: project.projectId
+                projectId: project.projectId,
+                applicationId: application.applicationId,
+                source: application.source || (application.proposalId ? 'PROPOSAL' : 'APPLICATION')
             });
 
             const originalConsoleError = console.error;
@@ -408,7 +442,9 @@ export default function ClientDashboardPage() {
                 orderId,
                 amount,
                 orderName,
-                projectId: project.projectId
+                projectId: project.projectId,
+                applicationId: application.applicationId,
+                source: application.source || (application.proposalId ? 'PROPOSAL' : 'APPLICATION')
             });
 
             setIsPaymentProcessing(true);
@@ -440,250 +476,303 @@ export default function ClientDashboardPage() {
             return p.status === filterStatus;
         })
         .sort((a, b) => {
-            const priorityA = statusPriority[a.status] || 4;
-            const priorityB = statusPriority[b.status] || 4;
-            if (priorityA !== priorityB) return priorityA - priorityB;
-            return b.projectId - a.projectId;
+            // 날짜(projectId) 기준 정렬을 최우선으로 적용
+            return sortOrder === 'DESC' ? b.projectId - a.projectId : a.projectId - b.projectId;
         });
 
     return (
-        <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-20 relative overflow-hidden font-sans">
+        <div className="min-h-screen bg-[#F9FAFB] text-zinc-900 pb-20 relative overflow-hidden font-sans">
             <div className="pointer-events-none fixed left-0 top-0 z-0 h-[300px] w-[300px] rounded-full bg-[#FF7D00]/20 blur-[120px] will-change-transform" style={{ transform: `translate(${cursor.x - 150}px, ${cursor.y - 150}px)` }} />
             <GlobalNavbar user={user} profile={profile} />
 
-            <header className="relative pt-24 pb-16 px-8 overflow-hidden max-w-6xl mx-auto">
-                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3 mb-6">
-                    <span className="w-12 h-[3px] bg-[#FF7D00] rounded-full"></span>
-                    <span className="text-[11px] font-black text-[#FF7D00] uppercase tracking-[0.4em] font-mono">관리 콘솔</span>
-                </motion.div>
-                <h1 className="text-5xl font-black tracking-tighter mb-12 text-zinc-950">클라이언트 <span className="text-zinc-400">대시보드</span></h1>
+            <header className="relative pt-24 pb-16 px-8 overflow-hidden bg-white border-b border-zinc-100 text-center">
+                {/* 십자가 무늬 배경 패턴 */}
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                     style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
-                <div className="flex gap-10 border-b border-zinc-200/50">
-                    {[
-                        { id: 'PROJECTS', label: '프로젝트 관리', icon: <Briefcase size={18} /> },
-                        { id: 'BOOKMARKS', label: '관심 프리랜서', icon: <Heart size={18} /> },
-                        { id: 'PROPOSALS', label: '제안 현황', icon: <Send size={18} /> }
-                    ].map((tab) => (
-                        <button key={tab.id} onClick={() => setActiveMainTab(tab.id as any)} className={`flex items-center gap-2.5 pb-6 text-sm font-black transition-all relative ${activeMainTab === tab.id ? 'text-[#FF7D00]' : 'text-zinc-400 hover:text-zinc-600'}`}>
-                            {tab.icon} {tab.label}
-                            {activeMainTab === tab.id && <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 right-0 h-1 bg-[#FF7D00] rounded-t-full shadow-[0_-4px_10px_#FF7D00]" />}
-                        </button>
-                    ))}
+                {/* 데코레이션 아이콘 */}
+                <div className="absolute left-[-20px] bottom-4 opacity-5 hidden lg:block text-[#FF7D00]">
+                    <Briefcase size={200} strokeWidth={0.5} />
+                </div>
+                <div className="absolute right-[-40px] top-10 opacity-5 hidden lg:block rotate-12 text-[#FF7D00]">
+                    <Users size={240} strokeWidth={0.5} />
+                </div>
+
+                <div className="max-w-4xl mx-auto relative z-10">
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                        <div className="flex items-center justify-center gap-3 mb-6">
+                            <span className="w-12 h-[3px] bg-[#FF7D00] rounded-full"></span>
+                            <span className="text-[11px] font-black text-[#FF7D00] uppercase tracking-[0.4em] font-mono">관리 콘솔</span>
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 text-zinc-900 leading-tight">
+                            클라이언트 <span className="text-[#FF7D00]">대시보드</span>
+                        </h1>
+                        <p className="text-zinc-400 text-sm font-medium max-w-lg mx-auto">등록한 프로젝트를 관리하고 지원자 정보를 확인하여 성공적인 팀을 구성하세요.</p>
+                    </motion.div>
+
                 </div>
             </header>
 
-            <main className="max-w-6xl mx-auto px-8 py-16 relative z-10">
-                {activeMainTab === 'PROJECTS' && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-8">
-                            <div className="flex items-center gap-4">
-                                <h2 className="text-2xl font-black tracking-tight text-zinc-950 uppercase font-mono">프로젝트 목록</h2>
-                                <span className="px-3 py-1 bg-white border border-zinc-200 rounded-lg text-xs font-black text-[#FF7D00]">총 {filteredProjects.length}개</span>
-                                <button onClick={() => router.push("/client/projects/new")} className="p-2.5 bg-white border border-zinc-200 text-[#FF7D00] rounded-xl hover:bg-[#FF7D00] hover:text-white transition-all shadow-sm group"><Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" strokeWidth={3} /></button>
-                            </div>
-                            <div className="flex gap-2 p-2 bg-white/50 backdrop-blur-md border border-zinc-200 rounded-3xl">
-                                {[{ id: 'ALL', label: '전체' }, { id: 'OPEN', label: '모집중' }, { id: 'IN_PROGRESS', label: '진행중' }, { id: 'COMPLETED', label: '마감됨' }].map((s) => (
-                                    <button key={s.id} onClick={() => setFilterStatus(s.id)} className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all tracking-wider uppercase font-mono ${filterStatus === s.id ? 'bg-zinc-950 text-white shadow-xl' : 'text-zinc-400 hover:text-zinc-600'}`}>{s.label}</button>
-                                ))}
-                            </div>
+            <main className="max-w-7xl mx-auto px-8 py-12 relative z-10">
+                {/* 🎯 메인 콘텐츠 영역 */}
+                <div className="flex flex-col lg:flex-row gap-12">
+                    {/* 좌측 사이드바: 퀵 스탯 */}
+                    <aside className="w-full lg:w-72 flex flex-col gap-10">
+                        {/* 프로젝트 등록 버튼 */}
+                        <button 
+                            onClick={() => router.push("/client/projects/new")} 
+                            className="group flex items-center justify-center gap-3 w-full py-4 bg-[#FF7D00] text-white rounded-2xl text-[11px] font-black hover:bg-zinc-950 transition-all shadow-lg shadow-orange-500/10 uppercase tracking-widest"
+                        >
+                            <Plus size={18} strokeWidth={3} /> 프로젝트 등록
+                        </button>
+
+                        {/* 메인 내비게이션 섹션 */}
+                        <div className="flex flex-col gap-2">
+                            <p className="px-4 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-2">Management_Console</p>
+                            {[
+                                { id: 'PROJECTS', label: '프로젝트 관리', icon: <Briefcase size={18} /> },
+                                { id: 'PROPOSALS', label: '제안 현황', icon: <Send size={18} /> },
+                                { id: 'BOOKMARKS', label: '관심 프리랜서', icon: <Heart size={18} /> }
+                            ].map((tab) => (
+                                <button 
+                                    key={tab.id} 
+                                    onClick={() => setActiveMainTab(tab.id as any)} 
+                                    className={`flex items-center gap-4 px-6 py-4 rounded-[1.2rem] text-[10px] font-black transition-all tracking-wider text-left ${
+                                        activeMainTab === tab.id 
+                                        ? 'bg-zinc-950 text-white shadow-xl translate-x-2' 
+                                        : 'text-zinc-400 hover:text-zinc-600 hover:bg-white border border-transparent hover:border-zinc-100'
+                                    }`}
+                                >
+                                    <span className={activeMainTab === tab.id ? 'text-[#FF7D00]' : ''}>{tab.icon}</span>
+                                    {tab.label}
+                                </button>
+                            ))}
                         </div>
 
-                        <div className="grid gap-8">
-                            {filteredProjects.map((project) => {
-                                const isExpanded = expandedProjectId === project.projectId;
-                                const projectApplicants = applicantsByProject[project.projectId] || [];
+                    </aside>
 
-                                return (
-                                    <div key={project.projectId} className="flex flex-col gap-3">
-                                        <motion.div className={`group bg-white p-10 rounded-[2.5rem] border transition-all duration-500 ${isExpanded ? 'border-[#FF7D00] shadow-2xl ring-1 ring-[#FF7D00]/20' : 'border-zinc-100 shadow-xl hover:border-[#FF7D00]/30'}`}>
-                                            <div className="flex flex-col xl:flex-row justify-between items-center gap-8 w-full">
-                                                <div className="flex-1 w-full">
-                                                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-[0.2em] uppercase font-mono border ${project.status === 'OPEN' ? 'bg-[#FF7D00]/10 text-[#FF7D00] border-[#FF7D00]/20' : project.status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-500 border-blue-100' : 'bg-zinc-50 text-zinc-400'}`}>
-                                                        {project.status === 'OPEN' ? '모집중' : project.status === 'IN_PROGRESS' ? '진행중' : '마감됨'}
-                                                    </span>
-                                                    <h3 className="text-3xl font-black text-zinc-900 mt-4 group-hover:text-[#FF7D00] transition-colors tracking-tight">{project.projectName}</h3>
-                                                    <div className="flex gap-8 mt-6 text-xs font-bold text-zinc-400 font-mono uppercase">
-                                                        <span><DollarSign size={16} className="inline mr-1 text-[#FF7D00]"/>{project.budget?.toLocaleString()}원</span>
-                                                        <span><Calendar size={16} className="inline mr-1 text-[#FF7D00]"/>{project.deadline} 마감</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-5">
-                                                    <div className="flex gap-2 px-4 border-x border-zinc-100">
-                                                        {project.status === 'IN_PROGRESS' ? (
-                                                            <button onClick={() => handleCompleteProject(project)} className="px-6 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-[#FF7D00] transition-all uppercase tracking-widest font-mono shadow-md">프로젝트 마감</button>
-                                                        ) : (
-                                                            <>
-                                                                <button onClick={() => handleEditProjectClick(project.projectId)} className="p-4 text-zinc-300 hover:text-[#7A4FFF] transition-all"><Edit size={20} /></button>
-                                                                <button onClick={() => handleDeleteProject(project.projectId)} className="p-4 text-zinc-300 hover:text-red-500 transition-all"><Trash2 size={20} /></button>
-                                                            </>
-                                                        )}
-                                                    </div>
-
-                                                    {/* 🎯 [추가된 버튼] 자동 매칭 결과 확인용 */}
-                                                    <div className="flex items-center gap-3">
-                                                        {project.status === 'OPEN' && (
-                                                            <button
-                                                                onClick={() => {
-                                                                    setSelectedProjectIdForMatching(project.projectId);
-                                                                    setIsMatchingModalOpen(true);
-                                                                }}
-                                                                className="relative group px-8 py-5 bg-zinc-900 text-white rounded-[1.5rem] font-black text-xs tracking-[0.15em] uppercase transition-all duration-300 flex items-center gap-2 overflow-hidden shadow-2xl hover:shadow-[0_0_25px_rgba(255,125,0,0.3)] border border-white/5 hover:border-[#FF7D00]/50 active:scale-95 font-mono"
-                                                            >
-                                                                {/* 버튼 내부 그라데이션 광택 효과 */}
-                                                                <div className="absolute inset-0 bg-gradient-to-r from-[#FF7D00]/0 via-[#FF7D00]/5 to-[#FF7D00]/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-
-                                                                {/* 아이콘 및 텍스트 */}
-                                                                <Sparkles
-                                                                    size={16}
-                                                                    strokeWidth={2.5}
-                                                                    className="text-[#FF7D00] group-hover:rotate-12 transition-transform duration-300"
-                                                                />
-                                                                <span className="relative z-10 group-hover:text-[#FF7D00] transition-colors">
-            자동 매칭 결과
-        </span>
-                                                            </button>
-                                                        )}
-                                                        <button onClick={() => handleViewApplicants(project)} className={`px-10 py-5 rounded-[1.5rem] font-black text-xs tracking-[0.2em] uppercase transition-all flex items-center gap-3 shadow-2xl font-mono ${isExpanded ? 'bg-[#FF7D00] text-white shadow-orange-200' : 'bg-zinc-950 text-white hover:bg-[#FF7D00]'}`}>
-                                                            <Users size={18} /> 지원자 확인 {projectApplicants.length > 0 && `(${projectApplicants.length})`}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-
-                                        <AnimatePresence>
-                                            {isExpanded && (
-                                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                                    <div className="mt-2 mb-12 p-3 bg-white border border-zinc-200 shadow-2xl rounded-[3rem]">
-                                                        {loadingApplicants[project.projectId] ? (
-                                                            <div className="py-24 flex flex-col items-center justify-center gap-5"><Loader2 className="w-10 h-10 animate-spin text-[#FF7D00]" /><span className="animate-pulse tracking-[0.3em] text-xs font-black font-mono text-zinc-400 uppercase">지원자 정보를 동기화 중...</span></div>
-                                                        ) : (
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5">
-                                                                {projectApplicants.length === 0 ? (
-                                                                    <div className="col-span-2 py-24 text-center text-zinc-200 font-black border-4 border-dashed border-zinc-50 rounded-[2.5rem] text-2xl font-mono uppercase">지원자가 없습니다</div>
-                                                                ) : (
-                                                                    projectApplicants.map((app: any) => (
-                                                                        <div key={app.applicationId} className={`p-8 bg-zinc-50 rounded-[2rem] border transition-all hover:bg-white hover:shadow-xl ${app.status === 'ACCEPTED' ? 'border-[#FF7D00] bg-orange-50/30' : 'border-zinc-100'}`}>
-                                                                            <div className="flex items-center gap-6 mb-8">
-                                                                                <div className="w-16 h-16 rounded-2xl bg-white border border-zinc-200 overflow-hidden cursor-pointer shadow-sm" onClick={() => router.push(`/client/freelancers/${app.freelancerId}`)}>{app.freelancerProfileImageUrl ? <img src={app.freelancerProfileImageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-300"><User size={28} /></div>}</div>
-                                                                                <div className="flex-1">
-                                                                                    <div className="flex items-center gap-3 mb-1">
-                                                                                        <h4 className="font-black text-xl text-zinc-900">{app.freelancerNickname}</h4>
-                                                                                        <span className="text-[10px] font-black text-[#FF7D00] bg-white px-2 py-0.5 rounded border border-orange-100">일치율 {Math.round(app.matchingRate)}%</span>
-                                                                                        {app.source === 'PROPOSAL' && (
-                                                                                            <span className="text-[10px] font-black text-white bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800 uppercase font-mono tracking-wider animate-pulse">역제안 보냄</span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="flex items-center justify-between pt-6 border-t border-zinc-200/50">
-                                                                                <p className="text-xl font-black text-zinc-950 font-mono italic">₩{app.bidPrice?.toLocaleString()}</p>
-                                                                                <div className="flex gap-2">
-                                                                                    {app.status === 'PENDING' ? (
-                                                                                        app.source === 'PROPOSAL' ? (
-                                                                                            <div className="px-6 py-3 bg-white border border-zinc-200 text-zinc-400 rounded-xl text-[10px] font-black uppercase italic tracking-tighter">
-                                                                                                프리랜서 응답 대기 중
-                                                                                            </div>
-                                                                                        ) : (
-                                                                                            <><button onClick={() => handleApplicationStatus(app.applicationId, 'ACCEPTED')} className="px-6 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-[#FF7D00] transition-all uppercase">수락</button><button onClick={() => handleApplicationStatus(app.applicationId, 'REJECTED')} className="px-6 py-3 bg-white border border-zinc-200 text-zinc-400 rounded-xl text-[10px] font-black hover:text-red-500 transition-all uppercase">거절</button></>
-                                                                                        )
-                                                                                    ) : (
-                                                                                        <div className="flex flex-col gap-2 min-w-[120px]">
-                                                                                            <div className={`px-6 py-3 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 uppercase border ${app.status === 'ACCEPTED' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' : 'bg-red-50 text-red-500 border border-red-100'}`}>
-                                                                                                {app.status === 'ACCEPTED' ? <CheckCircle size={14} /> : <XCircle size={14} />}
-                                                                                                {app.status === 'ACCEPTED' ? '수락됨' : '거절됨'}
-                                                                                            </div>
-                                                                                            {app.status === 'ACCEPTED' && project.status === 'OPEN' && (
-                                                                                                <div className="flex flex-col gap-2 mt-2">
-                                                                                                    <button onClick={() => handlePayment(project, app)} disabled={paymentProjectIdInFlight === project.projectId} className="w-full px-4 py-3 bg-zinc-950 text-white rounded-xl text-[10px] font-black hover:bg-zinc-800 transition-all uppercase tracking-widest font-mono shadow-md disabled:opacity-50">{paymentProjectIdInFlight === project.projectId ? '처리 중...' : '안전 결제하기'}</button>
-                                                                                                    <button onClick={() => handleDemoPayment(project, app)} disabled={paymentProjectIdInFlight === project.projectId} className="w-full px-4 py-3 bg-[#FF7D00] text-white rounded-xl text-[10px] font-black hover:bg-orange-600 transition-all uppercase tracking-widest font-mono shadow-[0_4px_15px_rgba(255,125,0,0.4)] flex items-center justify-center gap-2 disabled:opacity-50"><Sparkles size={14} className={paymentProjectIdInFlight === project.projectId ? "" : "animate-pulse"} />{paymentProjectIdInFlight === project.projectId ? '처리 중...' : '번개 데모 결제'}</button>
-                                                                                                </div>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    ))
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
+                    {/* 우측 메인 리스트 */}
+                    <div className="flex-1 min-w-0">
+                        {activeMainTab === 'PROJECTS' && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <div className="sticky top-4 z-40 backdrop-blur-md pb-6 flex items-center gap-4">
+                                    <div className="flex-1 bg-white/70 border border-zinc-100 rounded-full shadow-sm p-1.5">
+                                        <div className="grid grid-cols-4 gap-1">
+                                            {[{ id: 'ALL', label: '전체' }, { id: 'OPEN', label: '모집중' }, { id: 'IN_PROGRESS', label: '진행중' }, { id: 'COMPLETED', label: '마감됨' }].map((s) => (
+                                                <button 
+                                                    key={s.id} 
+                                                    onClick={() => setFilterStatus(s.id)} 
+                                                    className={`py-3 rounded-full text-[11px] font-black transition-all tracking-widest uppercase font-mono text-center ${
+                                                        filterStatus === s.id 
+                                                        ? 'bg-zinc-950 text-white shadow-xl scale-[1.02]' 
+                                                        : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/80'
+                                                    }`}
+                                                >
+                                                    {s.label}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </motion.div>
-                )}
+                                    <button 
+                                        onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
+                                        className="px-8 py-3.5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all flex items-center gap-3 shadow-xl shadow-zinc-100"
+                                    >
+                                        <Clock size={16} /> {sortOrder === 'DESC' ? 'Latest' : 'Oldest'}
+                                    </button>
+                                </div>
 
-                {/* 북마크 및 제안 탭 로직 (동일) */}
-                {activeMainTab === 'BOOKMARKS' && (
-                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-12">
-                        <div className="flex items-center justify-between mb-4">
-                            <div><h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">관심 프리랜서</h2><p className="text-sm font-medium text-zinc-400">지목한 최정상급 프리랜서 후보군입니다.</p></div>
-                            <span className="px-5 py-2 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#FF7D00]">프리랜서 수: {bookmarks.length}명</span>
-                        </div>
-                        {bookmarks.length === 0 && !bookmarksLoading ? (
-                            <div className="text-center py-48 bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 font-black text-zinc-200 italic uppercase tracking-tighter">찜한 인재가 없습니다</div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {bookmarks.map((freelancer, idx) => (
-                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={freelancer.profileId} className="group bg-white p-10 rounded-[3rem] border border-zinc-100 hover:border-[#FF7D00] hover:shadow-[0_20px_50px_rgba(255,125,0,0.15)] transition-all relative">
-                                        <button onClick={() => handleRemoveBookmark(freelancer.profileId)} className="absolute top-8 right-8 p-3 bg-zinc-50 rounded-2xl text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 size={18} /></button>
-                                        <div className="flex flex-col items-center text-center mb-8 cursor-pointer" onClick={() => router.push(`/client/freelancers/${freelancer.profileId}`)}>
-                                            <div className="w-24 h-24 rounded-[2rem] bg-zinc-100 overflow-hidden border-4 border-white shadow-xl mb-6">{freelancer.profileImageUrl ? <img src={freelancer.profileImageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-300 bg-zinc-50"><User size={40} /></div>}</div>
-                                            <div className="flex items-center gap-2 mb-2"><h3 className="text-2xl font-black text-zinc-900 group-hover:text-[#FF7D00] transition-colors">{freelancer.userName}</h3><span className="px-2 py-0.5 bg-zinc-950 text-white text-[9px] font-black rounded font-mono uppercase">{freelancer.gradeName}</span></div>
-                                            <div className="flex items-center gap-1.5 text-xs font-bold text-[#FF7D00] mb-4">
-                                                <Star size={16} fill="#FF7D00" strokeWidth={0} />
-                                                <span>{(freelancer.averageRating ?? 0).toFixed(1)}</span>
-                                                <span className="text-zinc-300 ml-1 font-mono">({freelancer.reviewCount} 리뷰)</span>
+                                <div className="grid gap-10 mt-4">
+                                    {filteredProjects.length === 0 ? (
+                                        <div className="text-center py-40 bg-white/30 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200">
+                                            <div className="w-20 h-20 bg-zinc-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                <Briefcase size={32} className="text-zinc-300" />
                                             </div>
-                                            <p className="text-xs font-medium text-zinc-400 line-clamp-2 italic leading-relaxed">"{freelancer.introduction || "준비된 프리랜서입니다."}"</p>
+                                            <h3 className="text-zinc-400 font-black text-xl font-mono uppercase tracking-widest">No_Project_Found</h3>
+                                            <p className="text-zinc-400 text-xs mt-2 italic font-medium tracking-tight">등록된 프로젝트가 없거나 필터 조건에 맞는 결과가 없습니다.</p>
                                         </div>
-                                        <div className="space-y-2">
-                                            <button onClick={() => router.push(`/client/freelancers/${freelancer.profileId}`)} className="w-full py-4 bg-zinc-50 text-zinc-400 group-hover:bg-[#FF7D00] group-hover:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all font-mono">프로필 상세보기</button>
-                                            <button onClick={() => openProposalModal(freelancer)} className="w-full py-4 bg-zinc-950 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF7D00] font-mono">제안 보내기</button>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        )}
-                    </motion.div>
-                )}
+                                    ) : (
+                                        filteredProjects.map((project) => {
+                                            const isExpanded = expandedProjectId === project.projectId;
+                                            const projectApplicants = applicantsByProject[project.projectId] || [];
 
-                {activeMainTab === 'PROPOSALS' && (
-                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-12">
-                        <div className="flex items-center justify-between mb-4">
-                            <div><h2 className="text-3xl font-black tracking-tight text-zinc-950 uppercase font-mono mb-2">제안 현황</h2><p className="text-sm font-medium text-zinc-400">요원들에게 발송한 제안 내역입니다.</p></div>
-                            <span className="px-5 py-2 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-[#FF7D00]">전송된 제안: {sentProposals.length}건</span>
-                        </div>
-                        {proposalsLoading ? (
-                            <div className="py-24 flex justify-center"><Loader2 className="animate-spin text-[#FF7D00] w-10 h-10" /></div>
-                        ) : sentProposals.length === 0 ? (
-                            <div className="text-center py-48 bg-white/40 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200 font-black text-zinc-200 italic uppercase tracking-tighter">보낸 제안이 없습니다</div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {sentProposals.map((proposal, idx) => (
-                                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={proposal.proposalId || idx} className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 hover:border-[#FF7D00] hover:shadow-xl transition-all relative">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${proposal.status === 'ACCEPTED' ? 'bg-green-50 text-green-500' : proposal.status === 'REJECTED' ? 'bg-red-50 text-red-500' : 'bg-zinc-100 text-zinc-500'}`}>{proposal.status || '대기중'}</span>
-                                            <span className="text-xs text-zinc-400 font-mono">{new Date(proposal.createdAt || Date.now()).toLocaleDateString()}</span>
-                                        </div>
-                                        <h3 className="text-xl font-black text-zinc-900 mb-2 truncate">{proposal.projectName || proposal.positionTitle || '프로젝트 제안'}</h3>
-                                        <p className="text-sm text-zinc-500 mb-6 line-clamp-2">"{proposal.message}"</p>
-                                        <div className="flex items-center justify-between pt-6 border-t border-zinc-100">
-                                            <div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400"><User size={16} /></div><span className="text-sm font-bold text-zinc-700">{proposal.freelancerName || '프리랜서'}</span></div>
-                                            <div className="text-lg font-black text-[#FF7D00] font-mono">₩{proposal.offeredPrice?.toLocaleString() || '0'}</div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
+                                            return (
+                                                <ClientProjectCard
+                                                    key={project.projectId}
+                                                    project={project}
+                                                    isExpanded={isExpanded}
+                                                    projectApplicants={projectApplicants}
+                                                    loadingApplicants={loadingApplicants[project.projectId] || false}
+                                                    handleEditProjectClick={handleEditProjectClick}
+                                                    handleDeleteProject={handleDeleteProject}
+                                                    handleCompleteProject={handleCompleteProject}
+                                                    setSelectedProjectIdForMatching={setSelectedProjectIdForMatching}
+                                                    setIsMatchingModalOpen={setIsMatchingModalOpen}
+                                                    handleViewApplicants={handleViewApplicants}
+                                                    handleApplicationStatus={handleApplicationStatus}
+                                                    handleDemoPayment={handleDemoPayment}
+                                                    handlePayment={handlePayment}
+                                                />
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </motion.div>
                         )}
-                    </motion.div>
-                )}
+
+                        {/* 북마크 및 제안 탭은 기존 고도화된 스타일 유지하면서 좌측 사이드바와 조화롭게 배치 */}
+                        {activeMainTab === 'BOOKMARKS' && (
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+                                <div className="sticky top-4 z-40 backdrop-blur-md pb-6 flex items-center justify-between">
+                                    <button 
+                                        onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
+                                        className="px-8 py-3.5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all flex items-center gap-3 shadow-xl shadow-zinc-100"
+                                    >
+                                        <Clock size={16} /> {sortOrder === 'DESC' ? 'Latest' : 'Oldest'}
+                                    </button>
+                                </div>
+                                
+                                {bookmarks.length === 0 ? (
+                                    <div className="text-center py-48 bg-white/30 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200">
+                                        <Heart size={64} className="text-zinc-200 mx-auto mb-8" strokeWidth={0.5} />
+                                        <h3 className="text-zinc-300 font-black text-2xl font-mono uppercase tracking-[0.3em]">Empty_Library</h3>
+                                        <p className="text-zinc-400 text-xs mt-2 italic">찜한 인재가 없습니다. 탐색 페이지에서 파트너를 찾아보세요.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-8">
+                                        {[...bookmarks].sort((a,b) => sortOrder === 'DESC' ? b.profileId - a.profileId : a.profileId - b.profileId).map((freelancer, idx) => (
+                                            <motion.div 
+                                                initial={{ opacity: 0, y: 20 }} 
+                                                animate={{ opacity: 1, y: 0 }} 
+                                                transition={{ delay: idx * 0.05 }} 
+                                                key={freelancer.profileId} 
+                                                className="group bg-white p-8 rounded-[3rem] border border-zinc-100 hover:border-[#FF7D00] hover:shadow-2xl transition-all relative flex flex-col xl:flex-row items-center gap-10"
+                                            >
+
+                                                {/* 좌측: 아바타 섹션 */}
+                                                <div className="relative group/avatar cursor-pointer shrink-0" onClick={() => router.push(`/client/freelancers/${freelancer.profileId}`)}>
+                                                    <div className="w-32 h-32 rounded-[2.5rem] bg-zinc-100 border-4 border-white overflow-hidden shadow-xl transition-transform duration-500 group-hover/avatar:scale-105">
+                                                        {freelancer.profileImageUrl ? <img src={freelancer.profileImageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-300 bg-zinc-50"><User size={48} /></div>}
+                                                    </div>
+                                                    <div className="absolute -bottom-2 -right-2 bg-zinc-950 px-3 py-1.5 rounded-xl shadow-lg border-2 border-white">
+                                                        <div className="flex items-center gap-1.5 text-[#FF7D00] font-black text-[10px] font-mono">
+                                                            <Star size={12} fill="#FF7D00" strokeWidth={0} />
+                                                            {(freelancer.averageRating ?? 0).toFixed(1)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* 중앙: 정보 및 소개 */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-4 mb-4">
+                                                        <h3 className="text-3xl font-black text-zinc-950 group-hover:text-[#FF7D00] transition-colors tracking-tight">{freelancer.userName}</h3>
+                                                        <span className="px-3 py-1 bg-zinc-950 text-white text-[8px] font-black rounded-lg font-mono uppercase tracking-[0.2em]">{freelancer.gradeName}</span>
+                                                    </div>
+                                                    <p className="text-xs font-medium text-zinc-400 line-clamp-2 italic leading-relaxed mb-6 border-l-4 border-zinc-100 pl-4 py-1 max-w-2xl">
+                                                        "{freelancer.introduction || "혁신적인 결과물을 만드는 검증된 파트너입니다."}"
+                                                    </p>
+                                                    <div className="flex gap-10">
+                                                        <div className="flex flex-col">
+                                                            <p className="text-[7px] font-black text-zinc-300 uppercase tracking-widest mb-1">Reviews</p>
+                                                            <p className="text-sm font-black text-zinc-900 font-mono italic">{freelancer.reviewCount || 0}</p>
+                                                        </div>
+                                                        <div className="w-px h-8 bg-zinc-100 self-center" />
+                                                        <div className="flex flex-col">
+                                                            <p className="text-[7px] font-black text-zinc-300 uppercase tracking-widest mb-1">Projects</p>
+                                                            <p className="text-sm font-black text-zinc-900 font-mono italic">24+</p>
+                                                        </div>
+                                                        <div className="w-px h-8 bg-zinc-100 self-center" />
+                                                        <div className="flex flex-col">
+                                                            <p className="text-[7px] font-black text-zinc-300 uppercase tracking-widest mb-1">Status</p>
+                                                            <p className="text-[9px] font-black text-green-500 uppercase font-mono">Verified_Expert</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* 우측: 액션 섹션 */}
+                                                <div className="flex flex-col gap-3 min-w-[260px] w-full xl:w-auto xl:border-l xl:border-zinc-50 xl:pl-10">
+                                                    <button onClick={() => openProposalModal(freelancer)} className="w-full py-4 bg-zinc-950 text-white hover:bg-[#FF7D00] rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all font-mono shadow-xl shadow-zinc-900/10">Send Partnership Offer</button>
+                                                    <button onClick={() => router.push(`/client/freelancers/${freelancer.profileId}`)} className="w-full py-4 bg-zinc-50 text-zinc-500 hover:bg-zinc-100 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all font-mono">View Full Identity</button>
+                                                    <button 
+                                                        onClick={() => handleRemoveBookmark(freelancer.profileId)} 
+                                                        className="w-full py-2 text-zinc-300 hover:text-red-500 text-[8px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                                                    >
+                                                        <Trash2 size={12} /> Remove from Library
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {activeMainTab === 'PROPOSALS' && (
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+                                <div className="sticky top-4 z-40 backdrop-blur-md pb-6 flex items-center justify-between">
+                                    <button 
+                                        onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
+                                        className="px-8 py-3.5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all flex items-center gap-3 shadow-xl shadow-zinc-100"
+                                    >
+                                        <Clock size={16} /> {sortOrder === 'DESC' ? 'Latest' : 'Oldest'}
+                                    </button>
+                                </div>
+
+                                {sentProposals.length === 0 ? (
+                                    <div className="text-center py-48 bg-white/30 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200">
+                                        <Send size={64} className="text-zinc-200 mx-auto mb-8" strokeWidth={0.5} />
+                                        <h3 className="text-zinc-300 font-black text-2xl font-mono uppercase tracking-[0.3em]">No_Outbound_Offers</h3>
+                                        <p className="text-zinc-400 text-xs mt-2 italic">전송된 제안서가 없습니다. 전문가에게 먼저 다가가보세요.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-8">
+                                        {[...sentProposals].sort((a,b) => {
+                                            const timeA = new Date(a.createdAt || 0).getTime();
+                                            const timeB = new Date(b.createdAt || 0).getTime();
+                                            return sortOrder === 'DESC' ? timeB - timeA : timeA - timeB;
+                                        }).map((proposal, idx) => (
+                                            <motion.div 
+                                                initial={{ opacity: 0, x: -20 }} 
+                                                animate={{ opacity: 1, x: 0 }} 
+                                                transition={{ delay: idx * 0.05 }} 
+                                                key={proposal.proposalId || idx} 
+                                                className="bg-white p-10 rounded-[3rem] border-2 border-zinc-50 hover:border-[#FF7D00] hover:shadow-2xl transition-all relative group/prop flex flex-col md:flex-row gap-10 items-start md:items-center"
+                                            >
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-4 mb-6">
+                                                        <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] font-mono border-2 ${
+                                                            proposal.status === 'ACCEPTED' ? 'bg-green-50 text-green-500 border-green-100' : 
+                                                            proposal.status === 'REJECTED' ? 'bg-red-50 text-red-500 border-red-100' : 
+                                                            'bg-zinc-50 text-zinc-400 border-zinc-100'
+                                                        }`}>
+                                                            {proposal.status || 'PENDING'}
+                                                        </span>
+                                                        <span className="text-[10px] font-black text-zinc-200 font-mono tracking-widest">{new Date(proposal.createdAt || Date.now()).toLocaleDateString()}</span>
+                                                    </div>
+                                                    
+                                                    <h3 className="text-2xl font-black text-zinc-950 mb-3 truncate tracking-tighter group-hover/prop:text-[#FF7D00] transition-colors leading-none">
+                                                        {proposal.projectName || proposal.positionTitle || 'Strategic Collaboration Offer'}
+                                                    </h3>
+                                                    
+                                                    <p className="text-xs text-zinc-500 leading-relaxed italic max-w-xl">"{proposal.message}"</p>
+                                                </div>
+
+                                                <div className="flex items-center gap-8 pl-10 border-l border-zinc-50">
+                                                    <div className="flex flex-col items-end">
+                                                        <p className="text-[8px] font-black text-zinc-300 uppercase tracking-widest mb-2 italic">Proposed_Budget</p>
+                                                        <p className="text-2xl font-black text-[#FF7D00] font-mono italic tracking-tighter leading-none">₩{proposal.offeredPrice?.toLocaleString() || '0'}</p>
+                                                    </div>
+                                                    <div className="w-16 h-16 rounded-3xl bg-zinc-950 flex items-center justify-center text-white shadow-xl shadow-zinc-950/20 group-hover/prop:scale-110 transition-transform duration-500">
+                                                        {proposal.freelancerName?.charAt(0) || 'U'}
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+                    </div>
+                </div>
             </main>
 
             <FreelancerReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} projectId={selectedProjectForReview?.projectId} freelancerId={selectedProjectForReview?.freelancerId} freelancerNickname={selectedProjectForReview?.freelancerNickname || "선택한 요원"} />

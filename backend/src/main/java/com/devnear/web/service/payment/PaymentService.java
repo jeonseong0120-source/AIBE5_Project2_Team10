@@ -1,10 +1,15 @@
 package com.devnear.web.service.payment;
 
 import com.devnear.global.service.TossPaymentClient;
+import com.devnear.web.domain.application.ProjectApplication;
+import com.devnear.web.domain.application.ProjectApplicationRepository;
+import com.devnear.web.domain.enums.ApplicationStatus;
+import com.devnear.web.domain.enums.ProposalStatus;
 import com.devnear.web.domain.payment.Payment;
 import com.devnear.web.domain.payment.PaymentRepository;
 import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
+import com.devnear.web.domain.proposal.ProposalRepository;
 import com.devnear.web.dto.payment.PaymentConfirmRequest;
 import com.devnear.web.dto.payment.PaymentResponse;
 import com.devnear.web.exception.PaymentAmountMismatchException;
@@ -23,6 +28,8 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final ProjectRepository projectRepository;
+    private final ProjectApplicationRepository projectApplicationRepository;
+    private final ProposalRepository proposalRepository;
     private final TossPaymentClient tossPaymentClient;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -67,6 +74,8 @@ public class PaymentService {
                 .netAmount(netAmount)
                 .orderName(request.getOrderName())
                 .project(project)
+                .applicationId(request.getApplicationId())
+                .source(request.getSource())
                 .status(com.devnear.web.domain.enums.PaymentStatus.READY)
                 .build();
 
@@ -119,10 +128,36 @@ public class PaymentService {
         String method = (String) response.get("method");
         payment.confirm(request.getPaymentKey(), method);
 
-        // 6. 프로젝트 상태 변경 (진행 중으로 변경)
+        // 6. 프로젝트 및 지원서 상태 변경
         Project project = payment.getProject();
         if (project != null) {
+            // 프로젝트 시작
             project.start();
+
+            // [추가] 수락된 지원서/제안서 상태 변경 및 프리랜서 할당
+            if (payment.getApplicationId() != null) {
+                if ("PROPOSAL".equals(payment.getSource())) {
+                    // 역제안(Proposal) 처리
+                    proposalRepository.findById(payment.getApplicationId()).ifPresent(proposal -> {
+                        proposal.updateStatus(ProposalStatus.ACCEPTED);
+                        project.assignFreelancer(proposal.getFreelancerProfile());
+                    });
+                } else {
+                    // 일반 지원(Application) 처리
+                    projectApplicationRepository.findById(payment.getApplicationId()).ifPresent(application -> {
+                        application.updateStatus(ApplicationStatus.ACCEPTED);
+                        project.assignFreelancer(application.getFreelancerProfile());
+                    });
+                }
+
+                // 해당 프로젝트의 다른 모든 대기 지원자들(Applications) 거절 처리
+                projectApplicationRepository.findByProjectIdWithFreelancerSorted(project.getId())
+                        .stream()
+                        .filter(a -> !"APPLICATION".equals(payment.getSource()) || !a.getId().equals(payment.getApplicationId()))
+                        .filter(a -> a.getStatus() == ApplicationStatus.PENDING)
+                        .forEach(a -> a.updateStatus(ApplicationStatus.REJECTED));
+            }
+
             Long clientUserId = project.getClientProfile().getUser().getId();
             eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getId(), project.getId(), clientUserId));
         }
