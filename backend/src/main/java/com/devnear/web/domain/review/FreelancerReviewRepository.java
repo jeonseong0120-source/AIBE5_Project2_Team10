@@ -15,6 +15,7 @@ public interface FreelancerReviewRepository extends JpaRepository<FreelancerRevi
                                                             ClientProfile reviewerClient,
                                                             FreelancerProfile freelancer);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"reviewerClient", "reviewerClient.user"})
     List<FreelancerReview> findByFreelancer(FreelancerProfile freelancer);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

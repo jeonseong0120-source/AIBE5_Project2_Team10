@@ -74,3 +74,31 @@ export function mapFreelancerDtoToProfile(dto: ApiFreelancerDto): FreelancerProf
         isBookmarked: dto.isBookmarked ?? dto.is_bookmarked ?? false,
     };
 }
+
+export interface ReviewResponse {
+    id: number;
+    averageScore: number;
+    comment: string;
+    workQuality?: number;
+    deadline?: number;
+    communication?: number;
+    expertise?: number;
+    requirementClarity?: number;
+    paymentReliability?: number;
+    workAttitude?: number;
+    reviewerNickname: string;
+    reviewerProfileImageUrl?: string;
+    createdAt: string;
+}
+
+export interface ProjectHistoryDto {
+    projectId: number;
+    companyName: string;
+    projectName: string;
+    budget: number;
+    deadline: string;
+    status: string;
+    location: string;
+    logoUrl?: string;
+    skills: string[];
+}

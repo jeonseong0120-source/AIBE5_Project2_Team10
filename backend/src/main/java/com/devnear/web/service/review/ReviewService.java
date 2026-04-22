@@ -173,7 +173,10 @@ public class ReviewService {
                         review.getExpertise(),
                         null,
                         null,
-                        null
+                        null,
+                        review.getReviewerClient() != null ? review.getReviewerClient().getCompanyName() : "익명",
+                        review.getReviewerClient() != null ? review.getReviewerClient().getLogoUrl() : null,
+                        review.getCreatedAt()
                 ))
                 .toList();
     }
@@ -193,7 +196,12 @@ public class ReviewService {
                         null,
                         review.getRequirementClarity(),
                         review.getPaymentReliability(),
-                        review.getWorkAttitude()
+                        review.getWorkAttitude(),
+                        (review.getReviewerFreelancer() != null && review.getReviewerFreelancer().getUser() != null) 
+                            ? review.getReviewerFreelancer().getUser().getNickname() 
+                            : "익명",
+                        review.getReviewerFreelancer() != null ? review.getReviewerFreelancer().getProfileImageUrl() : null,
+                        review.getCreatedAt()
                 ))
                 .toList();
     }
