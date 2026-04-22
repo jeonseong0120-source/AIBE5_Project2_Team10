@@ -31,7 +31,8 @@ public class FreelancerProfile extends BaseTimeEntity {
     @Column(name = "profile_image_url")
     private String profileImageUrl; // 프리랜서 전용 프로필 이미지
 
-    @Column(columnDefinition = "TEXT")
+    /** 소개는 길어질 수 있어 MySQL에서는 LONGTEXT로 유지 (기존 VARCHAR 잔존 시 ddl-auto:update로 확장) */
+    @Column(name = "introduction", columnDefinition = "LONGTEXT")
     private String introduction;
 
     @Column(length = 200)

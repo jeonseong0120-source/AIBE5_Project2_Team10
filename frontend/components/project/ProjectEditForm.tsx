@@ -3,6 +3,7 @@
 import { FormEvent, useState, useEffect } from "react";
 import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
 import SkillTagSelector from "@/components/project/SkillTagSelector";
+import { MAX_PROJECT_SKILLS } from "@/app/lib/skillLimits";
 import api from "@/app/lib/axios";
 import { useRouter } from "next/navigation";
 import { DollarSign, Calendar, MapPin, ArrowLeft, Type, Activity, List } from "lucide-react";
@@ -22,7 +23,9 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
     const [latitude, setLatitude] = useState(String(initialData.latitude || ""));
     const [longitude, setLongitude] = useState(String(initialData.longitude || ""));
 
-    const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>(initialData.skillIds || []);
+    const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>(
+        (initialData.skillIds || []).slice(0, MAX_PROJECT_SKILLS)
+    );
     const [submitting, setSubmitting] = useState(false);
     const [isSkillsLoading, setIsSkillsLoading] = useState(true);
 
@@ -42,7 +45,7 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
         const syncSkillIds = async () => {
             try {
                 if (initialData.skillIds && initialData.skillIds.length > 0) {
-                    setSelectedSkillIds(initialData.skillIds);
+                    setSelectedSkillIds(initialData.skillIds.slice(0, MAX_PROJECT_SKILLS));
                     setIsSkillsLoading(false);
                     return;
                 }
@@ -57,7 +60,7 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                         .map((s: any) => s.skillId);
 
                     if (matchedIds.length > 0) {
-                        setSelectedSkillIds(matchedIds);
+                        setSelectedSkillIds(matchedIds.slice(0, MAX_PROJECT_SKILLS));
                     } else {
                         // 🔍 매핑 실패 시 플래그를 false로 전환
                         setMappingSucceeded(false);
@@ -87,6 +90,9 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
 
         // 🔍 [Fix] 리뷰 반영: 예산 검증 기준(1원 이상) 일치
         if (Number(budget) <= 0) return alert("예산은 1원 이상이어야 합니다.");
+        if (selectedSkillIds.length > MAX_PROJECT_SKILLS) {
+            return alert(`기술 스택은 최대 ${MAX_PROJECT_SKILLS}개까지 선택할 수 있습니다.`);
+        }
 
         setSubmitting(true);
         try {
@@ -225,6 +231,7 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                             initialSkillNames={initialData.skillNames}
                             suggestSourceText={detail}
                             suggestContext="project"
+                            maxSelected={MAX_PROJECT_SKILLS}
                         />
                     </div>
                 </div>

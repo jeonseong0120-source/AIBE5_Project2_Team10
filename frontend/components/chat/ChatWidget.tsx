@@ -141,7 +141,7 @@ export default function ChatWidget() {
         const subscribe = () => {
             safeUnsubscribe(subscriptionRef.current);
 
-            subscriptionRef.current = subscribeChatRoom(selectedRoomId, async (frame) => {
+            void subscribeChatRoom(selectedRoomId, async (frame) => {
                 try {
                     const newMessage: ChatMessageResponse = JSON.parse(frame.body);
                     const isCurrentRoom = selectedRoomIdRef.current === newMessage.roomId;
@@ -173,6 +173,8 @@ export default function ChatWidget() {
                 } catch (error) {
                     console.error("실시간 메시지 처리 실패", error);
                 }
+            }).then((sub) => {
+                subscriptionRef.current = sub;
             });
         };
 

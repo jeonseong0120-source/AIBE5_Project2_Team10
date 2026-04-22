@@ -2,6 +2,7 @@ package com.devnear.web.service.review;
 
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.client.ClientProfileRepository;
+import com.devnear.web.domain.enums.NotificationType;
 import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
@@ -18,9 +19,13 @@ import com.devnear.web.dto.review.ReviewResponse;
 import com.devnear.web.exception.ResourceConflictException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import com.devnear.web.service.freelancer.FreelancerGradeService;
+import com.devnear.web.service.notification.NotificationService;
 import com.devnear.web.domain.payment.PaymentRepository;
 import com.devnear.web.domain.payment.Payment;
 
@@ -28,6 +33,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -40,6 +46,7 @@ public class ReviewService {
     private final ProjectRepository projectRepository;
     private final FreelancerGradeService freelancerGradeService;
     private final PaymentRepository paymentRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public Long createFreelancerReview(User user, FreelancerReviewCreateRequest request) {
@@ -101,6 +108,53 @@ public class ReviewService {
 
         recomputeFreelancerAggregates(freelancer.getId(), payment.getNetAmount());
 
+        final Long freelancerUserId = freelancer.getUser().getId();
+        final Long projectId = project.getId();
+        Runnable dispatch = () -> {
+            try {
+                notificationService.notifyUser(
+                        freelancerUserId,
+                        NotificationType.REVIEW_LEFT_BY_CLIENT,
+                        "새 리뷰",
+                        "클라이언트가 리뷰를 남겼습니다.",
+                        projectId
+                );
+            } catch (Exception ex) {
+                log.warn(
+                        "Failed REVIEW_LEFT_BY_CLIENT notification (projectId={}, recipientUserId={})",
+                        projectId,
+                        freelancerUserId,
+                        ex
+                );
+            }
+            try {
+                notificationService.notifyUser(
+                        freelancerUserId,
+                        NotificationType.FREELANCER_DEPOSIT_COMPLETED,
+                        "입금 완료",
+                        "입금이 완료되었습니다.",
+                        projectId
+                );
+            } catch (Exception ex) {
+                log.warn(
+                        "Failed FREELANCER_DEPOSIT_COMPLETED notification (projectId={}, recipientUserId={})",
+                        projectId,
+                        freelancerUserId,
+                        ex
+                );
+            }
+        };
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    dispatch.run();
+                }
+            });
+        } else {
+            dispatch.run();
+        }
+
         return review.getId();
     }
 
@@ -154,6 +208,37 @@ public class ReviewService {
         // 저장 후 평점 재계산
         clientReviewRepository.save(review);
         updateClientRating(client);
+
+        final Long clientUserId = client.getUser().getId();
+        final Long projectId = project.getId();
+        Runnable dispatch = () -> {
+            try {
+                notificationService.notifyUser(
+                        clientUserId,
+                        NotificationType.REVIEW_LEFT_BY_FREELANCER,
+                        "새 리뷰",
+                        "프리랜서가 리뷰를 남겼습니다.",
+                        projectId
+                );
+            } catch (Exception ex) {
+                log.warn(
+                        "Failed REVIEW_LEFT_BY_FREELANCER notification (projectId={}, recipientUserId={})",
+                        projectId,
+                        clientUserId,
+                        ex
+                );
+            }
+        };
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    dispatch.run();
+                }
+            });
+        } else {
+            dispatch.run();
+        }
 
         return review.getId();
     }

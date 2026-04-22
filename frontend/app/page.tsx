@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "./lib/axios";
+import { postLoginPathForRole } from "./lib/postLoginRedirect";
 import { Zap, MapPin, ShieldCheck, ArrowRight } from "lucide-react";
 
 export default function Home() {
@@ -17,12 +18,9 @@ export default function Home() {
       try {
         const res = await api.get("/v1/users/me");
         const role = res.data.role;
-        if (role === "ROLE_GUEST" || role === "GUEST") {
-          router.push("/onboarding");
-          return;
-        }
-        if (["CLIENT", "BOTH", "ROLE_CLIENT", "ROLE_BOTH"].includes(role)) {
-          router.replace("/client/dashboard");
+        const next = postLoginPathForRole(role);
+        if (next !== "/") {
+          router.replace(next);
           return;
         }
         setUser(res.data);

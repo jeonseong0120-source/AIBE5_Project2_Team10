@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,14 +20,14 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    @Operation(summary = "내 알림 목록", description = "최신순 페이지와 미읽음 개수를 반환합니다.")
+    @Operation(summary = "내 알림 목록", description = "최신순 페이지와 미읽음 개수를 반환합니다. unreadOnly=true이면 읽지 않은 알림만 반환합니다.")
     @GetMapping
     public ResponseEntity<NotificationInboxResponse> list(
-            @AuthenticationPrincipal SecurityUser principal, // [수정] User -> SecurityUser
-            @PageableDefault(size = 20) Pageable pageable
+            @AuthenticationPrincipal SecurityUser principal,
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(defaultValue = "false") boolean unreadOnly
     ) {
-        // [수정] principal.getId()만 넘겨줍니다.
-        return ResponseEntity.ok(notificationService.getInbox(principal.getId(), pageable));
+        return ResponseEntity.ok(notificationService.getInbox(principal.getId(), pageable, unreadOnly));
     }
 
     @Operation(summary = "알림 읽음 처리", description = "본인 알림만 읽음으로 표시합니다.")

@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "Notifications")
@@ -54,7 +54,7 @@ public class Notification {
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Builder
     public Notification(User user, NotificationType notificationType, String content, boolean read, String url) {

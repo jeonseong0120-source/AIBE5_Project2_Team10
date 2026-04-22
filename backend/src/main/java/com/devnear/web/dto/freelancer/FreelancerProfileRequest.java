@@ -15,6 +15,8 @@ import java.util.List;
 public class FreelancerProfileRequest {
 
     private String profileImageUrl;
+
+    @Size(max = 4000, message = "소개글은 4000자 이내로 입력해 주세요.")
     private String introduction;
     private String location;
     @NotNull(message = "위도(latitude)는 필수 항목입니다.")
