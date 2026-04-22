@@ -79,6 +79,7 @@ export default function MypageSidebar({ tabs, activeTab, setActiveTab, accentCol
                 </button>
                 <button
                     onClick={handleWithdraw}
+                    disabled={isWithdrawing}
                     className="w-full mt-2 flex items-center gap-3 p-4 hover:bg-rose-50 rounded-xl transition-all duration-300 text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase font-mono tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <UserX size={16} />
