@@ -71,10 +71,13 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
     const userName = user?.nickname || user?.name || (isClientPage ? 'C' : 'F');
 
     return (
+        <>
+        {/* fixed 헤더와 본문 겹침 방지용 스페이서 */}
+        <div className="h-24 w-full" />
         <motion.nav
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="w-full h-24 flex justify-center items-center sticky top-0 z-50 font-sans"
+            className="fixed top-0 left-0 w-full h-24 flex justify-center items-center z-50 font-sans"
         >
             {/* 배경 레이어: 더 정교한 글래스모피즘 (전체 너비 유지) */}
             <div className="absolute inset-0 bg-white/60 backdrop-blur-xl border-b border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.03)]" />
@@ -195,5 +198,6 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
                 </div>
             </div>
         </motion.nav>
+        </>
     );
 }

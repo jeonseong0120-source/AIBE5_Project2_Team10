@@ -1,5 +1,6 @@
 package com.devnear.web.controller.freelancer;
 
+import com.devnear.global.auth.SecurityUser;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.ai.RecommendedProjectResponse;
 import com.devnear.web.dto.freelancer.FreelancerProfileRequest;
@@ -65,7 +66,7 @@ public class FreelancerController {
     // [조회] 프리랜서 목록 탐색 (필터 / 정렬 지원)
     @GetMapping
     public ResponseEntity<List<FreelancerProfileResponse>> searchFreelancers(
-            @AuthenticationPrincipal User user,
+            @AuthenticationPrincipal SecurityUser principal,
             @RequestParam(required = false) String skill,
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String sort,
@@ -76,7 +77,8 @@ public class FreelancerController {
         String safeRegion = (region != null && region.trim().isEmpty()) ? null : region;
         String safeSort = (sort != null && sort.trim().isEmpty()) ? null : sort;
         String safeWorkStyle = (workStyle != null && workStyle.trim().isEmpty()) ? null : workStyle;
-        Long excludeUserId = (user != null) ? user.getId() : null;
+        // JWT principal은 User가 아니라 SecurityUser — 타입 불일치 시 null이 되어 본인이 목록에 노출됨
+        Long excludeUserId = (principal != null) ? principal.getId() : null;
 
         return ResponseEntity.ok(freelancerService.searchFreelancers(
                 safeSkill, safeRegion, safeSort, safeWorkStyle, excludeUserId));

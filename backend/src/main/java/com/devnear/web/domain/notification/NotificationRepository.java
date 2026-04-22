@@ -3,9 +3,11 @@ package com.devnear.web.domain.notification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.Optional;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
@@ -14,6 +16,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     Page<Notification> findByUser_IdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
+    Page<Notification> findByUser_IdAndReadIsFalseOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.user.id = :userId AND NOT n.read")
     long countUnreadByUserId(@Param("userId") Long userId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM Notification n WHERE n.createdAt < :cutoff")
+    int deleteByCreatedAtBefore(@Param("cutoff") Instant cutoff);
 }

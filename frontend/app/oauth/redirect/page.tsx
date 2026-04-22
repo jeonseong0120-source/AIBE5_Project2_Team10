@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "../../lib/axios";
 import { notifyAuthChanged } from "../../lib/authEvents";
+import { postLoginPathForRole } from "../../lib/postLoginRedirect";
 
 export default function OAuthRedirect() {
     const router = useRouter();
@@ -27,17 +28,7 @@ export default function OAuthRedirect() {
                     try {
                         // [추가] 토큰 저장 후 즉시 역할을 확인하여 맞춤형 라우팅 진행
                         const res = await api.get("/v1/users/me");
-                        const role = res.data.role;
-
-                        if (role === "GUEST" || role === "ROLE_GUEST") {
-                            router.replace("/onboarding");
-                        } else if (role === "CLIENT" || role === "BOTH" || role === "ROLE_CLIENT" || role === "ROLE_BOTH") {
-                            // [요청 반영] 클라이언트나 겸업 유저는 바로 대시보드로 꽂아줍니다!
-                            router.replace("/client/dashboard");
-                        } else {
-                            // 프리랜서는 메인 페이지나 프로젝트 목록으로 이동
-                            router.replace("/");
-                        }
+                        router.replace(postLoginPathForRole(res.data.role));
                     } catch (err) {
                         console.error("권한 정보 로드 실패", err);
                         router.replace("/");

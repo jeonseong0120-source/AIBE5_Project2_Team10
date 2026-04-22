@@ -12,6 +12,7 @@ public class UserInfoResponse {
     private String nickname;
     private String profileImageUrl;
     private Role role;
+    private boolean notifyCommunityComments;
 
     public UserInfoResponse(User user) {
         this.id = user.getId();
@@ -20,5 +21,6 @@ public class UserInfoResponse {
         this.nickname = user.getNickname();
         this.profileImageUrl = user.getProfileImageUrl();
         this.role = user.getRole();
+        this.notifyCommunityComments = user.isNotifyCommunityComments();
     }
 }

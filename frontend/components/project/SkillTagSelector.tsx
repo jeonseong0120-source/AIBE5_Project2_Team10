@@ -16,6 +16,8 @@ type Props = {
     initialSkillNames?: string[];
     suggestSourceText?: string;
     suggestContext?: "portfolio" | "project";
+    /** 미지정 시 MAX_SELECTED_SKILLS(50) */
+    maxSelected?: number;
 };
 
 type SuggestedSkill = {
@@ -47,6 +49,7 @@ export default function SkillTagSelector({
     initialSkillNames = [],
     suggestSourceText = "",
     suggestContext = "project",
+    maxSelected = MAX_SELECTED_SKILLS,
 }: Props) {
     const onChangeRef = useRef(onChangeAction);
     onChangeRef.current = onChangeAction;
@@ -165,7 +168,7 @@ export default function SkillTagSelector({
         if (selectedSet.has(skillId)) {
             selectedSet.delete(skillId);
         } else {
-            if (selectedSet.size >= MAX_SELECTED_SKILLS) {
+            if (selectedSet.size >= maxSelected) {
                 return;
             }
             selectedSet.add(skillId);
@@ -186,7 +189,7 @@ export default function SkillTagSelector({
             const res = await api.post<SuggestedSkill[]>("/v1/skills/suggest", {
                 text: source,
                 context: suggestContext,
-                limit: Math.min(MAX_SELECTED_SKILLS, 20),
+                limit: Math.min(maxSelected, 20),
             });
             const suggestions = (res.data ?? []).filter((s) => Number.isFinite(s.skillId));
             if (suggestions.length === 0) {
@@ -223,8 +226,9 @@ export default function SkillTagSelector({
         if (selectedSkillIds.includes(skillId)) {
             return;
         }
-        if (selectedSkillIds.length >= MAX_SELECTED_SKILLS) {
-            setSuggestError(`스킬은 최대 ${MAX_SELECTED_SKILLS}개까지 선택할 수 있습니다.`);
+        const uniqueCount = new Set(selectedSkillIds).size;
+        if (uniqueCount >= maxSelected) {
+            setSuggestError(`스킬은 최대 ${maxSelected}개까지 선택할 수 있습니다.`);
             return;
         }
         onChangeAction([...selectedSkillIds, skillId]);
@@ -235,7 +239,7 @@ export default function SkillTagSelector({
             <label className="block text-sm font-bold text-zinc-700">
                 기술 스택 검색{" "}
                 <span className="font-mono text-xs font-black text-zinc-400">
-                    ({selectedSkillIds.length}/{MAX_SELECTED_SKILLS})
+                    ({selectedSkillIds.length}/{maxSelected})
                 </span>
                 <input
                     className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 font-medium outline-none focus:border-[#FF7D00]"
@@ -307,7 +311,7 @@ export default function SkillTagSelector({
                 <div className="flex flex-wrap gap-2">
                     {filteredSkills.map((skill) => {
                         const active = selectedSkillIds.includes(skill.skillId);
-                        const atCap = !active && selectedSkillIds.length >= MAX_SELECTED_SKILLS;
+                        const atCap = !active && selectedSkillIds.length >= maxSelected;
                         return (
                             <button
                                 key={skill.skillId}

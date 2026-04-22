@@ -5,8 +5,7 @@
 import { useEffect, useState } from "react";
 import api from "@/app/lib/axios";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import ProjectEditForm from "@/components/project/ProjectEditForm";
+import ProjectEditContent from "@/components/project/ProjectEditContent";
 
 export default function ClientProjectEditPage() {
     const params = useParams();
@@ -44,15 +43,19 @@ export default function ClientProjectEditPage() {
     if (!initialData) return null;
 
     return (
-        <div className="min-h-screen bg-zinc-50/50">
-            <nav className="p-8">
-                <button onClick={() => router.back()} className="flex items-center gap-2 text-xs font-black text-zinc-400 hover:text-zinc-900 transition-colors uppercase tracking-[0.2em]">
-                    <ArrowLeft size={16} /> Back_to_Dash
-                </button>
-            </nav>
-            <main className="px-6 pb-20">
-                <ProjectEditForm projectId={id} initialData={initialData} />
-            </main>
+        <div className="min-h-screen bg-zinc-50 relative">
+            <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-40" />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto no-scrollbar rounded-[2rem]">
+                    <ProjectEditContent
+                        projectId={id}
+                        initialData={initialData}
+                        embedded
+                        onClose={() => router.back()}
+                        onSaved={() => router.push("/client/dashboard")}
+                    />
+                </div>
+            </div>
         </div>
     );
 }

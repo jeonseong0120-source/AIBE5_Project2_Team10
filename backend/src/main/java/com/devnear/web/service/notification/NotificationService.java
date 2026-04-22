@@ -19,7 +19,6 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Objects;
 
 @Service
@@ -36,11 +35,16 @@ public class NotificationService {
      */
     @Transactional(readOnly = true)
     public NotificationInboxResponse getInbox(Long userId, Pageable pageable) {
+        return getInbox(userId, pageable, false);
+    }
+
+    @Transactional(readOnly = true)
+    public NotificationInboxResponse getInbox(Long userId, Pageable pageable, boolean unreadOnly) {
         long unread = notificationRepository.countUnreadByUserId(userId);
-        Page<NotificationResponse> page = notificationRepository
-                .findByUser_IdOrderByCreatedAtDesc(userId, pageable)
-                .map(NotificationResponse::fromEntity);
-        return NotificationInboxResponse.of(unread, page);
+        Page<Notification> page = unreadOnly
+                ? notificationRepository.findByUser_IdAndReadIsFalseOrderByCreatedAtDesc(userId, pageable)
+                : notificationRepository.findByUser_IdOrderByCreatedAtDesc(userId, pageable);
+        return NotificationInboxResponse.of(unread, page.map(NotificationResponse::fromEntity));
     }
 
     /**
@@ -59,6 +63,11 @@ public class NotificationService {
 
     @Transactional
     public void notifyUser(Long userId, NotificationType type, String title, String message, Long resourceId) {
+        notifyUser(userId, type, title, message, resourceId, null);
+    }
+
+    @Transactional
+    public void notifyUser(Long userId, NotificationType type, String title, String message, Long resourceId, String urlOverride) {
         if (userId == null) {
             throw new IllegalArgumentException("수신자 userId는 null일 수 없습니다.");
         }
@@ -71,17 +80,18 @@ public class NotificationService {
                 .orElseThrow(() -> new ResourceNotFoundException("수신자를 찾을 수 없습니다."));
 
         String content = title + "\n" + message;
+        String url = (urlOverride != null && !urlOverride.isBlank())
+                ? urlOverride
+                : buildUrl(type, resourceId);
         Notification saved = notificationRepository.save(Notification.builder()
                 .user(targetUser)
                 .notificationType(type)
                 .content(content)
                 .read(false)
-                .url(buildUrl(type, resourceId))
+                .url(url)
                 .build());
 
-        Instant at = saved.getCreatedAt() != null
-                ? saved.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()
-                : Instant.now();
+        Instant at = saved.getCreatedAt() != null ? saved.getCreatedAt() : Instant.now();
 
         NotificationPayload payload = NotificationPayload.of(
                 saved.getId(),
@@ -111,6 +121,14 @@ public class NotificationService {
             case PROJECT_PROPOSAL_ACCEPTED, PROJECT_PROPOSAL_REJECTED -> null;
             case PROJECT_APPLICATION_SUBMITTED -> "/client/dashboard";
             case PROJECT_APPLICATION_ACCEPTED, PROJECT_APPLICATION_REJECTED -> null;
+            case PROJECT_COMPLETED_REVIEW_REQUEST -> "/client/mypage?tab=projects";
+            case PAYMENT_COMPLETED -> "/client/dashboard";
+            case FREELANCER_DEPOSIT_COMPLETED -> resourceId == null
+                    ? "/freelancer/mypage?tab=settlement"
+                    : "/freelancer/mypage?tab=settlement&projectId=" + resourceId;
+            case REVIEW_LEFT_BY_CLIENT -> "/freelancer/mypage?tab=reviews";
+            case REVIEW_LEFT_BY_FREELANCER -> "/client/mypage?tab=projects";
+            case COMMUNITY_COMMENT_ON_MY_POST -> "/community/" + resourceId;
         };
     }
 }

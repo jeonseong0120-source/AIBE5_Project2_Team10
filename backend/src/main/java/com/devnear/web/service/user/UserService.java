@@ -12,7 +12,12 @@ import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.freelancer.FreelancerProfileRequest;
-import com.devnear.web.dto.user.*;
+import com.devnear.web.dto.user.NotificationPreferencePatchRequest;
+import com.devnear.web.dto.user.OnboardingRequest;
+import com.devnear.web.dto.user.TokenResponse;
+import com.devnear.web.dto.user.UserInfoResponse;
+import com.devnear.web.dto.user.UserLoginRequest;
+import com.devnear.web.dto.user.UserRegisterRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataIntegrityViolationException; // 👈 예외 처리 필수 임포트
@@ -141,6 +146,23 @@ public class UserService {
         return new UserInfoResponse(user);
     }
 
+    @Transactional
+    public UserInfoResponse updateNotificationPreferences(String email, NotificationPreferencePatchRequest request) {
+        User user = userRepository.findByEmailForUpdate(email)
+                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
+            throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
+        }
+        if (request.getNotifyCommunityComments() != null) {
+            user.setNotifyCommunityComments(request.getNotifyCommunityComments());
+        }
+        return new UserInfoResponse(user);
+    }
+
+    /**
+     * [Cloudinary] 프로필 이미지 URL을 DB에 반영합니다.
+     * ImageController에서 Cloudinary 업로드 완료 후 호출됩니다.
+     */
     @CacheEvict(value = "users", key = "#email")
     @Transactional
     public void updateProfileImage(String email, String newImageUrl) {

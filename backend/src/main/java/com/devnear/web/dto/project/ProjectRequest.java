@@ -11,11 +11,14 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @Getter
 @Setter
 @NoArgsConstructor
 public class ProjectRequest {
+    private static final int MAX_PROJECT_SKILLS = 10;
+
     @NotBlank(message = "프로젝트 명은 필수입니다.")
     @Size(max = 100)
     private String projectName;
@@ -44,12 +47,33 @@ public class ProjectRequest {
     private Double longitude;
 
     @JsonAlias({"skills", "projectSkills"})
-    @Size(max = 50, message = "프로젝트 스킬은 최대 50개까지 지정할 수 있습니다.")
+    @Size(max = MAX_PROJECT_SKILLS, message = "프로젝트 스킬은 최대 10개까지 지정할 수 있습니다.")
     private List<String> skillNames;
 
     @JsonAlias({"skillIds"})
-    @Size(max = 50, message = "프로젝트 스킬은 최대 50개까지 지정할 수 있습니다.")
+    @Size(max = MAX_PROJECT_SKILLS, message = "프로젝트 스킬은 최대 10개까지 지정할 수 있습니다.")
     private List<Long> skillIds; // 숫자 ID 기반 입력 호환용
+
+    @AssertTrue(message = "프로젝트 스킬은 최대 10개까지 지정할 수 있습니다.")
+    private boolean isTotalSkillPayloadSizeValid() {
+        long idCount = skillIds == null
+                ? 0
+                : skillIds.stream()
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .count();
+
+        long nameCount = skillNames == null
+                ? 0
+                : skillNames.stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(name -> !name.isEmpty())
+                        .distinct()
+                        .count();
+
+        return idCount + nameCount <= MAX_PROJECT_SKILLS;
+    }
 
     @AssertTrue(message = "오프라인 프로젝트는 주소 정보가 필수입니다.")
     private boolean isOfflineLocationValid() {

@@ -10,6 +10,7 @@ import com.devnear.web.dto.payment.PaymentResponse;
 import com.devnear.web.exception.PaymentAmountMismatchException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final ProjectRepository projectRepository;
     private final TossPaymentClient tossPaymentClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 결제 내역 생성 (결제창 띄우기 전 단계)
@@ -121,6 +123,8 @@ public class PaymentService {
         Project project = payment.getProject();
         if (project != null) {
             project.start();
+            Long clientUserId = project.getClientProfile().getUser().getId();
+            eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getId(), project.getId(), clientUserId));
         }
 
         return PaymentResponse.from(payment);

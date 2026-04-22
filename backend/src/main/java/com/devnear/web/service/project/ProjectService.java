@@ -30,6 +30,7 @@ import com.devnear.web.service.freelancer.FreelancerGradeService;
 import jakarta.persistence.EntityManager; // 🔍 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -64,6 +65,7 @@ public class ProjectService {
     private final ClientReviewRepository clientReviewRepository;
     private final FreelancerReviewRepository freelancerReviewRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public Long createProject(User user, ProjectRequest request) {
@@ -346,5 +348,17 @@ public class ProjectService {
             freelancerProfile.increaseCompletedProjects();
             freelancerGradeService.refreshGrade(freelancerProfile);
         }
+
+        Long pid = project.getId();
+        String title = "프로젝트 완료";
+        String message = "프로젝트가 완료되었습니다. 리뷰를 작성해 주세요.";
+        Long clientUserId = project.getClientProfile().getUser().getId();
+        eventPublisher.publishEvent(new ProjectCompletedNotificationEvent(
+                clientUserId,
+                pid,
+                title,
+                message,
+                "/client/mypage?tab=projects"
+        ));
     }
 }

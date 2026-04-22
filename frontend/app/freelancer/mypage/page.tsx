@@ -2,12 +2,10 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { User as UserIcon, Briefcase, Star, Award, Bookmark, CreditCard } from 'lucide-react';
+import { User as UserIcon, Briefcase, Star, Award, Bookmark, CreditCard, Bell } from 'lucide-react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { MAX_SELECTED_SKILLS } from '@/app/lib/skillLimits';
-import { NotificationBell } from '@/components/notifications/NotificationProvider';
-
 // New Components
 import MypageSidebar from '@/components/layout/MypageSidebar';
 import MypageWithdrawFooter from '@/components/layout/MypageWithdrawFooter';
@@ -20,6 +18,7 @@ import PortfolioFormModal from '@/components/freelancer_mypage/PortfolioFormModa
 import PortfolioDetailModal from '@/components/freelancer_mypage/PortfolioDetailModal';
 import BookmarkTab from '../../../components/freelancer_mypage/MypageBookmarksTab';
 import MypageSettlementTab from '@/components/freelancer_mypage/MypageSettlementTab';
+import { MypageNotificationsTab } from '@/components/mypage/MypageNotificationsTab';
 
 const TABS = [
     { id: 'profile', label: 'MY PROFILE', icon: UserIcon },
@@ -28,6 +27,7 @@ const TABS = [
     { id: 'grade', label: 'RANK', icon: Award },
     { id: 'bookmarks', label: 'BOOKMARKS', icon: Bookmark },
     { id: 'settlement', label: 'SETTLEMENT', icon: CreditCard },
+    { id: 'notifications', label: 'NOTIFICATIONS', icon: Bell },
 ];
 
 const LOCATION_COORDS: Record<string, { lat: number, lng: number }> = {
@@ -373,9 +373,10 @@ function FreelancerMyPageContent() {
                                 {activeTab === 'grade' && <MypageGradeTab profile={profile} />}
                                 {activeTab === 'bookmarks' && <BookmarkTab />}
                                 {activeTab === 'settlement' && <MypageSettlementTab profile={profile} />}
+                                {activeTab === 'notifications' && <MypageNotificationsTab accentColor="#7A4FFF" />}
                             </div>
                         )}
-                        <MypageWithdrawFooter />
+                        {!loading && activeTab === 'profile' ? <MypageWithdrawFooter /> : null}
                     </motion.div>
                 </div>
             </main>

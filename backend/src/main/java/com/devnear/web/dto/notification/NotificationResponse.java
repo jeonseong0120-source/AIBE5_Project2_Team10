@@ -2,7 +2,7 @@ package com.devnear.web.dto.notification;
 
 import com.devnear.web.domain.notification.Notification;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record NotificationResponse(
         Long notificationId,
@@ -12,7 +12,7 @@ public record NotificationResponse(
         String content,
         boolean read,
         String url,
-        LocalDateTime createdAt
+        Instant createdAt
 ) {
     public static NotificationResponse fromEntity(Notification n) {
         String c = n.getContent();
