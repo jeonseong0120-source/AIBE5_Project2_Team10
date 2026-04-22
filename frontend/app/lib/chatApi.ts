@@ -2,9 +2,10 @@ import api from "./axios";
 import type {
     ChatMessageResponse,
     ChatMessageSendRequest,
+    ChatRoomCreateResponse,
     ChatRoomResponse,
 } from "../../types/chat";
-import { connectChatSocket } from "./chatSocket";
+import { ensureChatSocketConnected } from "./chatSocket";
 
 export async function getChatRooms(): Promise<ChatRoomResponse[]> {
     const { data } = await api.get<ChatRoomResponse[]>("/chat/rooms");
@@ -40,8 +41,8 @@ export async function sendChatMessage(
 
 export async function createOrGetChatRoom(
     targetUserId: number
-): Promise<{ roomId: number }> {
-    const { data } = await api.post<{ roomId: number }>("/chat/rooms", {
+): Promise<ChatRoomCreateResponse> {
+    const { data } = await api.post<ChatRoomCreateResponse>("/chat/rooms", {
         targetUserId,
     });
     return data;

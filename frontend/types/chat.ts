@@ -21,3 +21,11 @@ export interface ChatMessageSendRequest {
     roomId: number;
     message: string;
 }
+
+export interface ChatRoomCreateRequest {
+    targetUserId: number;
+}
+
+export interface ChatRoomCreateResponse {
+    roomId: number;
+}

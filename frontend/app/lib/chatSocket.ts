@@ -1,64 +1,37 @@
-import { Client, IMessage, StompSubscription } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
+let connectingPromise: Promise<Client> | null = null;
 
-let client: Client | null = null;
+export async function ensureChatSocketConnected(): Promise<Client> {
+    // 이미 연결됨
+    if (client?.connected) return client;
 
-function getAccessToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("accessToken");
-}
+    // 🔥 이미 연결 시도 중이면 그거 재사용
+    if (connectingPromise) return connectingPromise;
 
-function resolveChatSocketUrl(): string {
-    const envUrl = process.env.NEXT_PUBLIC_WS_URL?.trim();
+    connectingPromise = new Promise((resolve, reject) => {
+        const socketClient = connectChatSocket();
 
-    if (envUrl) {
-        return envUrl;
-    }
+        const timeout = setTimeout(() => {
+            connectingPromise = null;
+            reject(new Error("채팅 소켓 연결 시간 초과"));
+        }, 5000);
 
-    return "http://127.0.0.1:8080/ws-chat";
-}
+        const originalOnConnect = socketClient.onConnect;
+        const originalOnWebSocketError = socketClient.onWebSocketError;
 
-export function connectChatSocket(onConnect?: () => void) {
-    if (client?.active) return client;
+        socketClient.onConnect = (frame) => {
+            clearTimeout(timeout);
+            connectingPromise = null;
+            originalOnConnect?.(frame);
+            resolve(socketClient);
+        };
 
-    const token = getAccessToken();
-
-    client = new Client({
-        webSocketFactory: () => new SockJS(resolveChatSocketUrl()),
-        connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
-        reconnectDelay: 5000,
-        debug: () => {},
-        onConnect: () => {
-            onConnect?.();
-        },
-        onStompError: (frame) => {
-            console.error("STOMP 에러", frame);
-        },
-        onWebSocketError: (event) => {
-            console.error("WebSocket 에러", event);
-        },
+        socketClient.onWebSocketError = (event) => {
+            clearTimeout(timeout);
+            connectingPromise = null;
+            originalOnWebSocketError?.(event);
+            reject(new Error("채팅 소켓 연결 실패"));
+        };
     });
 
-    client.activate();
-    return client;
-}
-
-export function disconnectChatSocket() {
-    if (client) {
-        client.deactivate();
-        client = null;
-    }
-}
-
-export function subscribeChatRoom(
-    roomId: number,
-    callback: (message: IMessage) => void
-): StompSubscription | null {
-    if (!client || !client.connected) return null;
-
-    return client.subscribe(`/sub/chat/rooms/${roomId}`, callback);
-}
-
-export function isChatSocketConnected() {
-    return !!client?.connected;
+    return connectingPromise;
 }
