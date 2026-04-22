@@ -166,4 +166,18 @@ public class FreelancerProfile extends BaseTimeEntity {
         }
         this.balance += amount;
     }
+
+    /**
+     * 탈퇴 후에도 리뷰·완료 건수·평점 집계는 유지하고, 노출되는 개인 정보와 스킬만 제거합니다.
+     */
+    public void scrubPersonalDataForWithdrawal() {
+        this.profileImageUrl = null;
+        this.introduction = null;
+        this.location = null;
+        this.latitude = null;
+        this.longitude = null;
+        this.hourlyRate = null;
+        this.isActive = false;
+        updateSkills(List.of());
+    }
 }

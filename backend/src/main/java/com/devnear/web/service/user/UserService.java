@@ -3,6 +3,7 @@ package com.devnear.web.service.user;
 import com.devnear.global.auth.JwtTokenProvider;
 import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.enums.Role;
+import com.devnear.web.domain.enums.UserStatus;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.freelancer.FreelancerSkill;
@@ -39,7 +40,7 @@ public class UserService {
 
     @Transactional
     public Long register(UserRegisterRequest request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (userRepository.findByEmailForUpdate(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
         }
         String encodedPassword = passwordEncoder.encode(request.getPassword());
@@ -65,8 +66,11 @@ public class UserService {
      */
     @Transactional
     public TokenResponse onboarding(String email, OnboardingRequest request) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailForUpdate(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
+            throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
+        }
 
         // [보고] 팀원 에러 픽스: 소셜 로그인 시 이미 부여된 닉네임(user.getNickname())과 입력한 닉네임이 다를 때만 중복 검사
         if (!Objects.equals(user.getNickname(), request.getNickname()) &&
@@ -148,8 +152,11 @@ public class UserService {
      */
     @Transactional
     public void updateProfileImage(String email, String newImageUrl) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailForUpdate(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
+            throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
+        }
         user.updateProfileImageUrl(newImageUrl);
         // @Transactional + Dirty Checking으로 별도 save() 불필요
     }
