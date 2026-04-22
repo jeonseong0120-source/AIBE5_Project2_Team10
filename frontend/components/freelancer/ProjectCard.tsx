@@ -79,7 +79,7 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
                     <div className="h-16 w-16 md:h-20 md:w-20 shrink-0 overflow-hidden rounded-2xl md:rounded-[1.5rem] border border-zinc-100 bg-zinc-50 shadow-sm transition-all duration-500 group-hover:scale-105 group-hover:shadow-[#7A4FFF]/10 p-1">
                         <img 
                             src={data.logoUrl || `https://ui-avatars.com/api/?name=${data.companyName || 'C'}&background=F4F4F5&color=A1A1AA`} 
-                            alt={data.companyName}
+                            alt={data.companyName || 'Company logo'}
                             className="h-full w-full object-cover rounded-xl md:rounded-[1.2rem]"
                         />
                     </div>
@@ -123,6 +123,8 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
                     <button 
                         type="button"
                         onClick={() => setIsBookmarked(!isBookmarked)}
+                        aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+                        aria-pressed={isBookmarked}
                         className="bookmark-btn p-3.5 md:p-4 rounded-2xl border border-zinc-100 hover:border-red-100 hover:bg-red-50 text-zinc-200 hover:text-red-500 transition-all active:scale-90 bg-white/50 backdrop-blur-sm shadow-sm shrink-0"
                     >
                         <Heart size={20} className={isBookmarked ? 'fill-red-500 text-red-500' : ''} />
