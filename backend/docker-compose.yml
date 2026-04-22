@@ -1,10 +1,9 @@
-# version: '3.8'
 services:
   db:
     image: mysql:8.0
     container_name: devnear-db
     ports:
-      - "3307:3306"  # 왼쪽 3306을 3307로 바꿉니다!
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: devnear
@@ -12,4 +11,11 @@ services:
       MYSQL_PASSWORD: user123
     volumes:
       - ./mysql_data:/var/lib/mysql
+    restart: always
+
+  redis:
+    image: redis:latest
+    container_name: devnear-redis
+    ports:
+      - "6379:6379"
     restart: always
