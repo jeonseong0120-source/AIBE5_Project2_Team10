@@ -418,11 +418,13 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                                 const thumb = p.thumbnailUrl || p.portfolioImages?.[0] || FALLBACK_IMAGE_URL;
                                 const portSkills = p.skills ?? [];
                                 return (
-                                    <motion.div
+                                    <motion.button
+                                        type="button"
                                         key={p.id}
                                         whileHover={{ y: -12 }}
                                         onClick={() => setSelectedPortfolio(p)}
-                                        className="group relative flex flex-col bg-white rounded-[3rem] border border-zinc-100 overflow-hidden hover:border-[#7A4FFF] hover:shadow-[0_30px_60px_-12px_rgba(122,79,255,0.12)] transition-all duration-500 cursor-pointer"
+                                        aria-label={`포트폴리오 열기: ${p.title}`}
+                                        className="group relative flex flex-col bg-white rounded-[3rem] border border-zinc-100 overflow-hidden hover:border-[`#7A4FFF`] hover:shadow-[0_30px_60px_-12px_rgba(122,79,255,0.12)] transition-all duration-500 cursor-pointer text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[`#7A4FFF`] focus-visible:ring-offset-2"
                                     >
                                         {/* Thumbnail: 7:5 Aspect Ratio */}
                                         <div className="w-full aspect-[7/5] bg-zinc-50 overflow-hidden relative">
@@ -465,7 +467,7 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                                                 )}
                                             </div>
                                         </div>
-                                    </motion.div>
+                                    </motion.button>
                                 );
                             })}
                         </div>
