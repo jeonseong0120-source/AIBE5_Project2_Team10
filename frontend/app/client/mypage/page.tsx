@@ -9,6 +9,7 @@ import { NotificationBell } from '@/components/notifications/NotificationProvide
 import api from '../../lib/axios';
 
 import MypageSidebar from '@/components/layout/MypageSidebar';
+import MypageWithdrawFooter from '@/components/layout/MypageWithdrawFooter';
 // 🎯 [수정 1] 기존 MypageNavbar 임포트 삭제 후 GlobalNavbar 임포트
 import GlobalNavbar, { type UserData, type ProfileData } from '@/components/common/GlobalNavbar';
 import ProjectsTab from '@/components/client_mypage/ProjectsTab';
@@ -165,20 +166,23 @@ export default function ClientMyPage() {
                             duration: 0.3,
                             ease: "easeOut"
                         }}
-                        className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/50 min-h-[700px] w-full"
+                        className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-10 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/50 min-h-[780px] w-full flex flex-col"
                     >
-                        {activeTab === 'projects' && (
-                            <ProjectsTab user={user} projects={projects} loading={loading} setSelectedProjectForView={setSelectedProjectForView} />
-                        )}
-                        {activeTab === 'bookmarks' && (
-                            <div className="space-y-8">
-                                <h2 className="text-sm font-black uppercase font-mono tracking-[0.3em] text-zinc-400 mb-8">Bookmarked Freelancers</h2>
-                                <BookmarkedFreelancers />
-                            </div>
-                        )}
-                        {activeTab === 'settings' && (
-                            <SettingsTab onUpdateSuccess={handleUpdateSuccess} />
-                        )}
+                        <div className="min-h-0 flex-1 w-full">
+                            {activeTab === 'projects' && (
+                                <ProjectsTab user={user} projects={projects} loading={loading} setSelectedProjectForView={setSelectedProjectForView} />
+                            )}
+                            {activeTab === 'bookmarks' && (
+                                <div className="space-y-8">
+                                    <h2 className="text-sm font-black uppercase font-mono tracking-[0.3em] text-zinc-400 mb-8">Bookmarked Freelancers</h2>
+                                    <BookmarkedFreelancers />
+                                </div>
+                            )}
+                            {activeTab === 'settings' && (
+                                <SettingsTab onUpdateSuccess={handleUpdateSuccess} />
+                            )}
+                        </div>
+                        <MypageWithdrawFooter />
                     </motion.div>
                 </div>
             </main>
