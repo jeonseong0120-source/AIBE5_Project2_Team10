@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.cache.annotation.CacheEvict;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -38,7 +38,8 @@ public class UserService {
 
     @Transactional
     public Long register(UserRegisterRequest request) {
-        // [N+1 팁] 중복 체크 시에는 EntityGraph가 없는 전용 메서드나 existsByEmail을 쓰는 게 더 가볍습니다.
+        // [보안 팁] 혹시 모를 중복 가입 시도 방지를 위해 가입 시에도 캐시를 비워주는 것이 타당
+        // 하지만 가입 시엔 보통 캐시가 없으므로 생략 가능
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
         }
@@ -60,9 +61,9 @@ public class UserService {
         return new TokenResponse(token, "Bearer");
     }
 
+    @CacheEvict(value = "users", key = "#email") // 👈 [추가] 권한 승격 시 캐시 삭제!
     @Transactional
     public TokenResponse onboarding(String email, OnboardingRequest request) {
-        // 여기서 이미 Freelancer/Client Profile을 JOIN으로 다 가져왔습니다!
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
 
@@ -128,6 +129,7 @@ public class UserService {
         return new UserInfoResponse(user);
     }
 
+    @CacheEvict(value = "users", key = "#email") // 👈 [추가] 프로필 이미지 변경 시에도 캐시 삭제
     @Transactional
     public void updateProfileImage(String email, String newImageUrl) {
         User user = userRepository.findByEmail(email)

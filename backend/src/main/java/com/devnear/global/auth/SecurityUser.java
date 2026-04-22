@@ -14,15 +14,15 @@ import java.util.Collection;
 import java.util.Collections;
 
 @Getter
-@NoArgsConstructor // 역직렬화 필수
+@NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class") // 클래스 정보 강제 포함
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
 public class SecurityUser implements UserDetails {
     private Long id;
     private String email;
     private String password;
     private String role;
-    private String status; // 🎯 유저 상태값 (활성화/정지 등) 보관 (프론트 미들웨어에서 필요)
+    private String status;
 
     public SecurityUser(User user) {
         this.id = user.getId();
@@ -32,7 +32,7 @@ public class SecurityUser implements UserDetails {
         this.status = user.getStatus().name();
     }
 
-    @JsonIgnore // Authorities 객체는 직렬화하지 않고 role 문자열만 저장함 (에러 방지)
+    @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + role));
@@ -43,5 +43,11 @@ public class SecurityUser implements UserDetails {
     @Override public boolean isAccountNonExpired() { return true; }
     @Override public boolean isAccountNonLocked() { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }
-    @Override public boolean isEnabled() { return true; }
+
+    @Override
+    public boolean isEnabled() {
+        // 🎯 [수정] ACTIVE 또는 INACTIVE 상태일 때만 true를 반환
+        // 탈퇴(WITHDRAWN)나 정지 상태라면 false가 반환되어 시큐리티가 차단합
+        return "ACTIVE".equals(status) || "INACTIVE".equals(status);
+    }
 }

@@ -13,7 +13,6 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
-
 import java.time.Duration;
 
 @Configuration
@@ -22,17 +21,22 @@ public class RedisConfig {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // 1. 보안과 날짜 처리가 완벽한 ObjectMapper 커스텀 설정
+        // 1. 보안이 강화된 ObjectMapper 설정
         ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule()); // 날짜 처리 모듈만 등록 (시큐리티 모듈 제외하여 에러 방지)
+        mapper.registerModule(new JavaTimeModule());
 
-        // 역직렬화 시 클래스 타입 보존 (401 에러 방지의 핵심)
+        // 🎯 [보안 강화] 모든 클래스(Object.class) 허용은 RCE 공격의 통로가 됨
+        // 우리 프로젝트 내의 클래스와 날짜 관련 타입만 직렬화되도록 화이트리스트를 지정
         BasicPolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
-                .allowIfBaseType(Object.class)
+                .allowIfSubType("com.devnear.") // 우리 패키지 허용
+                .allowIfSubType("java.time.")   // 날짜 타입 허용
+                .allowIfSubType("java.util.")   // 컬렉션 등 허용
+                .allowIfSubType("org.springframework.security.") // 시큐리티 권한 객체 등 허용
                 .build();
+
         mapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
 
-        // 2. [필살기] 지원 중단된 클래스 대신 직접 구현한 무결점 Serializer 사용
+        // 2. 커스텀 Serializer (SecurityUser 등의 DTO 처리에 최적화)
         RedisSerializer<Object> customSerializer = new RedisSerializer<>() {
             @Override
             public byte[] serialize(Object value) throws SerializationException {
@@ -50,14 +54,15 @@ public class RedisConfig {
                 try {
                     return mapper.readValue(bytes, Object.class);
                 } catch (Exception e) {
-                    throw new SerializationException("역직렬화 실패 (401 원인)", e);
+                    throw new SerializationException("역직렬화 실패 (보안 또는 타입 불일치)", e);
                 }
             }
         };
 
+        // 3. 캐시 상세 설정 (TTL 5분 유지)
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10))
-                .disableCachingNullValues()
+                .entryTtl(Duration.ofMinutes(5)) // 짧은 TTL로 데이터 불일치 최소화
+                .disableCachingNullValues()    // 존재하지 않는 유저(Null)는 캐싱하지 않아 DoS 방어
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.string()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(customSerializer));
 
