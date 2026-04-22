@@ -17,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +32,7 @@ public class ProjectController {
     @Operation(summary = "프로젝트 공고 등록", description = "클라이언트가 새로운 프로젝트 공고를 등록합니다.")
     @PostMapping
     public ResponseEntity<Long> createProject(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @RequestBody @Valid ProjectRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(projectService.createProject(user, request));
@@ -40,7 +41,7 @@ public class ProjectController {
     @Operation(summary = "프로젝트 공고 수정", description = "본인이 등록한 프로젝트 공고 내용을 수정합니다.")
     @PutMapping("/{projectId}")
     public ResponseEntity<Void> updateProject(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @PathVariable Long projectId,
             @RequestBody @Valid ProjectRequest request) {
         projectService.updateProject(user, projectId, request);
@@ -50,7 +51,7 @@ public class ProjectController {
     @Operation(summary = "프로젝트 공고 삭제", description = "본인이 등록한 프로젝트 공고를 삭제합니다.")
     @DeleteMapping("/{projectId}")
     public ResponseEntity<Void> deleteProject(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @PathVariable Long projectId) {
         projectService.deleteProject(user, projectId);
         return ResponseEntity.noContent().build();
@@ -65,7 +66,7 @@ public class ProjectController {
     )
     @GetMapping
     public ResponseEntity<Page<ProjectResponse>> getProjectList(
-            @Nullable @AuthenticationPrincipal(errorOnInvalidType = false) User viewer,
+            @Nullable @LoginUser User viewer,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String skill,
@@ -106,7 +107,7 @@ public class ProjectController {
     @Operation(summary = "내 프로젝트 목록 조회", description = "로그인한 유저가 작성한 프로젝트 공고만 조회합니다.")
     @GetMapping("/me")
     public ResponseEntity<Page<ProjectResponse>> getMyProjects(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @RequestParam(required = false) ProjectStatus status,  // 추가
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(projectService.getMyProjectList(user, status, pageable));
@@ -122,7 +123,7 @@ public class ProjectController {
     @Operation(summary = "프로젝트 마감", description = "프로젝트 공고를 마감합니다.")
     @PatchMapping("/{projectId}/close")
     public ResponseEntity<Void> closeProject(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @PathVariable Long projectId) {
         projectService.closeProject(user, projectId);
         return ResponseEntity.ok().build();
@@ -131,7 +132,7 @@ public class ProjectController {
     @Operation(summary = "프로젝트 시작", description = "프로젝트를 진행중으로 변경합니다.")
     @PatchMapping("/{projectId}/start")
     public ResponseEntity<Void> startProject(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @PathVariable Long projectId) {
         projectService.startProject(user, projectId);
         return ResponseEntity.ok().build();
@@ -140,7 +141,7 @@ public class ProjectController {
     @Operation(summary = "프로젝트 완료", description = "프로젝트를 완료 처리합니다.")
     @PatchMapping("/{projectId}/complete")
     public ResponseEntity<Void> completeProject(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @PathVariable Long projectId) {
         projectService.completeProject(user, projectId);
         return ResponseEntity.ok().build();

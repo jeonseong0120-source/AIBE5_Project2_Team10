@@ -9,6 +9,7 @@ import com.devnear.web.service.ai.AiRecommendationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,7 +31,7 @@ public class FreelancerSelfController {
 
     @GetMapping("/me/recommended-projects")
     public ResponseEntity<List<RecommendedProjectResponse>> getMyRecommendedProjects(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @RequestParam(required = false) Integer limit) {
 
         if (user == null) {

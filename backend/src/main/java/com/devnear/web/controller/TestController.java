@@ -1,6 +1,7 @@
 package com.devnear.web.controller;
 
 import com.devnear.web.domain.user.User;
+import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,7 +16,7 @@ public class TestController {
      * SecurityConfig의 .anyRequest().authenticated()에 의해 로그인만 하면 누구나 접근 가능
      */
     @GetMapping("/api/test-data")
-    public Map<String, Object> testData(@AuthenticationPrincipal User user) {
+    public Map<String, Object> testData(@LoginUser User user) {
         return getResponse(user, "보안 확인 및 공통 데이터 로드 성공ㅊㅋ");
     }
 
@@ -24,7 +25,7 @@ public class TestController {
      * SecurityConfig의 .hasAnyRole("FREELANCER", "BOTH") 적용 확인용
      */
     @GetMapping("/api/freelancer/test")
-    public Map<String, Object> freelancerOnly(@AuthenticationPrincipal User user) {
+    public Map<String, Object> freelancerOnly(@LoginUser User user) {
         return getResponse(user, "프리랜서(또는 겸업자) 전용 구역 통과ㅊㅋ");
     }
 
@@ -33,7 +34,7 @@ public class TestController {
      * SecurityConfig의 .hasAnyRole("CLIENT", "BOTH") 적용 확인용
      */
     @GetMapping("/api/client/test")
-    public Map<String, Object> clientOnly(@AuthenticationPrincipal User user) {
+    public Map<String, Object> clientOnly(@LoginUser User user) {
         return getResponse(user, "클라이언트(또는 겸업자) 전용 구역 통과ㅊㅋ");
     }
 

@@ -8,6 +8,7 @@ import com.devnear.web.service.review.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @PostMapping("/freelancers")
-    public ResponseEntity<Long> createFreelancerReview(@AuthenticationPrincipal User user,
+    public ResponseEntity<Long> createFreelancerReview(@LoginUser User user,
                                                        @RequestBody FreelancerReviewCreateRequest request) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -32,7 +33,7 @@ public class ReviewController {
     }
 
     @PostMapping("/clients")
-    public ResponseEntity<Long> createClientReview(@AuthenticationPrincipal User user,
+    public ResponseEntity<Long> createClientReview(@LoginUser User user,
                                                    @RequestBody ClientReviewCreateRequest request) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
