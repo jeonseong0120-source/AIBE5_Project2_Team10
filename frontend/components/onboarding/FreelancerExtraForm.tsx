@@ -4,9 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import api from "../../app/lib/axios";
 import { MAX_SELECTED_SKILLS } from "@/app/lib/skillLimits";
-// 🎯 카카오 맵 위치 피커 임포트
 import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
-import { MapPin } from "lucide-react";
+import { MapPin, MessageSquare, DollarSign, Zap, Code } from "lucide-react";
 
 interface FreelancerExtraFormProps {
     freelancerData: {
@@ -23,9 +22,10 @@ interface FreelancerExtraFormProps {
 
 export default function FreelancerExtraForm({ freelancerData, setFreelancerData }: FreelancerExtraFormProps) {
     const [availableSkills, setAvailableSkills] = useState<{skillId: number, name: string, category: string}[]>([]);
-
-    // 환경변수에서 카카오 키 로드 (마스터의 설정에 맞게 확인해주세요!)
     const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim() ?? "";
+
+    const inputStyle = "w-full pl-12 pr-4 py-4 bg-zinc-50/50 border border-zinc-100 rounded-2xl outline-none transition-all font-bold text-sm focus:ring-4 focus:ring-[#7A4FFF]/10 focus:border-[#7A4FFF] focus:bg-white";
+    const labelStyle = "text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest block mb-2";
 
     useEffect(() => {
         const fetchSkills = async () => {
@@ -49,9 +49,7 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
         setFreelancerData({ ...freelancerData, skillIds: newSkills });
     };
 
-    const formatNumber = (num: number) => {
-        return num.toLocaleString("ko-KR");
-    };
+    const formatNumber = (num: number) => num.toLocaleString("ko-KR");
 
     const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/[^0-9]/g, "");
@@ -64,39 +62,40 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
         >
-            <div className="pt-6 mt-6 border-t border-zinc-100 space-y-5">
+            <div className="pt-8 mt-8 border-t border-zinc-100 space-y-6">
                 <div className="flex items-center gap-2 mb-2">
-                    <span className="w-2 h-2 bg-[#7A4FFF] rounded-full"></span>
-                    <p className="text-[10px] font-black text-[#7A4FFF] uppercase tracking-widest">Professional Arsenal</p>
+                    <span className="w-2 h-2 bg-[#7A4FFF] rounded-full animate-pulse"></span>
+                    <p className="text-[10px] font-black text-[#7A4FFF] uppercase tracking-[0.2em]">Professional Arsenal</p>
                 </div>
 
                 {/* 한 줄 소개 */}
-                <div className="space-y-1">
-                    <label htmlFor="intro-input" className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Introduction *</label>
-                    <textarea
-                        id="intro-input"
-                        value={freelancerData.introduction}
-                        onChange={(e) => setFreelancerData({ ...freelancerData, introduction: e.target.value })}
-                        placeholder="마스터의 기술력과 경험을 짧게 소개해 주세요."
-                        className="w-full p-3 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-2 focus:ring-[#7A4FFF] outline-none transition-all min-h-[80px] resize-none text-sm"
-                    />
+                <div className="group">
+                    <label className={labelStyle}>One-line Introduction *</label>
+                    <div className="relative">
+                        <MessageSquare className="absolute left-4 top-4 text-zinc-300 group-focus-within:text-[#7A4FFF] transition-colors" size={18} />
+                        <textarea
+                            value={freelancerData.introduction}
+                            onChange={(e) => setFreelancerData({ ...freelancerData, introduction: e.target.value })}
+                            placeholder="당신의 기술력과 경험을 짧게 소개해 주세요."
+                            className={`${inputStyle} min-h-[100px] resize-none py-4`}
+                        />
+                    </div>
                 </div>
 
-                {/* 활동 지역 설정 (카카오 맵 통합) */}
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                        <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest">Location</label>
+                {/* 활동 지역 설정 */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                        <label className={labelStyle}>Activity Location</label>
                         {freelancerData.location && (
-                            <span className="text-[10px] font-bold text-[#7A4FFF] bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100 animate-fade-in">
+                            <motion.span initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-[10px] font-black text-[#7A4FFF] bg-[#7A4FFF]/5 px-2 py-0.5 rounded border border-[#7A4FFF]/10">
                                 {freelancerData.location}
-                             </span>
+                            </motion.span>
                         )}
                     </div>
-
-                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-3">
+                    <div className="p-2 bg-zinc-50/50 rounded-3xl border border-zinc-100 overflow-hidden shadow-inner hover:bg-white hover:border-[#7A4FFF]/20 transition-all">
                         {kakaoJavascriptKey ? (
                             <KakaoLocationPicker
                                 javascriptKey={kakaoJavascriptKey}
@@ -115,81 +114,84 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                                 }}
                             />
                         ) : (
-                            <div className="p-4 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100 flex items-center gap-2">
-                                ⚠️ 카카오 API 키가 설정되지 않았습니다. (.env 확인 필요)
+                            <div className="p-6 text-center text-red-500 text-xs font-bold uppercase tracking-widest font-mono">
+                                // ERROR: KAKAO_API_KEY_MISSING
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* 희망 시급 */}
-                    <div className="space-y-1">
-                        <label htmlFor="hourly-rate-input" className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Hourly Rate (₩) *</label>
+                    <div className="group">
+                        <label className={labelStyle}>Hourly Rate (₩) *</label>
                         <div className="relative">
+                            <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[#7A4FFF] transition-colors" size={18} />
                             <input
-                                id="hourly-rate-input"
                                 type="text"
                                 value={formatNumber(freelancerData.hourlyRate)}
                                 onChange={handlePriceChange}
                                 placeholder="0"
-                                className="w-full p-3 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-2 focus:ring-[#7A4FFF] outline-none transition-all text-sm font-bold pr-8 text-right"
+                                className={`${inputStyle} pr-12 text-right`}
                             />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">원</span>
+                            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-400">KRW</span>
+                        </div>
+                    </div>
+
+                    {/* 작업 방식 */}
+                    <div>
+                        <label className={labelStyle}>Work Style</label>
+                        <div className="flex p-1 bg-zinc-100 rounded-2xl gap-1 border border-zinc-200 shadow-inner">
+                            {["ONLINE", "OFFLINE", "HYBRID"].map((style) => (
+                                <button
+                                    key={style}
+                                    type="button"
+                                    onClick={() => setFreelancerData({ ...freelancerData, workStyle: style })}
+                                    className={`flex-1 py-3 rounded-xl text-[10px] font-black transition-all ${
+                                        freelancerData.workStyle === style
+                                            ? "bg-white text-[#7A4FFF] shadow-md ring-1 ring-black/5"
+                                            : "text-zinc-400 hover:text-zinc-600"
+                                    }`}
+                                >
+                                    {style}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>
 
-                {/* 작업 방식 */}
-                <div className="space-y-1">
-                    <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase">Work Style</label>
-                    <div className="flex gap-2">
-                        {["ONLINE", "OFFLINE", "HYBRID"].map((style) => (
-                            <button
-                                key={style}
-                                type="button"
-                                onClick={() => setFreelancerData({ ...freelancerData, workStyle: style })}
-                                className={`flex-1 p-2 rounded-xl text-[10px] font-bold transition-all border ${
-                                    freelancerData.workStyle === style
-                                        ? "bg-zinc-900 text-white border-zinc-900 shadow-md"
-                                        : "bg-white text-zinc-400 border-zinc-100 hover:border-zinc-300"
-                                }`}
-                            >
-                                {style}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* 기술 스택 선택 (기존 로직 유지) */}
-                <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest">
-                        Tech Stacks * (1–{MAX_SELECTED_SKILLS}){" "}
-                        <span className="text-zinc-500 normal-case">
-                            ({freelancerData.skillIds.length}/{MAX_SELECTED_SKILLS})
+                {/* 기술 스택 선택 */}
+                <div className="space-y-3">
+                    <div className="flex justify-between items-center px-1">
+                        <label className={labelStyle}>Tech Stacks (Arsenal)</label>
+                        <span className="text-[10px] font-mono font-bold text-zinc-400">
+                            {freelancerData.skillIds.length}/{MAX_SELECTED_SKILLS} Selected
                         </span>
-                    </label>
-                    <div className="max-h-56 overflow-y-auto rounded-2xl border border-zinc-100 bg-zinc-50/50 p-3">
-                        <div className="flex flex-wrap gap-2">
+                    </div>
+                    <div className="max-h-60 overflow-y-auto rounded-[2.5rem] border border-zinc-100 bg-zinc-50/50 p-5 shadow-inner custom-scrollbar">
+                        <div className="flex flex-wrap gap-2.5">
                             {availableSkills.map((skill) => {
                                 const on = freelancerData.skillIds.includes(skill.skillId);
                                 const atCap = !on && freelancerData.skillIds.length >= MAX_SELECTED_SKILLS;
                                 return (
-                                    <button
+                                    <motion.button
+                                        whileHover={!atCap ? { scale: 1.05 } : {}}
+                                        whileTap={!atCap ? { scale: 0.95 } : {}}
                                         key={skill.skillId}
                                         type="button"
                                         disabled={atCap}
                                         onClick={() => toggleSkill(skill.skillId)}
-                                        className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition-all ${
+                                        className={`rounded-xl border px-4 py-2 text-[11px] font-black transition-all ${
                                             on
-                                                ? "cursor-pointer border-[#7A4FFF] bg-[#7A4FFF] text-white shadow-md"
+                                                ? "border-[#7A4FFF] bg-[#7A4FFF] text-white shadow-[0_5px_15px_-5px_rgba(122,79,255,0.4)]"
                                                 : atCap
-                                                    ? "cursor-not-allowed border-zinc-100 bg-zinc-100 text-zinc-300"
-                                                    : "cursor-pointer border-zinc-100 bg-white text-zinc-500 hover:bg-zinc-100"
+                                                    ? "opacity-30 cursor-not-allowed border-zinc-100 bg-zinc-100 text-zinc-300"
+                                                    : "border-zinc-200 bg-white text-zinc-500 hover:border-[#7A4FFF]/30 hover:text-[#7A4FFF]"
                                         }`}
                                     >
+                                        {on && <Zap size={10} className="inline mr-1 fill-current" />}
                                         {skill.name}
-                                    </button>
+                                    </motion.button>
                                 );
                             })}
                         </div>

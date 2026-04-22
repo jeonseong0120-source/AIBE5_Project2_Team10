@@ -13,7 +13,7 @@ export default function ClientProjectNewPage() {
         const gate = async () => {
             const token = localStorage.getItem("accessToken");
             if (!token) {
-                router.replace("/login");
+                router.replace("/");
                 return;
             }
             try {
@@ -29,7 +29,7 @@ export default function ClientProjectNewPage() {
                 }
                 setReady(true);
             } catch {
-                router.replace("/login");
+                router.replace("/");
             }
         };
         void gate();

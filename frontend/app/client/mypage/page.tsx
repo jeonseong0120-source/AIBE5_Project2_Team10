@@ -77,7 +77,7 @@ export default function ClientMyPage() {
     useEffect(() => {
         const checkAccessAndFetchUser = async () => {
             const token = localStorage.getItem("accessToken");
-            if (!token) { router.replace("/login"); return; }
+            if (!token) { router.replace("/"); return; }
             try {
                 const res = await api.get("/v1/users/me");
                 const roles = res.data.role || "";
@@ -92,7 +92,7 @@ export default function ClientMyPage() {
 
                 setUser(res.data);
                 setAuthorized(true);
-            } catch (err) { router.replace("/login"); }
+            } catch (err) { router.replace("/"); }
         };
         checkAccessAndFetchUser();
     }, [router]);

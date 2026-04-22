@@ -41,7 +41,7 @@ export default function ClientDashboard() {
             const token = localStorage.getItem("accessToken");
             if (!token) {
                 alert("로그인이 필요합니다.");
-                router.replace("/login");
+                router.replace("/");
                 return;
             }
 
@@ -86,7 +86,7 @@ export default function ClientDashboard() {
                 });
                 setAuthorized(true);
             } catch {
-                router.replace("/login");
+                router.replace("/");
             }
         };
 
@@ -196,12 +196,16 @@ export default function ClientDashboard() {
 
                 <div className="max-w-4xl mx-auto relative z-10">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-10 text-zinc-900 leading-tight">
-                            나에게 맞는 <span className="text-[#FF7D00]">파트너</span>를 찾으세요.
+                        {/* 🎯 문구 교체 + 텍스트 그림자 + 글로우 효과 적용 */}
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-10 text-zinc-900 leading-tight break-keep [text-shadow:0_4px_15px_rgba(0,0,0,0.06)]">
+                            데이터가 증명하는 완벽한 기술 교차점, <br />
+                            <span className="text-[#FF7D00] drop-shadow-[0_0_20px_rgba(255,125,0,0.4)] animate-[pulse_3s_ease-in-out_infinite]">
+                최적의 파트너
+            </span>
+                            를 찾으세요.
                         </h1>
-
-
                     </motion.div>
+
 
                     {/* Simple Search Input - freelancer/explore와 동일 규격 */}
                     <div className="max-w-2xl mx-auto relative group">

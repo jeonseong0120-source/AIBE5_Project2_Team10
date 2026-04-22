@@ -85,7 +85,7 @@ export default function ClientDashboardPage() {
                 setUser(res.data);
                 setAuthorized(true);
             } catch (err) {
-                router.replace("/login");
+                router.replace("/");
             }
         };
         checkAccess();

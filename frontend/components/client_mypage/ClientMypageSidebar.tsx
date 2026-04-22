@@ -35,7 +35,7 @@ export default function ClientMypageSidebar({ tabs, activeTab, setActiveTab }: C
 
             <div className="bg-white rounded-2xl p-2 border border-zinc-200 shadow-sm mt-6">
                 <button 
-                    onClick={() => { logout(); router.push('/login'); }} 
+                    onClick={() => { logout(); router.push('/'); }}
                     className="w-full flex items-center gap-3 p-4 hover:bg-red-50 rounded-xl transition text-sm font-bold text-red-500"
                 >
                     <X size={16} />

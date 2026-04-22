@@ -137,6 +137,14 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
                 )
+                // 🎯 [추가] 로그아웃 성공 시 메인("/")으로 보내는 설정
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout") // 프론트에서 호출할 로그아웃 API 주소
+                        .logoutSuccessUrl("/")        // 로그아웃 성공 시 메인으로 이동
+                        .deleteCookies("JSESSIONID", "accessToken") // 쿠키 삭제
+                        .invalidateHttpSession(true)
+                        .permitAll()
+                )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
 

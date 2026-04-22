@@ -67,7 +67,7 @@ export default function FreelancerDashboardPage() {
                 setUser(res.data);
                 setAuthorized(true);
             } catch (err) {
-                router.replace("/login");
+                router.replace("/");
             } finally {
                 setLoading(false);
             }

@@ -99,7 +99,7 @@ function FreelancerMyPageContent() {
             const token = localStorage.getItem("accessToken");
             if (!token) {
                 alert("로그인이 필요합니다.");
-                router.replace("/login");
+                router.replace("/");
                 return;
             }
 
@@ -123,7 +123,7 @@ function FreelancerMyPageContent() {
                 await Promise.all([fetchProfile(), fetchGlobalSkills()]);
             } catch (err) {
 
-                router.replace("/login");
+                router.replace("/");
             }
         };
         init();
