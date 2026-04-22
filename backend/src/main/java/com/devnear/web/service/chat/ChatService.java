@@ -5,8 +5,11 @@ import com.devnear.web.domain.chat.ChatMessageRepository;
 import com.devnear.web.domain.chat.ChatRoom;
 import com.devnear.web.domain.chat.ChatRoomRepository;
 import com.devnear.web.domain.enums.NotificationType;
+import com.devnear.web.domain.freelancer.FreelancerProfile;
+import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
+import com.devnear.web.domain.proposal.ProposalRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.chat.ChatMessageResponse;
@@ -42,13 +45,15 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+    private final ProposalRepository proposalRepository;
+    private final FreelancerProfileRepository freelancerProfileRepository;
     private final NotificationService notificationService;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * 프로젝트 상세의 "문의하기" 버튼용 채팅방 생성/조회
-     * - 문의 대상은 반드시 해당 프로젝트의 클라이언트여야 함
-     * - 클라이언트 본인이 자기 프로젝트에 문의하는 것은 금지
+     * 채팅방 생성/조회 정책
+     * 1) 프리랜서 -> 클라이언트 문의: 허용
+     * 2) 클라이언트 -> 프리랜서: 해당 프로젝트로 역제안을 보낸 경우만 허용
      */
     @Transactional
     public ChatRoomResponse createRoom(User me, ChatRoomCreateRequest request) {
@@ -68,28 +73,32 @@ public class ChatService {
 
         Long clientUserId = project.getClientProfile().getUser().getId();
 
-        if (!target.getId().equals(clientUserId)) {
-            throw new ChatAccessDeniedException("해당 프로젝트의 클라이언트에게만 문의할 수 있습니다.");
+        boolean meIsClient = me.getId().equals(clientUserId);
+        boolean targetIsClient = target.getId().equals(clientUserId);
+
+        // 1. 프리랜서 -> 클라이언트 문의 허용
+        if (!meIsClient && targetIsClient) {
+            return createOrGetRoom(me, target, project);
         }
 
-        if (me.getId().equals(clientUserId)) {
-            throw new ChatAccessDeniedException("클라이언트 본인은 본인 프로젝트에 문의할 수 없습니다.");
-        }
+        // 2. 클라이언트 -> 프리랜서 채팅은 역제안이 있는 경우만 허용
+        if (meIsClient && !targetIsClient) {
+            FreelancerProfile freelancerProfile = freelancerProfileRepository.findByUser_Id(target.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("프리랜서 프로필을 찾을 수 없습니다."));
 
-        AtomicBoolean createdNew = new AtomicBoolean(false);
-        ChatRoom room = resolveOrCreateChatRoom(project, me, target, createdNew);
-
-        if (createdNew.get()) {
-            notificationService.notifyUser(
-                    target.getId(),
-                    NotificationType.CHAT_ROOM_CREATED,
-                    "새 문의 채팅방",
-                    me.getNickname() + " 님이 '" + project.getProjectName() + "' 문의 채팅방을 만들었습니다.",
-                    room.getId()
+            boolean hasProposal = proposalRepository.existsByProjectIdAndFreelancerProfileId(
+                    project.getId(),
+                    freelancerProfile.getId()
             );
+
+            if (!hasProposal) {
+                throw new ChatAccessDeniedException("역제안을 보낸 프리랜서와만 채팅할 수 있습니다.");
+            }
+
+            return createOrGetRoom(me, target, project);
         }
 
-        return ChatRoomResponse.from(room, me);
+        throw new ChatAccessDeniedException("채팅방을 생성할 수 없습니다.");
     }
 
     /**
@@ -148,6 +157,23 @@ public class ChatService {
         if (clientUser.getId().equals(freelancerUser.getId())) {
             throw new IllegalArgumentException("동일한 사용자 간에는 채팅방을 만들 수 없습니다.");
         }
+    }
+
+    private ChatRoomResponse createOrGetRoom(User me, User target, Project project) {
+        AtomicBoolean createdNew = new AtomicBoolean(false);
+        ChatRoom room = resolveOrCreateChatRoom(project, me, target, createdNew);
+
+        if (createdNew.get()) {
+            notificationService.notifyUser(
+                    target.getId(),
+                    NotificationType.CHAT_ROOM_CREATED,
+                    "채팅 시작",
+                    me.getNickname() + " 님이 '" + project.getProjectName() + "' 채팅을 시작했습니다.",
+                    room.getId()
+            );
+        }
+
+        return ChatRoomResponse.from(room, me);
     }
 
     /**

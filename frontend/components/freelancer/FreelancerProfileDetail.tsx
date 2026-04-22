@@ -4,13 +4,15 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// 🎯 아이콘들
 import { ChevronLeft, Briefcase, Grid3X3, Heart, ArrowUpRight, MapPin } from 'lucide-react';
 import api from '@/app/lib/axios';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
 import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
 import type { PortfolioDetailShape } from '@/components/portfolio/PortfolioDetailModal';
-import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } from '@/components/proposal/ProposalSendModal';
+import ProposalSendModal, {
+    mapProjectsForProposalPicker,
+    type ProjectOption,
+} from '@/components/proposal/ProposalSendModal';
 import { useNotifications } from '@/components/notifications/notificationContext';
 import ChatStartButton from '@/components/chat/ChatStartButton';
 
@@ -455,13 +457,30 @@ export default function FreelancerProfileDetail({
                                 </div>
 
                                 {viewerIsClient && freelancer?.userId && (
-                                    <div className="mt-6 flex justify-center md:justify-start">
-                                        <ChatStartButton
-                                            targetUserId={freelancer.userId}
-                                            className="rounded-2xl bg-[#7A4FFF] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#6840e0]"
-                                        >
-                                            문의하기
-                                        </ChatStartButton>
+                                    <div className="mt-6 flex flex-col items-center gap-3 md:items-start">
+                                        {selectedProjectId ? (
+                                            <ChatStartButton
+                                                targetUserId={freelancer.userId}
+                                                projectId={selectedProjectId}
+                                                className="rounded-2xl bg-[#7A4FFF] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#6840e0]"
+                                            >
+                                                문의하기
+                                            </ChatStartButton>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={openProposalModal}
+                                                className="rounded-2xl bg-[#7A4FFF] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#6840e0]"
+                                            >
+                                                문의하기
+                                            </button>
+                                        )}
+
+                                        <p className="text-xs text-zinc-400">
+                                            {!selectedProjectId
+                                                ? '먼저 연결할 프로젝트를 선택해야 채팅을 시작할 수 있습니다.'
+                                                : `선택된 프로젝트 ID: ${selectedProjectId}`}
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -543,10 +562,7 @@ export default function FreelancerProfileDetail({
                                                 alt={p.title}
                                                 className="h-full w-full object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-110"
                                                 onError={(e) => {
-                                                    if (
-                                                        e.currentTarget.src !==
-                                                        FALLBACK_IMAGE_URL
-                                                    ) {
+                                                    if (e.currentTarget.src !== FALLBACK_IMAGE_URL) {
                                                         e.currentTarget.src = FALLBACK_IMAGE_URL;
                                                     }
                                                 }}
@@ -638,49 +654,52 @@ export default function FreelancerProfileDetail({
                     document.body
                 )}
 
-            {portalReady && viewerIsClient && isProposalModalOpen && createPortal(
-                <AnimatePresence>
-                    <motion.div 
-                        key="proposal-modal" 
-                        initial={{ opacity: 0 }} 
-                        animate={{ opacity: 1 }} 
-                        exit={{ opacity: 0 }} 
-                        className="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm"
-                    >
-                        <motion.div 
-                            initial={{ opacity: 0, y: 24, scale: 0.98 }} 
-                            animate={{ opacity: 1, y: 0, scale: 1 }} 
-                            exit={{ opacity: 0, y: 24, scale: 0.98 }} 
-                            className="w-full max-w-2xl"
+            {portalReady &&
+                viewerIsClient &&
+                isProposalModalOpen &&
+                createPortal(
+                    <AnimatePresence>
+                        <motion.div
+                            key="proposal-modal"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm"
                         >
-                            <ProposalSendModal
-                                open={isProposalModalOpen}
-                                targetName={freelancer.nickname}
-                                mode={proposalMode}
-                                onChangeMode={setProposalMode}
-                                projects={clientProjects}
-                                projectsLoading={projectsLoading}
-                                selectedProjectId={selectedProjectId}
-                                onChangeProjectId={setSelectedProjectId}
-                                offeredPrice={offeredPrice}
-                                onChangeOfferedPrice={setOfferedPrice}
-                                positionTitle={positionTitle}
-                                onChangePositionTitle={setPositionTitle}
-                                workScope={workScope}
-                                onChangeWorkScope={setWorkScope}
-                                workingPeriod={workingPeriod}
-                                onChangeWorkingPeriod={setWorkingPeriod}
-                                message={message}
-                                onChangeMessage={setMessage}
-                                sending={isSendingProposal}
-                                onClose={closeProposalModal}
-                                onSend={handleSendProposal}
-                            />
+                            <motion.div
+                                initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 24, scale: 0.98 }}
+                                className="w-full max-w-2xl"
+                            >
+                                <ProposalSendModal
+                                    open={isProposalModalOpen}
+                                    targetName={freelancer.nickname}
+                                    mode={proposalMode}
+                                    onChangeMode={setProposalMode}
+                                    projects={clientProjects}
+                                    projectsLoading={projectsLoading}
+                                    selectedProjectId={selectedProjectId}
+                                    onChangeProjectId={setSelectedProjectId}
+                                    offeredPrice={offeredPrice}
+                                    onChangeOfferedPrice={setOfferedPrice}
+                                    positionTitle={positionTitle}
+                                    onChangePositionTitle={setPositionTitle}
+                                    workScope={workScope}
+                                    onChangeWorkScope={setWorkScope}
+                                    workingPeriod={workingPeriod}
+                                    onChangeWorkingPeriod={setWorkingPeriod}
+                                    message={message}
+                                    onChangeMessage={setMessage}
+                                    sending={isSendingProposal}
+                                    onClose={closeProposalModal}
+                                    onSend={handleSendProposal}
+                                />
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
-                </AnimatePresence>,
-                document.body
-            )}
+                    </AnimatePresence>,
+                    document.body
+                )}
         </div>
     );
 }

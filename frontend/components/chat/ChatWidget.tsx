@@ -13,6 +13,7 @@ import {
     connectChatSocket,
     disconnectChatSocket,
     subscribeChatRoom,
+    ensureChatSocketConnected,
 } from "../../app/lib/chatSocket";
 import { getCurrentUserId } from "../../app/lib/auth";
 import { useChatStore } from "../../app/store/chatStore";
@@ -131,57 +132,67 @@ export default function ChatWidget() {
     useEffect(() => {
         if (!isOpen || !selectedRoomId) return;
 
-        const subscribe = () => {
-            subscriptionRef.current?.unsubscribe();
+        let cancelled = false;
 
-            void subscribeChatRoom(selectedRoomId, async (frame) => {
-                try {
-                    const newMessage: ChatMessageResponse = JSON.parse(frame.body);
-                    const isCurrentRoom = selectedRoomIdRef.current === newMessage.roomId;
-                    const isMyMessage =
-                        currentUserIdRef.current !== null &&
-                        newMessage.senderId === currentUserIdRef.current;
+        const subscribe = async () => {
+            try {
+                await ensureChatSocketConnected();
 
-                    if (isCurrentRoom) {
-                        setMessages((prev) => {
-                            const exists = prev.some(
-                                (msg) => msg.messageId === newMessage.messageId
-                            );
-                            if (exists) return prev;
-                            return [...prev, newMessage];
-                        });
+                if (cancelled) return;
 
-                        if (!isMyMessage) {
-                            await markChatAsRead(newMessage.roomId);
+                subscriptionRef.current?.unsubscribe();
+
+                const sub = subscribeChatRoom(selectedRoomId, async (frame) => {
+                    try {
+                        const newMessage: ChatMessageResponse = JSON.parse(frame.body);
+                        const isCurrentRoom = selectedRoomIdRef.current === newMessage.roomId;
+                        const isMyMessage =
+                            currentUserIdRef.current !== null &&
+                            newMessage.senderId === currentUserIdRef.current;
+
+                        if (isCurrentRoom) {
+                            setMessages((prev) => {
+                                const exists = prev.some(
+                                    (msg) => msg.messageId === newMessage.messageId
+                                );
+                                if (exists) return prev;
+                                return [...prev, newMessage];
+                            });
+
+                            if (!isMyMessage) {
+                                await markChatAsRead(newMessage.roomId);
+                            }
                         }
-                    }
 
-                    setRooms((prev) => {
-                        const updated = prev.map((room) => {
-                            if (room.roomId !== newMessage.roomId) return room;
+                        setRooms((prev) => {
+                            const updated = prev.map((room) => {
+                                if (room.roomId !== newMessage.roomId) return room;
 
-                            return {
-                                ...room,
-                                lastMessage: newMessage.content,
-                                lastMessageTime: newMessage.createdAt,
-                                unreadCount: isCurrentRoom ? 0 : room.unreadCount + 1,
-                            };
+                                return {
+                                    ...room,
+                                    lastMessage: newMessage.content,
+                                    lastMessageTime: newMessage.createdAt,
+                                    unreadCount: isCurrentRoom ? 0 : room.unreadCount + 1,
+                                };
+                            });
+
+                            return sortRoomsByLatest(updated);
                         });
+                    } catch (error) {
+                        console.error("실시간 메시지 처리 실패", error);
+                    }
+                });
 
-                        return sortRoomsByLatest(updated);
-                    });
-                } catch (error) {
-                    console.error("실시간 메시지 처리 실패", error);
-                }
-            }).then((sub) => {
                 subscriptionRef.current = sub;
-            });
+            } catch (error) {
+                console.error("채팅방 구독 실패", error);
+            }
         };
 
-        const timer = setTimeout(subscribe, 300);
+        subscribe();
 
         return () => {
-            clearTimeout(timer);
+            cancelled = true;
             subscriptionRef.current?.unsubscribe();
             subscriptionRef.current = null;
         };
