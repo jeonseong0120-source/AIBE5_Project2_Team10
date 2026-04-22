@@ -72,7 +72,9 @@ public class NotificationService {
         User targetUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("수신자를 찾을 수 없습니다."));
         String content = title + "\n" + message;
-        String url = urlOverride != null ? urlOverride : buildUrl(type, resourceId);
+        String url = (urlOverride != null && !urlOverride.isBlank())
+                ? urlOverride
+                : buildUrl(type, resourceId);
         Notification saved = notificationRepository.save(Notification.builder()
                 .user(targetUser)
                 .notificationType(type)
@@ -112,7 +114,9 @@ public class NotificationService {
             case PROJECT_APPLICATION_ACCEPTED, PROJECT_APPLICATION_REJECTED -> null;
             case PROJECT_COMPLETED_REVIEW_REQUEST -> "/client/mypage?tab=projects";
             case PAYMENT_COMPLETED -> "/client/dashboard";
-            case FREELANCER_DEPOSIT_COMPLETED -> "/freelancer/mypage?tab=settlement";
+            case FREELANCER_DEPOSIT_COMPLETED -> resourceId == null
+                    ? "/freelancer/mypage?tab=settlement"
+                    : "/freelancer/mypage?tab=settlement&projectId=" + resourceId;
             case REVIEW_LEFT_BY_CLIENT -> "/freelancer/mypage?tab=reviews";
             case REVIEW_LEFT_BY_FREELANCER -> "/client/mypage?tab=projects";
             case COMMUNITY_COMMENT_ON_MY_POST -> "/community/" + resourceId;

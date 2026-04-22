@@ -25,13 +25,12 @@ import com.devnear.web.dto.project.ProjectRequest;
 import com.devnear.web.dto.project.ProjectResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
-import com.devnear.web.domain.enums.NotificationType;
 import com.devnear.web.service.ai.ProjectEmbeddingService;
 import com.devnear.web.service.freelancer.FreelancerGradeService;
-import com.devnear.web.service.notification.NotificationService;
 import jakarta.persistence.EntityManager; // 🔍 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -66,7 +65,7 @@ public class ProjectService {
     private final ClientReviewRepository clientReviewRepository;
     private final FreelancerReviewRepository freelancerReviewRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public Long createProject(User user, ProjectRequest request) {
@@ -354,13 +353,12 @@ public class ProjectService {
         String title = "프로젝트 완료";
         String message = "프로젝트가 완료되었습니다. 리뷰를 작성해 주세요.";
         Long clientUserId = project.getClientProfile().getUser().getId();
-        notificationService.notifyUser(
+        eventPublisher.publishEvent(new ProjectCompletedNotificationEvent(
                 clientUserId,
-                NotificationType.PROJECT_COMPLETED_REVIEW_REQUEST,
+                pid,
                 title,
                 message,
-                pid,
                 "/client/mypage?tab=projects"
-        );
+        ));
     }
 }

@@ -226,7 +226,8 @@ export default function SkillTagSelector({
         if (selectedSkillIds.includes(skillId)) {
             return;
         }
-        if (selectedSkillIds.length >= maxSelected) {
+        const uniqueCount = new Set(selectedSkillIds).size;
+        if (uniqueCount >= maxSelected) {
             setSuggestError(`스킬은 최대 ${maxSelected}개까지 선택할 수 있습니다.`);
             return;
         }

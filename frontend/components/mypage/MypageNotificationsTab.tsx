@@ -47,22 +47,23 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
             setUnreadCount(data.unreadCount ?? 0);
         } catch {
             setItems([]);
+            setUnreadCount(0);
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        const id = window.setTimeout(() => {
-            void loadPrefs();
-            void loadInbox();
-        }, 0);
-        return () => clearTimeout(id);
-    }, [loadPrefs, loadInbox]);
+        void loadPrefs();
+        void loadInbox();
+        }, [loadPrefs, loadInbox]);
 
+    const [savingPref, setSavingPref] = useState(false);
     const toggleCommunity = async () => {
+        if (savingPref) return;
         const next = !communityOn;
         setCommunityOn(next);
+        setSavingPref(true);
         try {
             await api.patch("/v1/users/me/notification-preferences", {
                 notifyCommunityComments: next,
@@ -70,7 +71,25 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
         } catch {
             setCommunityOn(!next);
             setToast("설정 저장에 실패했습니다.");
+        } finally {
+            setSavingPref(false);
         }
+    };
+
+    const markRead = useCallback(async (n: InboxNotification) => {
+        await api.patch(`/v1/notifications/${n.notificationId}/read`);
+        setUnreadCount((c) => Math.max(0, c - 1));
+        setItems((prev) =>
+            prev.map((x) => (x.notificationId === n.notificationId ? { ...x, read: true } : x)),
+        );
+    }, []);
+
+    const extractErrorMessage = (err: unknown, fallback: string) => {
+        if (isAxiosError(err)) {
+            const data = err.response?.data as { message?: string } | undefined;
+            if (data?.message && typeof data.message === "string") return data.message;
+        }
+        return fallback;
     };
 
     const onDismiss = async (n: InboxNotification) => {

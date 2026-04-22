@@ -13,15 +13,19 @@ import com.devnear.web.dto.community.CommunityCommentUpdateRequest;
 import com.devnear.web.exception.ResourceNotFoundException;
 import com.devnear.web.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -55,18 +59,18 @@ public class CommunityCommentService {
         communityPostRepository.incrementCommentCount(post.getId());
 
         Long postAuthorId = post.getAuthorId();
+        final Long postId = post.getId();
         if (postAuthorId != null && !postAuthorId.equals(authorId)) {
-            userRepository.findById(postAuthorId).ifPresent(postAuthor -> {
-                if (postAuthor.isNotifyCommunityComments()) {
-                    notificationService.notifyUser(
-                            postAuthorId,
-                            NotificationType.COMMUNITY_COMMENT_ON_MY_POST,
-                            "커뮤니티 댓글",
-                            "내 게시글에 새 댓글이 달렸습니다.",
-                            post.getId()
-                    );
-                }
-            });
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        dispatchCommunityCommentAuthorNotification(postAuthorId, postId);
+                    }
+                });
+            } else {
+                dispatchCommunityCommentAuthorNotification(postAuthorId, postId);
+            }
         }
 
         return commentId;
@@ -127,5 +131,30 @@ public class CommunityCommentService {
         if (!authorId.equals(userId)) {
             throw new AccessDeniedException("작성자만 수정 또는 삭제할 수 있습니다.");
         }
+    }
+
+    /** 커뮤니티 댓글 알림 전송(실패는 로그만, 커밋 후 호출 경로가 기본). */
+    private void dispatchCommunityCommentAuthorNotification(Long postAuthorId, Long postId) {
+        userRepository.findById(postAuthorId).ifPresent(postAuthor -> {
+            if (!postAuthor.isNotifyCommunityComments()) {
+                return;
+            }
+            try {
+                notificationService.notifyUser(
+                        postAuthorId,
+                        NotificationType.COMMUNITY_COMMENT_ON_MY_POST,
+                        "커뮤니티 댓글",
+                        "내 게시글에 새 댓글이 달렸습니다.",
+                        postId
+                );
+            } catch (Exception ex) {
+                log.warn(
+                        "Failed to send community comment notification (postId={}, recipientUserId={})",
+                        postId,
+                        postAuthorId,
+                        ex
+                );
+            }
+        });
     }
 }

@@ -19,8 +19,11 @@ import com.devnear.web.dto.review.ReviewResponse;
 import com.devnear.web.exception.ResourceConflictException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import com.devnear.web.service.freelancer.FreelancerGradeService;
 import com.devnear.web.service.notification.NotificationService;
 import com.devnear.web.domain.payment.PaymentRepository;
@@ -30,6 +33,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -102,23 +106,54 @@ public class ReviewService {
             throw new IllegalStateException("유효한 결제 완료 상태가 아닙니다.");
         }
 
-        notificationService.notifyUser(
-                freelancer.getUser().getId(),
-                NotificationType.REVIEW_LEFT_BY_CLIENT,
-                "새 리뷰",
-                "클라이언트가 리뷰를 남겼습니다.",
-                project.getId()
-        );
-
         recomputeFreelancerAggregates(freelancer.getId(), payment.getNetAmount());
 
-        notificationService.notifyUser(
-                freelancer.getUser().getId(),
-                NotificationType.FREELANCER_DEPOSIT_COMPLETED,
-                "입금 완료",
-                "입금이 완료되었습니다.",
-                project.getId()
-        );
+        final Long freelancerUserId = freelancer.getUser().getId();
+        final Long projectId = project.getId();
+        Runnable dispatch = () -> {
+            try {
+                notificationService.notifyUser(
+                        freelancerUserId,
+                        NotificationType.REVIEW_LEFT_BY_CLIENT,
+                        "새 리뷰",
+                        "클라이언트가 리뷰를 남겼습니다.",
+                        projectId
+                );
+            } catch (Exception ex) {
+                log.warn(
+                        "Failed REVIEW_LEFT_BY_CLIENT notification (projectId={}, recipientUserId={})",
+                        projectId,
+                        freelancerUserId,
+                        ex
+                );
+            }
+            try {
+                notificationService.notifyUser(
+                        freelancerUserId,
+                        NotificationType.FREELANCER_DEPOSIT_COMPLETED,
+                        "입금 완료",
+                        "입금이 완료되었습니다.",
+                        projectId
+                );
+            } catch (Exception ex) {
+                log.warn(
+                        "Failed FREELANCER_DEPOSIT_COMPLETED notification (projectId={}, recipientUserId={})",
+                        projectId,
+                        freelancerUserId,
+                        ex
+                );
+            }
+        };
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    dispatch.run();
+                }
+            });
+        } else {
+            dispatch.run();
+        }
 
         return review.getId();
     }
@@ -174,13 +209,36 @@ public class ReviewService {
         clientReviewRepository.save(review);
         updateClientRating(client);
 
-        notificationService.notifyUser(
-                client.getUser().getId(),
-                NotificationType.REVIEW_LEFT_BY_FREELANCER,
-                "새 리뷰",
-                "프리랜서가 리뷰를 남겼습니다.",
-                project.getId()
-        );
+        final Long clientUserId = client.getUser().getId();
+        final Long projectId = project.getId();
+        Runnable dispatch = () -> {
+            try {
+                notificationService.notifyUser(
+                        clientUserId,
+                        NotificationType.REVIEW_LEFT_BY_FREELANCER,
+                        "새 리뷰",
+                        "프리랜서가 리뷰를 남겼습니다.",
+                        projectId
+                );
+            } catch (Exception ex) {
+                log.warn(
+                        "Failed REVIEW_LEFT_BY_FREELANCER notification (projectId={}, recipientUserId={})",
+                        projectId,
+                        clientUserId,
+                        ex
+                );
+            }
+        };
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    dispatch.run();
+                }
+            });
+        } else {
+            dispatch.run();
+        }
 
         return review.getId();
     }

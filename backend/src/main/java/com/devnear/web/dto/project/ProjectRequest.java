@@ -44,11 +44,11 @@ public class ProjectRequest {
     private Double longitude;
 
     @JsonAlias({"skills", "projectSkills"})
-    @Size(max = 50, message = "프로젝트 스킬은 최대 50개까지 지정할 수 있습니다.")
+    @Size(max = 10, message = "프로젝트 스킬은 최대 10개까지 지정할 수 있습니다.")
     private List<String> skillNames;
 
     @JsonAlias({"skillIds"})
-    @Size(max = 50, message = "프로젝트 스킬은 최대 50개까지 지정할 수 있습니다.")
+    @Size(max = 10, message = "프로젝트 스킬은 최대 10개까지 지정할 수 있습니다.")
     private List<Long> skillIds; // 숫자 ID 기반 입력 호환용
 
     @AssertTrue(message = "오프라인 프로젝트는 주소 정보가 필수입니다.")
