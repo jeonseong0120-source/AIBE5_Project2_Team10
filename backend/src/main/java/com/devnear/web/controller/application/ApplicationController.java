@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +33,7 @@ public class ApplicationController {
     @Operation(summary = "프로젝트 지원", description = "프리랜서가 프로젝트에 지원하며, 지원 시점 기술 스택 기준 매칭률을 저장합니다.")
     @PostMapping("/applications")
     public ResponseEntity<Map<String, Long>> applyToProject(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @Valid @RequestBody ApplicationRequest request) {
 
         if (user == null) {
@@ -54,7 +55,7 @@ public class ApplicationController {
     @Operation(summary = "내 지원 내역 조회", description = "프리랜서 본인의 프로젝트 지원 내역을 최신순으로 조회합니다.")
     @GetMapping("/applications/me")
     public ResponseEntity<List<MyApplicationResponse>> getMyApplications(
-            @AuthenticationPrincipal User user) {
+            @LoginUser User user) {
 
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -74,7 +75,7 @@ public class ApplicationController {
     @Operation(summary = "내 프로젝트 지원자 조회", description = "클라이언트가 자신의 프로젝트 지원자 목록을 매칭률 내림차순으로 조회합니다.")
     @GetMapping("/projects/{projectId}/applications")
     public ResponseEntity<List<ApplicantResponse>> getApplicantsForMyProject(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @PathVariable Long projectId) {
 
         if (user == null) {
@@ -91,7 +92,7 @@ public class ApplicationController {
     @Operation(summary = "지원 상태 변경", description = "클라이언트가 지원 상태를 ACCEPTED 또는 REJECTED로 변경합니다.")
     @PatchMapping("/applications/{applicationId}/status")
     public ResponseEntity<Void> updateApplicationStatus(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @PathVariable Long applicationId,
             @Valid @RequestBody ApplicationStatusUpdateRequest request) {
 

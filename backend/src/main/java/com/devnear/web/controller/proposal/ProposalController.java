@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +35,7 @@ public class ProposalController {
     @Operation(summary = "역제안 전송", description = "클라이언트가 특정 프리랜서에게 역제안(스카우트)을 보냅니다.")
     @PostMapping
     public ResponseEntity<Map<String, Long>> sendProposal(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @Valid @RequestBody ProposalRequest request) {
 
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -53,7 +54,7 @@ public class ProposalController {
     @Operation(summary = "역제안 전송(제안서 전용 프로젝트 동시 생성)", description = "프로젝트 공고를 생성하고 같은 요청에서 역제안을 보냅니다.")
     @PostMapping("/with-standalone-project")
     public ResponseEntity<Map<String, Long>> sendProposalWithStandaloneProject(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @Valid @RequestBody ProposalWithStandaloneProjectRequest request) {
 
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -72,7 +73,7 @@ public class ProposalController {
     @Operation(summary = "보낸 역제안 목록 조회", description = "클라이언트가 자신이 보낸 역제안 목록을 최신순으로 조회합니다.")
     @GetMapping("/sent")
     public ResponseEntity<List<SentProposalResponse>> getSentProposals(
-            @AuthenticationPrincipal User user) {
+            @LoginUser User user) {
 
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
@@ -86,7 +87,7 @@ public class ProposalController {
     @Operation(summary = "받은 역제안 목록 조회", description = "프리랜서가 자신이 받은 역제안 목록을 최신순으로 조회합니다.")
     @GetMapping("/received")
     public ResponseEntity<List<ReceivedProposalResponse>> getReceivedProposals(
-            @AuthenticationPrincipal User user) {
+            @LoginUser User user) {
 
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
@@ -100,7 +101,7 @@ public class ProposalController {
     @Operation(summary = "역제안 수락/거절", description = "프리랜서가 받은 역제안을 ACCEPTED 또는 REJECTED로 변경합니다.")
     @PatchMapping("/{proposalId}/status")
     public ResponseEntity<Void> respondToProposal(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @PathVariable Long proposalId,
             @Valid @RequestBody ProposalStatusUpdateRequest request) {
 
@@ -120,7 +121,7 @@ public class ProposalController {
     @Operation(summary = "역제안 문의하기", description = "프리랜서가 받은 역제안 기준으로 채팅방을 조회하거나 생성합니다.")
     @PostMapping("/{proposalId}/inquire")
     public ResponseEntity<ProposalInquiryResponse> inquire(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @PathVariable Long proposalId
     ) {
         if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

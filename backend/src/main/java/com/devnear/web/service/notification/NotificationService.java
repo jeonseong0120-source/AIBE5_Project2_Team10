@@ -17,10 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import java.util.Objects;
 
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -31,20 +31,27 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
 
+    /**
+     * [수정] User 엔티티 대신 userId(Long)를 직접 받도록 변경
+     */
     @Transactional(readOnly = true)
-    public NotificationInboxResponse getInbox(User user, Pageable pageable) {
-        long unread = notificationRepository.countUnreadByUserId(user.getId());
+    public NotificationInboxResponse getInbox(Long userId, Pageable pageable) {
+        long unread = notificationRepository.countUnreadByUserId(userId);
         Page<NotificationResponse> page = notificationRepository
-                .findByUser_IdOrderByCreatedAtDesc(user.getId(), pageable)
+                .findByUser_IdOrderByCreatedAtDesc(userId, pageable)
                 .map(NotificationResponse::fromEntity);
         return NotificationInboxResponse.of(unread, page);
     }
 
+    /**
+     * [수정] User 엔티티 대신 userId(Long)를 직접 받도록 변경
+     */
     @Transactional
-    public void markNotificationRead(User user, Long notificationId) {
+    public void markNotificationRead(Long userId, Long notificationId) {
         Notification notification = notificationRepository
-                .findByIdAndUser_Id(notificationId, user.getId())
+                .findByIdAndUser_Id(notificationId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("알림을 찾을 수 없습니다."));
+
         if (!notification.isRead()) {
             notification.markRead();
         }
@@ -59,8 +66,10 @@ public class NotificationService {
         Objects.requireNonNull(type, "알림 타입은 null일 수 없습니다.");
         Objects.requireNonNull(title, "알림 제목은 null일 수 없습니다.");
         Objects.requireNonNull(message, "알림 메시지는 null일 수 없습니다.");
+
         User targetUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("수신자를 찾을 수 없습니다."));
+
         String content = title + "\n" + message;
         Notification saved = notificationRepository.save(Notification.builder()
                 .user(targetUser)
@@ -69,9 +78,11 @@ public class NotificationService {
                 .read(false)
                 .url(buildUrl(type, resourceId))
                 .build());
+
         Instant at = saved.getCreatedAt() != null
                 ? saved.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()
                 : Instant.now();
+
         NotificationPayload payload = NotificationPayload.of(
                 saved.getId(),
                 type,
@@ -81,6 +92,7 @@ public class NotificationService {
                 saved.getUrl(),
                 at
         );
+
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -94,11 +106,8 @@ public class NotificationService {
             return null;
         }
         return switch (type) {
-            // 문의하기는 알림 링크 대신 화면 내 "문의하기" 버튼에서 처리
             case CHAT_ROOM_CREATED -> null;
-            // 역제안 도착 알림만 링크 이동 허용
             case PROJECT_PROPOSAL_SENT -> "/freelancer/mypage";
-            // 수락/거절은 우측 X로 확인 처리
             case PROJECT_PROPOSAL_ACCEPTED, PROJECT_PROPOSAL_REJECTED -> null;
             case PROJECT_APPLICATION_SUBMITTED -> "/client/dashboard";
             case PROJECT_APPLICATION_ACCEPTED, PROJECT_APPLICATION_REJECTED -> null;

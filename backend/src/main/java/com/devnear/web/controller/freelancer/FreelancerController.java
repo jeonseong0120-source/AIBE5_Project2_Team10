@@ -8,6 +8,7 @@ import com.devnear.web.service.ai.AiRecommendationService;
 import com.devnear.web.service.freelancer.FreelancerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,7 +31,7 @@ public class FreelancerController {
     // [조회] 대시보드 내 프로필 요약 정보 로드
     @GetMapping("/me")
     public ResponseEntity<FreelancerProfileResponse> getMyProfile(
-            @AuthenticationPrincipal User user) {
+            @LoginUser User user) {
 
         if (user == null) {
             return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
@@ -49,7 +50,7 @@ public class FreelancerController {
     // [수정] 대시보드 내 프로필 일괄 업데이트
     @PutMapping("/me")
     public ResponseEntity<FreelancerProfileResponse> updateMyProfile(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @Valid @RequestBody FreelancerProfileRequest request) {
 
         if (user == null) {
@@ -100,7 +101,7 @@ public class FreelancerController {
     // [수정] 대시보드 상단 '활동 상태' 단독 토글
     @PatchMapping("/status")
     public ResponseEntity<Map<String, String>> updateMyStatus(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @Valid @RequestBody com.devnear.web.dto.freelancer.FreelancerStatusRequest request) {
 
         if (user == null) {
@@ -115,7 +116,7 @@ public class FreelancerController {
     // [삭제] 내 프리랜서 프로필 삭제
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteMyProfile(
-            @AuthenticationPrincipal User user) {
+            @LoginUser User user) {
 
         if (user == null) {
             return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).build();
