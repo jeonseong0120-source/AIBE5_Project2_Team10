@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import api from '@/app/lib/axios';
+import { getCurrentUserId } from '@/app/lib/auth';
 import { createOrGetChatRoom } from '@/app/lib/chatApi';
 import { useChatStore } from '@/app/store/chatStore';
 import { useParams, useRouter } from 'next/navigation';
