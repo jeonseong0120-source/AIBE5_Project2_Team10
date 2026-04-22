@@ -17,6 +17,7 @@ import com.devnear.web.domain.project.ProjectSkill;
 import com.devnear.web.domain.proposal.ProposalRepository;
 import com.devnear.web.domain.review.ClientReviewRepository;
 import com.devnear.web.domain.review.FreelancerReviewRepository;
+import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.skill.Skill;
 import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
@@ -64,6 +65,7 @@ public class ProjectService {
     private final PaymentRepository paymentRepository;
     private final ClientReviewRepository clientReviewRepository;
     private final FreelancerReviewRepository freelancerReviewRepository;
+    private final FreelancerProfileRepository freelancerProfileRepository;
     private final NotificationService notificationService;
 
     @Transactional
@@ -280,6 +282,20 @@ public class ProjectService {
                     .map(ProjectResponse::from);
         }
         return projectRepository.findAllByClientProfile(clientProfile, pageable)
+                .map(ProjectResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProjectResponse> getFreelancerProjectList(Long freelancerId, ProjectStatus status, Pageable pageable) {
+        FreelancerProfile freelancerProfile = freelancerProfileRepository.findById(freelancerId)
+                .orElseThrow(() -> new ResourceNotFoundException("프리랜서 프로필을 찾을 수 없습니다."));
+
+        if (status != null) {
+            return projectRepository.findAllByFreelancerProfileAndStatus(freelancerProfile, status, pageable)
+                    .map(ProjectResponse::from);
+        }
+        // status가 없을 경우 해당 프리랜서의 모든 프로젝트를 조회합니다.
+        return projectRepository.findAllByFreelancerProfile(freelancerProfile, pageable)
                 .map(ProjectResponse::from);
     }
 
