@@ -1,49 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import { createOrGetChatRoom } from "@/app/lib/chatApi";
-import { useChatStore } from "@/app/store/chatStore";
+import { createOrGetChatRoom } from "../../app/lib/chatApi";
+import { useChatStore } from "../../app/store/chatStore";
 
 interface ChatStartButtonProps {
     targetUserId: number;
     className?: string;
-    label?: string;
-    disabled?: boolean;
+    children?: React.ReactNode;
 }
 
 export default function ChatStartButton({
                                             targetUserId,
-                                            className = "",
-                                            label = "채팅하기",
-                                            disabled = false,
+                                            className = "rounded-lg bg-violet-600 px-4 py-2 text-white hover:bg-violet-700",
+                                            children = "채팅하기",
                                         }: ChatStartButtonProps) {
-    const openChat = useChatStore((state) => state.openChat);
-    const [isLoading, setIsLoading] = useState(false);
+    const { openChat } = useChatStore();
 
     const handleStartChat = async () => {
-        if (disabled || isLoading) return;
-
         try {
-            setIsLoading(true);
-
-            const response = await createOrGetChatRoom(targetUserId);
-            openChat(response.roomId);
+            const { roomId } = await createOrGetChatRoom(targetUserId);
+            openChat(roomId);
         } catch (error) {
-            console.error("채팅방 생성/조회 실패:", error);
-            alert("채팅방을 열지 못했습니다. 다시 시도해주세요.");
-        } finally {
-            setIsLoading(false);
+            console.error("채팅방 생성 실패", error);
         }
     };
 
     return (
-        <button
-            type="button"
-            onClick={handleStartChat}
-            disabled={disabled || isLoading}
-            className={className}
-        >
-            {isLoading ? "채팅방 여는 중..." : label}
+        <button type="button" onClick={handleStartChat} className={className}>
+            {children}
         </button>
     );
 }

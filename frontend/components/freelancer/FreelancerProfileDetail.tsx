@@ -7,11 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 // 🎯 아이콘들
 import { ChevronLeft, Briefcase, Grid3X3, Heart, ArrowUpRight, Star, MapPin, User } from 'lucide-react';
 import api from '@/app/lib/axios';
-import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile, ReviewResponse, ProjectHistoryDto } from '@/types/freelancer';
+import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
 import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
 import type { PortfolioDetailShape } from '@/components/portfolio/PortfolioDetailModal';
 import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } from '@/components/proposal/ProposalSendModal';
-import ProjectCard from './ProjectCard';
 import { useNotifications } from '@/components/notifications/notificationContext';
 
 export type FreelancerProfileDetailVariant = 'freelancer' | 'client';
@@ -65,17 +64,6 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
     // --- 🎯 북마크(하트) 상태 및 로딩 (참고하신 프리랜서 방식 적용) ---
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [bookmarkLoading, setBookmarkLoading] = useState(false);
-
-    // --- 🎯 탭 및 리뷰 상태 ---
-    const [activeTab, setActiveTab] = useState<'PORTFOLIO' | 'PROJECT' | 'REVIEW'>('PORTFOLIO');
-    const [reviews, setReviews] = useState<ReviewResponse[]>([]);
-    const [reviewsLoading, setReviewsLoading] = useState(false);
-    const [reviewsFetchDone, setReviewsFetchDone] = useState(false);
-
-    // 프로젝트 상태 추가
-    const [historyProjects, setHistoryProjects] = useState<ProjectHistoryDto[]>([]);
-    const [historyLoading, setHistoryLoading] = useState(false);
-    const [historyFetchDone, setHistoryFetchDone] = useState(false);
 
     const FALLBACK_IMAGE_URL = 'https://ui-avatars.com/api/?name=Agent&background=F4F4F5&color=A1A1AA&size=150';
 
@@ -275,48 +263,6 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
         return () => { cancelled = true; };
     }, [freelancer?.userId]);
 
-    // --- 리뷰 페칭 ---
-    useEffect(() => {
-        if (!freelancer?.id || activeTab !== 'REVIEW' || reviewsFetchDone) return;
-
-        const fetchReviews = async () => {
-            setReviewsLoading(true);
-            try {
-                const { data } = await api.get(`/v1/reviews/freelancers/${freelancer.id}`);
-                setReviews(data || []);
-            } catch (err) {
-                console.error("Reviews 로드 실패", err);
-                setReviews([]);
-            } finally {
-                setReviewsLoading(false);
-                setReviewsFetchDone(true);
-            }
-        };
-
-        fetchReviews();
-    }, [freelancer?.id, activeTab, reviewsFetchDone]);
-    
-    useEffect(() => {
-        if (!freelancer?.id || activeTab !== 'PROJECT' || historyFetchDone) return;
-
-        const fetchProjects = async () => {
-            setHistoryLoading(true);
-            try {
-                const { data } = await api.get(`/v1/projects/freelancers/${freelancer.id}`, {
-                    params: { status: 'COMPLETED' }
-                });
-                setHistoryProjects(data.content || []);
-            } catch (err) {
-                console.error("Projects 로드 실패", err);
-            } finally {
-                setHistoryLoading(false);
-                setHistoryFetchDone(true);
-            }
-        };
-
-        fetchProjects();
-    }, [freelancer?.id, activeTab, historyFetchDone]);
-
     if (loading) return <div className="flex min-h-[70vh] items-center justify-center font-mono text-xl font-black uppercase text-[#7A4FFF] animate-pulse">SCANNING AGENT DOSSIER...</div>;
     if (!freelancer) return <div className="flex min-h-[70vh] flex-col items-center justify-center text-center"><h3 className="font-mono text-lg font-bold text-zinc-400">Null: No_Expert_Found</h3><button type="button" onClick={() => router.push(cfg.notFoundHref)} className="mt-4 font-mono text-xs font-black text-[#7A4FFF] underline">Return_To_Base</button></div>;
 
@@ -449,203 +395,81 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                     </div>
                 </div>
 
-                {/* 하단 탭 및 컨텐츠 영역 */}
+                {/* 포트폴리오 그리드 영역 */}
                 <div className="bg-white rounded-[3rem] p-10 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                    <div className="mb-12 flex justify-center gap-4 md:gap-12">
-                        {[
-                            { id: 'PORTFOLIO', label: 'Portfolios', icon: Grid3X3 },
-                            { id: 'PROJECT', label: 'Projects', icon: Briefcase },
-                            { id: 'REVIEW', label: 'Reviews', icon: Star },
-                        ].map((tab) => {
-                            const Icon = tab.icon;
-                            const isActive = activeTab === tab.id;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
-                                    className={`relative -mt-[42px] flex items-center gap-2 px-6 py-4 font-mono text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-500 group ${
-                                        isActive 
-                                            ? 'text-[#7A4FFF]' 
-                                            : 'text-zinc-400 hover:text-zinc-600'
-                                    }`}
-                                >
-                                    <Icon size={14} className={`transition-transform duration-500 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                                    {tab.label}
-                                    {isActive && (
-                                        <motion.div 
-                                            layoutId="activeTab"
-                                            className="absolute top-0 left-0 right-0 h-1 bg-[#7A4FFF] rounded-full shadow-[0_4px_12px_rgba(122,79,255,0.4)]"
-                                        />
-                                    )}
-                                </button>
-                            );
-                        })}
+                    <div className="mb-8 flex justify-center gap-12">
+                        <div className="-mt-[34px] flex cursor-pointer items-center gap-1.5 border-t-2 border-[#7A4FFF] pt-3 font-mono text-xs font-black uppercase tracking-widest text-zinc-900"><Grid3X3 size={14} className="text-[#7A4FFF]" /> PORTFOLIOS</div>
+                        <div className="-mt-[34px] flex items-center gap-1.5 pt-3 font-mono text-xs font-bold uppercase tracking-widest text-zinc-400"><Briefcase size={14} /> PROJECTS</div>
                     </div>
 
-                    <AnimatePresence mode="wait">
-                        {activeTab === 'PORTFOLIO' && (
-                            <motion.div
-                                key="portfolio-tab"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.4 }}
-                            >
-                                {!portfolioFetchDone ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                                        {[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="aspect-[7/5] rounded-[2rem] border border-zinc-100 bg-zinc-50 animate-pulse" />)}
-                                    </div>
-                                ) : portfolioList.length === 0 ? (
-                                    <div className="flex w-full flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-zinc-100 bg-zinc-50/50 py-24 text-center">
-                                        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-zinc-100 bg-white shadow-sm"><Briefcase className="text-zinc-200" size={32} /></div>
-                                        <p className="font-mono text-xs font-black uppercase tracking-widest text-[#7A4FFF]">No_Portfolio_Data</p>
-                                        <p className="mt-2 text-[11px] font-bold text-zinc-400">등록된 포트폴리오가 없습니다.</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                                        {portfolioList.map((p) => {
-                                            const thumb = p.thumbnailUrl || p.portfolioImages?.[0] || FALLBACK_IMAGE_URL;
-                                            const portSkills = p.skills ?? [];
-                                            return (
-                                                <motion.div
-                                                    key={p.id}
-                                                    whileHover={{ y: -8 }}
-                                                    onClick={() => setSelectedPortfolio(p)}
-                                                    className="group relative flex flex-col bg-white rounded-[2.5rem] border border-zinc-100 overflow-hidden hover:border-[#7A4FFF] hover:shadow-[0_20px_40px_-12px_rgba(122,79,255,0.08)] transition-all duration-500 cursor-pointer"
-                                                >
-                                                    <div className="w-full aspect-[7/5] bg-zinc-50 overflow-hidden relative">
-                                                        <img src={thumb} alt={p.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1500ms] ease-out" />
-                                                        <div className="absolute inset-0 bg-zinc-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[1px] flex items-center justify-center">
-                                                            <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-xl flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                                                                <span className="text-zinc-950 text-[9px] font-black font-mono tracking-widest uppercase">View_Details</span>
-                                                                <ArrowUpRight size={12} className="text-[#7A4FFF]" />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="p-6 flex flex-col items-center text-center">
-                                                        <h3 className="font-bold text-sm leading-tight text-zinc-900 group-hover:text-[#7A4FFF] transition-colors line-clamp-2 min-h-[2.5rem] flex items-center justify-center mb-3">{p.title}</h3>
-                                                        <div className="flex flex-wrap justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
-                                                            {portSkills.slice(0, 3).map((s, idx) => (
-                                                                <span key={idx} className="px-2.5 py-0.5 bg-zinc-50 text-zinc-600 border border-zinc-100 rounded-lg text-[8px] font-bold uppercase font-mono group-hover:border-[#7A4FFF]/20">#{s.name}</span>
-                                                            ))}
-                                                            {portSkills.length > 3 && <span className="px-1.5 py-0.5 bg-zinc-900 text-white rounded-lg text-[8px] font-black font-mono">+{portSkills.length - 3}</span>}
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
-
-                        {activeTab === 'PROJECT' && (
-                            <motion.div
-                                key="project-tab"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                className="w-full"
-                            >
-                                {historyLoading ? (
-                                    <div className="flex flex-col items-center justify-center py-24">
-                                        <div className="h-12 w-12 rounded-full border-4 border-[#7A4FFF]/20 border-t-[#7A4FFF] animate-spin mb-4" />
-                                        <p className="text-zinc-400 font-mono text-[11px] font-black tracking-widest uppercase animate-pulse">Synchronizing_Project_Ledger...</p>
-                                    </div>
-                                ) : historyProjects.length > 0 ? (
-                                    <div className="grid grid-cols-1 gap-6">
-                                        {historyProjects.map((project, idx) => (
-                                            <ProjectCard key={project.projectId} data={project} index={idx} />
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center py-24 text-center bg-zinc-50/50 rounded-[3rem] border-2 border-dashed border-zinc-100">
-                                        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-zinc-100 bg-white shadow-sm">
-                                            <Briefcase className="text-zinc-200" size={32} />
-                                        </div>
-                                        <p className="font-mono text-xs font-black uppercase tracking-widest text-[#7A4FFF]">History_Not_Found</p>
-                                        <p className="mt-2 text-[11px] font-bold text-zinc-400">아직 완료된 프로젝트 정보가 없습니다.</p>
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
-
-                        {activeTab === 'REVIEW' && (
-                            <motion.div
-                                key="review-tab"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                className="space-y-6"
-                            >
-                                {reviewsLoading ? (
-                                    <div className="space-y-4">
-                                        {[0, 1, 2].map((i) => (
-                                            <div key={i} className="p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-100 animate-pulse h-32" />
-                                        ))}
-                                    </div>
-                                ) : reviews.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-24 text-center bg-zinc-50/50 rounded-[3rem] border-2 border-dashed border-zinc-100">
-                                        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-zinc-100 bg-white shadow-sm"><Star className="text-zinc-200" size={32} /></div>
-                                        <p className="font-mono text-xs font-black uppercase tracking-widest text-[#7A4FFF]">No_Review_Signals</p>
-                                        <p className="mt-2 text-[11px] font-bold text-zinc-400">아직 등록된 리뷰가 없습니다.</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 gap-6">
-                                        {reviews.map((review) => (
-                                            <motion.div
-                                                key={review.id}
-                                                initial={{ opacity: 0, scale: 0.95 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                className="p-8 bg-white rounded-[2.5rem] border border-zinc-100 shadow-sm hover:shadow-md transition-shadow"
-                                            >
-                                                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                                                    <div className="flex items-start gap-4">
-                                                        <div className="h-12 w-12 rounded-2xl bg-zinc-50 overflow-hidden border border-zinc-100 shrink-0">
-                                                            <img 
-                                                                src={review.reviewerProfileImageUrl || `https://ui-avatars.com/api/?name=${review.reviewerNickname}&background=F4F4F5&color=A1A1AA`} 
-                                                                alt={review.reviewerNickname} 
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="font-black text-sm text-zinc-900">{review.reviewerNickname}</h4>
-                                                            <div className="mt-1 flex items-center gap-1.5">
-                                                                <div className="flex items-center gap-0.5">
-                                                                    {[...Array(5)].map((_, i) => (
-                                                                        <Star 
-                                                                            key={i} 
-                                                                            size={12} 
-                                                                            className={i < Math.round(review.averageScore) ? "text-yellow-400 fill-yellow-400" : "text-zinc-200"} 
-                                                                        />
-                                                                    ))}
-                                                                </div>
-                                                                <span className="text-[10px] font-black text-zinc-400 font-mono">{(review.averageScore || 0).toFixed(1)}</span>
-                                                            </div>
-                                                            <p className="mt-4 text-zinc-600 text-sm leading-relaxed">&quot;{review.comment}&quot;</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="shrink-0 flex flex-col items-end gap-2">
-                                                        <span className="text-[10px] font-mono font-black text-zinc-300 uppercase">
-                                                            {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : '-'}
-                                                        </span>
-                                                        <div className="flex flex-wrap gap-2 justify-end">
-                                                            {review.workQuality && (
-                                                                <div className="px-2 py-1 bg-purple-50 rounded-lg text-[9px] font-bold text-[#7A4FFF] border border-purple-100">Quality: {review.workQuality}</div>
-                                                            )}
-                                                            {review.deadline && (
-                                                                <div className="px-2 py-1 bg-zinc-50 rounded-lg text-[9px] font-bold text-zinc-500 border border-zinc-100">Timing: {review.deadline}</div>
-                                                            )}
-                                                        </div>
-                                                    </div>
+                    {!portfolioFetchDone ? (
+                        <div className="grid animate-pulse grid-cols-3 gap-3 md:gap-4">
+                            {[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="aspect-square rounded-[2rem] border border-zinc-200 bg-zinc-50" />)}
+                        </div>
+                    ) : portfolioList.length === 0 ? (
+                        <div className="flex w-full flex-col items-center justify-center rounded-[3rem] border-2 border-dashed border-zinc-200 bg-zinc-50/50 py-24 text-center">
+                            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-zinc-100 bg-white shadow-sm"><Briefcase className="text-zinc-300" size={32} /></div>
+                            <p className="font-mono text-sm font-black uppercase tracking-widest text-[#7A4FFF]">&gt; NO_PORTFOLIO_DATA_ATTACHED</p>
+                            <p className="mt-3 text-xs font-bold text-zinc-400">이 요원은 아직 설계도를 업로드하지 않았습니다.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-3 gap-3 md:gap-4">
+                            {portfolioList.map((p) => {
+                                const thumb = p.thumbnailUrl || p.portfolioImages?.[0] || FALLBACK_IMAGE_URL;
+                                const portSkills = p.skills ?? [];
+                                return (
+                                    <motion.div
+                                        key={p.id}
+                                        whileHover={{ y: -12 }}
+                                        onClick={() => setSelectedPortfolio(p)}
+                                        className="group relative flex flex-col bg-white rounded-[3rem] border border-zinc-100 overflow-hidden hover:border-[#7A4FFF] hover:shadow-[0_30px_60px_-12px_rgba(122,79,255,0.12)] transition-all duration-500 cursor-pointer"
+                                    >
+                                        {/* Thumbnail: 7:5 Aspect Ratio */}
+                                        <div className="w-full aspect-[7/5] bg-zinc-50 overflow-hidden relative">
+                                            <img
+                                                src={thumb}
+                                                alt={p.title}
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1500ms] ease-out"
+                                                onError={(e) => {
+                                                    if (e.currentTarget.src !== FALLBACK_IMAGE_URL) {
+                                                        e.currentTarget.src = FALLBACK_IMAGE_URL;
+                                                    }
+                                                }}
+                                            />
+                                            
+                                            {/* Action Overlay */}
+                                            <div className="absolute inset-0 bg-zinc-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[2px] flex items-center justify-center">
+                                                <div className="bg-white/90 backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                                    <span className="text-zinc-950 text-[10px] font-black font-mono tracking-[0.2em] uppercase">Open_Project</span>
+                                                    <ArrowUpRight size={14} className="text-[#7A4FFF]" />
                                                 </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                            </div>
+                                        </div>
+
+                                        {/* Content Info (Matching MyPage style) */}
+                                        <div className="p-7 flex flex-col items-center text-center">
+                                            <h3 className="font-black text-base leading-tight text-zinc-900 group-hover:text-[#7A4FFF] transition-colors line-clamp-2 min-h-[2.5rem] flex items-center justify-center mb-4">
+                                                {p.title}
+                                            </h3>
+                                            
+                                            <div className="flex flex-wrap justify-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+                                                {portSkills.slice(0, 5).map((s, idx) => (
+                                                    <span key={idx} className="px-3 py-1 bg-zinc-50 text-zinc-700 border border-zinc-100 rounded-lg text-[9px] font-bold uppercase font-mono tracking-tighter group-hover:border-[#7A4FFF]/30">
+                                                        #{s.name}
+                                                    </span>
+                                                ))}
+                                                {portSkills.length > 5 && (
+                                                    <span className="px-2 py-1 bg-zinc-950 text-white rounded-lg text-[8px] font-black font-mono">
+                                                        +{portSkills.length - 5}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </main>
 
