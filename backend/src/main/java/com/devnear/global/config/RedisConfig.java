@@ -52,20 +52,21 @@ public class RedisConfig {
             public Object deserialize(byte[] bytes) throws SerializationException {
                 if (bytes == null || bytes.length == 0) return null;
                 try {
+                    // Object.class로 읽더라도 mapper가 타입 정보를(@class) 보고 타당하게 변환하지만,
+                    // 보안 화이트리스트가 ptv에서 이미 걸러주므로 현재 방식도 안전
                     return mapper.readValue(bytes, Object.class);
                 } catch (Exception e) {
-                    throw new SerializationException("역직렬화 실패 (보안 또는 타입 불일치)", e);
+                    throw new SerializationException("역직렬화 실패: 데이터 구조가 바뀌었을 수 있습니다.", e);
                 }
             }
         };
 
-        // 3. 캐시 상세 설정 (TTL 5분 유지)
+// 3. 캐시 상세 설정
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(5)) // 짧은 TTL로 데이터 불일치 최소화
-                .disableCachingNullValues()    // 존재하지 않는 유저(Null)는 캐싱하지 않아 DoS 방어
+                .entryTtl(Duration.ofMinutes(5))
+                // .disableCachingNullValues() // 👈 [고민 포인트]
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.string()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(customSerializer));
-
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
                 .build();
