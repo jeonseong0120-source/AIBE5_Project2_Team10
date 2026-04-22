@@ -2,6 +2,7 @@ package com.devnear.web.domain.payment;
 
 import com.devnear.web.domain.common.BaseTimeEntity;
 import com.devnear.web.domain.enums.PaymentStatus;
+import com.devnear.web.domain.enums.PaymentSource;
 import com.devnear.web.domain.project.Project;
 import jakarta.persistence.*;
 import lombok.*;
@@ -44,6 +45,13 @@ public class Payment extends BaseTimeEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
     private Project project; // 연관된 프로젝트
+
+    @Column(name = "application_id")
+    private Long applicationId; // 수락할 지원서 또는 제안서 ID
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source")
+    private PaymentSource source; // "APPLICATION" 또는 "PROPOSAL"
 
     // 결제 완료 처리
     public void confirm(String paymentKey, String method) {

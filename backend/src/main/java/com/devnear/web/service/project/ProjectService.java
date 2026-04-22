@@ -250,7 +250,8 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public Page<ProjectResponse> getProjectList(Pageable pageable) {
-        return projectRepository.findAll(pageable).map(ProjectResponse::from);
+        Page<Project> projects = projectRepository.findAll(pageable);
+        return mapToResponsesWithCounts(projects);
     }
 
     /**
@@ -259,7 +260,7 @@ public class ProjectService {
      */
     @Transactional(readOnly = true)
     public Page<ProjectResponse> searchProjects(String keyword, String location, List<String> skills, Boolean online,
-                                                Boolean offline, Long excludeOwnerUserId, Pageable pageable) {
+                                                 Boolean offline, Long excludeOwnerUserId, Pageable pageable) {
         ProjectSearchCond cond = new ProjectSearchCond();
         cond.setKeyword(keyword);
         cond.setLocation(location);
@@ -268,20 +269,21 @@ public class ProjectService {
         cond.setOffline(offline);
         cond.setExcludeOwnerUserId(excludeOwnerUserId);
 
-        return projectRepository.search(cond, pageable)
-                .map(ProjectResponse::from);
+        Page<Project> projects = projectRepository.search(cond, pageable);
+        return mapToResponsesWithCounts(projects);
     }
 
     @Transactional(readOnly = true)
     public Page<ProjectResponse> getMyProjectList(User user, ProjectStatus status, Pageable pageable) {
         ClientProfile clientProfile = findClientProfileByUser(user);
 
+        Page<Project> projects;
         if (status != null) {
-            return projectRepository.findAllByClientProfileAndStatus(clientProfile, status, pageable)
-                    .map(ProjectResponse::from);
+            projects = projectRepository.findAllByClientProfileAndStatus(clientProfile, status, pageable);
+        } else {
+            projects = projectRepository.findAllByClientProfile(clientProfile, pageable);
         }
-        return projectRepository.findAllByClientProfile(clientProfile, pageable)
-                .map(ProjectResponse::from);
+        return mapToResponsesWithCounts(projects);
     }
 
     @Transactional(readOnly = true)
@@ -289,13 +291,29 @@ public class ProjectService {
         FreelancerProfile freelancerProfile = freelancerProfileRepository.findById(freelancerId)
                 .orElseThrow(() -> new ResourceNotFoundException("프리랜서 프로필을 찾을 수 없습니다."));
 
+        Page<Project> projects;
         if (status != null) {
-            return projectRepository.findAllByFreelancerProfileAndStatus(freelancerProfile, status, pageable)
-                    .map(ProjectResponse::from);
+            projects = projectRepository.findAllByFreelancerProfileAndStatus(freelancerProfile, status, pageable);
+        } else {
+            projects = projectRepository.findAllByFreelancerProfile(freelancerProfile, pageable);
         }
-        // status가 없을 경우 해당 프리랜서의 모든 프로젝트를 조회합니다.
-        return projectRepository.findAllByFreelancerProfile(freelancerProfile, pageable)
-                .map(ProjectResponse::from);
+        return mapToResponsesWithCounts(projects);
+    }
+
+    private Page<ProjectResponse> mapToResponsesWithCounts(Page<Project> projectPage) {
+        List<Long> projectIds = projectPage.getContent().stream()
+                .map(Project::getId)
+                .collect(Collectors.toList());
+
+        Map<Long, Long> countMap = new HashMap<>();
+        if (!projectIds.isEmpty()) {
+            List<Object[]> counts = projectApplicationRepository.countByProjectIdIn(projectIds);
+            for (Object[] row : counts) {
+                countMap.put((Long) row[0], (Long) row[1]);
+            }
+        }
+
+        return projectPage.map(p -> ProjectResponse.from(p, countMap.getOrDefault(p.getId(), 0L)));
     }
 
     @Transactional(readOnly = true)
@@ -303,7 +321,8 @@ public class ProjectService {
         Project project = projectRepository.findByIdWithClientProfile(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 프로젝트 공고를 찾을 수 없습니다. ID: " + projectId));
 
-        return ProjectResponse.from(project);
+        long count = projectApplicationRepository.countByProjectId(projectId); 
+        return ProjectResponse.from(project, count);
     }
 
     private ClientProfile findClientProfileByUser(User user) {
@@ -349,15 +368,11 @@ public class ProjectService {
             freelancerGradeService.refreshGrade(freelancerProfile);
         }
 
-        Long pid = project.getId();
-        String title = "프로젝트 완료";
-        String message = "프로젝트가 완료되었습니다. 리뷰를 작성해 주세요.";
-        Long clientUserId = project.getClientProfile().getUser().getId();
         eventPublisher.publishEvent(new ProjectCompletedNotificationEvent(
-                clientUserId,
-                pid,
-                title,
-                message,
+                project.getClientProfile().getUser().getId(),
+                project.getId(),
+                "프로젝트 완료",
+                "프로젝트가 완료되었습니다. 리뷰를 작성해 주세요.",
                 "/client/mypage?tab=projects"
         ));
     }

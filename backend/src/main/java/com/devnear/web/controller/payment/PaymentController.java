@@ -1,5 +1,6 @@
 package com.devnear.web.controller.payment;
 
+import com.devnear.global.auth.LoginUser;
 import com.devnear.web.dto.payment.PaymentConfirmRequest;
 import com.devnear.web.dto.payment.PaymentResponse;
 import com.devnear.web.service.payment.PaymentService;
@@ -23,7 +24,7 @@ public class PaymentController {
      */
     @PostMapping("/prepare")
     public ResponseEntity<Void> preparePayment(
-            @org.springframework.security.core.annotation.AuthenticationPrincipal com.devnear.web.domain.user.User user,
+            @LoginUser com.devnear.web.domain.user.User user,
             @RequestBody @Valid com.devnear.web.dto.payment.PaymentPrepareRequest request) {
         paymentService.preparePayment(user, request);
         return ResponseEntity.ok().build();
@@ -34,7 +35,7 @@ public class PaymentController {
      */
     @PostMapping("/confirm")
     public ResponseEntity<PaymentResponse> confirmPayment(
-            @org.springframework.security.core.annotation.AuthenticationPrincipal com.devnear.web.domain.user.User user,
+            @LoginUser com.devnear.web.domain.user.User user,
             @RequestBody @Valid PaymentConfirmRequest request) {
         return ResponseEntity.ok(paymentService.confirmPayment(user, request));
     }

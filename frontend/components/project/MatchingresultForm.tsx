@@ -272,9 +272,6 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                                         </div>
 
                                         <div className="flex flex-col items-end gap-2 shrink-0">
-                                            <div className="text-right">
-                                                <div className={`text-[#FF7D00] font-black tracking-tighter ${isMapView ? 'text-base' : 'text-xl'}`}>⚡ {f.matchingRate}%</div>
-                                            </div>
 
                                             <button
                                                 onClick={() => router.push(`/client/freelancers/${f.profileId}`)}
