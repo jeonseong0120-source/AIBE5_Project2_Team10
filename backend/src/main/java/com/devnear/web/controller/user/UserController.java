@@ -3,6 +3,7 @@ package com.devnear.web.controller.user;
 import com.devnear.web.dto.user.OnboardingRequest;
 import com.devnear.web.dto.user.TokenResponse;
 import com.devnear.web.dto.user.UserInfoResponse;
+import com.devnear.web.service.user.AccountWithdrawalService;
 import com.devnear.web.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
+    private final AccountWithdrawalService accountWithdrawalService;
 
     @Operation(summary = "온보딩 처리", description = "GUEST 유저가 닉네임과 역할을 선택하여 권한을 승격합니다.")
     @PostMapping("/onboarding")
@@ -41,5 +44,12 @@ public class UserController {
     public ResponseEntity<UserInfoResponse> getMyInfo(@AuthenticationPrincipal UserDetails userDetails) {
         UserInfoResponse response = userService.getUserInfo(userDetails.getUsername());
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "회원 탈퇴", description = "역할별 종료 조건을 만족한 경우에만 계정을 비활성화하고 개인정보를 제거합니다.")
+    @DeleteMapping("/me/account")
+    public ResponseEntity<Void> withdrawAccount(@AuthenticationPrincipal UserDetails userDetails) {
+        accountWithdrawalService.withdrawByEmail(userDetails.getUsername());
+        return ResponseEntity.noContent().build();
     }
 }

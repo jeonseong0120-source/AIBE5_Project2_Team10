@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { User, Settings, LogOut, Phone, Landmark, Globe, FileText, CheckCircle2, Save, X, Loader2, Upload, Activity } from 'lucide-react';
-import { logout } from '@/app/lib/authEvents';
-import { useRouter } from 'next/navigation';
+import { User, Settings, Phone, Landmark, Globe, FileText, CheckCircle2, Save, Loader2, Upload, Activity } from 'lucide-react';
 import api from '@/app/lib/axios';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,7 +10,6 @@ interface SettingsTabProps {
 }
 
 export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
-    const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -221,16 +218,6 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                                     <span className="font-black text-zinc-900 text-lg font-mono">{originalData?.phoneNum || '미설정'}</span>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Logout Footer Style Same as Freelancer Push-aside buttons */}
-                        <div className="pt-8 flex justify-end">
-                            <button
-                                onClick={() => { if(confirm('로그아웃 하시겠습니까?')) { logout(); router.push('/login'); } }}
-                                className="px-8 py-4 rounded-xl bg-red-50 text-red-500 font-black text-[10px] uppercase font-mono tracking-widest hover:bg-red-500 hover:text-white transition-all border border-red-100"
-                            >
-                                <LogOut size={16} className="inline mr-2" /> Sign_Out
-                            </button>
                         </div>
                     </motion.div>
                 ) : (

@@ -14,6 +14,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -94,5 +95,9 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
            "AND u.email LIKE 'bulk-demo-client%'")
     List<Long> findOpenBulkDemoProjectIdsMissingEmbedding(@Param("status") ProjectStatus status,
                                                           @Param("marketplace") ProjectListingKind marketplace);
+
+    boolean existsByClientProfile_IdAndStatusIn(Long clientId, Collection<ProjectStatus> statuses);
+
+    boolean existsByFreelancerProfile_IdAndStatusIn(Long freelancerId, Collection<ProjectStatus> statuses);
 
 }
