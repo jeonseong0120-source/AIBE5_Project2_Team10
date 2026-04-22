@@ -12,19 +12,17 @@ import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.freelancer.FreelancerProfileRequest;
-import com.devnear.web.dto.user.OnboardingRequest;
-import com.devnear.web.dto.user.TokenResponse;
-import com.devnear.web.dto.user.UserInfoResponse;
-import com.devnear.web.dto.user.UserRegisterRequest;
-import com.devnear.web.dto.user.UserLoginRequest;
+import com.devnear.web.dto.user.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.dao.DataIntegrityViolationException; // 👈 예외 처리 필수 임포트
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.cache.annotation.CacheEvict;
+
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -37,16 +35,28 @@ public class UserService {
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final SkillRepository skillRepository;
 
+    /**
+     * 회원 가입
+     * [수정] 동시성 이슈 대응을 위해 try-catch 블록 추가
+     */
     @Transactional
     public Long register(UserRegisterRequest request) {
-        // [보안 팁] 혹시 모를 중복 가입 시도 방지를 위해 가입 시에도 캐시를 비워주는 것이 타당
-        // 하지만 가입 시엔 보통 캐시가 없으므로 생략 가능
+        // 1차 체크 (대부분 여기서 걸러짐)
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
         }
-        String encodedPassword = passwordEncoder.encode(request.getPassword());
-        User user = request.toEntity(encodedPassword);
-        return userRepository.save(user).getId();
+
+        try {
+            String encodedPassword = passwordEncoder.encode(request.getPassword());
+            User user = request.toEntity(encodedPassword);
+
+            // 2차 방어: DB Unique 제약 조건 위반 시 Catch
+            // saveAndFlush를 사용하여 메서드 내부에서 즉시 예외를 발생시키고 잡을 수 있게 함
+            return userRepository.save(user).getId();
+        } catch (DataIntegrityViolationException e) {
+            // 동시 가입 시도가 발생하여 1차 체크를 통과했더라도 DB 레이어에서 최종 차단
+            throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
+        }
     }
 
     @Transactional
@@ -62,11 +72,12 @@ public class UserService {
         return new TokenResponse(token, "Bearer");
     }
 
-    @CacheEvict(value = "users", key = "#email") // 👈 [추가] 권한 승격 시 캐시 삭제!
+    @CacheEvict(value = "users", key = "#email")
     @Transactional
     public TokenResponse onboarding(String email, OnboardingRequest request) {
         User user = userRepository.findByEmailForUpdate(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+
         if (user.getStatus() == UserStatus.WITHDRAWN) {
             throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
         }
@@ -78,9 +89,8 @@ public class UserService {
 
         user.onboard(request.getNickname(), request.getRole());
 
-        // 2. 클라이언트 프로필 처리
+        // 클라이언트 프로필 처리
         if (request.getRole() == Role.CLIENT || request.getRole() == Role.BOTH) {
-            // [리팩터링] 레포지토리를 또 조회하지 않고, user 객체에 이미 로드된 프로필을 사용합니다.
             if (user.getClientProfile() != null) {
                 user.getClientProfile().update(request.getClientProfile());
             } else {
@@ -88,9 +98,8 @@ public class UserService {
             }
         }
 
-        // 3. 프리랜서 프로필 처리
+        // 프리랜서 프로필 처리
         if (request.getRole() == Role.FREELANCER || request.getRole() == Role.BOTH) {
-            // [리팩터링] 마찬가지로 user.getFreelancerProfile()로 즉시 확인하여 쿼리를 줄입니다.
             if (user.getFreelancerProfile() != null) {
                 throw new IllegalStateException("이미 프리랜서 프로필이 존재합니다.");
             }
@@ -127,13 +136,12 @@ public class UserService {
     }
 
     public UserInfoResponse getUserInfo(String email) {
-        // 정보 조회 시 Profile 정보가 포함된다면 EntityGraph의 효과를 톡톡히 봅니다.
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
         return new UserInfoResponse(user);
     }
 
-    @CacheEvict(value = "users", key = "#email") // 👈 [추가] 프로필 이미지 변경 시에도 캐시 삭제
+    @CacheEvict(value = "users", key = "#email")
     @Transactional
     public void updateProfileImage(String email, String newImageUrl) {
         User user = userRepository.findByEmailForUpdate(email)

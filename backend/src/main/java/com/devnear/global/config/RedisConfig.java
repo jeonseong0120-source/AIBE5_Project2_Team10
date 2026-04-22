@@ -69,6 +69,7 @@ public class RedisConfig {
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(customSerializer));
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
+                .transactionAware()
                 .build();
     }
 }
