@@ -151,8 +151,15 @@ export default function ProjectDetailPage() {
             project.ownerUserId ??
             null;
 
+        const currentUserId = getCurrentUserId();
+        if (currentUserId !== null && targetUserId === currentUserId) {
+            alert('본인에게는 문의할 수 없습니다.');
+            return;
+        }
+
         if (!targetUserId) {
-            alert('채팅 대상 정보가 없습니다. 프로젝트 응답에 작성자 userId가 필요합니다.');
+            console.error('프로젝트 응답에 작성자 userId가 없습니다.', project);
+            alert('채팅 대상 정보가 없습니다.');
             return;
         }
 
