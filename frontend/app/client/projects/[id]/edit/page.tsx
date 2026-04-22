@@ -45,7 +45,7 @@ export default function ClientProjectEditPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50/50">
-            <nav className="p-8">
+            <nav className="sticky top-0 z-50 p-6 bg-zinc-50/90 backdrop-blur-md border-b border-zinc-200/70">
                 <button onClick={() => router.back()} className="flex items-center gap-2 text-xs font-black text-zinc-400 hover:text-zinc-900 transition-colors uppercase tracking-[0.2em]">
                     <ArrowLeft size={16} /> Back_to_Dash
                 </button>

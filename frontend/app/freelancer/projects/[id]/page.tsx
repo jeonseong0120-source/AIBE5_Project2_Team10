@@ -227,7 +227,7 @@ export default function ProjectDetailPage() {
                 />
             </div>
 
-            <nav className="max-w-6xl mx-auto py-8 px-8 flex items-center justify-between relative z-10">
+            <nav className="sticky top-0 z-50 max-w-6xl mx-auto py-6 px-8 flex items-center justify-between bg-zinc-50/85 backdrop-blur-md border-b border-zinc-200/70">
                 <button
                     onClick={() => router.back()}
                     className="group flex items-center gap-3 text-zinc-400 hover:text-zinc-950 transition-all font-black text-xs uppercase tracking-widest font-mono"
