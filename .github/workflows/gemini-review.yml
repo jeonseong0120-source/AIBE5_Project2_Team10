@@ -1,29 +1,25 @@
-name: "Gemini AI Code Review"
+name: "AI Code Review"
 
 on:
   pull_request:
     types: [opened, synchronize]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   review:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Gemini AI Reviewer
-        # 2026년 현재 가장 오류가 적고 타당한 비서입니다.
+      - name: AI Reviewer
         uses: anc95/ChatGPT-CodeReview@v1
         with:
-          # 마스터의 금고(Secrets)에 있는 키를 사용합니다.
-          openai_api_key: ${{ secrets.GEMINI_API_KEY }}
-          # 🚨 프로바이더와 모델명을 이 비서의 규칙에 맞게 설정했습니다.
-          provider: gemini
-          model: "gemini-1.5-flash"
-          # 한국어로 친절하게 답변하도록 설정했습니다.
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          model: "gpt-4o-mini"
           language: "Korean"
-          # 댓글 작성을 위해 깃허브가 제공하는 기본 토큰입니다.
           github_token: ${{ secrets.GITHUB_TOKEN }}
