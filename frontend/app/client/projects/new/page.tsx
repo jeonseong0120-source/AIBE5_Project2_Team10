@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import ProjectRegisterForm from "@/components/project/ProjectRegisterForm";
+import ProjectRegisterContent from "@/components/project/ProjectRegisterContent";
 import api from "@/app/lib/axios";
 
 export default function ClientProjectNewPage() {
@@ -44,8 +44,17 @@ export default function ClientProjectNewPage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-50 py-12 px-4">
-            <ProjectRegisterForm />
+        <div className="min-h-screen bg-zinc-50 relative">
+            <div className="fixed inset-0 bg-black/55 backdrop-blur-sm z-40" />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto no-scrollbar rounded-[2rem]">
+                    <ProjectRegisterContent
+                        embedded
+                        onClose={() => router.back()}
+                        onSaved={() => router.push("/client/dashboard")}
+                    />
+                </div>
+            </div>
         </div>
     );
 }
