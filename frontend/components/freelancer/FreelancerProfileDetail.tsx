@@ -397,9 +397,9 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
 
                 {/* 포트폴리오 그리드 영역 */}
                 <div className="bg-white rounded-[3rem] p-10 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                    <div className="mb-8 flex justify-center gap-12">
-                        <div className="-mt-[34px] flex cursor-pointer items-center gap-1.5 border-t-2 border-[#7A4FFF] pt-3 font-mono text-xs font-black uppercase tracking-widest text-zinc-900"><Grid3X3 size={14} className="text-[#7A4FFF]" /> PORTFOLIOS</div>
-                        <div className="-mt-[34px] flex items-center gap-1.5 pt-3 font-mono text-xs font-bold uppercase tracking-widest text-zinc-400"><Briefcase size={14} /> PROJECTS</div>
+                    <div className="mb-8 flex justify-center">
+                        <div className="-mt-[34px] flex items-center gap-1.5 border-t-2 border-[`#7A4FFF`] pt-3 font-mono text-xs font-black uppercase tracking-widest text-zinc-900"><Grid3X3 size={14} className="text-[`#7A4FFF`]" /> PORTFOLIOS</div>
+                    </div>
                     </div>
 
                     {!portfolioFetchDone ? (
