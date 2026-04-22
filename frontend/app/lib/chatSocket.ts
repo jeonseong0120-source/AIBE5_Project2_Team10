@@ -9,14 +9,10 @@ function getAccessToken(): string | null {
     return localStorage.getItem("accessToken");
 }
 
+import { resolveSockJsUrl } from "./wsUrl";
+
 function resolveChatSocketUrl(): string {
-    const envUrl = process.env.NEXT_PUBLIC_WS_URL?.trim();
-
-    if (envUrl) {
-        return envUrl;
-    }
-
-    return "http://127.0.0.1:8080/ws-chat";
+    return process.env.NEXT_PUBLIC_WS_URL?.trim() || resolveSockJsUrl();
 }
 
 export function connectChatSocket(onConnect?: () => void) {
