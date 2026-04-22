@@ -132,9 +132,9 @@ export default function ChatWindow({
                         <p className="mt-1 text-xs">첫 메시지를 보내보세요.</p>
                     </div>
                 ) : (
-                    messages.map((msg) => (
+                    messages.map((msg, index) => (
                         <ChatMessageBubble
-                            key={msg.id}
+                            key={msg.id ?? `${msg.roomId}-${msg.createdAt}-${msg.senderId}-${index}`}
                             message={msg.message}
                             time={formatChatTime(msg.createdAt)}
                             isMine={currentUserId !== null && msg.senderId === currentUserId}

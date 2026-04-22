@@ -26,6 +26,17 @@ function sortRoomsByLatest(roomList: ChatRoomResponse[]) {
     });
 }
 
+function safeUnsubscribe(subscription: unknown) {
+    if (
+        subscription &&
+        typeof subscription === "object" &&
+        "unsubscribe" in subscription &&
+        typeof (subscription as { unsubscribe: unknown }).unsubscribe === "function"
+    ) {
+        (subscription as { unsubscribe: () => void }).unsubscribe();
+    }
+}
+
 export default function ChatWidget() {
     const [input, setInput] = useState("");
     const [rooms, setRooms] = useState<ChatRoomResponse[]>([]);
@@ -118,7 +129,7 @@ export default function ChatWidget() {
         connectChatSocket();
 
         return () => {
-            subscriptionRef.current?.unsubscribe();
+            safeUnsubscribe(subscriptionRef.current);
             subscriptionRef.current = null;
             disconnectChatSocket();
         };
@@ -128,7 +139,7 @@ export default function ChatWidget() {
         if (!isOpen || !selectedRoomId) return;
 
         const subscribe = () => {
-            subscriptionRef.current?.unsubscribe();
+            safeUnsubscribe(subscriptionRef.current);
 
             void subscribeChatRoom(selectedRoomId, async (frame) => {
                 try {
@@ -171,7 +182,7 @@ export default function ChatWidget() {
 
         return () => {
             clearTimeout(timer);
-            subscriptionRef.current?.unsubscribe();
+            safeUnsubscribe(subscriptionRef.current);
             subscriptionRef.current = null;
         };
     }, [isOpen, selectedRoomId]);
