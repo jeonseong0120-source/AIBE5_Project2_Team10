@@ -3,6 +3,7 @@ package com.devnear.web.dto.application;
 import com.devnear.web.domain.application.ProjectApplication;
 import com.devnear.web.domain.proposal.Proposal;
 import com.devnear.web.domain.enums.ApplicationStatus;
+import com.devnear.web.domain.enums.ProposalStatus;
 import com.devnear.web.domain.enums.ProjectStatus;
 import lombok.Builder;
 import lombok.Getter;
@@ -43,13 +44,18 @@ public class MyApplicationResponse {
     }
 
     public static MyApplicationResponse from(Proposal proposal) {
+        // [안전 가드] 수락된 제안이 아닌 경우 명시적 예외 발생 (잘못된 데이터 노출 방지)
+        if (proposal.getStatus() != ProposalStatus.ACCEPTED) {
+            throw new IllegalStateException("수락된 제안만 지원 내역에 표시할 수 있습니다. Proposal ID: " + proposal.getId());
+        }
+
         return MyApplicationResponse.builder()
                 .applicationId(proposal.getId())
                 .projectId(proposal.getProject().getId())
                 .projectName(proposal.getProject().getProjectName())
                 .clientCompanyName(proposal.getClientProfile().getCompanyName())
                 .bidPrice(proposal.getOfferedPrice())
-                .status(ApplicationStatus.ACCEPTED) // 수락된 상태만 노출할 것이므로
+                .status(ApplicationStatus.ACCEPTED) // ProposalStatus.ACCEPTED를 ApplicationStatus.ACCEPTED로 매핑
                 .projectStatus(proposal.getProject().getStatus())
                 .appliedAt(proposal.getCreatedAt())
                 .message(proposal.getMessage())

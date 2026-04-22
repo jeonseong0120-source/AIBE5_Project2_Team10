@@ -19,6 +19,7 @@ interface ClientProjectCardProps {
     handleApplicationStatus: (applicationId: number, status: 'ACCEPTED' | 'REJECTED') => void;
     handleDemoPayment: (project: any, application: any) => void;
     handlePayment: (project: any, application: any) => void;
+    paymentDisabled?: boolean;
 }
 
 export default function ClientProjectCard({
@@ -34,7 +35,8 @@ export default function ClientProjectCard({
     handleViewApplicants,
     handleApplicationStatus,
     handleDemoPayment,
-    handlePayment
+    handlePayment,
+    paymentDisabled = false
 }: ClientProjectCardProps) {
     const router = useRouter();
     const isCompleted = project.status === 'COMPLETED';
@@ -128,7 +130,8 @@ export default function ClientProjectCard({
                                     <div className="grid grid-cols-2 gap-3">
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handleDemoPayment(project, acceptedApp); }} 
-                                            className="group/pay px-8 py-4 bg-[#FF7D00] text-white rounded-[1.2rem] transition-all hover:scale-[1.03] hover:shadow-2xl hover:shadow-orange-500/30 active:scale-95 flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-orange-400/20 shadow-xl"
+                                            disabled={paymentDisabled}
+                                            className={`group/pay px-8 py-4 bg-[#FF7D00] text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-orange-400/20 shadow-xl ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-2xl hover:shadow-orange-500/30 active:scale-95'}`}
                                         >
                                             <div className="flex items-center gap-2">
                                                 <CreditCard size={16} className="group-hover/pay:rotate-12 transition-transform" />
@@ -138,7 +141,8 @@ export default function ClientProjectCard({
                                         </button>
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handlePayment(project, acceptedApp); }} 
-                                            className="group/pay px-8 py-4 bg-zinc-950 text-white rounded-[1.2rem] transition-all hover:scale-[1.03] hover:shadow-2xl hover:shadow-zinc-900/30 active:scale-95 flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-zinc-800 shadow-xl"
+                                            disabled={paymentDisabled}
+                                            className={`group/pay px-8 py-4 bg-zinc-950 text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-zinc-800 shadow-xl ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-2xl hover:shadow-zinc-900/30 active:scale-95'}`}
                                         >
                                             <div className="flex items-center gap-2">
                                                 <ShieldCheck size={16} className="group-hover/pay:scale-110 transition-transform" />
@@ -231,7 +235,7 @@ export default function ClientProjectCard({
                                             <p className="text-zinc-400 text-[10px] max-w-xs leading-relaxed">아직 지원자가 없습니다. 프로젝트 공고를 매력적으로 수정하거나 인재에게 직접 제안해보세요.</p>
                                         </div>
                                     ) : (
-                                        projectApplicants.sort((a,b) => b.matchingRate - a.matchingRate).map((app: any, appIdx: number) => (
+                                        [...projectApplicants].sort((a,b) => b.matchingRate - a.matchingRate).map((app: any, appIdx: number) => (
                                             <motion.div 
                                                 initial={{ opacity: 0, y: 20 }} 
                                                 animate={{ opacity: 1, y: 0 }}
@@ -290,27 +294,29 @@ export default function ClientProjectCard({
                                                                     </button>
                                                                     
                                                                     <div className="flex gap-3 ml-2 border-l border-zinc-100 pl-6">
-                                                                        <button 
-                                                                            onClick={() => handleDemoPayment(project, app)} 
-                                                                            className="group/btn px-7 py-3 bg-[#FF7D00] text-white rounded-[1.2rem] transition-all hover:scale-[1.03] hover:shadow-xl hover:shadow-orange-500/20 active:scale-95 flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-orange-400/20 shadow-lg"
-                                                                        >
-                                                                            <div className="flex items-center gap-2">
-                                                                                <CreditCard size={14} className="group-hover/btn:rotate-12 transition-transform" />
-                                                                                <span className="text-[11px] font-black uppercase tracking-widest">수락</span>
-                                                                            </div>
-                                                                            <span className="text-[8px] font-black font-mono opacity-60 tracking-tighter uppercase italic">Demo_Payment</span>
-                                                                        </button>
-                                                                        
-                                                                        <button 
-                                                                            onClick={() => handlePayment(project, app)} 
-                                                                            className="group/btn px-7 py-3 bg-zinc-950 text-white rounded-[1.2rem] transition-all hover:scale-[1.03] hover:shadow-xl hover:shadow-zinc-900/20 active:scale-95 flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-zinc-800 shadow-lg"
-                                                                        >
-                                                                            <div className="flex items-center gap-2">
-                                                                                <ShieldCheck size={14} className="group-hover/btn:scale-110 transition-transform" />
-                                                                                <span className="text-[11px] font-black uppercase tracking-widest">수락</span>
-                                                                            </div>
-                                                                            <span className="text-[8px] font-black font-mono opacity-60 tracking-tighter uppercase italic">Secure_Payment</span>
-                                                                        </button>
+                                                                    <button 
+                                                                        onClick={() => handleDemoPayment(project, app)} 
+                                                                        disabled={paymentDisabled}
+                                                                        className={`group/btn px-7 py-3 bg-[#FF7D00] text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-orange-400/20 shadow-lg ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-xl hover:shadow-orange-500/20 active:scale-95'}`}
+                                                                    >
+                                                                        <div className="flex items-center gap-2">
+                                                                            <CreditCard size={14} className="group-hover/btn:rotate-12 transition-transform" />
+                                                                            <span className="text-[11px] font-black uppercase tracking-widest">수락</span>
+                                                                        </div>
+                                                                        <span className="text-[8px] font-black font-mono opacity-60 tracking-tighter uppercase italic">Demo_Payment</span>
+                                                                    </button>
+                                                                    
+                                                                    <button 
+                                                                        onClick={() => handlePayment(project, app)} 
+                                                                        disabled={paymentDisabled}
+                                                                        className={`group/btn px-7 py-3 bg-zinc-950 text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-zinc-800 shadow-lg ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-xl hover:shadow-zinc-900/20 active:scale-95'}`}
+                                                                    >
+                                                                        <div className="flex items-center gap-2">
+                                                                            <ShieldCheck size={14} className="group-hover/btn:scale-110 transition-transform" />
+                                                                            <span className="text-[11px] font-black uppercase tracking-widest">수락</span>
+                                                                        </div>
+                                                                        <span className="text-[8px] font-black font-mono opacity-60 tracking-tighter uppercase italic">Secure_Payment</span>
+                                                                    </button>
                                                                     </div>
                                                                 </>
                                                             )

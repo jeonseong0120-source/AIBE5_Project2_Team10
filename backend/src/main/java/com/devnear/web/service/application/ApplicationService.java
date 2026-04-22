@@ -111,9 +111,7 @@ public class ApplicationService {
                 .collect(Collectors.toList());
 
         // 2. 수락된 역제안 중 결제 완료(진행 중 이상)된 내역 추가
-        List<MyApplicationResponse> proposals = proposalRepository.findReceivedProposalsByFreelancerId(freelancer.getId()).stream()
-                .filter(p -> p.getStatus() == ProposalStatus.ACCEPTED && 
-                            (p.getProject().getStatus() == ProjectStatus.IN_PROGRESS || p.getProject().getStatus() == ProjectStatus.COMPLETED))
+        List<MyApplicationResponse> proposals = proposalRepository.findAcceptedReceivedProposalsByFreelancerId(freelancer.getId()).stream()
                 .map(MyApplicationResponse::from)
                 .collect(Collectors.toList());
 

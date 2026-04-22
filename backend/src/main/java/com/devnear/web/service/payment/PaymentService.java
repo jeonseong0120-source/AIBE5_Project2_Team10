@@ -5,6 +5,7 @@ import com.devnear.web.domain.application.ProjectApplication;
 import com.devnear.web.domain.application.ProjectApplicationRepository;
 import com.devnear.web.domain.enums.ApplicationStatus;
 import com.devnear.web.domain.enums.ProposalStatus;
+import com.devnear.web.domain.enums.PaymentSource;
 import com.devnear.web.domain.payment.Payment;
 import com.devnear.web.domain.payment.PaymentRepository;
 import com.devnear.web.domain.project.Project;
@@ -115,7 +116,20 @@ public class PaymentService {
             throw new IllegalStateException("모집 중인 프로젝트만 결제할 수 있습니다. 현재 상태: " + payment.getProject().getStatus());
         }
 
-        // 4. 토스페이먼츠 서버 승인 요청 (데모 모드인 경우 건너뜀)
+        // 4. 결제 대상(지원서/제안서) 존재 및 상태 검증 (추가된 보안 로직)
+        if (payment.getApplicationId() == null || payment.getSource() == null) {
+            throw new IllegalStateException("결제 대상 정보가 누락되었습니다.");
+        }
+
+        if (payment.getSource() == PaymentSource.PROPOSAL) {
+            proposalRepository.findById(payment.getApplicationId())
+                    .orElseThrow(() -> new ResourceNotFoundException("대상 제안서를 찾을 수 없습니다. ID: " + payment.getApplicationId()));
+        } else {
+            projectApplicationRepository.findById(payment.getApplicationId())
+                    .orElseThrow(() -> new ResourceNotFoundException("대상 지원서를 찾을 수 없습니다. ID: " + payment.getApplicationId()));
+        }
+
+        // 5. 토스페이먼츠 서버 승인 요청 (데모 모드인 경우 건너뜀)
         Map<String, Object> response;
         if (request.getPaymentKey().startsWith("mock_")) {
             // 데모용 가짜 응답 생성
@@ -124,7 +138,7 @@ public class PaymentService {
             response = tossPaymentClient.confirmPayment(request);
         }
 
-        // 5. 결제 상태 업데이트
+        // 6. 결제 상태 업데이트
         String method = (String) response.get("method");
         payment.confirm(request.getPaymentKey(), method);
 
@@ -136,7 +150,7 @@ public class PaymentService {
 
             // [추가] 수락된 지원서/제안서 상태 변경 및 프리랜서 할당
             if (payment.getApplicationId() != null) {
-                if ("PROPOSAL".equals(payment.getSource())) {
+                if (payment.getSource() == PaymentSource.PROPOSAL) {
                     // 역제안(Proposal) 처리
                     proposalRepository.findById(payment.getApplicationId()).ifPresent(proposal -> {
                         proposal.updateStatus(ProposalStatus.ACCEPTED);
@@ -153,9 +167,16 @@ public class PaymentService {
                 // 해당 프로젝트의 다른 모든 대기 지원자들(Applications) 거절 처리
                 projectApplicationRepository.findByProjectIdWithFreelancerSorted(project.getId())
                         .stream()
-                        .filter(a -> !"APPLICATION".equals(payment.getSource()) || !a.getId().equals(payment.getApplicationId()))
+                        .filter(a -> payment.getSource() != PaymentSource.APPLICATION || !a.getId().equals(payment.getApplicationId()))
                         .filter(a -> a.getStatus() == ApplicationStatus.PENDING)
                         .forEach(a -> a.updateStatus(ApplicationStatus.REJECTED));
+
+                // [추가] 해당 프로젝트의 다른 모든 대기 제안들(Proposals) 거절 처리
+                proposalRepository.findAllByProjectId(project.getId())
+                        .stream()
+                        .filter(p -> payment.getSource() != PaymentSource.PROPOSAL || !p.getId().equals(payment.getApplicationId()))
+                        .filter(p -> p.getStatus() == ProposalStatus.PENDING)
+                        .forEach(p -> p.updateStatus(ProposalStatus.REJECTED));
             }
 
             Long clientUserId = project.getClientProfile().getUser().getId();

@@ -163,7 +163,7 @@ export default function FreelancerDashboardPage() {
         if (activeMainTab !== 'RECEIVED_PROPOSALS') {
             fetchReceivedProposals();
         }
-    }, [authorized, activeMainTab]);
+    }, [authorized, activeMainTab, sortOrder]);
 
     const handleToggleExpand = (uniqueId: string) => {
         setExpandedAppId(expandedAppId === uniqueId ? null : uniqueId);

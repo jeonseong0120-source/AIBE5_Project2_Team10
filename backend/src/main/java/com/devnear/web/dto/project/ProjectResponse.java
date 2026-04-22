@@ -46,27 +46,28 @@ public class ProjectResponse {
                 .skills(project.getProjectSkills().stream()
                         .map(ps -> ps.getSkill().getName())
                         .collect(Collectors.toList()))
-                .applicationCount(0L) // 기본값, 필요 시 서비스에서 채움
+                .applicationCount(null) // null로 설정하여 명시적으로 값이 채워지지 않았음을 표시
                 .build();
     }
 
     public static ProjectResponse from(Project project, Long applicationCount) {
-        ProjectResponse response = from(project);
         return ProjectResponse.builder()
-                .projectId(response.getProjectId())
-                .companyName(response.getCompanyName())
-                .projectName(response.getProjectName())
-                .budget(response.getBudget())
-                .deadline(response.getDeadline())
-                .detail(response.getDetail())
-                .status(response.getStatus())
-                .online(response.isOnline())
-                .offline(response.isOffline())
-                .location(response.getLocation())
-                .latitude(response.getLatitude())
-                .longitude(response.getLongitude())
-                .logoUrl(response.getLogoUrl())
-                .skills(response.getSkills())
+                .projectId(project.getId())
+                .companyName(project.getClientProfile().getCompanyName())
+                .logoUrl(project.getClientProfile().getLogoUrl())
+                .projectName(project.getProjectName())
+                .budget(project.getBudget())
+                .deadline(project.getDeadline())
+                .detail(project.getDetail())
+                .status(project.getStatus().name())
+                .online(project.isOnline())
+                .offline(project.isOffline())
+                .location(project.getLocation())
+                .latitude(project.getLatitude())
+                .longitude(project.getLongitude())
+                .skills(project.getProjectSkills().stream()
+                        .map(ps -> ps.getSkill().getName())
+                        .collect(Collectors.toList()))
                 .applicationCount(applicationCount)
                 .build();
     }

@@ -3,6 +3,7 @@ package com.devnear.web.dto.payment;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import com.devnear.web.domain.enums.PaymentSource;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -33,6 +34,6 @@ public class PaymentPrepareRequest {
     @Positive(message = "유효하지 않은 지원서 ID입니다.")
     private Long applicationId;
 
-    @NotBlank(message = "구분(source)은 필수입니다.")
-    private String source;
+    @NotNull(message = "구분(source)은 필수입니다. (APPLICATION 또는 PROPOSAL)")
+    private PaymentSource source;
 }

@@ -321,7 +321,7 @@ public class ProjectService {
         Project project = projectRepository.findByIdWithClientProfile(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 프로젝트 공고를 찾을 수 없습니다. ID: " + projectId));
 
-        long count = projectApplicationRepository.findByProjectIdWithFreelancerSorted(projectId).size(); 
+        long count = projectApplicationRepository.countByProjectId(projectId); 
         return ProjectResponse.from(project, count);
     }
 
@@ -368,15 +368,11 @@ public class ProjectService {
             freelancerGradeService.refreshGrade(freelancerProfile);
         }
 
-        Long pid = project.getId();
-        String title = "프로젝트 완료";
-        String message = "프로젝트가 완료되었습니다. 리뷰를 작성해 주세요.";
-        Long clientUserId = project.getClientProfile().getUser().getId();
         eventPublisher.publishEvent(new ProjectCompletedNotificationEvent(
-                clientUserId,
-                pid,
-                title,
-                message,
+                project.getClientProfile().getUser().getId(),
+                project.getId(),
+                "프로젝트 완료",
+                "프로젝트가 완료되었습니다. 리뷰를 작성해 주세요.",
                 "/client/mypage?tab=projects"
         ));
     }
