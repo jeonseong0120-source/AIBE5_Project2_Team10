@@ -12,19 +12,16 @@ import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.freelancer.FreelancerProfileRequest;
-import com.devnear.web.dto.user.OnboardingRequest;
-import com.devnear.web.dto.user.TokenResponse;
-import com.devnear.web.dto.user.UserInfoResponse;
-import com.devnear.web.dto.user.UserRegisterRequest;
-import com.devnear.web.dto.user.UserLoginRequest;
+import com.devnear.web.dto.user.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.dao.DataIntegrityViolationException; // 👈 예외 처리 필수 임포트
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,14 +35,28 @@ public class UserService {
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final SkillRepository skillRepository;
 
+    /**
+     * 회원 가입
+     * [수정] 동시성 이슈 대응을 위해 try-catch 블록 추가
+     */
     @Transactional
     public Long register(UserRegisterRequest request) {
-        if (userRepository.findByEmailForUpdate(request.getEmail()).isPresent()) {
+        // 1차 체크 (대부분 여기서 걸러짐)
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
         }
-        String encodedPassword = passwordEncoder.encode(request.getPassword());
-        User user = request.toEntity(encodedPassword);
-        return userRepository.save(user).getId();
+
+        try {
+            String encodedPassword = passwordEncoder.encode(request.getPassword());
+            User user = request.toEntity(encodedPassword);
+
+            // 2차 방어: DB Unique 제약 조건 위반 시 Catch
+            // saveAndFlush를 사용하여 메서드 내부에서 즉시 예외를 발생시키고 잡을 수 있게 함
+            return userRepository.save(user).getId();
+        } catch (DataIntegrityViolationException e) {
+            // 동시 가입 시도가 발생하여 1차 체크를 통과했더라도 DB 레이어에서 최종 차단
+            throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
+        }
     }
 
     @Transactional
@@ -61,53 +72,39 @@ public class UserService {
         return new TokenResponse(token, "Bearer");
     }
 
-    /**
-     * [최종 통합] 온보딩 로직: 닉네임/역할 업데이트 및 각 프로필 동시 저장
-     */
+    @CacheEvict(value = "users", key = "#email")
     @Transactional
     public TokenResponse onboarding(String email, OnboardingRequest request) {
         User user = userRepository.findByEmailForUpdate(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+
         if (user.getStatus() == UserStatus.WITHDRAWN) {
             throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
         }
 
-        // [보고] 팀원 에러 픽스: 소셜 로그인 시 이미 부여된 닉네임(user.getNickname())과 입력한 닉네임이 다를 때만 중복 검사
         if (!Objects.equals(user.getNickname(), request.getNickname()) &&
                 userRepository.existsByNickname(request.getNickname())) {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
 
-        // 1. 유저 기본 정보 업데이트
         user.onboard(request.getNickname(), request.getRole());
 
-        // [보고] 500 에러 방지를 위해 필수 프로필 정보 누락 검증
-        if ((request.getRole() == Role.CLIENT || request.getRole() == Role.BOTH) && request.getClientProfile() == null) {
-            throw new IllegalArgumentException("클라이언트 프로필 정보가 누락되었습니다.");
-        }
-        if ((request.getRole() == Role.FREELANCER || request.getRole() == Role.BOTH) && request.getFreelancerProfile() == null) {
-            throw new IllegalArgumentException("프리랜서 프로필 정보가 누락되었습니다.");
-        }
-
-        // 2. 클라이언트 프로필 저장 (CLIENT 또는 BOTH)
+        // 클라이언트 프로필 처리
         if (request.getRole() == Role.CLIENT || request.getRole() == Role.BOTH) {
-            // [보고] 리뷰 반영: 멱등성 보장 - 기존 프로필이 있으면 업데이트, 없으면 생성
-            clientProfileRepository.findByUser(user)
-                    .ifPresentOrElse(
-                            existingProfile -> existingProfile.update(request.getClientProfile()), // 이미 있으면 Update
-                            () -> clientProfileRepository.save(request.getClientProfile().toEntity(user)) // 없으면 Create
-                    );
+            if (user.getClientProfile() != null) {
+                user.getClientProfile().update(request.getClientProfile());
+            } else {
+                clientProfileRepository.save(request.getClientProfile().toEntity(user));
+            }
         }
 
-        // 3. 프리랜서 프로필 저장 (FREELANCER 또는 BOTH)
+        // 프리랜서 프로필 처리
         if (request.getRole() == Role.FREELANCER || request.getRole() == Role.BOTH) {
-            FreelancerProfileRequest fReq = request.getFreelancerProfile();
-
-            // [보고] 리뷰 반영: 멱등성 보장 - 기존 프리랜서 프로필이 이미 있으면 에러 처리(혹은 Update)
-            if (freelancerProfileRepository.findByUser_Id(user.getId()).isPresent()) {
+            if (user.getFreelancerProfile() != null) {
                 throw new IllegalStateException("이미 프리랜서 프로필이 존재합니다.");
             }
 
+            FreelancerProfileRequest fReq = request.getFreelancerProfile();
             FreelancerProfile profile = FreelancerProfile.builder()
                     .user(user)
                     .introduction(fReq.getIntroduction())
@@ -119,7 +116,6 @@ public class UserService {
                     .isActive(true)
                     .build();
 
-            // 스킬 ID 리스트를 실제 FreelancerSkill 엔티티 리스트로 변환
             List<FreelancerSkill> skills = fReq.getSkillIds().stream()
                     .map(skillId -> {
                         Skill skill = skillRepository.findById(skillId)
@@ -129,13 +125,12 @@ public class UserService {
                                 .skill(skill)
                                 .build();
                     })
-                    .collect(Collectors.toList());
+                    .toList();
 
             profile.updateSkills(skills);
             freelancerProfileRepository.save(profile);
         }
 
-        // [보고] 모든 DB 저장이 성공적으로 끝나면 권한이 승격된 토큰을 새로 발급
         String newToken = jwtTokenProvider.createToken(user.getId(), user.getEmail(), user.getRole().name());
         return new TokenResponse(newToken, "Bearer");
     }
@@ -146,10 +141,7 @@ public class UserService {
         return new UserInfoResponse(user);
     }
 
-    /**
-     * [Cloudinary] 프로필 이미지 URL을 DB에 반영합니다.
-     * ImageController에서 Cloudinary 업로드 완료 후 호출됩니다.
-     */
+    @CacheEvict(value = "users", key = "#email")
     @Transactional
     public void updateProfileImage(String email, String newImageUrl) {
         User user = userRepository.findByEmailForUpdate(email)
@@ -158,6 +150,5 @@ public class UserService {
             throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
         }
         user.updateProfileImageUrl(newImageUrl);
-        // @Transactional + Dirty Checking으로 별도 save() 불필요
     }
 }

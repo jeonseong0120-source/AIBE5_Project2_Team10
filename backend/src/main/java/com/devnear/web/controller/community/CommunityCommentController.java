@@ -9,6 +9,7 @@ import com.devnear.web.domain.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +23,7 @@ public class CommunityCommentController {
 
     @PostMapping("/api/community/comments")
     public ResponseEntity<Long> create(@RequestBody CommunityCommentCreateRequest request,
-                                       @AuthenticationPrincipal User user) {
+                                       @LoginUser User user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -40,7 +41,7 @@ public class CommunityCommentController {
     @PutMapping("/api/community/comments/{commentId}")
     public ResponseEntity<CommunitySuccessResponse> update(@PathVariable Long commentId,
                                                            @RequestBody CommunityCommentUpdateRequest request,
-                                                           @AuthenticationPrincipal User user) {
+                                                           @LoginUser User user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -52,7 +53,7 @@ public class CommunityCommentController {
 
     @DeleteMapping("/api/community/comments/{commentId}")
     public ResponseEntity<CommunitySuccessResponse> delete(@PathVariable Long commentId,
-                                                           @AuthenticationPrincipal User user) {
+                                                           @LoginUser User user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

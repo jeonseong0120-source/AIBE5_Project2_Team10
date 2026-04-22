@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -50,7 +51,7 @@ public class ImageController {
                              "반환된 URL을 포트폴리오 등록/수정 API의 요청 바디에 사용하세요.")
     @PostMapping(value = "/portfolio", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImageUploadResponse.Single> uploadPortfolioImage(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @RequestPart("file") MultipartFile file) {
 
         requireAuthenticated(user);
@@ -72,7 +73,7 @@ public class ImageController {
                description = "이미지 여러 장(최대 10장)을 Cloudinary에 업로드하고 URL 목록을 반환합니다.")
     @PostMapping(value = "/portfolios/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImageUploadResponse.Multi> uploadPortfolioImages(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @RequestPart("files") List<MultipartFile> files) {
 
         requireAuthenticated(user);
@@ -99,7 +100,7 @@ public class ImageController {
                description = "프로필 이미지를 Cloudinary에 업로드하고 즉시 내 계정에 반영합니다.")
     @PostMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImageUploadResponse.Single> uploadProfileImage(
-            @AuthenticationPrincipal User user,
+            @LoginUser User user,
             @RequestPart("file") MultipartFile file) {
 
         requireAuthenticated(user);
