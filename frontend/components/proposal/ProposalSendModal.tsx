@@ -1,7 +1,6 @@
 'use client';
 
 import { XCircle, Briefcase, FileText, DollarSign, Clock, MessageSquare, Target, Send, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 type ProposalMode = 'PROJECT' | 'FORM';
 
@@ -104,6 +103,7 @@ export default function ProposalSendModal({
                     <button
                         type="button"
                         onClick={onClose}
+                        aria-label="닫기"
                         className="group relative flex h-9 w-9 items-center justify-center rounded-full bg-zinc-50 text-zinc-400 transition-all hover:bg-zinc-900 hover:text-white"
                     >
                         <XCircle size={20} />
