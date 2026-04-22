@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ChatInput from "./ChatInput";
 import ChatMessageBubble from "./ChatMessageBubble";
-import { ChatMessageResponse, ChatRoomResponse } from "../../types/chat";
+import type { ChatMessageResponse, ChatRoomResponse } from "../../types/chat";
 import { formatChatTime } from "../../app/lib/chatTime";
 
 interface ChatWindowProps {
@@ -12,7 +12,7 @@ interface ChatWindowProps {
     onClose: () => void;
     rooms: ChatRoomResponse[];
     selectedRoomId: number | null;
-    onSelectRoom: (roomId: number) => void;
+    onSelectRoom: (roomId: number) => void | Promise<void>;
     messages: ChatMessageResponse[];
     input: string;
     onChangeInput: (value: string) => void;

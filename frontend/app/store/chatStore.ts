@@ -22,6 +22,7 @@ export const useChatStore = create<ChatState>((set) => ({
     closeChat: () =>
         set({
             isOpen: false,
+            selectedRoomId: null,
         }),
 
     setRoom: (roomId) =>
