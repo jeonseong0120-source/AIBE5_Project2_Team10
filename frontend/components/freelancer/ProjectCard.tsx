@@ -172,4 +172,4 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
             </div>
         </motion.div>
     );
-}
+}
