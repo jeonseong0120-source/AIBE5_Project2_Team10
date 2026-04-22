@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/reviews")
+@RequestMapping(value = {"/api/reviews", "/api/v1/reviews"})
 @RequiredArgsConstructor
 public class ReviewController {
 
@@ -43,8 +43,13 @@ public class ReviewController {
     }
 
     @GetMapping("/freelancers/{freelancerId}")
-    public ResponseEntity<List<ReviewResponse>> findFreelancerReviews(@PathVariable Long freelancerId) {
-        return ResponseEntity.ok(reviewService.findFreelancerReviews(freelancerId));
+    public ResponseEntity<?> findFreelancerReviews(@PathVariable Long freelancerId) {
+        try {
+            return ResponseEntity.ok(reviewService.findFreelancerReviews(freelancerId));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error details: " + e.getMessage());
+        }
     }
 
     @GetMapping("/clients/{clientId}")
