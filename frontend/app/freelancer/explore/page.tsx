@@ -591,15 +591,7 @@ export default function FreelancerExplorePage() {
                 {/* 우측 공고 리스트 */}
                 <section className="flex-1">
                     <div className="flex justify-between items-center mb-8 border-b border-zinc-100 pb-8 relative z-20">
-                        <div>
-                            <div className="mb-2 flex items-center gap-2">
-                                <span className="h-1.5 w-1.5 rounded-full bg-[#7A4FFF] animate-pulse" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.35em] text-[#7A4FFF] font-mono italic">live database</span>
-                            </div>
-                            <h2 className="text-2xl font-black tracking-tight text-zinc-950 md:text-3xl uppercase font-mono">
-                                Total_Missions <span className="text-zinc-300 ml-1">/</span> <span className="text-[#7A4FFF] ml-1">{totalElements}</span>
-                            </h2>
-                        </div>
+                        <div /> {/* Left side empty */}
 
                         {/* 🎯 [개선] 커스텀 프리미엄 정렬 드롭다운 */}
                         <div className="relative group/sort">
