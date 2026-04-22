@@ -278,12 +278,18 @@ export default function MypageProfileTab({
                                 </div>
 
                                 <div className="space-y-3 md:col-span-2">
-                                    <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">소개글</label>
+                                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                                        <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">소개글</label>
+                                        <span className="text-[10px] font-mono text-zinc-400">
+                                            {(editProfileData.introduction?.length ?? 0)} / 4000
+                                        </span>
+                                    </div>
                                     <textarea
-                                        rows={4}
+                                        rows={8}
+                                        maxLength={4000}
                                         value={editProfileData.introduction}
                                         onChange={e => setEditProfileData({ ...editProfileData, introduction: e.target.value })}
-                                        className="w-full bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#7A4FFF] hover:border-[#7A4FFF]/50 text-sm font-medium shadow-sm transition-all resize-none focus:ring-4 focus:ring-[#7A4FFF]/10 leading-relaxed"
+                                        className="w-full min-h-[10rem] max-h-[24rem] overflow-y-auto resize-y bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#7A4FFF] hover:border-[#7A4FFF]/50 text-sm font-medium shadow-sm transition-all focus:ring-4 focus:ring-[#7A4FFF]/10 leading-relaxed"
                                         placeholder="자신의 강점을 어필해주세요."
                                     />
                                 </div>
