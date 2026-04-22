@@ -254,14 +254,17 @@ public class ProjectService {
      * 컨트롤러에서 프리랜서 탐색 등에만 이 값을 넣도록 스코프를 제한합니다.
      */
     @Transactional(readOnly = true)
-    public Page<ProjectResponse> searchProjects(String keyword, String location, String skill, Boolean online,
+    public Page<ProjectResponse> searchProjects(String keyword, String location, List<String> skills, Boolean online,
                                                 Boolean offline, Long excludeOwnerUserId, Pageable pageable) {
-        String safeKeyword = (keyword != null && keyword.trim().isEmpty()) ? null : keyword;
-        String safeLocation = (location != null && location.trim().isEmpty()) ? null : location;
-        String safeSkill = (skill != null && skill.trim().isEmpty()) ? null : skill;
+        ProjectSearchCond cond = new ProjectSearchCond();
+        cond.setKeyword(keyword);
+        cond.setLocation(location);
+        cond.setSkillNames(skills);
+        cond.setOnline(online);
+        cond.setOffline(offline);
+        cond.setExcludeOwnerUserId(excludeOwnerUserId);
 
-        return projectRepository.searchProjects(safeKeyword, safeLocation, safeSkill, online, offline,
-                        ProjectListingKind.MARKETPLACE, excludeOwnerUserId, pageable)
+        return projectRepository.search(cond, pageable)
                 .map(ProjectResponse::from);
     }
 

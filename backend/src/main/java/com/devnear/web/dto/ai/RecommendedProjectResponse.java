@@ -11,14 +11,18 @@ public record RecommendedProjectResponse(
         Long projectId,
         String projectName,
         double similarityScore,
-        Integer budget
+        Integer budget,
+        String companyName, // ✨ 추가
+        String logoUrl // ✨ 추가
 ) {
     public static RecommendedProjectResponse of(Project project, double similarityScore) {
         return new RecommendedProjectResponse(
                 project.getId(),
                 project.getProjectName(),
                 similarityScore,
-                project.getBudget()
+                project.getBudget(),
+                project.getClientProfile().getCompanyName(), // ✨ 매핑
+                project.getClientProfile().getLogoUrl() // ✨ 매핑
         );
     }
 }

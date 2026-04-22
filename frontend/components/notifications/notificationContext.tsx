@@ -82,6 +82,7 @@ export type NotificationsContextValue = {
     panelRef: RefObject<HTMLDivElement | null>;
     onRowClick: (n: InboxNotification) => Promise<void>;
     onDismissClick: (n: InboxNotification) => Promise<void>;
+    setToast: Dispatch<SetStateAction<string | null>>;
 };
 
 const NotificationsContext = createContext<NotificationsContextValue | null>(null);
@@ -330,8 +331,9 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
             panelRef,
             onRowClick,
             onDismissClick,
+            setToast,
         }),
-        [showBell, open, unreadCount, items, loading, onRowClick, onDismissClick],
+        [showBell, open, unreadCount, items, loading, onRowClick, onDismissClick, setToast],
     );
 
     return (
