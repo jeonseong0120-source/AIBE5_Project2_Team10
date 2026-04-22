@@ -58,6 +58,17 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
         void loadInbox();
         }, [loadPrefs, loadInbox]);
 
+
+        const extractErrorMessage = (err: unknown, fallback: string) => {
+            if (isAxiosError(err)) {
+                const data = err.response?.data as { message?: string } | undefined;
+                if (data?.message && typeof data.message === "string") {
+                    return data.message;
+                }
+            }
+            return fallback;
+        };
+
     const [savingPref, setSavingPref] = useState(false);
     const toggleCommunity = async () => {
         if (savingPref) return;
@@ -68,9 +79,9 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
             await api.patch("/v1/users/me/notification-preferences", {
                 notifyCommunityComments: next,
             });
-        } catch {
+        } catch (err) {
             setCommunityOn(!next);
-            setToast("설정 저장에 실패했습니다.");
+            setToast(extractErrorMessage(err, "설정 저장에 실패했습니다."));
         } finally {
             setSavingPref(false);
         }
@@ -145,7 +156,7 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
                         type="button"
                         disabled={prefsLoading}
                         onClick={() => void toggleCommunity()}
-                        className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${
+                        className={`relative h-8 w-14 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                             communityOn ? "" : "bg-zinc-200"
                         }`}
                         style={communityOn ? { backgroundColor: accentColor } : undefined}
