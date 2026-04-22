@@ -6,10 +6,18 @@ import SkillTagSelector from "@/components/project/SkillTagSelector";
 import { MAX_PROJECT_SKILLS } from "@/app/lib/skillLimits";
 import api from "@/app/lib/axios";
 import { useRouter } from "next/navigation";
-import { DollarSign, Calendar, MapPin, ArrowLeft, Type, Activity, List } from "lucide-react";
+import { DollarSign, Calendar, MapPin, ArrowLeft, Type, Activity, List, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-export default function ProjectEditForm({ projectId, initialData }: any) {
+interface ProjectEditFormProps {
+    projectId: string | number;
+    initialData: any;
+    embedded?: boolean;
+    onClose?: () => void;
+    onSaved?: () => void;
+}
+
+export default function ProjectEditForm({ projectId, initialData, embedded = false, onClose, onSaved }: ProjectEditFormProps) {
     const router = useRouter();
 
     const [projectName, setProjectName] = useState(initialData.projectName || "");
@@ -125,8 +133,12 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
 
             // 🔍 [Fix] 리뷰 반영: baseURL(/api) 중복 방지를 위해 경로 수정
             await api.put(`/projects/${projectId}`, payload);
-            alert("✅ 프로젝트 수정이 완료되었습니다.");
-            router.push("/client/dashboard");
+            if (embedded) {
+                onSaved?.();
+            } else {
+                alert("✅ 프로젝트 수정이 완료되었습니다.");
+                router.push("/client/dashboard");
+            }
         } catch (err: any) {
             console.error(err);
             alert(`❌ 수정 실패: ${err.response?.data?.message || "서버 오류"}`);
@@ -136,15 +148,15 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
     };
 
     return (
-        <div className="min-h-screen bg-zinc-50 relative overflow-hidden font-sans pb-20">
+        <div className={`${embedded ? "relative" : "min-h-screen bg-zinc-50 relative overflow-hidden font-sans pb-20"}`}>
             {/* 커서 글로우 */}
-            <div
+            {!embedded && <div
                 className="pointer-events-none fixed left-0 top-0 z-0 h-[400px] w-[400px] rounded-full bg-[#FF7D00]/10 blur-[120px] will-change-transform"
                 style={{ transform: `translate(${cursor.x - 200}px, ${cursor.y - 200}px)` }}
-            />
+            />}
 
             {/* 헤더 섹션 */}
-            <section className="relative pt-16 pb-12 px-8 bg-white border-b border-zinc-200 overflow-hidden mb-10">
+            {!embedded && <section className="relative pt-16 pb-12 px-8 bg-white border-b border-zinc-200 overflow-hidden mb-10">
                 <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
                 <div className="max-w-xl mx-auto relative z-10">
                     <div className="flex items-center gap-4">
@@ -160,9 +172,22 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section>}
 
             <form onSubmit={handleSubmit} className="mx-auto max-w-xl bg-white p-10 rounded-[2.5rem] shadow-xl border border-zinc-100 space-y-8 relative z-10">
+                {embedded && (
+                    <div className="flex items-center justify-between mb-2">
+                        <h2 className="text-2xl font-black tracking-tight">프로젝트 수정</h2>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="p-2 rounded-full bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors"
+                            aria-label="Close modal"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+                )}
                 <div className="space-y-6">
                     {/* 프로젝트명 */}
                     <div className="space-y-2">
@@ -236,12 +261,33 @@ export default function ProjectEditForm({ projectId, initialData }: any) {
                     </div>
                 </div>
 
-                <button type="submit" disabled={submitting || isSkillsLoading}
-                        className="w-full py-5 bg-zinc-950 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all shadow-xl disabled:bg-zinc-200 active:scale-[0.98]">
-                    {isSkillsLoading ? "Syncing..." :
-                        (!mappingSucceeded && selectedSkillIds.length === 0) ? "Please select Tech Stack" :
-                            submitting ? "Saving..." : "수정 완료하기"}
-                </button>
+                {embedded ? (
+                    <div className="flex gap-4 pt-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-black rounded-xl text-sm transition-colors"
+                        >
+                            취소
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={submitting || isSkillsLoading}
+                            className="flex-1 py-4 bg-zinc-950 text-white rounded-xl font-black text-sm hover:bg-[#FF7D00] transition-all disabled:bg-zinc-200"
+                        >
+                            {isSkillsLoading ? "Syncing..." :
+                                (!mappingSucceeded && selectedSkillIds.length === 0) ? "Please select Tech Stack" :
+                                    submitting ? "Saving..." : "프로젝트 수정하기"}
+                        </button>
+                    </div>
+                ) : (
+                    <button type="submit" disabled={submitting || isSkillsLoading}
+                            className="w-full py-5 bg-zinc-950 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all shadow-xl disabled:bg-zinc-200 active:scale-[0.98]">
+                        {isSkillsLoading ? "Syncing..." :
+                            (!mappingSucceeded && selectedSkillIds.length === 0) ? "Please select Tech Stack" :
+                                submitting ? "Saving..." : "수정 완료하기"}
+                    </button>
+                )}
             </form>
         </div>
     );
