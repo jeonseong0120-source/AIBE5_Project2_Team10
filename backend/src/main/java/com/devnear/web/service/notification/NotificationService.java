@@ -31,25 +31,32 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
 
+    /**
+     * [수정] User 엔티티 대신 userId(Long)를 직접 받도록 변경
+     */
     @Transactional(readOnly = true)
-    public NotificationInboxResponse getInbox(User user, Pageable pageable) {
-        return getInbox(user, pageable, false);
+    public NotificationInboxResponse getInbox(Long userId, Pageable pageable) {
+        return getInbox(userId, pageable, false);
     }
 
     @Transactional(readOnly = true)
-    public NotificationInboxResponse getInbox(User user, Pageable pageable, boolean unreadOnly) {
-        long unread = notificationRepository.countUnreadByUserId(user.getId());
+    public NotificationInboxResponse getInbox(Long userId, Pageable pageable, boolean unreadOnly) {
+        long unread = notificationRepository.countUnreadByUserId(userId);
         Page<Notification> page = unreadOnly
-                ? notificationRepository.findByUser_IdAndReadIsFalseOrderByCreatedAtDesc(user.getId(), pageable)
-                : notificationRepository.findByUser_IdOrderByCreatedAtDesc(user.getId(), pageable);
+                ? notificationRepository.findByUser_IdAndReadIsFalseOrderByCreatedAtDesc(userId, pageable)
+                : notificationRepository.findByUser_IdOrderByCreatedAtDesc(userId, pageable);
         return NotificationInboxResponse.of(unread, page.map(NotificationResponse::fromEntity));
     }
 
+    /**
+     * [수정] User 엔티티 대신 userId(Long)를 직접 받도록 변경
+     */
     @Transactional
-    public void markNotificationRead(User user, Long notificationId) {
+    public void markNotificationRead(Long userId, Long notificationId) {
         Notification notification = notificationRepository
-                .findByIdAndUser_Id(notificationId, user.getId())
+                .findByIdAndUser_Id(notificationId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("알림을 찾을 수 없습니다."));
+
         if (!notification.isRead()) {
             notification.markRead();
         }
@@ -69,8 +76,10 @@ public class NotificationService {
         Objects.requireNonNull(type, "알림 타입은 null일 수 없습니다.");
         Objects.requireNonNull(title, "알림 제목은 null일 수 없습니다.");
         Objects.requireNonNull(message, "알림 메시지는 null일 수 없습니다.");
+
         User targetUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("수신자를 찾을 수 없습니다."));
+
         String content = title + "\n" + message;
         String url = (urlOverride != null && !urlOverride.isBlank())
                 ? urlOverride
@@ -82,9 +91,11 @@ public class NotificationService {
                 .read(false)
                 .url(url)
                 .build());
+
         Instant at = saved.getCreatedAt() != null
                 ? saved.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()
                 : Instant.now();
+
         NotificationPayload payload = NotificationPayload.of(
                 saved.getId(),
                 type,
@@ -94,6 +105,7 @@ public class NotificationService {
                 saved.getUrl(),
                 at
         );
+
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {

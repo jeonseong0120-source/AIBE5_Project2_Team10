@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,7 @@ public class CommunityPostController {
 
     @PostMapping
     public ResponseEntity<Long> create(@RequestBody CommunityPostCreateRequest request,
-                                       @AuthenticationPrincipal User user) {
+                                       @LoginUser User user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -42,7 +43,7 @@ public class CommunityPostController {
 
     @GetMapping("/{postId}")
     public ResponseEntity<CommunityPostResponse> findById(@PathVariable Long postId,
-                                                          @AuthenticationPrincipal User user) {
+                                                          @LoginUser User user) {
         Long userId = (user != null) ? user.getId() : null;
         return ResponseEntity.ok(communityPostService.findById(postId, userId));
     }
@@ -50,7 +51,7 @@ public class CommunityPostController {
     @PutMapping("/{postId}")
     public ResponseEntity<CommunitySuccessResponse> update(@PathVariable Long postId,
                                                            @RequestBody CommunityPostUpdateRequest request,
-                                                           @AuthenticationPrincipal User user) {
+                                                           @LoginUser User user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -62,7 +63,7 @@ public class CommunityPostController {
 
     @DeleteMapping("/{postId}")
     public ResponseEntity<CommunitySuccessResponse> delete(@PathVariable Long postId,
-                                                           @AuthenticationPrincipal User user) {
+                                                           @LoginUser User user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -74,7 +75,7 @@ public class CommunityPostController {
 
     @PostMapping("/{postId}/like")
     public ResponseEntity<CommunityLikeResponse> like(@PathVariable Long postId,
-                                                      @AuthenticationPrincipal User user) {
+                                                      @LoginUser User user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -85,7 +86,7 @@ public class CommunityPostController {
 
     @DeleteMapping("/{postId}/like")
     public ResponseEntity<CommunityLikeResponse> cancelLike(@PathVariable Long postId,
-                                                            @AuthenticationPrincipal User user) {
+                                                            @LoginUser User user) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
