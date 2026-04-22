@@ -19,7 +19,6 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Objects;
 
 @Service
@@ -92,9 +91,7 @@ public class NotificationService {
                 .url(url)
                 .build());
 
-        Instant at = saved.getCreatedAt() != null
-                ? saved.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()
-                : Instant.now();
+        Instant at = saved.getCreatedAt() != null ? saved.getCreatedAt() : Instant.now();
 
         NotificationPayload payload = NotificationPayload.of(
                 saved.getId(),

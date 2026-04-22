@@ -565,7 +565,7 @@ export default function ClientDashboardPage() {
                                                                     projectApplicants.map((app: any) => (
                                                                         <div key={app.applicationId} className={`p-8 bg-zinc-50 rounded-[2rem] border transition-all hover:bg-white hover:shadow-xl ${app.status === 'ACCEPTED' ? 'border-[#FF7D00] bg-orange-50/30' : 'border-zinc-100'}`}>
                                                                             <div className="flex items-center gap-6 mb-8">
-                                                                                <div className="w-16 h-16 rounded-2xl bg-white border border-zinc-200 overflow-hidden cursor-pointer shadow-sm" onClick={() => router.push(`/freelancer/${app.freelancerId}`)}>{app.freelancerProfileImageUrl ? <img src={app.freelancerProfileImageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-300"><User size={28} /></div>}</div>
+                                                                                <div className="w-16 h-16 rounded-2xl bg-white border border-zinc-200 overflow-hidden cursor-pointer shadow-sm" onClick={() => router.push(`/client/freelancers/${app.freelancerId}`)}>{app.freelancerProfileImageUrl ? <img src={app.freelancerProfileImageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-300"><User size={28} /></div>}</div>
                                                                                 <div className="flex-1">
                                                                                     <div className="flex items-center gap-3 mb-1">
                                                                                         <h4 className="font-black text-xl text-zinc-900">{app.freelancerNickname}</h4>
@@ -633,7 +633,7 @@ export default function ClientDashboardPage() {
                                 {bookmarks.map((freelancer, idx) => (
                                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} key={freelancer.profileId} className="group bg-white p-10 rounded-[3rem] border border-zinc-100 hover:border-[#FF7D00] hover:shadow-[0_20px_50px_rgba(255,125,0,0.15)] transition-all relative">
                                         <button onClick={() => handleRemoveBookmark(freelancer.profileId)} className="absolute top-8 right-8 p-3 bg-zinc-50 rounded-2xl text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 size={18} /></button>
-                                        <div className="flex flex-col items-center text-center mb-8 cursor-pointer" onClick={() => router.push(`/freelancer/${freelancer.profileId}`)}>
+                                        <div className="flex flex-col items-center text-center mb-8 cursor-pointer" onClick={() => router.push(`/client/freelancers/${freelancer.profileId}`)}>
                                             <div className="w-24 h-24 rounded-[2rem] bg-zinc-100 overflow-hidden border-4 border-white shadow-xl mb-6">{freelancer.profileImageUrl ? <img src={freelancer.profileImageUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-300 bg-zinc-50"><User size={40} /></div>}</div>
                                             <div className="flex items-center gap-2 mb-2"><h3 className="text-2xl font-black text-zinc-900 group-hover:text-[#FF7D00] transition-colors">{freelancer.userName}</h3><span className="px-2 py-0.5 bg-zinc-950 text-white text-[9px] font-black rounded font-mono uppercase">{freelancer.gradeName}</span></div>
                                             <div className="flex items-center gap-1.5 text-xs font-bold text-[#FF7D00] mb-4">
@@ -644,7 +644,7 @@ export default function ClientDashboardPage() {
                                             <p className="text-xs font-medium text-zinc-400 line-clamp-2 italic leading-relaxed">"{freelancer.introduction || "준비된 프리랜서입니다."}"</p>
                                         </div>
                                         <div className="space-y-2">
-                                            <button onClick={() => router.push(`/freelancer/${freelancer.profileId}`)} className="w-full py-4 bg-zinc-50 text-zinc-400 group-hover:bg-[#FF7D00] group-hover:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all font-mono">프로필 상세보기</button>
+                                            <button onClick={() => router.push(`/client/freelancers/${freelancer.profileId}`)} className="w-full py-4 bg-zinc-50 text-zinc-400 group-hover:bg-[#FF7D00] group-hover:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all font-mono">프로필 상세보기</button>
                                             <button onClick={() => openProposalModal(freelancer)} className="w-full py-4 bg-zinc-950 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#FF7D00] font-mono">제안 보내기</button>
                                         </div>
                                     </motion.div>

@@ -31,7 +31,7 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
             const { data } = await api.get<MeApi>("/v1/users/me");
             setCommunityOn(data.notifyCommunityComments !== false);
         } catch {
-            setCommunityOn(true);
+            setToast("알림 설정을 불러오지 못했습니다.");
         } finally {
             setPrefsLoading(false);
         }
