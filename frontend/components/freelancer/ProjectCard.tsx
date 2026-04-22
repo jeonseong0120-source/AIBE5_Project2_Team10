@@ -8,9 +8,10 @@ import { useState } from 'react';
 interface ProjectCardProps {
     data: any;
     index: number;
+    onOpenProject?: (projectId: number) => void;
 }
 
-export default function ProjectCard({ data, index }: ProjectCardProps) {
+export default function ProjectCard({ data, index, onOpenProject }: ProjectCardProps) {
     const router = useRouter();
     const [isBookmarked, setIsBookmarked] = useState(false);
 
@@ -38,7 +39,11 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
 
         const id = data.projectId || data.id;
         if (id) {
-            router.push(`/freelancer/projects/${id}`);
+            if (onOpenProject) {
+                onOpenProject(Number(id));
+            } else {
+                router.push(`/freelancer/projects/${id}`);
+            }
         }
     };
 

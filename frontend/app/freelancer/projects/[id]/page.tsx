@@ -23,6 +23,7 @@ import {
     MessageCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import GlobalNavbar, { type UserData, type ProfileData } from '@/components/common/GlobalNavbar';
 
 interface ProjectDetail {
     projectId: number;
@@ -63,6 +64,8 @@ export default function ProjectDetailPage() {
     const [message, setMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [chatLoading, setChatLoading] = useState(false);
+    const [user, setUser] = useState<UserData | null>(null);
+    const [profile, setProfile] = useState<ProfileData | null>(null);
 
     useEffect(() => {
         const fetchProjectDetail = async () => {
@@ -103,6 +106,27 @@ export default function ProjectDetailPage() {
 
         fetchProjectDetail();
     }, [id]);
+
+    useEffect(() => {
+        const fetchNavbarData = async () => {
+            try {
+                const meRes = await api.get('/v1/users/me');
+                const role = meRes.data.role?.replace('ROLE_', '') || 'FREELANCER';
+                setUser({ ...meRes.data, role: role as UserData['role'] });
+            } catch {
+                setUser(null);
+            }
+
+            try {
+                const profileRes = await api.get('/v1/freelancers/me');
+                setProfile(profileRes.data);
+            } catch {
+                setProfile(null);
+            }
+        };
+
+        void fetchNavbarData();
+    }, []);
 
     const handleBookmarkToggle = async () => {
         if (!project) return;
@@ -186,26 +210,32 @@ export default function ProjectDetailPage() {
 
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#7A4FFF] font-black text-xl animate-pulse font-mono uppercase">
-                Loading_Project...
+            <div className="min-h-screen bg-zinc-950">
+                <GlobalNavbar user={user} profile={profile} />
+                <div className="flex min-h-[calc(100vh-6rem)] items-center justify-center text-[#7A4FFF] font-black text-xl animate-pulse font-mono uppercase">
+                    Loading_Project...
+                </div>
             </div>
         );
     }
 
     if (error || !project) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-                <div className="text-center p-12 bg-white rounded-[3rem] shadow-2xl border border-zinc-100">
-                    <XCircle size={60} className="text-red-400 mx-auto mb-6" />
-                    <p className="text-zinc-900 text-2xl font-black mb-6 tracking-tighter">
-                        {error || '프로젝트를 찾을 수 없습니다.'}
-                    </p>
-                    <button
-                        onClick={() => router.back()}
-                        className="px-8 py-4 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#7A4FFF] transition-all"
-                    >
-                        목록으로 돌아가기
-                    </button>
+            <div className="min-h-screen bg-zinc-50">
+                <GlobalNavbar user={user} profile={profile} />
+                <div className="min-h-[calc(100vh-6rem)] flex items-center justify-center">
+                    <div className="text-center p-12 bg-white rounded-[3rem] shadow-2xl border border-zinc-100">
+                        <XCircle size={60} className="text-red-400 mx-auto mb-6" />
+                        <p className="text-zinc-900 text-2xl font-black mb-6 tracking-tighter">
+                            {error || '프로젝트를 찾을 수 없습니다.'}
+                        </p>
+                        <button
+                            onClick={() => router.back()}
+                            className="px-8 py-4 bg-zinc-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#7A4FFF] transition-all"
+                        >
+                            목록으로 돌아가기
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -216,6 +246,7 @@ export default function ProjectDetailPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 text-zinc-900 pb-32 relative overflow-x-hidden font-sans">
+            <GlobalNavbar user={user} profile={profile} />
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div
                     className="absolute inset-0 opacity-[0.05]"
@@ -227,7 +258,7 @@ export default function ProjectDetailPage() {
                 />
             </div>
 
-            <nav className="sticky top-0 z-50 max-w-6xl mx-auto py-6 px-8 flex items-center justify-between bg-zinc-50/85 backdrop-blur-md border-b border-zinc-200/70">
+            <nav className="sticky top-24 z-40 max-w-6xl mx-auto py-6 px-8 flex items-center justify-between bg-zinc-50/85 backdrop-blur-md">
                 <button
                     onClick={() => router.back()}
                     className="group flex items-center gap-3 text-zinc-400 hover:text-zinc-950 transition-all font-black text-xs uppercase tracking-widest font-mono"
