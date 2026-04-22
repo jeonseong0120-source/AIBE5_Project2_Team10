@@ -153,6 +153,7 @@ export default function ProjectDetailPage() {
             null;
 
         const currentUserId = getCurrentUserId();
+
         if (currentUserId !== null && targetUserId === currentUserId) {
             alert('본인에게는 문의할 수 없습니다.');
             return;
@@ -166,7 +167,12 @@ export default function ProjectDetailPage() {
 
         try {
             setChatLoading(true);
-            const response = await createOrGetChatRoom(targetUserId);
+
+            const response = await createOrGetChatRoom(
+                targetUserId,
+                project.projectId // 🔥 핵심 추가
+            );
+
             openChat(response.roomId);
         } catch (error) {
             console.error('채팅방 생성/조회 실패:', error);

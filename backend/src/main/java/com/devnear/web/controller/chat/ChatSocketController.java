@@ -1,8 +1,11 @@
 package com.devnear.web.controller.chat;
 
+import com.devnear.global.auth.SecurityUser;
 import com.devnear.web.domain.user.User;
+import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.chat.ChatMessageResponse;
 import com.devnear.web.dto.chat.ChatMessageSendRequest;
+import com.devnear.web.exception.ResourceNotFoundException;
 import com.devnear.web.service.chat.ChatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,20 +21,36 @@ public class ChatSocketController {
 
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository userRepository;
 
     @MessageMapping("/chat/send")
     public void sendMessage(@Valid @Payload ChatMessageSendRequest request, Authentication authentication) {
-        if (authentication == null) {
-            throw new IllegalArgumentException("웹소켓 인증 정보가 없습니다.");
+        System.out.println("소켓 메시지 도착: roomId=" + request.getRoomId() + ", content=" + request.getContent());
+        System.out.println("authentication=" + authentication);
+
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new IllegalStateException("소켓 인증 정보가 없습니다.");
         }
 
         Object principal = authentication.getPrincipal();
+        System.out.println("principal=" + principal);
 
-        if (!(principal instanceof User user)) {
-            throw new IllegalArgumentException("principal 타입이 User가 아닙니다: " + principal.getClass().getName());
+        Long userId;
+
+        if (principal instanceof SecurityUser securityUser) {
+            userId = securityUser.getId();
+        } else if (principal instanceof User domainUser) {
+            userId = domainUser.getId();
+        } else {
+            throw new IllegalStateException("지원하지 않는 인증 principal 타입입니다: " + principal.getClass().getName());
         }
 
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다. id=" + userId));
+
         ChatMessageResponse response = chatService.saveMessage(user, request);
+
+        System.out.println("DB 저장 완료: messageId=" + response.getMessageId());
 
         messagingTemplate.convertAndSend(
                 "/sub/chat/rooms/" + request.getRoomId(),

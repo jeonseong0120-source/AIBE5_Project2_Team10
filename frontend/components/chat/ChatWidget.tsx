@@ -16,9 +16,9 @@ import {
 } from "../../app/lib/chatSocket";
 import { getCurrentUserId } from "../../app/lib/auth";
 import { useChatStore } from "../../app/store/chatStore";
-import type { ChatMessageResponse, ChatRoomResponse } from "../../types/chat";
+import type { ChatMessageResponse, ChatRoomListResponse } from "../../types/chat";
 
-function sortRoomsByLatest(roomList: ChatRoomResponse[]) {
+function sortRoomsByLatest(roomList: ChatRoomListResponse[]) {
     return [...roomList].sort((a, b) => {
         const aTime = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
         const bTime = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
@@ -26,20 +26,9 @@ function sortRoomsByLatest(roomList: ChatRoomResponse[]) {
     });
 }
 
-function safeUnsubscribe(subscription: unknown) {
-    if (
-        subscription &&
-        typeof subscription === "object" &&
-        "unsubscribe" in subscription &&
-        typeof (subscription as { unsubscribe: unknown }).unsubscribe === "function"
-    ) {
-        (subscription as { unsubscribe: () => void }).unsubscribe();
-    }
-}
-
 export default function ChatWidget() {
     const [input, setInput] = useState("");
-    const [rooms, setRooms] = useState<ChatRoomResponse[]>([]);
+    const [rooms, setRooms] = useState<ChatRoomListResponse[]>([]);
     const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
@@ -50,11 +39,14 @@ export default function ChatWidget() {
     const { isOpen, selectedRoomId, openChat, closeChat, setRoom } = useChatStore();
 
     const selectedRoomIdRef = useRef<number | null>(null);
+    const currentUserIdRef = useRef<number | null>(null);
     const latestMessageReqId = useRef(0);
     const subscriptionRef = useRef<StompSubscription | null>(null);
 
     useEffect(() => {
-        setCurrentUserId(getCurrentUserId());
+        const userId = getCurrentUserId();
+        setCurrentUserId(userId);
+        currentUserIdRef.current = userId;
     }, []);
 
     useEffect(() => {
@@ -94,11 +86,12 @@ export default function ChatWidget() {
 
         try {
             setLoadingMessages(true);
-            const messageData = await getChatMessages(roomId);
 
+            const messageData = await getChatMessages(roomId);
             if (requestId !== latestMessageReqId.current) return;
 
             setMessages(messageData);
+
             await markChatAsRead(roomId);
 
             setRooms((prev) =>
@@ -129,7 +122,7 @@ export default function ChatWidget() {
         connectChatSocket();
 
         return () => {
-            safeUnsubscribe(subscriptionRef.current);
+            subscriptionRef.current?.unsubscribe();
             subscriptionRef.current = null;
             disconnectChatSocket();
         };
@@ -139,21 +132,28 @@ export default function ChatWidget() {
         if (!isOpen || !selectedRoomId) return;
 
         const subscribe = () => {
-            safeUnsubscribe(subscriptionRef.current);
+            subscriptionRef.current?.unsubscribe();
 
             subscriptionRef.current = subscribeChatRoom(selectedRoomId, async (frame) => {
                 try {
                     const newMessage: ChatMessageResponse = JSON.parse(frame.body);
                     const isCurrentRoom = selectedRoomIdRef.current === newMessage.roomId;
+                    const isMyMessage =
+                        currentUserIdRef.current !== null &&
+                        newMessage.senderId === currentUserIdRef.current;
 
                     if (isCurrentRoom) {
                         setMessages((prev) => {
-                            const exists = prev.some((msg) => msg.id === newMessage.id);
+                            const exists = prev.some(
+                                (msg) => msg.messageId === newMessage.messageId
+                            );
                             if (exists) return prev;
                             return [...prev, newMessage];
                         });
 
-                        await markChatAsRead(newMessage.roomId);
+                        if (!isMyMessage) {
+                            await markChatAsRead(newMessage.roomId);
+                        }
                     }
 
                     setRooms((prev) => {
@@ -162,7 +162,7 @@ export default function ChatWidget() {
 
                             return {
                                 ...room,
-                                lastMessage: newMessage.message,
+                                lastMessage: newMessage.content,
                                 lastMessageTime: newMessage.createdAt,
                                 unreadCount: isCurrentRoom ? 0 : room.unreadCount + 1,
                             };
@@ -180,7 +180,7 @@ export default function ChatWidget() {
 
         return () => {
             clearTimeout(timer);
-            safeUnsubscribe(subscriptionRef.current);
+            subscriptionRef.current?.unsubscribe();
             subscriptionRef.current = null;
         };
     }, [isOpen, selectedRoomId]);
@@ -194,21 +194,16 @@ export default function ChatWidget() {
         }
     };
 
-    const handleSelectRoom = async (roomId: number) => {
+    const handleSelectRoom = (roomId: number) => {
         setRoom(roomId);
         setInput("");
         setMessages([]);
 
-        try {
-            await markChatAsRead(roomId);
-            setRooms((prev) =>
-                prev.map((room) =>
-                    room.roomId === roomId ? { ...room, unreadCount: 0 } : room
-                )
-            );
-        } catch (error) {
-            console.error("읽음 처리 실패", error);
-        }
+        setRooms((prev) =>
+            prev.map((room) =>
+                room.roomId === roomId ? { ...room, unreadCount: 0 } : room
+            )
+        );
     };
 
     const handleSend = async () => {

@@ -1,7 +1,6 @@
 package com.devnear.web.dto.project;
 
 import com.devnear.web.domain.project.Project;
-import com.devnear.web.domain.project.ProjectSkill;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -24,14 +23,16 @@ public class ProjectResponse {
     private String location;
     private Double latitude;
     private Double longitude;
-    private String logoUrl; // ✨ 클라이언트 로고 URL 추가
+    private String logoUrl; // 클라이언트 로고 URL
     private List<String> skills; // 연결된 기술 스택 이름 목록
+
+    private Long clientUserId; // 채팅 상대(클라이언트) userId 추가
 
     public static ProjectResponse from(Project project) {
         return ProjectResponse.builder()
                 .projectId(project.getId())
                 .companyName(project.getClientProfile().getCompanyName())
-                .logoUrl(project.getClientProfile().getLogoUrl()) // ✨ 매핑 추가
+                .logoUrl(project.getClientProfile().getLogoUrl())
                 .projectName(project.getProjectName())
                 .budget(project.getBudget())
                 .deadline(project.getDeadline())
@@ -45,6 +46,7 @@ public class ProjectResponse {
                 .skills(project.getProjectSkills().stream()
                         .map(ps -> ps.getSkill().getName())
                         .collect(Collectors.toList()))
+                .clientUserId(project.getClientProfile().getUser().getId())
                 .build();
     }
 }

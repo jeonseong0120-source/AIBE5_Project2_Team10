@@ -18,13 +18,19 @@ import com.devnear.web.exception.ChatAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import com.devnear.web.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
@@ -39,35 +45,40 @@ public class ChatService {
     private final NotificationService notificationService;
     private final ApplicationEventPublisher eventPublisher;
 
-    // 채팅방 생성
+    /**
+     * 프로젝트 상세의 "문의하기" 버튼용 채팅방 생성/조회
+     * - 문의 대상은 반드시 해당 프로젝트의 클라이언트여야 함
+     * - 클라이언트 본인이 자기 프로젝트에 문의하는 것은 금지
+     */
     @Transactional
     public ChatRoomResponse createRoom(User me, ChatRoomCreateRequest request) {
-
-        // 자기 자신과 채팅방 만드는 건 막기
         if (me.getId().equals(request.getTargetUserId())) {
             throw new IllegalArgumentException("자기 자신과는 채팅방을 만들 수 없습니다.");
         }
 
-        // 상대 유저 조회
         User target = userRepository.findById(request.getTargetUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("대상 유저를 찾을 수 없습니다."));
 
-        // 프로젝트 조회
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("프로젝트를 찾을 수 없습니다."));
 
-        // 프로젝트 참여자 여부 검사: me와 target 모두 프로젝트의 클라이언트 또는 프리랜서여야 함
-        boolean meIsParticipant = (project.getClientProfile() != null && project.getClientProfile().getUser().getId().equals(me.getId()))
-                || (project.getFreelancerProfile() != null && project.getFreelancerProfile().getUser().getId().equals(me.getId()));
-        boolean targetIsParticipant = (project.getClientProfile() != null && project.getClientProfile().getUser().getId().equals(target.getId()))
-                || (project.getFreelancerProfile() != null && project.getFreelancerProfile().getUser().getId().equals(target.getId()));
+        if (project.getClientProfile() == null || project.getClientProfile().getUser() == null) {
+            throw new ResourceNotFoundException("프로젝트의 클라이언트 정보를 찾을 수 없습니다.");
+        }
 
-        if (!meIsParticipant || !targetIsParticipant) {
-            throw new ChatAccessDeniedException("프로젝트 참여자만 채팅을 생성할 수 있습니다.");
+        Long clientUserId = project.getClientProfile().getUser().getId();
+
+        if (!target.getId().equals(clientUserId)) {
+            throw new ChatAccessDeniedException("해당 프로젝트의 클라이언트에게만 문의할 수 있습니다.");
+        }
+
+        if (me.getId().equals(clientUserId)) {
+            throw new ChatAccessDeniedException("클라이언트 본인은 본인 프로젝트에 문의할 수 없습니다.");
         }
 
         AtomicBoolean createdNew = new AtomicBoolean(false);
         ChatRoom room = resolveOrCreateChatRoom(project, me, target, createdNew);
+
         if (createdNew.get()) {
             notificationService.notifyUser(
                     target.getId(),
@@ -77,6 +88,7 @@ public class ChatService {
                     room.getId()
             );
         }
+
         return ChatRoomResponse.from(room, me);
     }
 
@@ -95,8 +107,7 @@ public class ChatService {
     }
 
     /**
-     * {@link #resolveOrCreateChatRoomForClientAndFreelancer(Project, User, User)} 와 동일하되,
-     * 호출자(actingUser) 기준 {@link ChatRoomResponse} 로 반환합니다.
+     * 위 메서드와 동일하되, 호출자 기준 ChatRoomResponse로 반환합니다.
      */
     @Transactional
     public ChatRoomResponse getOrCreateRoomForProjectClientAndFreelancer(
@@ -106,10 +117,13 @@ public class ChatService {
             User freelancerUser
     ) {
         validateProjectClientAndPair(project, clientUser, freelancerUser);
+
         AtomicBoolean createdNew = new AtomicBoolean(false);
         ChatRoom room = resolveOrCreateChatRoom(project, clientUser, freelancerUser, createdNew);
+
         if (createdNew.get()) {
             User recipient = actingUser.getId().equals(clientUser.getId()) ? freelancerUser : clientUser;
+
             notificationService.notifyUser(
                     recipient.getId(),
                     NotificationType.CHAT_ROOM_CREATED,
@@ -118,6 +132,7 @@ public class ChatService {
                     room.getId()
             );
         }
+
         return ChatRoomResponse.from(room, actingUser);
     }
 
@@ -125,9 +140,11 @@ public class ChatService {
         if (project.getClientProfile() == null) {
             throw new ResourceNotFoundException("프로젝트에 클라이언트 정보가 없습니다.");
         }
+
         if (!project.getClientProfile().getUser().getId().equals(clientUser.getId())) {
             throw new ChatAccessDeniedException("해당 프로젝트의 클라이언트만 이 채팅방에 참여할 수 있습니다.");
         }
+
         if (clientUser.getId().equals(freelancerUser.getId())) {
             throw new IllegalArgumentException("동일한 사용자 간에는 채팅방을 만들 수 없습니다.");
         }
@@ -135,8 +152,6 @@ public class ChatService {
 
     /**
      * 시스템 안내 메시지를 저장하고, 구독 중인 클라이언트에 웹소켓으로 전달합니다.
-     *
-     * @param technicalSender 감사 추적용 발신자(프론트에서는 {@code systemMessage}로 구분 표시)
      */
     @Transactional
     public ChatMessageResponse saveSystemMessageAndBroadcast(ChatRoom room, User technicalSender, String content) {
@@ -179,6 +194,7 @@ public class ChatService {
                                 .user2(second)
                                 .build()
                 );
+
                 if (createdFlag != null) {
                     createdFlag.set(true);
                 }
@@ -187,10 +203,10 @@ public class ChatService {
                         .orElseThrow(() -> e);
             }
         }
+
         return room;
     }
 
-    // 내 채팅방 목록 조회
     public List<ChatRoomListResponse> getMyRooms(User me) {
         List<ChatRoom> rooms = chatRoomRepository.findAllByUser1OrUser2OrderByUpdatedAtDesc(me, me);
 
@@ -198,36 +214,34 @@ public class ChatService {
             return List.of();
         }
 
-        // 채팅방 id 목록
-        List<Long> roomIds = rooms.stream().map(ChatRoom::getId).toList();
+        List<Long> roomIds = rooms.stream()
+                .map(ChatRoom::getId)
+                .toList();
 
-        // Bulk 조회: 마지막 메시지들
         List<ChatMessage> lastMessages = chatMessageRepository.findLastMessagesForChatRooms(roomIds);
-        // Map roomId -> ChatMessage
-        java.util.Map<Long, ChatMessage> lastMessageMap = new java.util.HashMap<>();
-        for (ChatMessage m : lastMessages) {
-            if (m.getChatRoom() != null && m.getChatRoom().getId() != null) {
-                lastMessageMap.put(m.getChatRoom().getId(), m);
+        Map<Long, ChatMessage> lastMessageMap = new HashMap<>();
+
+        for (ChatMessage message : lastMessages) {
+            if (message.getChatRoom() != null && message.getChatRoom().getId() != null) {
+                lastMessageMap.put(message.getChatRoom().getId(), message);
             }
         }
 
-        // Bulk 조회: 읽지 않은 개수
         List<Object[]> unreadCounts = chatMessageRepository.countUnreadByChatRoomIn(roomIds, me.getId());
-        java.util.Map<Long, Long> unreadCountMap = new java.util.HashMap<>();
+        Map<Long, Long> unreadCountMap = new HashMap<>();
+
         for (Object[] row : unreadCounts) {
             Number roomIdNum = (Number) row[0];
-            Number cntNum = (Number) row[1];
-            unreadCountMap.put(roomIdNum.longValue(), cntNum.longValue());
+            Number countNum = (Number) row[1];
+            unreadCountMap.put(roomIdNum.longValue(), countNum.longValue());
         }
 
         return rooms.stream()
                 .map(room -> {
                     ChatMessage lastMessage = lastMessageMap.get(room.getId());
                     long unreadCount = unreadCountMap.getOrDefault(room.getId(), 0L);
-
                     return ChatRoomListResponse.of(room, me, lastMessage, unreadCount);
                 })
-                // 마지막 메시지 시간이 최신인 순서대로 정렬
                 .sorted(Comparator.comparing(
                         ChatRoomListResponse::getLastMessageAt,
                         Comparator.nullsLast(Comparator.reverseOrder())
@@ -235,45 +249,40 @@ public class ChatService {
                 .toList();
     }
 
-    // 특정 채팅방의 메시지 전체 조회
     public List<ChatMessageResponse> getMessages(User me, Long roomId, int page, int size) {
         ChatRoom room = getValidatedRoom(me, roomId);
 
-        // 페이지 요청: 생성일 기준 오름차순 (오래된 메시지부터)
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
-                org.springframework.data.domain.Sort.by("createdAt").ascending());
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("createdAt").ascending()
+        );
 
-        org.springframework.data.domain.Page<ChatMessage> messages = chatMessageRepository.findByChatRoomOrderByCreatedAtAsc(room, pageable);
+        Page<ChatMessage> messages = chatMessageRepository.findByChatRoomOrderByCreatedAtAsc(room, pageable);
 
         return messages.getContent().stream()
                 .map(ChatMessageResponse::from)
                 .toList();
     }
 
-    // 읽음 처리
     @Transactional
     public void markAsRead(User me, Long roomId) {
         ChatRoom room = getValidatedRoom(me, roomId);
 
-        // 내가 받은 메시지 중 아직 안 읽은 메시지만 조회
         List<ChatMessage> unreadMessages =
                 chatMessageRepository.findByChatRoomAndSenderNotAndIsReadFalse(room, me);
 
-        // 모두 읽음 처리
         unreadMessages.forEach(ChatMessage::markAsRead);
     }
 
-    // 메시지 저장
     @Transactional
     public ChatMessageResponse saveMessage(User me, ChatMessageSendRequest request) {
         ChatRoom room = getValidatedRoom(me, request.getRoomId());
 
-        // 공백 메시지 방지
         if (request.getContent() == null || request.getContent().trim().isEmpty()) {
             throw new IllegalArgumentException("메시지 내용은 비어 있을 수 없습니다.");
         }
 
-        // 메시지 저장
         ChatMessage message = chatMessageRepository.save(
                 ChatMessage.builder()
                         .chatRoom(room)
@@ -285,16 +294,11 @@ public class ChatService {
         return ChatMessageResponse.from(message);
     }
 
-    // 채팅방 존재 여부 + 참여 권한 검사
     private ChatRoom getValidatedRoom(User me, Long roomId) {
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("채팅방을 찾을 수 없습니다."));
 
-        // 해당 유저가 참여자가 아니라면 접근 금지
-        boolean isParticipant =
-                room.getUser1().getId().equals(me.getId()) ||
-                        room.getUser2().getId().equals(me.getId());
-        if (!isParticipant){
+        if (!room.isParticipant(me)) {
             throw new ChatAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
         }
 
