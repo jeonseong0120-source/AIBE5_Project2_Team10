@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -24,6 +26,8 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
 
     @Override
     public Page<Project> search(ProjectSearchCond cond, Pageable pageable) {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+
         List<Project> content = queryFactory
                 .selectFrom(project)
                 .leftJoin(project.clientProfile).fetchJoin()
@@ -37,6 +41,7 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                         isOffline(cond.getOffline()),
                         excludeOwner(cond.getExcludeOwnerUserId()),
                         project.status.eq(ProjectStatus.OPEN), // 탐색 페이지 노출 로직 (OPEN만 노출)
+                        isNotExpired(today),
                         marketplaceListingOnly()
                 )
                 .offset(pageable.getOffset())
@@ -57,6 +62,7 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                         isOffline(cond.getOffline()),
                         excludeOwner(cond.getExcludeOwnerUserId()),
                         project.status.eq(ProjectStatus.OPEN), // 탐색 페이지 노출 로직
+                        isNotExpired(today),
                         marketplaceListingOnly()
                 );
 
@@ -115,6 +121,10 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
 
     private BooleanExpression isOffline(Boolean offline) {
         return (offline != null && offline) ? project.offline.isTrue() : null;
+    }
+
+    private BooleanExpression isNotExpired(LocalDate today) {
+        return project.deadline.goe(today);
     }
 
     /** 제안서 단독 공고는 QueryDSL 검색에서 제외 (null = 레거시 마켓 공고) */
