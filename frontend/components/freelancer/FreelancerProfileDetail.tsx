@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // 🎯 아이콘들
 import { ChevronLeft, Briefcase, Grid3X3, Heart, ArrowUpRight, Star, MapPin, User } from 'lucide-react';
 import api from '@/app/lib/axios';
-import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
+import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile, ReviewResponse, ProjectHistoryDto } from '@/types/freelancer';
 import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
 import type { PortfolioDetailShape } from '@/components/portfolio/PortfolioDetailModal';
 import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } from '@/components/proposal/ProposalSendModal';
@@ -68,12 +68,12 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
 
     // --- 🎯 탭 및 리뷰 상태 ---
     const [activeTab, setActiveTab] = useState<'PORTFOLIO' | 'PROJECT' | 'REVIEW'>('PORTFOLIO');
-    const [reviews, setReviews] = useState<any[]>([]);
+    const [reviews, setReviews] = useState<ReviewResponse[]>([]);
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const [reviewsFetchDone, setReviewsFetchDone] = useState(false);
 
     // 프로젝트 상태 추가
-    const [historyProjects, setHistoryProjects] = useState<any[]>([]);
+    const [historyProjects, setHistoryProjects] = useState<ProjectHistoryDto[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyFetchDone, setHistoryFetchDone] = useState(false);
 
@@ -627,7 +627,7 @@ export default function FreelancerProfileDetail({ profileId, variant, showFallba
                                                     </div>
                                                     <div className="shrink-0 flex flex-col items-end gap-2">
                                                         <span className="text-[10px] font-mono font-black text-zinc-300 uppercase">
-                                                            {new Date(review.createdAt).toLocaleDateString()}
+                                                            {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : '-'}
                                                         </span>
                                                         <div className="flex flex-wrap gap-2 justify-end">
                                                             {review.workQuality && (

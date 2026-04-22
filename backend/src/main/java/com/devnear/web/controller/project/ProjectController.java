@@ -117,7 +117,7 @@ public class ProjectController {
     @GetMapping("/freelancers/{freelancerId}")
     public ResponseEntity<Page<ProjectResponse>> getFreelancerProjects(
             @PathVariable Long freelancerId,
-            @RequestParam(required = false, defaultValue = "COMPLETED") ProjectStatus status,
+            @RequestParam(defaultValue = "COMPLETED") ProjectStatus status,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(projectService.getFreelancerProjectList(freelancerId, status, pageable));
     }

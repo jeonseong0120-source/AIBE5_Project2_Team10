@@ -291,9 +291,8 @@ public class ProjectService {
             return projectRepository.findAllByFreelancerProfileAndStatus(freelancerProfile, status, pageable)
                     .map(ProjectResponse::from);
         }
-        // status가 없을 경우 해당 프리랜서의 모든 프로젝트 (미구현 시 추가 필요할 수 있음)
-        // 현재는 COMPLETED 위주로 연동하므로 기본 status를 처리하거나 Repository에 메서드 추가
-        return projectRepository.findAllByFreelancerProfileAndStatus(freelancerProfile, ProjectStatus.COMPLETED, pageable)
+        // status가 없을 경우 해당 프리랜서의 모든 프로젝트를 조회합니다.
+        return projectRepository.findAllByFreelancerProfile(freelancerProfile, pageable)
                 .map(ProjectResponse::from);
     }
 

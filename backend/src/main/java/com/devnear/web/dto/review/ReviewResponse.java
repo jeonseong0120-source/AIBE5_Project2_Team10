@@ -18,12 +18,12 @@ public class ReviewResponse {
     private BigDecimal workAttitude;
     private String reviewerNickname;
     private String reviewerProfileImageUrl;
-    private String createdAt;
+    private java.time.LocalDateTime createdAt;
 
     public ReviewResponse() {
     }
 
-    public ReviewResponse(Long id, BigDecimal averageScore, String comment, BigDecimal workQuality, BigDecimal deadline, BigDecimal communication, BigDecimal expertise, BigDecimal requirementClarity, BigDecimal paymentReliability, BigDecimal workAttitude, String reviewerNickname, String reviewerProfileImageUrl, String createdAt) {
+    public ReviewResponse(Long id, java.math.BigDecimal averageScore, String comment, java.math.BigDecimal workQuality, java.math.BigDecimal deadline, java.math.BigDecimal communication, java.math.BigDecimal expertise, java.math.BigDecimal requirementClarity, java.math.BigDecimal paymentReliability, java.math.BigDecimal workAttitude, String reviewerNickname, String reviewerProfileImageUrl, java.time.LocalDateTime createdAt) {
         this.id = id;
         this.averageScore = averageScore;
         this.comment = comment;

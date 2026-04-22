@@ -44,6 +44,9 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
     @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "projectSkills", "projectSkills.skill"})
     Page<Project> findAllByFreelancerProfileAndStatus(FreelancerProfile freelancerProfile, ProjectStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "projectSkills", "projectSkills.skill"})
+    Page<Project> findAllByFreelancerProfile(FreelancerProfile freelancerProfile, Pageable pageable);
+
     // [수정] 봇 리뷰 반영: countQuery 명시 및 메모리 페이징 방지용 DISTINCT 활용
     // + 추가: 모집 중(OPEN)인 프로젝트만 노출되도록 필터링 추가
     @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "projectSkills", "projectSkills.skill"})

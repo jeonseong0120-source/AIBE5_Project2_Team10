@@ -43,13 +43,8 @@ public class ReviewController {
     }
 
     @GetMapping("/freelancers/{freelancerId}")
-    public ResponseEntity<?> findFreelancerReviews(@PathVariable Long freelancerId) {
-        try {
-            return ResponseEntity.ok(reviewService.findFreelancerReviews(freelancerId));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error details: " + e.getMessage());
-        }
+    public ResponseEntity<List<ReviewResponse>> findFreelancerReviews(@PathVariable Long freelancerId) {
+        return ResponseEntity.ok(reviewService.findFreelancerReviews(freelancerId));
     }
 
     @GetMapping("/clients/{clientId}")

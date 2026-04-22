@@ -176,7 +176,7 @@ public class ReviewService {
                         null,
                         review.getReviewerClient() != null ? review.getReviewerClient().getCompanyName() : "익명",
                         review.getReviewerClient() != null ? review.getReviewerClient().getLogoUrl() : null,
-                        review.getCreatedAt() != null ? review.getCreatedAt().toString() : null
+                        review.getCreatedAt()
                 ))
                 .toList();
     }
@@ -201,7 +201,7 @@ public class ReviewService {
                             ? review.getReviewerFreelancer().getUser().getNickname() 
                             : "익명",
                         review.getReviewerFreelancer() != null ? review.getReviewerFreelancer().getProfileImageUrl() : null,
-                        review.getCreatedAt() != null ? review.getCreatedAt().toString() : null
+                        review.getCreatedAt()
                 ))
                 .toList();
     }
