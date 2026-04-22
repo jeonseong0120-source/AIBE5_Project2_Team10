@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { XCircle, ExternalLink, Briefcase, UserCircle, Heart } from 'lucide-react';
+import { XCircle, ExternalLink, Briefcase, UserCircle, Heart, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { logout } from '../../lib/authEvents';
-import { NotificationBell } from '@/components/notifications/NotificationProvider';
 import api from '../../lib/axios';
 
 import MypageSidebar from '@/components/layout/MypageSidebar';
@@ -15,6 +14,7 @@ import GlobalNavbar, { type UserData, type ProfileData } from '@/components/comm
 import ProjectsTab from '@/components/client_mypage/ProjectsTab';
 import SettingsTab from '@/components/client_mypage/SettingsTab';
 import BookmarkedFreelancers from '@/components/client_mypage/BookmarkedFreelancers';
+import { MypageNotificationsTab } from '@/components/mypage/MypageNotificationsTab';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -60,6 +60,7 @@ const TABS = [
     { id: 'settings', label: 'ACCOUNT SETTINGS', icon: UserCircle },
     { id: 'projects', label: 'MY PROJECTS', icon: Briefcase },
     { id: 'bookmarks', label: 'BOOKMARKS', icon: Heart },
+    { id: 'notifications', label: 'NOTIFICATIONS', icon: Bell },
 ];
 
 export default function ClientMyPage() {
@@ -181,6 +182,7 @@ export default function ClientMyPage() {
                             {activeTab === 'settings' && (
                                 <SettingsTab onUpdateSuccess={handleUpdateSuccess} />
                             )}
+                            {activeTab === 'notifications' && <MypageNotificationsTab accentColor="#FF7D00" />}
                         </div>
                         <MypageWithdrawFooter />
                     </motion.div>

@@ -68,6 +68,32 @@ class NotificationServiceIntegrationTest {
     }
 
     @Test
+    void getInbox_unreadOnly_excludesRead() {
+        User user = userRepository.save(User.builder()
+                .email("notif-unread-" + UUID.randomUUID() + "@test.dev")
+                .password("pw")
+                .name("테스트")
+                .nickname("nu-" + UUID.randomUUID().toString().substring(0, 8))
+                .role(Role.FREELANCER)
+                .provider("test")
+                .providerId("pu-" + UUID.randomUUID())
+                .build());
+
+        notificationService.notifyUser(user.getId(), NotificationType.PAYMENT_COMPLETED, "A", "m1", 1L);
+        notificationRepository.flush();
+        Long id = notificationRepository.findByUser_IdOrderByCreatedAtDesc(user.getId(), PageRequest.of(0, 1))
+                .getContent().get(0).getId();
+
+        assertThat(notificationService.getInbox(user, PageRequest.of(0, 10), true).content()).hasSize(1);
+
+        notificationService.markNotificationRead(user, id);
+        notificationRepository.flush();
+
+        assertThat(notificationService.getInbox(user, PageRequest.of(0, 10), true).content()).isEmpty();
+        assertThat(notificationService.getInbox(user, PageRequest.of(0, 10), false).content()).hasSize(1);
+    }
+
+    @Test
     void markRead_otherUser_throwsNotFound() {
         User a = userRepository.save(User.builder()
                 .email("a-" + UUID.randomUUID() + "@test.dev")

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "../lib/axios";
 import { notifyAuthChanged } from "../lib/authEvents";
+import { postLoginPathForRole } from "../lib/postLoginRedirect";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -20,7 +21,12 @@ export default function LoginPage() {
             if (accessToken) {
                 localStorage.setItem("accessToken", accessToken);
                 notifyAuthChanged();
-                router.push("/");
+                try {
+                    const me = await api.get<{ role?: string }>("/v1/users/me");
+                    router.replace(postLoginPathForRole(me.data.role));
+                } catch {
+                    router.replace("/");
+                }
             }
         } catch (err: any) {
             alert("이메일 또는 비밀번호를 확인해주세요.");

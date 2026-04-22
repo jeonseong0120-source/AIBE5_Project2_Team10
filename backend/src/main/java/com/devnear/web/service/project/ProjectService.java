@@ -24,8 +24,10 @@ import com.devnear.web.dto.project.ProjectRequest;
 import com.devnear.web.dto.project.ProjectResponse;
 import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.domain.enums.NotificationType;
 import com.devnear.web.service.ai.ProjectEmbeddingService;
 import com.devnear.web.service.freelancer.FreelancerGradeService;
+import com.devnear.web.service.notification.NotificationService;
 import jakarta.persistence.EntityManager; // 🔍 추가
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +64,7 @@ public class ProjectService {
     private final PaymentRepository paymentRepository;
     private final ClientReviewRepository clientReviewRepository;
     private final FreelancerReviewRepository freelancerReviewRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public Long createProject(User user, ProjectRequest request) {
@@ -330,5 +333,18 @@ public class ProjectService {
             freelancerProfile.increaseCompletedProjects();
             freelancerGradeService.refreshGrade(freelancerProfile);
         }
+
+        Long pid = project.getId();
+        String title = "프로젝트 완료";
+        String message = "프로젝트가 완료되었습니다. 리뷰를 작성해 주세요.";
+        Long clientUserId = project.getClientProfile().getUser().getId();
+        notificationService.notifyUser(
+                clientUserId,
+                NotificationType.PROJECT_COMPLETED_REVIEW_REQUEST,
+                title,
+                message,
+                pid,
+                "/client/mypage?tab=projects"
+        );
     }
 }

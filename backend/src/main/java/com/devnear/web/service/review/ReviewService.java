@@ -2,6 +2,7 @@ package com.devnear.web.service.review;
 
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.client.ClientProfileRepository;
+import com.devnear.web.domain.enums.NotificationType;
 import com.devnear.web.domain.enums.ProjectStatus;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.devnear.web.service.freelancer.FreelancerGradeService;
+import com.devnear.web.service.notification.NotificationService;
 import com.devnear.web.domain.payment.PaymentRepository;
 import com.devnear.web.domain.payment.Payment;
 
@@ -40,6 +42,7 @@ public class ReviewService {
     private final ProjectRepository projectRepository;
     private final FreelancerGradeService freelancerGradeService;
     private final PaymentRepository paymentRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public Long createFreelancerReview(User user, FreelancerReviewCreateRequest request) {
@@ -99,7 +102,23 @@ public class ReviewService {
             throw new IllegalStateException("유효한 결제 완료 상태가 아닙니다.");
         }
 
+        notificationService.notifyUser(
+                freelancer.getUser().getId(),
+                NotificationType.REVIEW_LEFT_BY_CLIENT,
+                "새 리뷰",
+                "클라이언트가 리뷰를 남겼습니다.",
+                project.getId()
+        );
+
         recomputeFreelancerAggregates(freelancer.getId(), payment.getNetAmount());
+
+        notificationService.notifyUser(
+                freelancer.getUser().getId(),
+                NotificationType.FREELANCER_DEPOSIT_COMPLETED,
+                "입금 완료",
+                "입금이 완료되었습니다.",
+                project.getId()
+        );
 
         return review.getId();
     }
@@ -154,6 +173,14 @@ public class ReviewService {
         // 저장 후 평점 재계산
         clientReviewRepository.save(review);
         updateClientRating(client);
+
+        notificationService.notifyUser(
+                client.getUser().getId(),
+                NotificationType.REVIEW_LEFT_BY_FREELANCER,
+                "새 리뷰",
+                "프리랜서가 리뷰를 남겼습니다.",
+                project.getId()
+        );
 
         return review.getId();
     }

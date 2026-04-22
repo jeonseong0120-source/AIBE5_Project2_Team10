@@ -7,8 +7,10 @@ import com.devnear.web.domain.project.Project;
 import com.devnear.web.domain.project.ProjectRepository;
 import com.devnear.web.dto.payment.PaymentConfirmRequest;
 import com.devnear.web.dto.payment.PaymentResponse;
+import com.devnear.web.domain.enums.NotificationType;
 import com.devnear.web.exception.PaymentAmountMismatchException;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final ProjectRepository projectRepository;
     private final TossPaymentClient tossPaymentClient;
+    private final NotificationService notificationService;
 
     /**
      * 결제 내역 생성 (결제창 띄우기 전 단계)
@@ -122,6 +125,15 @@ public class PaymentService {
         if (project != null) {
             project.start();
         }
+
+        Long clientUserId = payment.getProject().getClientProfile().getUser().getId();
+        notificationService.notifyUser(
+                clientUserId,
+                NotificationType.PAYMENT_COMPLETED,
+                "결제 완료",
+                "결제가 완료되었습니다.",
+                payment.getProject().getId()
+        );
 
         return PaymentResponse.from(payment);
     }

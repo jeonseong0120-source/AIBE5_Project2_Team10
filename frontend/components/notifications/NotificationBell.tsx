@@ -49,8 +49,7 @@ export function NotificationBell() {
                                             <button
                                                 type="button"
                                                 onClick={() => void onRowClick(n)}
-                                                disabled={!n.url}
-                                                className={`flex flex-1 flex-col gap-0.5 text-left ${n.url ? "transition hover:opacity-80" : "cursor-default"}`}
+                                                className={`flex flex-1 flex-col gap-0.5 text-left transition hover:opacity-80 ${n.url ? "" : "cursor-default"}`}
                                             >
                                                 <span className="font-medium">{n.title}</span>
                                                 {n.message ? (

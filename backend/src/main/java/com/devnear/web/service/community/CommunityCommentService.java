@@ -4,12 +4,14 @@ import com.devnear.web.domain.community.CommunityComment;
 import com.devnear.web.domain.community.CommunityCommentRepository;
 import com.devnear.web.domain.community.CommunityPost;
 import com.devnear.web.domain.community.CommunityPostRepository;
+import com.devnear.web.domain.enums.NotificationType;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.community.CommunityCommentCreateRequest;
 import com.devnear.web.dto.community.CommunityCommentResponse;
 import com.devnear.web.dto.community.CommunityCommentUpdateRequest;
 import com.devnear.web.exception.ResourceNotFoundException;
+import com.devnear.web.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class CommunityCommentService {
     private final CommunityPostService communityPostService;
     private final CommunityPostRepository communityPostRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public Long create(CommunityCommentCreateRequest request, Long authorId) {
@@ -50,6 +53,22 @@ public class CommunityCommentService {
 
         Long commentId = communityCommentRepository.save(comment).getId();
         communityPostRepository.incrementCommentCount(post.getId());
+
+        Long postAuthorId = post.getAuthorId();
+        if (postAuthorId != null && !postAuthorId.equals(authorId)) {
+            userRepository.findById(postAuthorId).ifPresent(postAuthor -> {
+                if (postAuthor.isNotifyCommunityComments()) {
+                    notificationService.notifyUser(
+                            postAuthorId,
+                            NotificationType.COMMUNITY_COMMENT_ON_MY_POST,
+                            "커뮤니티 댓글",
+                            "내 게시글에 새 댓글이 달렸습니다.",
+                            post.getId()
+                    );
+                }
+            });
+        }
+
         return commentId;
     }
 

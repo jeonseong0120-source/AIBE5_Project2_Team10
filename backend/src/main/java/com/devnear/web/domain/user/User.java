@@ -74,6 +74,10 @@ public class User extends BaseTimeEntity implements UserDetails {
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private FreelancerProfile freelancerProfile;
 
+    /** 커뮤니티 게시글에 댓글이 달렸을 때 알림 수신 여부 */
+    @Column(name = "notify_community_comments", nullable = false)
+    private boolean notifyCommunityComments = true;
+
     @Builder
     public User(String email, String password, String name, String nickname,
                 String phoneNumber, String profileImageUrl, Role role,
@@ -88,6 +92,10 @@ public class User extends BaseTimeEntity implements UserDetails {
         this.provider = provider;
         this.providerId = providerId;
         this.status = UserStatus.ACTIVE;
+    }
+
+    public void setNotifyCommunityComments(boolean notifyCommunityComments) {
+        this.notifyCommunityComments = notifyCommunityComments;
     }
 
     public User update(String name, String profileImageUrl, String provider, String providerId) {

@@ -1,5 +1,6 @@
 package com.devnear.web.controller.user;
 
+import com.devnear.web.dto.user.NotificationPreferencePatchRequest;
 import com.devnear.web.dto.user.OnboardingRequest;
 import com.devnear.web.dto.user.TokenResponse;
 import com.devnear.web.dto.user.UserInfoResponse;
@@ -14,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,6 +46,14 @@ public class UserController {
     public ResponseEntity<UserInfoResponse> getMyInfo(@AuthenticationPrincipal UserDetails userDetails) {
         UserInfoResponse response = userService.getUserInfo(userDetails.getUsername());
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "알림 설정 변경", description = "커뮤니티 댓글 알림 등 알림 수신 설정을 변경합니다.")
+    @PatchMapping("/me/notification-preferences")
+    public ResponseEntity<UserInfoResponse> patchNotificationPreferences(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody NotificationPreferencePatchRequest request) {
+        return ResponseEntity.ok(userService.updateNotificationPreferences(userDetails.getUsername(), request));
     }
 
     @Operation(summary = "회원 탈퇴", description = "역할별 종료 조건을 만족한 경우에만 계정을 비활성화하고 개인정보를 제거합니다.")

@@ -12,6 +12,7 @@ import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.freelancer.FreelancerProfileRequest;
+import com.devnear.web.dto.user.NotificationPreferencePatchRequest;
 import com.devnear.web.dto.user.OnboardingRequest;
 import com.devnear.web.dto.user.TokenResponse;
 import com.devnear.web.dto.user.UserInfoResponse;
@@ -143,6 +144,19 @@ public class UserService {
     public UserInfoResponse getUserInfo(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        return new UserInfoResponse(user);
+    }
+
+    @Transactional
+    public UserInfoResponse updateNotificationPreferences(String email, NotificationPreferencePatchRequest request) {
+        User user = userRepository.findByEmailForUpdate(email)
+                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
+            throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
+        }
+        if (request.getNotifyCommunityComments() != null) {
+            user.setNotifyCommunityComments(request.getNotifyCommunityComments());
+        }
         return new UserInfoResponse(user);
     }
 

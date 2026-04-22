@@ -17,10 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import java.util.Objects;
 
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -33,11 +33,16 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public NotificationInboxResponse getInbox(User user, Pageable pageable) {
+        return getInbox(user, pageable, false);
+    }
+
+    @Transactional(readOnly = true)
+    public NotificationInboxResponse getInbox(User user, Pageable pageable, boolean unreadOnly) {
         long unread = notificationRepository.countUnreadByUserId(user.getId());
-        Page<NotificationResponse> page = notificationRepository
-                .findByUser_IdOrderByCreatedAtDesc(user.getId(), pageable)
-                .map(NotificationResponse::fromEntity);
-        return NotificationInboxResponse.of(unread, page);
+        Page<Notification> page = unreadOnly
+                ? notificationRepository.findByUser_IdAndReadIsFalseOrderByCreatedAtDesc(user.getId(), pageable)
+                : notificationRepository.findByUser_IdOrderByCreatedAtDesc(user.getId(), pageable);
+        return NotificationInboxResponse.of(unread, page.map(NotificationResponse::fromEntity));
     }
 
     @Transactional
@@ -52,6 +57,11 @@ public class NotificationService {
 
     @Transactional
     public void notifyUser(Long userId, NotificationType type, String title, String message, Long resourceId) {
+        notifyUser(userId, type, title, message, resourceId, null);
+    }
+
+    @Transactional
+    public void notifyUser(Long userId, NotificationType type, String title, String message, Long resourceId, String urlOverride) {
         if (userId == null) {
             throw new IllegalArgumentException("수신자 userId는 null일 수 없습니다.");
         }
@@ -62,12 +72,13 @@ public class NotificationService {
         User targetUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("수신자를 찾을 수 없습니다."));
         String content = title + "\n" + message;
+        String url = urlOverride != null ? urlOverride : buildUrl(type, resourceId);
         Notification saved = notificationRepository.save(Notification.builder()
                 .user(targetUser)
                 .notificationType(type)
                 .content(content)
                 .read(false)
-                .url(buildUrl(type, resourceId))
+                .url(url)
                 .build());
         Instant at = saved.getCreatedAt() != null
                 ? saved.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()
@@ -94,14 +105,17 @@ public class NotificationService {
             return null;
         }
         return switch (type) {
-            // 문의하기는 알림 링크 대신 화면 내 "문의하기" 버튼에서 처리
             case CHAT_ROOM_CREATED -> null;
-            // 역제안 도착 알림만 링크 이동 허용
             case PROJECT_PROPOSAL_SENT -> "/freelancer/mypage";
-            // 수락/거절은 우측 X로 확인 처리
             case PROJECT_PROPOSAL_ACCEPTED, PROJECT_PROPOSAL_REJECTED -> null;
             case PROJECT_APPLICATION_SUBMITTED -> "/client/dashboard";
             case PROJECT_APPLICATION_ACCEPTED, PROJECT_APPLICATION_REJECTED -> null;
+            case PROJECT_COMPLETED_REVIEW_REQUEST -> "/client/mypage?tab=projects";
+            case PAYMENT_COMPLETED -> "/client/dashboard";
+            case FREELANCER_DEPOSIT_COMPLETED -> "/freelancer/mypage?tab=settlement";
+            case REVIEW_LEFT_BY_CLIENT -> "/freelancer/mypage?tab=reviews";
+            case REVIEW_LEFT_BY_FREELANCER -> "/client/mypage?tab=projects";
+            case COMMUNITY_COMMENT_ON_MY_POST -> "/community/" + resourceId;
         };
     }
 }

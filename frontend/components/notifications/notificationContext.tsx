@@ -131,7 +131,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         setLoading(true);
         try {
             const { data } = await api.get<InboxApiResponse>("/v1/notifications", {
-                params: { page: 0, size: 30 },
+                params: { page: 0, size: 30, unreadOnly: true },
             });
             const list = data.content ?? [];
             wsSeenIds.current = new Set(list.map((n) => n.notificationId));
@@ -272,11 +272,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
                 try {
                     await api.patch(`/v1/notifications/${n.notificationId}/read`);
                     setUnreadCount((c) => Math.max(0, c - 1));
-                    setItems((prev) =>
-                        prev.map((x) =>
-                            x.notificationId === n.notificationId ? { ...x, read: true } : x,
-                        ),
-                    );
+                    setItems((prev) => prev.filter((x) => x.notificationId !== n.notificationId));
                 } catch (err) {
                     let msg = "읽음 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.";
                     if (isAxiosError(err)) {
