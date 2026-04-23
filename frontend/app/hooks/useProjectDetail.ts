@@ -50,6 +50,8 @@ export function useProjectDetail(projectId: number | null) {
     const [submitting, setSubmitting] = useState(false);
     const [refetchTick, setRefetchTick] = useState(0);
     const prevProjectIdRef = useRef<number | null>(null);
+    /** 같은 projectId에서 refetch 시 사용자가 수정한 bidPrice를 덮어쓰지 않도록, 시드한 프로젝트 id만 기록 */
+    const bidPriceSeededForProjectIdRef = useRef<number | null>(null);
 
     const refetch = useCallback(() => {
         if (projectId == null) return;
@@ -62,6 +64,7 @@ export function useProjectDetail(projectId: number | null) {
         prevProjectIdRef.current = projectId;
 
         if (!projectId) {
+            bidPriceSeededForProjectIdRef.current = null;
             setProject(null);
             setError(null);
             setLoading(false);
@@ -90,7 +93,10 @@ export function useProjectDetail(projectId: number | null) {
                 const response = await api.get(`/v1/projects/${projectId}`, { signal });
                 if (signal.aborted) return;
                 setProject(response.data);
-                setBidPrice(String(response.data.budget ?? ''));
+                if (bidPriceSeededForProjectIdRef.current !== projectId) {
+                    setBidPrice(String(response.data.budget ?? ''));
+                    bidPriceSeededForProjectIdRef.current = projectId;
+                }
             } catch (err: unknown) {
                 if (signal.aborted || isAbortError(err)) return;
                 const status = (err as { response?: { status?: number } })?.response?.status;
@@ -187,7 +193,7 @@ export function useProjectDetail(projectId: number | null) {
             setChatLoading(false);
         }
     }, [chatLoading, openChat, project]);
-    
+
     const apply = useCallback(async () => {
         if (!projectId) return;
         const bid = Number(bidPrice);
