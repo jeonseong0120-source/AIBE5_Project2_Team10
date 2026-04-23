@@ -2,11 +2,12 @@
 
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Briefcase, Grid3X3, Heart, ArrowUpRight, MapPin, Star, Sparkles } from 'lucide-react';
 import api from '@/app/lib/axios';
-import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
+import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile, ReviewResponse } from '@/types/freelancer';
 import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
 import type { PortfolioDetailShape } from '@/components/portfolio/PortfolioDetailModal';
 import ProposalSendModal, {
@@ -71,7 +72,7 @@ export default function FreelancerProfileDetail({
 
     // 🎯 [추가] 탭 상태 및 리뷰 데이터
     const [activeTab, setActiveTab] = useState<'PORTFOLIO' | 'PROJECT' | 'REVIEW'>('PORTFOLIO');
-    const [reviews, setReviews] = useState<any[]>([]);
+    const [reviews, setReviews] = useState<ReviewResponse[]>([]);
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const [reviewsFetchDone, setReviewsFetchDone] = useState(false);
 
@@ -302,23 +303,44 @@ export default function FreelancerProfileDetail({
 
     // 🎯 [추가] 리뷰 로드 함수
     useEffect(() => {
-        if (activeTab !== 'REVIEW' || reviewsFetchDone || !freelancer?.id) return;
+        if (!freelancer?.id) {
+            setReviews([]);
+            setReviewsFetchDone(false);
+            return;
+        }
+
+        // 프로필이 바뀌면 리뷰 로드 상태 초기화
+        setReviewsFetchDone(false);
+
+        if (activeTab !== 'REVIEW') return;
+
+        const controller = new AbortController();
 
         const fetchReviews = async () => {
             setReviewsLoading(true);
             try {
-                const { data } = await api.get(`/reviews/freelancers/${freelancer.id}`);
-                setReviews(Array.isArray(data) ? data : (data.content || []));
-            } catch (err) {
+                const { data } = await api.get(`/reviews/freelancers/${freelancer.id}`, {
+                    signal: controller.signal
+                });
+                const finalData = Array.isArray(data) ? data : (data.content || []);
+                setReviews(finalData);
+                setReviewsFetchDone(true);
+            } catch (err: any) {
+                if (err.name === 'CanceledError' || axios.isCancel(err)) {
+                    return;
+                }
                 console.error('리뷰 로드 실패', err);
             } finally {
                 setReviewsLoading(false);
-                setReviewsFetchDone(true);
             }
         };
 
         void fetchReviews();
-    }, [activeTab, freelancer?.id, reviewsFetchDone]);
+
+        return () => {
+            controller.abort();
+        };
+    }, [activeTab, freelancer?.id]);
 
     if (loading) {
         return (
@@ -699,7 +721,7 @@ export default function FreelancerProfileDetail({
                                     ) : (
                                         reviews.map((rev, idx) => (
                                             <motion.div
-                                                key={idx}
+                                                key={rev.id}
                                                 initial={{ opacity: 0, x: -10 }}
                                                 animate={{ opacity: 1, x: 0 }}
                                                 transition={{ delay: idx * 0.05 }}

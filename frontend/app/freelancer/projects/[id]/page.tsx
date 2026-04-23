@@ -188,7 +188,7 @@ export default function ProjectDetailPage() {
 
                                 <div className="flex items-center gap-2.5 px-5 py-3 bg-white rounded-2xl border border-zinc-100 shadow-sm transition-all hover:border-[#7A4FFF]/30 hover:shadow-md">
                                     <MapPin size={18} className="text-[#7A4FFF]" />
-                                    <span className="text-zinc-900">{project.location}</span>
+                                    <span className="text-zinc-900">{project.location || '전국'}</span>
                                 </div>
                             </div>
 
@@ -299,9 +299,9 @@ export default function ProjectDetailPage() {
                         </h3>
                          <div className="bg-white border border-zinc-100 p-12 rounded-[3.5rem] shadow-2xl shadow-zinc-100 leading-relaxed text-zinc-800 whitespace-pre-wrap text-xl italic font-bold relative overflow-hidden group">
                             <div className="absolute top-0 left-0 w-2 h-full bg-[#7A4FFF] opacity-20 group-hover:opacity-100 transition-opacity"></div>
-                            <span className="text-[#7A4FFF] text-4xl font-serif absolute top-4 left-4 opacity-10">"</span>
+                            <span className="text-[#7A4FFF] text-4xl font-serif absolute top-4 left-4 opacity-10" aria-hidden="true">"</span>
                             {project.detail}
-                            <span className="text-[#7A4FFF] text-4xl font-serif absolute bottom-4 right-4 opacity-10">"</span>
+                            <span className="text-[#7A4FFF] text-4xl font-serif absolute bottom-4 right-4 opacity-10" aria-hidden="true">"</span>
                         </div>
                     </div>
                 </div>

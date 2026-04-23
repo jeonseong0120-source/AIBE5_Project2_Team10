@@ -32,6 +32,10 @@ public class MatchingService {
 
         Page<Tuple> matchingResults = freelancerProfileRepository.findOptimalFreelancersForProject(project, pageable);
 
+        final Long clientUserId = project.getClientProfile() != null && project.getClientProfile().getUser() != null
+                ? project.getClientProfile().getUser().getId()
+                : null;
+
         return matchingResults.getContent().stream()
                 .map(tuple -> {
                     // ✅ [Fix] 프로필 객체 자체의 null 여부를 먼저 확인합니다.
@@ -39,7 +43,7 @@ public class MatchingService {
                     if (profile == null) return null;
 
                     // 🎯 [유저 요청 사항] 겸업 유저(본인)는 본인이 생성한 프로젝트 추천 목록에서 제외합니다.
-                    if (profile.getUser().getId().equals(project.getClientProfile().getUser().getId())) {
+                    if (profile.getUser() != null && profile.getUser().getId().equals(clientUserId)) {
                         return null;
                     }
 

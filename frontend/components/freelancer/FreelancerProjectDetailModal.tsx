@@ -209,10 +209,11 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                                         <button
                                             type="button"
                                             onClick={() => router.push(`/freelancer/projects/${project.projectId}`)}
+                                            aria-label={`${project.companyName || '기업'} 상세 프로필 보기`}
                                             className="h-16 w-16 md:h-20 md:w-20 shrink-0 overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50 p-1 shadow-sm transition-transform hover:scale-105 active:scale-95 group/logo"
                                         >
                                             <img
-                                                src={project.logoUrl || `https://ui-avatars.com/api/?name=${project.companyName || 'C'}&background=F4F4F5&color=A1A1AA`}
+                                                src={project.logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(project.companyName || 'C')}&background=F4F4F5&color=A1A1AA`}
                                                 alt={project.companyName || 'Company logo'}
                                                 className="h-full w-full object-cover rounded-xl"
                                             />
