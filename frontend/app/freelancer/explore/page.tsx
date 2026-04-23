@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, MapPin, DollarSign, Cpu, RotateCcw, BarChart3, Activity, Sparkles, Loader2, AlertCircle, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import ProjectCard from "@/components/freelancer/ProjectCard";
+import FreelancerProjectDetailModal from '@/components/freelancer/FreelancerProjectDetailModal';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
 
@@ -58,6 +59,8 @@ export default function FreelancerExplorePage() {
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(false);
     const [fetchingMore, setFetchingMore] = useState(false);
+    const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+    const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
 
     type AiRecommendedProject = {
         projectId: number;
@@ -266,6 +269,11 @@ export default function FreelancerExplorePage() {
         fetchProjects(nextPage, true);
     };
 
+    const openProjectModal = (projectId: number) => {
+        setSelectedProjectId(projectId);
+        setIsProjectModalOpen(true);
+    };
+
     if (!authorized) return <div className="min-h-screen bg-white flex items-center justify-center text-[#7A4FFF] font-black tracking-widest animate-pulse font-mono uppercase text-xs">인증 정보를 확인 중입니다...</div>;
 
     const isFiltered = searchQuery !== '' || selectedLocation !== '' || selectedTechs.length > 0 || activeTab !== '전체';
@@ -456,7 +464,7 @@ export default function FreelancerExplorePage() {
 
                                             <button
                                                 type="button"
-                                                onClick={() => router.push(`/freelancer/projects/${p.projectId}`)}
+                                                onClick={() => openProjectModal(p.projectId)}
                                                 className="w-full relative overflow-hidden rounded-xl bg-zinc-950 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_10px_20px_rgba(122,79,255,0.2)] font-mono"
                                             >
                                                 <span className="relative z-10">OPEN_MISSION</span>
@@ -647,7 +655,12 @@ export default function FreelancerExplorePage() {
                     <div className="grid grid-cols-1 gap-5">
                         <AnimatePresence mode="popLayout">
                             {projects.map((project, idx) => (
-                                <ProjectCard key={project.projectId || project.id || idx} data={project} index={idx} />
+                                <ProjectCard
+                                    key={project.projectId || project.id || idx}
+                                    data={project}
+                                    index={idx}
+                                    onOpenProject={openProjectModal}
+                                />
                             ))}
                         </AnimatePresence>
 
@@ -678,6 +691,12 @@ export default function FreelancerExplorePage() {
                     </div>
                 </section>
             </main>
+
+            <FreelancerProjectDetailModal
+                open={isProjectModalOpen}
+                projectId={selectedProjectId}
+                onClose={() => setIsProjectModalOpen(false)}
+            />
         </div>
     );
 }
