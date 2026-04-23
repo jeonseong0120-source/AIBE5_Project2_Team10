@@ -8,6 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -49,4 +52,10 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM ChatMessage m WHERE m.chatRoom.project.id = :projectId")
     void deleteByProjectId(@Param("projectId") Long projectId);
+
+
+
+    // 👇 이거 추가 (내림차순)
+    @EntityGraph(attributePaths = {"sender"})
+    Page<ChatMessage> findByChatRoomOrderByCreatedAtDesc(ChatRoom chatRoom, Pageable pageable);
 }

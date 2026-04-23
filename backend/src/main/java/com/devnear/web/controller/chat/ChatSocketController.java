@@ -14,9 +14,11 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import lombok.extern.slf4j.Slf4j;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class ChatSocketController {
 
     private final ChatService chatService;
@@ -25,15 +27,13 @@ public class ChatSocketController {
 
     @MessageMapping("/chat/send")
     public void sendMessage(@Valid @Payload ChatMessageSendRequest request, Authentication authentication) {
-        System.out.println("소켓 메시지 도착: roomId=" + request.getRoomId() + ", content=" + request.getContent());
-        System.out.println("authentication=" + authentication);
+        log.debug("소켓 메시지 도착: roomId={}", request.getRoomId());
 
         if (authentication == null || authentication.getPrincipal() == null) {
             throw new IllegalStateException("소켓 인증 정보가 없습니다.");
         }
 
         Object principal = authentication.getPrincipal();
-        System.out.println("principal=" + principal);
 
         Long userId;
 
@@ -50,7 +50,7 @@ public class ChatSocketController {
 
         ChatMessageResponse response = chatService.saveMessage(user, request);
 
-        System.out.println("DB 저장 완료: messageId=" + response.getMessageId());
+        log.debug("DB 저장 완료: roomId={}, messageId={}", request.getRoomId(), response.getMessageId());
 
         messagingTemplate.convertAndSend(
                 "/sub/chat/rooms/" + request.getRoomId(),

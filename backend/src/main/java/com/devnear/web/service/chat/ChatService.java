@@ -78,6 +78,8 @@ public class ChatService {
 
         // 1. 프리랜서 -> 클라이언트 문의 허용
         if (!meIsClient && targetIsClient) {
+            freelancerProfileRepository.findByUser_Id(me.getId())
+                    .orElseThrow(() -> new ChatAccessDeniedException("프리랜서만 프로젝트 문의 채팅을 시작할 수 있습니다."));
             return createOrGetRoom(me, target, project);
         }
 
@@ -281,12 +283,15 @@ public class ChatService {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by("createdAt").ascending()
+                Sort.by("createdAt").descending()
         );
 
-        Page<ChatMessage> messages = chatMessageRepository.findByChatRoomOrderByCreatedAtAsc(room, pageable);
+        Page<ChatMessage> messages = chatMessageRepository.findByChatRoomOrderByCreatedAtDesc(room, pageable);
+        List<ChatMessage> orderedMessages = messages.getContent().stream()
+                .sorted(Comparator.comparing(ChatMessage::getCreatedAt))
+                .toList();
 
-        return messages.getContent().stream()
+        return orderedMessages.stream()
                 .map(ChatMessageResponse::from)
                 .toList();
     }

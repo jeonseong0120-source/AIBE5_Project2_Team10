@@ -83,17 +83,11 @@ export function disconnectChatSocket() {
     connectingPromise = null;
 }
 
-export function subscribeChatRoom(
+export async function subscribeChatRoom(
     roomId: number,
     callback: (message: IMessage) => void
-): StompSubscription {
-    if (!client || !client.connected) {
-        throw new Error("채팅 소켓이 연결되지 않았습니다.");
-    }
+): Promise<StompSubscription> {
+    const socketClient = await ensureChatSocketConnected();
+    return socketClient.subscribe(`/sub/chat/rooms/${roomId}`, callback);
 
-    return client.subscribe(`/sub/chat/rooms/${roomId}`, callback);
-}
-
-export function isChatSocketConnected() {
-    return !!client?.connected;
 }
