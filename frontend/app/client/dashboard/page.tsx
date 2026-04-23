@@ -20,6 +20,7 @@ import FreelancerReviewModal from '@/components/review/FreelancerReviewModal';
 import MatchingresultForm from '@/components/project/MatchingresultForm';
 import ClientProjectCard from '@/components/project/ClientProjectCard';
 import FreelancerBookmarkCard from '@/components/freelancer/FreelancerBookmarkCard';
+import DashboardSidebar from '@/components/common/DashboardSidebar';
 
 export default function ClientDashboardPage() {
     const router = useRouter();
@@ -521,39 +522,21 @@ export default function ClientDashboardPage() {
                 {/* 🎯 메인 콘텐츠 영역 */}
                 <div className="flex flex-col lg:flex-row gap-12">
                     {/* 좌측 사이드바: 퀵 스탯 */}
-                    <aside className="w-full lg:w-72 flex flex-col gap-10">
-                        {/* 프로젝트 등록 버튼 */}
-                        <button 
-                            onClick={() => router.push("/client/projects/new")} 
-                            className="group flex items-center justify-center gap-3 w-full py-4 bg-[#FF7D00] text-white rounded-2xl text-[11px] font-black hover:bg-zinc-950 transition-all shadow-lg shadow-orange-500/10 uppercase tracking-widest"
-                        >
-                            <Plus size={18} strokeWidth={3} /> 프로젝트 등록
-                        </button>
-
-                        {/* 메인 내비게이션 섹션 */}
-                        <div className="flex flex-col gap-2">
-                            <p className="px-4 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-2">Management_Console</p>
-                            {[
-                                { id: 'PROJECTS', label: '프로젝트 관리', icon: <Briefcase size={18} /> },
-                                { id: 'PROPOSALS', label: '제안 현황', icon: <Send size={18} /> },
-                                { id: 'BOOKMARKS', label: '관심 프리랜서', icon: <Heart size={18} /> }
-                            ].map((tab) => (
-                                <button 
-                                    key={tab.id} 
-                                    onClick={() => setActiveMainTab(tab.id as any)} 
-                                    className={`flex items-center gap-4 px-6 py-4 rounded-[1.2rem] text-[10px] font-black transition-all tracking-wider text-left ${
-                                        activeMainTab === tab.id 
-                                        ? 'bg-zinc-950 text-white shadow-xl translate-x-2' 
-                                        : 'text-zinc-400 hover:text-zinc-600 hover:bg-white border border-transparent hover:border-zinc-100'
-                                    }`}
-                                >
-                                    <span className={activeMainTab === tab.id ? 'text-[#FF7D00]' : ''}>{tab.icon}</span>
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-
-                    </aside>
+                    <DashboardSidebar
+                        activeTab={activeMainTab}
+                        onTabChange={setActiveMainTab}
+                        tabs={[
+                            { id: 'PROJECTS', label: '프로젝트 관리', icon: <Briefcase size={18} /> },
+                            { id: 'PROPOSALS', label: '제안 현황', icon: <Send size={18} /> },
+                            { id: 'BOOKMARKS', label: '관심 프리랜서', icon: <Heart size={18} /> }
+                        ]}
+                        mode="CLIENT"
+                        ctaLabel="프로젝트 등록"
+                        ctaIcon={<Plus size={18} strokeWidth={3} />}
+                        onCtaClick={() => router.push("/client/projects/new")}
+                        user={user}
+                        profile={profile}
+                    />
 
                     {/* 우측 메인 리스트 */}
                     <div className="flex-1 min-w-0">

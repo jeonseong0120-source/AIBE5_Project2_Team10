@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // 🎯 [추가 1] 대통합 네비게이션 바 불러오기!
 import GlobalNavbar from '@/components/common/GlobalNavbar';
+import DashboardSidebar from '@/components/common/DashboardSidebar';
 
 export default function FreelancerDashboardPage() {
     const router = useRouter();
@@ -245,53 +246,26 @@ export default function FreelancerDashboardPage() {
             <main className="max-w-7xl mx-auto px-8 py-12 relative z-10">
                 <div className="flex flex-col lg:flex-row gap-12">
                     {/* 좌측 사이드바 */}
-                    <aside className="w-full lg:w-72 flex flex-col gap-10">
-                        {/* 프로젝트 탐색 버튼 */}
-                        <button
-                            onClick={() => router.push("/freelancer/explore")}
-                            className="group flex items-center justify-center gap-3 w-full py-4 bg-[#7A4FFF] text-white rounded-2xl text-[11px] font-black hover:bg-zinc-950 transition-all shadow-lg shadow-purple-500/10 uppercase tracking-widest"
-                        >
-                            <Search size={18} strokeWidth={3} /> 프로젝트 탐색
-                        </button>
-
-                        {/* 메인 내비게이션 섹션 */}
-                        <div className="flex flex-col gap-2">
-                            <p className="px-4 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-2">Freelancer_Console</p>
-                            {[
-                                { id: 'APPLICATIONS', label: '지원 내역', icon: <FileText size={18} /> },
-                                { 
-                                    id: 'RECEIVED_PROPOSALS', 
-                                    label: '받은 제안', 
-                                    icon: <Inbox size={18} />,
-                                    badge: receivedProposals.filter(p => p.status === 'PENDING').length 
-                                },
-                                { id: 'BOOKMARKS', label: '관심 프로젝트', icon: <Bookmark size={18} /> }
-                            ].map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveMainTab(tab.id as any)}
-                                    className={`group flex items-center justify-between w-full px-6 py-4 rounded-[1.2rem] text-[10px] font-black transition-all tracking-wider text-left ${activeMainTab === tab.id
-                                            ? 'bg-zinc-950 text-white shadow-xl translate-x-2'
-                                            : 'text-zinc-400 hover:text-zinc-600 hover:bg-white border border-transparent hover:border-zinc-100'
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <span className={activeMainTab === tab.id ? 'text-[#7A4FFF]' : ''}>{tab.icon}</span>
-                                        {tab.label}
-                                    </div>
-                                    {(tab as any).badge > 0 && (
-                                        <span className={`flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full text-[9px] font-black font-mono ring-4 ${
-                                            activeMainTab === tab.id 
-                                            ? 'bg-[#7A4FFF] text-white ring-zinc-900' 
-                                            : 'bg-zinc-950 text-white ring-zinc-50 group-hover:ring-white'
-                                        }`}>
-                                            {(tab as any).badge}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-                    </aside>
+                    <DashboardSidebar
+                        activeTab={activeMainTab}
+                        onTabChange={setActiveMainTab}
+                        tabs={[
+                            { id: 'APPLICATIONS', label: '지원 내역', icon: <FileText size={18} /> },
+                            { 
+                                id: 'RECEIVED_PROPOSALS', 
+                                label: '받은 제안', 
+                                icon: <Inbox size={18} />,
+                                badge: receivedProposals.filter(p => p.status === 'PENDING').length 
+                            },
+                            { id: 'BOOKMARKS', label: '관심 프로젝트', icon: <Bookmark size={18} /> }
+                        ]}
+                        mode="FREELANCER"
+                        ctaLabel="프로젝트 탐색"
+                        ctaIcon={<Search size={18} strokeWidth={3} />}
+                        onCtaClick={() => router.push("/freelancer/explore")}
+                        user={user}
+                        profile={profile}
+                    />
 
                     {/* 우측 메인 콘텐츠 리스트 */}
                     <div className="flex-1 min-w-0">
