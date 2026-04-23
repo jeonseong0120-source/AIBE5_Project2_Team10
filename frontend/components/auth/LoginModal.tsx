@@ -123,9 +123,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
                         <div className="p-8 md:p-10">
                             <div className="text-center mb-8">
-                                <img src="/devnear-logo.png" alt="Logo" className="h-7 mx-auto mb-5" />
+                                <img src="/devnear-logo.png" alt="Logo" className="h-28 mx-auto mb-5" />
                                 <h3 id="modal-title" className="text-2xl font-black text-zinc-900 tracking-tight">서비스 접속</h3>
-                                <p className="text-sm text-zinc-500 font-medium mt-1">자격 증명을 입력하고 기지에 연결하세요.</p>
+                                <p className="text-sm text-zinc-500 font-medium mt-1">자격 증명을 입력하고 서비스를 경험해보세요.</p>
                             </div>
 
                             <form onSubmit={handleLogin} className="space-y-4">
