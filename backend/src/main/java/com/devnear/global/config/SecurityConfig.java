@@ -34,8 +34,10 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+
     @Value("${app.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5500,http://127.0.0.1:5500}")
     private List<String> allowedOrigins;
+
     @Value("${app.cors.allow-lan-origin-pattern:false}")
     private boolean allowLanOriginPattern;
 
@@ -48,89 +50,216 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED))
+                        .authenticationEntryPoint(
+                                new org.springframework.security.web.authentication.HttpStatusEntryPoint(
+                                        org.springframework.http.HttpStatus.UNAUTHORIZED
+                                )
+                        )
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers("/ws-chat", "/ws-chat/**").permitAll()
-                        .requestMatchers("/api/auth/**", "/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/login/**", "/oauth2/**").permitAll()
 
-                        // AI 추천: 프리랜서 본인 공고 추천 (아래 GET freelancers permitAll 보다 먼저 매칭)
-                        .requestMatchers(HttpMethod.GET,
+                        // WebSocket / SockJS handshake 허용
+                        .requestMatchers("/ws", "/ws/**").permitAll()
+
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/v1/auth/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/login/**",
+                                "/oauth2/**"
+                        ).permitAll()
+
+                        // AI 추천: 프리랜서 본인 공고 추천
+                        .requestMatchers(
+                                HttpMethod.GET,
                                 "/api/freelancers/*/recommended-projects",
                                 "/api/v1/freelancers/*/recommended-projects"
                         ).hasAnyRole("FREELANCER", "BOTH")
 
-                        // [추가] 커뮤니티(Community) 조회 권한 추가 (명세서 준수: 누구나 조회 가능)
-                        .requestMatchers(HttpMethod.GET, "/api/freelancers/**", "/api/v1/freelancers/**", "/api/projects/**", "/api/v1/projects/**", "/api/portfolios/**", "/api/v1/portfolios/**", "/api/skills/**", "/api/v1/skills/**", "/api/community/**", "/api/v1/community/**").permitAll()
+                        // 공개 조회
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/freelancers/**", "/api/v1/freelancers/**",
+                                "/api/projects/**", "/api/v1/projects/**",
+                                "/api/portfolios/**", "/api/v1/portfolios/**",
+                                "/api/skills/**", "/api/v1/skills/**",
+                                "/api/community/**", "/api/v1/community/**"
+                        ).permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/api/users/onboarding", "/api/v1/users/onboarding", "/api/users/onboarding/", "/api/v1/users/onboarding/").hasRole("GUEST")
-
-                        .requestMatchers("/api/users/me", "/api/v1/users/me", "/api/users/me/", "/api/v1/users/me/").authenticated()
-                        //    프리랜서 리뷰 등록
-                        //    클라이언트가 프리랜서를 평가하는 구조이므로
-                        //    CLIENT 또는 BOTH 권한이 있어야 작성 가능
                         .requestMatchers(
                                 HttpMethod.POST,
-                                "/api/reviews/freelancers", "/api/v1/reviews/freelancers"
+                                "/api/users/onboarding",
+                                "/api/v1/users/onboarding",
+                                "/api/users/onboarding/",
+                                "/api/v1/users/onboarding/"
+                        ).hasRole("GUEST")
+
+                        .requestMatchers(
+                                "/api/users/me",
+                                "/api/v1/users/me",
+                                "/api/users/me/",
+                                "/api/v1/users/me/"
+                        ).authenticated()
+
+                        // 리뷰
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/reviews/freelancers",
+                                "/api/v1/reviews/freelancers"
                         ).hasAnyRole("CLIENT", "BOTH")
 
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/reviews/clients",
+                                "/api/v1/reviews/clients"
+                        ).hasAnyRole("FREELANCER", "BOTH")
 
-                        //    프리랜서가 클라이언트를 평가하는 구조이므로
-                        //    FREELANCER 또는 BOTH 권한이 있어야 작성 가능
-                        .requestMatchers(HttpMethod.POST, "/api/reviews/clients", "/api/v1/reviews/clients").hasAnyRole("FREELANCER", "BOTH")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/reviews/**",
+                                "/api/v1/reviews/**"
+                        ).permitAll()
 
-                        // 리뷰 목록 조회는 공개하고 싶다면 GET 허용
-                        //    Swagger 테스트나 상세 조회 확인할 때 편함
-                        .requestMatchers(HttpMethod.GET, "/api/reviews/**", "/api/v1/reviews/**").permitAll()
+                        // 프리랜서 전용
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/portfolios", "/api/v1/portfolios",
+                                "/api/applications", "/api/v1/applications",
+                                "/api/skills", "/api/v1/skills"
+                        ).hasAnyRole("FREELANCER", "BOTH")
 
-                        // 3. [권한] 프리랜서 전용 구역
-                        .requestMatchers(HttpMethod.POST, "/api/portfolios", "/api/v1/portfolios", "/api/applications", "/api/v1/applications", "/api/skills", "/api/v1/skills").hasAnyRole("FREELANCER", "BOTH")
-                        .requestMatchers(HttpMethod.DELETE, "/api/portfolios/**", "/api/v1/portfolios/**", "/api/skills/**", "/api/v1/skills/**").hasAnyRole("FREELANCER", "BOTH")
-                        .requestMatchers(HttpMethod.PATCH, "/api/freelancers/status", "/api/v1/freelancers/status").hasAnyRole("FREELANCER", "BOTH")
-                        .requestMatchers("/api/freelancer/**", "/api/v1/freelancer/**").hasAnyRole("FREELANCER", "BOTH")
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/portfolios/**", "/api/v1/portfolios/**",
+                                "/api/skills/**", "/api/v1/skills/**"
+                        ).hasAnyRole("FREELANCER", "BOTH")
 
-                        // [Cloudinary] 이미지 업로드: 포트폴리오 이미지는 프리랜서, 프로필 이미지는 인증된 모든 사용자
-                        .requestMatchers(HttpMethod.POST, "/api/images/portfolio", "/api/images/portfolios/bulk").hasAnyRole("FREELANCER", "BOTH")
-                        .requestMatchers(HttpMethod.POST, "/api/images/profile").authenticated()
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/freelancers/status",
+                                "/api/v1/freelancers/status"
+                        ).hasAnyRole("FREELANCER", "BOTH")
 
-                        // [스킬 추천] 포트폴리오/공고 본문 기반 태그 추천: 클라이언트/프리랜서 공통
-                        .requestMatchers(HttpMethod.POST, "/api/skills/suggest", "/api/v1/skills/suggest")
-                        .hasAnyRole("CLIENT", "FREELANCER", "BOTH")
+                        .requestMatchers(
+                                "/api/freelancer/**",
+                                "/api/v1/freelancer/**"
+                        ).hasAnyRole("FREELANCER", "BOTH")
 
-                        // 4. [권한] 클라이언트 전용 구역
-                        .requestMatchers(HttpMethod.POST, "/api/projects", "/api/v1/projects").hasAnyRole("CLIENT", "BOTH")
-                        .requestMatchers(HttpMethod.PUT, "/api/projects/**", "/api/v1/projects/**").hasAnyRole("CLIENT", "BOTH")
-                        .requestMatchers(HttpMethod.DELETE, "/api/projects/**", "/api/v1/projects/**").hasAnyRole("CLIENT", "BOTH")
-                        .requestMatchers(HttpMethod.PATCH,
+                        // 이미지 업로드
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/images/portfolio",
+                                "/api/images/portfolios/bulk"
+                        ).hasAnyRole("FREELANCER", "BOTH")
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/images/profile"
+                        ).authenticated()
+
+                        // 스킬 추천
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/skills/suggest",
+                                "/api/v1/skills/suggest"
+                        ).hasAnyRole("CLIENT", "FREELANCER", "BOTH")
+
+                        // 클라이언트 전용
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/projects",
+                                "/api/v1/projects"
+                        ).hasAnyRole("CLIENT", "BOTH")
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/projects/**",
+                                "/api/v1/projects/**"
+                        ).hasAnyRole("CLIENT", "BOTH")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/projects/**",
+                                "/api/v1/projects/**"
+                        ).hasAnyRole("CLIENT", "BOTH")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
                                 "/api/projects/*/applications", "/api/v1/projects/*/applications",
                                 "/api/applications/*/accept", "/api/v1/applications/*/accept",
                                 "/api/projects/*/close", "/api/v1/projects/*/close",
                                 "/api/projects/*/start", "/api/v1/projects/*/start",
                                 "/api/projects/*/complete", "/api/v1/projects/*/complete"
                         ).hasAnyRole("CLIENT", "BOTH")
-                        .requestMatchers("/api/client/**", "/api/v1/client/**").hasAnyRole("CLIENT", "BOTH")
-                        // [찜/북마크] 권한 세분화
-                        // 1. 프리랜서 찜 & 포트폴리오 좋아요: 클라이언트 유저만 가능
-                        .requestMatchers("/api/bookmarks/freelancers/**", "/api/v1/bookmarks/freelancers/**").hasAnyRole("CLIENT", "BOTH")
-                        .requestMatchers("/api/bookmarks/portfolios/**", "/api/v1/bookmarks/portfolios/**").hasAnyRole("CLIENT", "BOTH")
-                        // 2. 프로젝트 찜: 프리랜서 유저만 가능
-                        .requestMatchers("/api/bookmarks/projects/**", "/api/v1/bookmarks/projects/**").hasAnyRole("FREELANCER", "BOTH")
 
-                        // [역제안] 전송/보낸 목록: 클라이언트
-                        .requestMatchers(HttpMethod.POST, "/api/proposals", "/api/v1/proposals").hasAnyRole("CLIENT", "BOTH")
-                        .requestMatchers(HttpMethod.POST, "/api/proposals/with-standalone-project", "/api/v1/proposals/with-standalone-project").hasAnyRole("CLIENT", "BOTH")
-                        .requestMatchers(HttpMethod.GET, "/api/proposals/sent", "/api/v1/proposals/sent").hasAnyRole("CLIENT", "BOTH")
+                        .requestMatchers(
+                                "/api/client/**",
+                                "/api/v1/client/**"
+                        ).hasAnyRole("CLIENT", "BOTH")
 
-                        // [결제] 결제 준비 및 승인: 클라이언트 전용
-                        .requestMatchers("/api/payments/**", "/api/v1/payments/**").hasAnyRole("CLIENT", "BOTH")
-                        // [역제안] 받은 목록/상태 변경/문의하기: 프리랜서
-                        .requestMatchers(HttpMethod.GET, "/api/proposals/received", "/api/v1/proposals/received").hasAnyRole("FREELANCER", "BOTH")
-                        .requestMatchers(HttpMethod.PATCH, "/api/proposals/*/status", "/api/v1/proposals/*/status").hasAnyRole("FREELANCER", "BOTH")
-                        .requestMatchers(HttpMethod.POST, "/api/proposals/*/inquire", "/api/v1/proposals/*/inquire").hasAnyRole("FREELANCER", "BOTH")
+                        // 찜/북마크
+                        .requestMatchers(
+                                "/api/bookmarks/freelancers/**",
+                                "/api/v1/bookmarks/freelancers/**"
+                        ).hasAnyRole("CLIENT", "BOTH")
 
-                        // 5. [나머지] 커뮤니티 글쓰기, 좋아요, 댓글 작성 등은 GUEST를 제외한 정식 유저만 가능!
+                        .requestMatchers(
+                                "/api/bookmarks/portfolios/**",
+                                "/api/v1/bookmarks/portfolios/**"
+                        ).hasAnyRole("CLIENT", "BOTH")
+
+                        .requestMatchers(
+                                "/api/bookmarks/projects/**",
+                                "/api/v1/bookmarks/projects/**"
+                        ).hasAnyRole("FREELANCER", "BOTH")
+
+                        // 역제안
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/proposals",
+                                "/api/v1/proposals"
+                        ).hasAnyRole("CLIENT", "BOTH")
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/proposals/with-standalone-project",
+                                "/api/v1/proposals/with-standalone-project"
+                        ).hasAnyRole("CLIENT", "BOTH")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/proposals/sent",
+                                "/api/v1/proposals/sent"
+                        ).hasAnyRole("CLIENT", "BOTH")
+
+                        // 결제
+                        .requestMatchers(
+                                "/api/payments/**",
+                                "/api/v1/payments/**"
+                        ).hasAnyRole("CLIENT", "BOTH")
+
+                        // 받은 제안
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/proposals/received",
+                                "/api/v1/proposals/received"
+                        ).hasAnyRole("FREELANCER", "BOTH")
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/proposals/*/status",
+                                "/api/v1/proposals/*/status"
+                        ).hasAnyRole("FREELANCER", "BOTH")
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/proposals/*/inquire",
+                                "/api/v1/proposals/*/inquire"
+                        ).hasAnyRole("FREELANCER", "BOTH")
+
                         .anyRequest().hasAnyRole("CLIENT", "FREELANCER", "BOTH")
                 )
                 .oauth2Login(oauth2 -> oauth2
@@ -138,17 +267,16 @@ public class SecurityConfig {
                         .successHandler(oAuth2SuccessHandler)
                 )
                 .logout(logout -> logout
-                        .logoutUrl("/api/auth/logout") // 프론트에서 호출할 로그아웃 API 주소
-                        // 🎯 [수정] 리다이렉트 대신 204 No Content 반환
-                        .logoutSuccessHandler((request, response, authentication) -> {
-                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT);
-                        })
+                        .logoutUrl("/api/auth/logout")
+                        .logoutSuccessHandler((request, response, authentication) ->
+                                response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT)
+                        )
                         .permitAll()
                 )
-
-// ... 이후 설정 생략
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
-                        UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(jwtTokenProvider),
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
@@ -157,20 +285,23 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        // setAllowedOrigins 와 setAllowedOriginPatterns 는 상호 배타라, 패턴으로 통합한다.
+
         Set<String> patterns = new LinkedHashSet<>();
         patterns.add("http://localhost:*");
         patterns.add("http://127.0.0.1:*");
+
         if (allowLanOriginPattern) {
             patterns.add("http://192.168.*:*");
         }
+
         for (String origin : allowedOrigins) {
             if (origin != null && !origin.isBlank()) {
                 patterns.add(origin.trim());
             }
         }
+
         config.setAllowedOriginPatterns(new ArrayList<>(patterns));
-                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
 
