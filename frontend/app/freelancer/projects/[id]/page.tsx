@@ -2,9 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import api from '@/app/lib/axios';
-import { getCurrentUserId } from '@/app/lib/auth';
-import { createOrGetChatRoom } from '@/app/lib/chatApi';
-import { useChatStore } from '@/app/store/chatStore';
 import { useParams, useRouter } from 'next/navigation';
 import {
     Calendar,
@@ -24,88 +21,36 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlobalNavbar, { type UserData, type ProfileData } from '@/components/common/GlobalNavbar';
+import { SkillItem, useProjectDetail } from '@/app/hooks/useProjectDetail';
 
-interface ProjectDetail {
-    projectId: number;
-    companyName: string;
-    projectName: string;
-    budget: number;
-    deadline: string;
-    detail: string;
-    status: string;
-    online: boolean;
-    offline: boolean;
-    location: string;
-    latitude: number;
-    longitude: number;
-    skills: string[];
-
-    clientUserId?: number;
-    userId?: number;
-    clientId?: number;
-    writerId?: number;
-    ownerUserId?: number;
-}
+const getSkillName = (skill: SkillItem): string =>
+    typeof skill === 'string' ? skill : skill.name;
 
 export default function ProjectDetailPage() {
     const params = useParams();
     const router = useRouter();
     const id = params?.id as string;
-    const openChat = useChatStore((state) => state.openChat);
-
-    const [project, setProject] = useState<ProjectDetail | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const [isApplied, setIsApplied] = useState(false);
-    const [isBookmarked, setIsBookmarked] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [bidPrice, setBidPrice] = useState('');
-    const [message, setMessage] = useState('');
-    const [submitting, setSubmitting] = useState(false);
-    const [chatLoading, setChatLoading] = useState(false);
     const [user, setUser] = useState<UserData | null>(null);
     const [profile, setProfile] = useState<ProfileData | null>(null);
-
-    useEffect(() => {
-        const fetchProjectDetail = async () => {
-            if (!id) return;
-
-            try {
-                const response = await api.get(`/v1/projects/${id}`);
-                setProject(response.data);
-                setBidPrice(String(response.data.budget));
-            } catch (err: any) {
-                if (err.response?.status !== 401) {
-                    setError('프로젝트 정보를 불러오는데 실패했습니다.');
-                }
-                setLoading(false);
-                return;
-            }
-
-            const token = localStorage.getItem('accessToken');
-            if (token) {
-                try {
-                    const myApps = await api.get('/applications/me');
-                    setIsApplied(myApps.data.some((app: any) => app.projectId === Number(id)));
-                } catch (e) {
-                    console.error('지원 내역을 불러오는데 실패했습니다.', e);
-                }
-
-                try {
-                    const myBookmarks = await api.get('/v1/bookmarks/projects?size=1000');
-                    const bookmarkList = myBookmarks.data.content || [];
-                    setIsBookmarked(bookmarkList.some((b: any) => b.projectId === Number(id)));
-                } catch (e) {
-                    console.error('북마크 내역을 불러오는데 실패했습니다.', e);
-                }
-            }
-
-            setLoading(false);
-        };
-
-        fetchProjectDetail();
-    }, [id]);
+    const numericProjectId = Number(id);
+    const {
+        project,
+        loading,
+        error,
+        isApplied,
+        isBookmarked,
+        chatLoading,
+        isApplyOpen: isModalOpen,
+        bidPrice,
+        message,
+        submitting,
+        setIsApplyOpen: setIsModalOpen,
+        setBidPrice,
+        setMessage,
+        toggleBookmark,
+        startChat,
+        apply,
+    } = useProjectDetail(Number.isFinite(numericProjectId) ? numericProjectId : null);
 
     useEffect(() => {
         const fetchNavbarData = async () => {
@@ -127,78 +72,6 @@ export default function ProjectDetailPage() {
 
         void fetchNavbarData();
     }, []);
-
-    const handleBookmarkToggle = async () => {
-        if (!project) return;
-
-        try {
-            if (isBookmarked) {
-                await api.delete(`/v1/bookmarks/projects/${id}`);
-                setIsBookmarked(false);
-            } else {
-                await api.post(`/v1/bookmarks/projects/${id}`);
-                setIsBookmarked(true);
-            }
-        } catch {
-            alert('찜하기 처리에 실패했습니다.');
-        }
-    };
-
-    const handleApplySubmit = async () => {
-        if (!bidPrice || !message) return alert('금액과 메시지를 입력해 주세요.');
-
-        setSubmitting(true);
-        try {
-            await api.post('/applications', {
-                projectId: Number(id),
-                bidPrice: Number(bidPrice),
-                message: message.trim(),
-            });
-
-            alert('지원이 완료되었습니다!');
-            setIsApplied(true);
-            setIsModalOpen(false);
-        } catch {
-            alert('지원 중 오류가 발생했습니다.');
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const handleStartChat = async () => {
-        if (!project || chatLoading) return;
-
-        const targetUserId =
-            project.clientUserId ??
-            project.userId ??
-            project.clientId ??
-            project.writerId ??
-            project.ownerUserId ??
-            null;
-
-        const currentUserId = getCurrentUserId();
-        if (currentUserId !== null && targetUserId === currentUserId) {
-            alert('본인에게는 문의할 수 없습니다.');
-            return;
-        }
-
-        if (!targetUserId) {
-            console.error('프로젝트 응답에 작성자 userId가 없습니다.', project);
-            alert('채팅 대상 정보가 없습니다.');
-            return;
-        }
-
-        try {
-            setChatLoading(true);
-            const response = await createOrGetChatRoom(targetUserId);
-            openChat(response.roomId);
-        } catch (error) {
-            console.error('채팅방 생성/조회 실패:', error);
-            alert('문의하기를 열지 못했습니다.');
-        } finally {
-            setChatLoading(false);
-        }
-    };
 
     const formatBudget = (amount: number) => {
         return new Intl.NumberFormat('ko-KR', {
@@ -319,7 +192,7 @@ export default function ProjectDetailPage() {
                             <div className="mt-6">
                                 <button
                                     type="button"
-                                    onClick={handleStartChat}
+                                    onClick={() => void startChat()}
                                     disabled={chatLoading}
                                     className="px-6 py-3 rounded-2xl bg-[#7A4FFF] text-white font-bold shadow-lg hover:bg-[#6840e0] transition disabled:opacity-60"
                                 >
@@ -333,7 +206,7 @@ export default function ProjectDetailPage() {
 
                         <motion.button
                             whileTap={{ scale: 0.9 }}
-                            onClick={handleBookmarkToggle}
+                            onClick={toggleBookmark}
                             aria-label={isBookmarked ? '북마크 해제' : '북마크 추가'}
                             aria-pressed={isBookmarked}
                             className={`p-6 rounded-[2rem] shadow-xl transition-all border-2 flex items-center justify-center ${
@@ -407,10 +280,10 @@ export default function ProjectDetailPage() {
                             <div className="flex flex-wrap gap-2">
                                 {project.skills?.map((skill, index) => (
                                     <span
-                                        key={index}
+                                        key={`${getSkillName(skill)}-${index}`}
                                         className="cursor-default rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-950 shadow-sm transition-all hover:border-[#7A4FFF] font-mono"
                                     >
-                                        #{skill}
+                                        #{getSkillName(skill)}
                                     </span>
                                 ))}
                             </div>
@@ -521,7 +394,7 @@ export default function ProjectDetailPage() {
                                 </div>
 
                                 <button
-                                    onClick={handleApplySubmit}
+                                    onClick={() => void apply()}
                                     disabled={submitting}
                                     className="w-full bg-zinc-950 text-white font-black py-6 rounded-2xl shadow-xl hover:bg-[#7A4FFF] transition-all active:scale-95 disabled:opacity-50 uppercase tracking-widest text-xs font-mono"
                                 >
