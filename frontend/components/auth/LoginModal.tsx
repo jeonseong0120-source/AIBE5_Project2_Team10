@@ -84,10 +84,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             setLoading(false);
         }
     };
-
     const handleGoogleLogin = () => {
-        const baseUrl = resolveApiBaseUrl();
-        window.location.href = `${baseUrl}/oauth2/authorization/google`;
+        const serverBaseUrl = resolveApiBaseUrl().replace(/\/api$/, "");
+
+        // 최종 주소: http://localhost:8080/oauth2/authorization/google
+        window.location.href = `${serverBaseUrl}/oauth2/authorization/google`;
     };
 
     return (
