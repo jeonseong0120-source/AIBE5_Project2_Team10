@@ -32,7 +32,6 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
            "ORDER BY p.createdAt DESC")
     List<Proposal> findSentProposalsByClientId(@Param("clientId") Long clientId);
 
-    // 프리랜서가 받은 제안 목록 (최신순)
     @Query("SELECT p FROM Proposal p " +
            "JOIN FETCH p.project " +
            "JOIN FETCH p.clientProfile cp " +
@@ -40,6 +39,16 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
            "WHERE p.freelancerProfile.id = :freelancerId " +
            "ORDER BY p.createdAt DESC")
     List<Proposal> findReceivedProposalsByFreelancerId(@Param("freelancerId") Long freelancerId);
+
+    @Query("SELECT p FROM Proposal p " +
+           "JOIN FETCH p.project pr " +
+           "JOIN FETCH p.clientProfile cp " +
+           "JOIN FETCH cp.user " +
+           "WHERE p.freelancerProfile.id = :freelancerId " +
+           "AND p.status = com.devnear.web.domain.enums.ProposalStatus.ACCEPTED " +
+           "AND (pr.status = com.devnear.web.domain.enums.ProjectStatus.IN_PROGRESS " +
+           "OR pr.status = com.devnear.web.domain.enums.ProjectStatus.COMPLETED)")
+    List<Proposal> findAcceptedReceivedProposalsByFreelancerId(@Param("freelancerId") Long freelancerId);
 
     // 단건 조회 (상태 변경용) - 동시 수락/거절 방지를 위해 비관적 쓰기 락 적용
     @Lock(LockModeType.PESSIMISTIC_WRITE)

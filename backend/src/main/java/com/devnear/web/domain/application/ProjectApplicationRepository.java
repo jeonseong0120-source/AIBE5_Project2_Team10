@@ -50,4 +50,9 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
                                                                 @Param("status") ApplicationStatus status);
 
     boolean existsByFreelancerProfile_IdAndStatus(Long freelancerProfileId, ApplicationStatus status);
+
+    @Query("SELECT a.project.id, COUNT(a) FROM ProjectApplication a WHERE a.project.id IN :projectIds GROUP BY a.project.id")
+    List<Object[]> countByProjectIdIn(@Param("projectIds") List<Long> projectIds);
+
+    long countByProjectId(Long projectId);
 }
