@@ -187,19 +187,19 @@ export function useProjectDetail(projectId: number | null) {
             setChatLoading(false);
         }
     }, [chatLoading, openChat, project]);
-
+    
     const apply = useCallback(async () => {
         if (!projectId) return;
-        if (!bidPrice || !message.trim()) {
+        const bid = Number(bidPrice);
+        if (!bidPrice || !Number.isFinite(bid) || bid <= 0 || !message.trim()) {
             alert('금액과 메시지를 입력해 주세요.');
             return;
         }
-
         setSubmitting(true);
         try {
             await api.post('/applications', {
                 projectId,
-                bidPrice: Number(bidPrice),
+                bidPrice: bid,
                 message: message.trim(),
             });
             alert('지원이 완료되었습니다!');
@@ -211,7 +211,6 @@ export function useProjectDetail(projectId: number | null) {
             setSubmitting(false);
         }
     }, [bidPrice, message, projectId]);
-
     return {
         project,
         loading,

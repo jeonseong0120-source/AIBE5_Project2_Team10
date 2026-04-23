@@ -301,6 +301,9 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                                             />
                                             <motion.div
                                                 ref={applyPanelRef}
+                                                role="dialog"
+                                                aria-modal="true"
+                                                aria-labelledby="freelancer-apply-panel-title"
                                                 initial={{ opacity: 0, y: 20, scale: 0.97 }}
                                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                                 exit={{ opacity: 0, y: 20, scale: 0.97 }}
@@ -315,7 +318,7 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                                                 >
                                                     <X size={16} />
                                                 </button>
-                                                <h4 className="text-2xl font-black mb-5">지원서 작성</h4>
+                                                <h4 id="freelancer-apply-panel-title" className="text-2xl font-black mb-5">지원서 작성</h4>
                                                 <div className="space-y-4">
                                                     <div>
                                                         <label className="text-xs font-bold text-zinc-500">입찰 금액</label>
