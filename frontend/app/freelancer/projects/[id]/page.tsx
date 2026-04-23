@@ -70,7 +70,7 @@ export default function ProjectDetailPage() {
             }
         };
 
-<<<<<<< HEAD
+
         fetchProjectDetail();
     }, [id]);
 
@@ -151,10 +151,9 @@ export default function ProjectDetailPage() {
             setChatLoading(false);
         }
     };
-=======
+
         void fetchNavbarData();
-    }, []);
->>>>>>> main
+
 
     const formatBudget = (amount: number) => {
         return new Intl.NumberFormat('ko-KR', {

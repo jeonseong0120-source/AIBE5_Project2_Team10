@@ -42,7 +42,21 @@ export default function ChatWidget() {
     const selectedRoomIdRef = useRef<number | null>(null);
     const currentUserIdRef = useRef<number | null>(null);
     const latestMessageReqId = useRef(0);
-    const subscriptionRef = useRef<StompSubscription | null>(null);
+    const subscriptionRef = useRef<StompSubscription | (() => void) | null>(null);
+
+    const cleanupSubscription = () => {
+        const current = subscriptionRef.current;
+
+        if (!current) return;
+
+        if (typeof current === "function") {
+            current();
+        } else if (typeof current.unsubscribe === "function") {
+            current.unsubscribe();
+        }
+
+        subscriptionRef.current = null;
+    };
 
     useEffect(() => {
         const userId = getCurrentUserId();
@@ -123,8 +137,7 @@ export default function ChatWidget() {
         connectChatSocket();
 
         return () => {
-            subscriptionRef.current?.unsubscribe();
-            subscriptionRef.current = null;
+            cleanupSubscription();
             disconnectChatSocket();
         };
     }, [isOpen]);
@@ -140,7 +153,7 @@ export default function ChatWidget() {
 
                 if (cancelled) return;
 
-                subscriptionRef.current?.unsubscribe();
+                cleanupSubscription();
 
                 const sub = subscribeChatRoom(selectedRoomId, async (frame) => {
                     try {
@@ -193,8 +206,7 @@ export default function ChatWidget() {
 
         return () => {
             cancelled = true;
-            subscriptionRef.current?.unsubscribe();
-            subscriptionRef.current = null;
+            cleanupSubscription();
         };
     }, [isOpen, selectedRoomId]);
 
