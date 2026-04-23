@@ -60,7 +60,7 @@ public class UserService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        String token = jwtTokenProvider.createToken(user.getId(), user.getEmail(), user.getRole().name());
+        String token = jwtTokenProvider.createToken(user.getId(), user.getEmail(), user.getRole().name(), user.getStatus().name());
         return new TokenResponse(token, "Bearer");
     }
 
@@ -123,7 +123,8 @@ public class UserService {
             freelancerProfileRepository.save(profile);
         }
 
-        String newToken = jwtTokenProvider.createToken(user.getId(), user.getEmail(), user.getRole().name());
+        // 🎯 [수정] status 파라미터 추가
+        String newToken = jwtTokenProvider.createToken(user.getId(), user.getEmail(), user.getRole().name(), user.getStatus().name());
         return new TokenResponse(newToken, "Bearer");
     }
 

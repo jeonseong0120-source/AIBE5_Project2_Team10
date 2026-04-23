@@ -27,7 +27,8 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createToken(Long userId, String email, String role) {
+    // 🎯 [수정] status 파라미터 추가 및 claim에 저장
+    public String createToken(Long userId, String email, String role, String status) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
 
@@ -36,6 +37,7 @@ public class JwtTokenProvider {
                 .subject(email)
                 .claim("userId", userId)
                 .claim("role", role)
+                .claim("status", status) // 추가됨
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key)
@@ -53,20 +55,22 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * 🎯 [최적화] DB 조회 없이 토큰의 Claim만으로 인증 객체를 생성합니다.
-     * 필터 단계에서의 불필요한 DB 조회를 제거하여 성능을 극대화합니다.
-     */
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
 
-        Long userId = claims.get("userId", Long.class);
+        Number userIdNumber = claims.get("userId", Number.class);
+        Long userId = userIdNumber != null ? userIdNumber.longValue() : null;
+
         String email = claims.getSubject();
         String role = claims.get("role", String.class);
+        String status = claims.get("status", String.class); // 🎯 상태 꺼내기
 
-        // SecurityUser는 마스터의 프로젝트에 정의된 Principal 객체라고 가정합니다.
-        // DB 조회를 생략하고 토큰 정보로만 구성된 SecurityUser를 넘깁니다.
-        SecurityUser principal = new SecurityUser(userId, email, role);
+        if (userId == null || email == null || email.isBlank() || role == null || role.isBlank()) {
+            throw new JwtException("JWT 필수 클레임이 누락되었습니다.");
+        }
+
+        // 🎯 [수정] SecurityUser 생성자에 status 전달 (SecurityUser 클래스도 이전 가이드대로 4개짜리 생성자로 수정되어 있어야 합니다)
+        SecurityUser principal = new SecurityUser(userId, email, role, status);
 
         return new UsernamePasswordAuthenticationToken(
                 principal,

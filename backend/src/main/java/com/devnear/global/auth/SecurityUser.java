@@ -39,14 +39,14 @@ public class SecurityUser implements UserDetails {
      * 🎯 [추가] 토큰 정보(Claims)를 통한 생성자
      * DB 조회 없이 필터 단계에서 인증 객체를 생성하기 위해 사용됩니다.
      */
-    public SecurityUser(Long id, String email, String role) {
+    public SecurityUser(Long id, String email, String role, String status) {
         this.id = id;
         this.email = email;
         this.role = role;
-        this.password = ""; // 토큰 인증 시 패스워드는 불필요합니다.
-        this.status = "ACTIVE"; // 토큰이 유효하다면 활성 상태로 간주합니다.
+        this.password = ""; // 토큰 인증 시 패스워드는 불필요
+        // 만약 구형 토큰이라 status가 없다면 차단을 유도하기 위해 UNKNOWN 처리
+        this.status = status != null ? status : "UNKNOWN";
     }
-
     @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
