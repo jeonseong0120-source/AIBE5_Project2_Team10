@@ -308,8 +308,7 @@ export default function FreelancerExplorePage() {
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                         {/* 🎯 문구 최적화 + 퍼플 글로우 + 텍스트 그림자 적용 */}
                         <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-10 text-zinc-900 leading-tight break-keep [text-shadow:0_4px_15px_rgba(0,0,0,0.06)]">
-                            데이터가 증명하는 완벽한 기술 교차점, <br />
-                            최적의 <span className="text-[`#7A4FFF`] drop-shadow-[0_0_20px_rgba(122,79,255,0.4)] motion-safe:animate-[pulse_3s_ease-in-out_infinite] motion-reduce:animate-none">프로젝트</span>를 찾으세요.
+                            최적의 <span className="text-[#7A4FFF] drop-shadow-[0_0_20px_rgba(122,79,255,0.4)] motion-safe:animate-[pulse_3s_ease-in-out_infinite] motion-reduce:animate-none">프로젝트</span>를 찾으세요.
                         </h1>
                     </motion.div>
 
@@ -340,10 +339,10 @@ export default function FreelancerExplorePage() {
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2 mb-1">
                                     <Sparkles className="text-[#7A4FFF]" size={14} />
-                                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-[#7A4FFF] font-mono italic">Recommended</span>
+                                    <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-[#7A4FFF]">Recommended</span>
                                 </div>
-                                <h2 className="text-2xl font-black tracking-tighter text-zinc-950 uppercase font-mono leading-none">
-                                    AI <span className="text-[#7A4FFF]">TOP_PICK</span>
+                                <h2 className="text-2xl font-bold tracking-tighter text-zinc-950 leading-none">
+                                    AI <span className="text-[#7A4FFF]">TOP PICK</span>
                                 </h2>
                             </div>
                             <div className="hidden lg:block h-8 w-[1px] bg-zinc-100" />
@@ -490,8 +489,8 @@ export default function FreelancerExplorePage() {
                     
                     {/* 1. 협업 근무 방식 필터 */}
                     <section>
-                        <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase mb-4 text-zinc-400 font-mono">
-                            <BarChart3 size={14} /> 협업_근무_방식
+                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
+                            <BarChart3 size={16} className="text-[#7A4FFF]" /> 협업 근무 방식
                         </h3>
                         <div className="flex bg-white p-1 rounded-2xl border border-zinc-200 shadow-sm overflow-x-auto no-scrollbar">
                             {['전체', '온라인', '오프라인'].map((tab) => (
@@ -510,8 +509,8 @@ export default function FreelancerExplorePage() {
 
                     {/* 2. 기술 스택 필터 (그리드 형태) */}
                     <section>
-                        <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase mb-4 text-zinc-400 font-mono">
-                            <Sparkles size={14} /> 프로젝트_기술_스택
+                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
+                            <Sparkles size={16} className="text-[#7A4FFF]" /> 프로젝트 기술 스택
                         </h3>
                         <div className="grid grid-cols-2 gap-2">
                             {techStacks.map(tech => {
@@ -543,8 +542,8 @@ export default function FreelancerExplorePage() {
                     {/* 3. 활동 지역 필터 (3열 컴팩트 그리드 - Client Mainpage 스타일) */}
                     <section>
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase text-zinc-400 font-mono">
-                                <MapPin size={14} /> 활동_지역
+                            <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight text-zinc-900">
+                                <MapPin size={16} className="text-[#7A4FFF]" /> 활동 지역
                             </h3>
                             {selectedLocation && (
                                 <span className="text-[9px] font-black text-[#7A4FFF] font-mono animate-pulse">FILTER_ACTIVE</span>
@@ -577,12 +576,12 @@ export default function FreelancerExplorePage() {
 
                     {/* 4. 희망 예산 브랜딩 (Coming Soon 스타일로 유지하되 세련되게) */}
                     <section>
-                        <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase mb-4 text-zinc-400 font-mono">
-                            <DollarSign size={14} /> 프로젝트_예산
+                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
+                            <DollarSign size={16} className="text-[#7A4FFF]" /> 프로젝트 예산
                         </h3>
-                        <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-                            <div className="text-[10px] font-black text-zinc-300 font-mono uppercase tracking-widest py-2">
-                                System_Updating...
+                         <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
+                            <div className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest py-2">
+                                Deep Analysis Mode
                             </div>
                         </div>
                     </section>

@@ -97,15 +97,15 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                     {/* 프로젝트 타이틀 영역 - 대폭 확장 */}
                     <div className="flex-1 min-w-0 flex flex-col gap-2.5">
                         <div className="flex flex-wrap items-center gap-3">
-                            <h2 className="text-xl md:text-3xl font-black group-hover:text-[#7A4FFF] transition-colors tracking-tight leading-tight line-clamp-2 pr-4">
+                            <h2 className="text-xl md:text-2xl font-bold group-hover:text-[#7A4FFF] transition-colors tracking-tight leading-tight line-clamp-2 pr-4">
                                 {data.projectName || "제목 없는 프로젝트"}
                             </h2>
                             <div className="flex items-center gap-1.5 shrink-0">
-                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase font-mono tracking-tighter border ${statusConfig.classes}`}>
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${statusConfig.classes}`}>
                                     {statusConfig.text}
                                 </span>
                                 {dDay && (
-                                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-black font-mono ${
+                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                                         dDay.includes('D-') ? 'bg-zinc-950 text-white' : 'bg-red-50 text-red-500 border border-red-100'
                                     }`}>
                                         {dDay}
@@ -148,13 +148,13 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                         {skillList.slice(0, 8).map((skill, idx: number) => (
                             <span
                                 key={`${getSkillName(skill)}-${idx}`}
-                                className="px-3.5 py-1.5 bg-zinc-50 border border-zinc-100 rounded-xl text-[10px] font-black text-zinc-400 uppercase tracking-tighter font-mono group-hover:border-[#7A4FFF]/20 group-hover:text-[#7A4FFF] hover:bg-white transition-all shadow-sm"
+                                className="px-3.5 py-1.5 bg-zinc-50 border border-zinc-100 rounded-xl text-[11px] font-bold text-zinc-400 uppercase tracking-tight group-hover:border-[#7A4FFF]/20 group-hover:text-[#7A4FFF] hover:bg-white transition-all shadow-sm"
                             >
                                 #{getSkillName(skill)}
                             </span>
                         ))}
                         {skillList.length > 8 && (
-                           <span className="px-3 py-1.5 bg-zinc-950 text-white rounded-xl text-[9px] font-black font-mono">
+                           <span className="px-3 py-1.5 bg-zinc-950 text-white rounded-xl text-[9px] font-bold">
                                +{skillList.length - 8}
                            </span>
                         )}
@@ -163,19 +163,19 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                     {/* 예산 및 액션 버튼 세트 */}
                     <div className="flex items-center gap-6 md:gap-10 shrink-0 w-full md:w-auto justify-between md:justify-end">
                         <div className="text-right">
-                            <span className="block text-[9px] font-black text-zinc-300 uppercase font-mono tracking-[0.2em] mb-1">Estimated_Budget</span>
-                            <p className="text-2xl md:text-3xl font-black text-zinc-950 font-mono tracking-tighter group-hover:text-[#FF7D00] transition-colors duration-500 italic">
-                                <span className="text-[#FF7D00] text-lg mr-1 not-italic">₩</span>
+                            <span className="block text-[11px] font-bold text-zinc-300 uppercase tracking-widest mb-1">예상 예산</span>
+                            <p className="text-2xl font-bold text-zinc-950 tracking-tighter group-hover:text-[#FF7D00] transition-colors duration-500">
+                                <span className="text-[#FF7D00] text-lg mr-1">₩</span>
                                 {((data.budget || 0) / 10000).toLocaleString()}
-                                <span className="text-zinc-300 text-xs ml-1 not-italic font-sans">만원</span>
+                                <span className="text-zinc-300 text-xs ml-1 font-sans">만원</span>
                             </p>
                         </div>
 
                         <motion.button
                             whileTap={{ scale: 0.97 }}
-                            className="bg-zinc-950 text-white h-12 md:h-14 px-6 md:px-8 rounded-xl md:rounded-2xl font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 group-hover:bg-[#7A4FFF] transition-all shadow-xl group-hover:shadow-[#7A4FFF]/20"
+                            className="bg-zinc-950 text-white h-12 md:h-14 px-6 md:px-8 rounded-xl md:rounded-2xl font-bold text-[13px] uppercase tracking-wider flex items-center justify-center gap-3 group-hover:bg-[#7A4FFF] transition-all shadow-xl group-hover:shadow-[#7A4FFF]/20"
                         >
-                            Open_Mission <ArrowUpRight size={16} className="group-hover:rotate-45 transition-transform duration-500" />
+                            상세 정보 확인 <ArrowUpRight size={16} className="group-hover:rotate-45 transition-transform duration-500" />
                         </motion.button>
                     </div>
                 </div>

@@ -6,9 +6,9 @@ import api from '@/app/lib/axios';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
 import {
     User, Users, CheckCircle, XCircle, Edit, Trash2,
-    Calendar, DollarSign, Activity, ChevronRight,
-    Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, Clock, ArrowUpRight, Plus, RefreshCcw, Search,
-    CreditCard, ShieldCheck, ExternalLink
+    Calendar, DollarSign, Activity, ChevronRight, Clock,
+    Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, ArrowUpRight, Plus, RefreshCcw, Search,
+    ListFilter, CreditCard, ShieldCheck, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } from '@/components/proposal/ProposalSendModal';
@@ -20,6 +20,7 @@ import FreelancerReviewModal from '@/components/review/FreelancerReviewModal';
 import MatchingresultForm from '@/components/project/MatchingresultForm';
 import ClientProjectCard from '@/components/project/ClientProjectCard';
 import FreelancerBookmarkCard from '@/components/freelancer/FreelancerBookmarkCard';
+import DashboardSidebar from '@/components/common/DashboardSidebar';
 
 export default function ClientDashboardPage() {
     const router = useRouter();
@@ -504,10 +505,6 @@ export default function ClientDashboardPage() {
 
                 <div className="max-w-4xl mx-auto relative z-10">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                        <div className="flex items-center justify-center gap-3 mb-6">
-                            <span className="w-12 h-[3px] bg-[#FF7D00] rounded-full"></span>
-                            <span className="text-[11px] font-black text-[#FF7D00] uppercase tracking-[0.4em] font-mono">관리 콘솔</span>
-                        </div>
                         <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 text-zinc-900 leading-tight">
                             클라이언트 <span className="text-[#FF7D00]">대시보드</span>
                         </h1>
@@ -521,68 +518,52 @@ export default function ClientDashboardPage() {
                 {/* 🎯 메인 콘텐츠 영역 */}
                 <div className="flex flex-col lg:flex-row gap-12">
                     {/* 좌측 사이드바: 퀵 스탯 */}
-                    <aside className="w-full lg:w-72 flex flex-col gap-10">
-                        {/* 프로젝트 등록 버튼 */}
-                        <button 
-                            onClick={() => router.push("/client/projects/new")} 
-                            className="group flex items-center justify-center gap-3 w-full py-4 bg-[#FF7D00] text-white rounded-2xl text-[11px] font-black hover:bg-zinc-950 transition-all shadow-lg shadow-orange-500/10 uppercase tracking-widest"
-                        >
-                            <Plus size={18} strokeWidth={3} /> 프로젝트 등록
-                        </button>
-
-                        {/* 메인 내비게이션 섹션 */}
-                        <div className="flex flex-col gap-2">
-                            <p className="px-4 text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-2">Management_Console</p>
-                            {[
-                                { id: 'PROJECTS', label: '프로젝트 관리', icon: <Briefcase size={18} /> },
-                                { id: 'PROPOSALS', label: '제안 현황', icon: <Send size={18} /> },
-                                { id: 'BOOKMARKS', label: '관심 프리랜서', icon: <Heart size={18} /> }
-                            ].map((tab) => (
-                                <button 
-                                    key={tab.id} 
-                                    onClick={() => setActiveMainTab(tab.id as any)} 
-                                    className={`flex items-center gap-4 px-6 py-4 rounded-[1.2rem] text-[10px] font-black transition-all tracking-wider text-left ${
-                                        activeMainTab === tab.id 
-                                        ? 'bg-zinc-950 text-white shadow-xl translate-x-2' 
-                                        : 'text-zinc-400 hover:text-zinc-600 hover:bg-white border border-transparent hover:border-zinc-100'
-                                    }`}
-                                >
-                                    <span className={activeMainTab === tab.id ? 'text-[#FF7D00]' : ''}>{tab.icon}</span>
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-
-                    </aside>
+                    <DashboardSidebar
+                        activeTab={activeMainTab}
+                        onTabChange={setActiveMainTab}
+                        tabs={[
+                            { id: 'PROJECTS', label: '프로젝트 관리', icon: <Briefcase size={18} /> },
+                            { id: 'PROPOSALS', label: '제안 현황', icon: <Send size={18} /> },
+                            { id: 'BOOKMARKS', label: '관심 프리랜서', icon: <Heart size={18} /> }
+                        ]}
+                        mode="CLIENT"
+                        ctaLabel="프로젝트 등록"
+                        ctaIcon={<Plus size={18} strokeWidth={3} />}
+                        onCtaClick={() => router.push("/client/projects/new")}
+                        user={user}
+                        profile={profile}
+                    />
 
                     {/* 우측 메인 리스트 */}
                     <div className="flex-1 min-w-0">
                         {activeMainTab === 'PROJECTS' && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                <div className="sticky top-4 z-40 backdrop-blur-md pb-6 flex items-center gap-4">
-                                    <div className="flex-1 bg-white/70 border border-zinc-100 rounded-full shadow-sm p-1.5">
-                                        <div className="grid grid-cols-4 gap-1">
-                                            {[{ id: 'ALL', label: '전체' }, { id: 'OPEN', label: '모집중' }, { id: 'IN_PROGRESS', label: '진행중' }, { id: 'COMPLETED', label: '마감됨' }].map((s) => (
-                                                <button 
-                                                    key={s.id} 
-                                                    onClick={() => setFilterStatus(s.id)} 
-                                                    className={`py-3 rounded-full text-[11px] font-black transition-all tracking-widest uppercase font-mono text-center ${
-                                                        filterStatus === s.id 
-                                                        ? 'bg-zinc-950 text-white shadow-xl scale-[1.02]' 
-                                                        : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/80'
-                                                    }`}
-                                                >
-                                                    {s.label}
-                                                </button>
-                                            ))}
+                                <div className="sticky top-4 z-40 backdrop-blur-md pb-6">
+                                    <div className="bg-white/70 border border-zinc-100 rounded-full shadow-sm p-1.5 flex items-center justify-between gap-4">
+                                        <div className="flex-1">
+                                            <div className="grid grid-cols-4 gap-1">
+                                                {[{ id: 'ALL', label: '전체' }, { id: 'OPEN', label: '모집중' }, { id: 'IN_PROGRESS', label: '진행중' }, { id: 'COMPLETED', label: '마감됨' }].map((s) => (
+                                                    <button 
+                                                        key={s.id} 
+                                                        onClick={() => setFilterStatus(s.id)} 
+                                                        className={`py-3.5 rounded-full text-[13px] font-bold transition-all tracking-wider text-center ${
+                                                            filterStatus === s.id 
+                                                            ? 'bg-zinc-950 text-white shadow-xl scale-[1.02]' 
+                                                            : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/80'
+                                                        }`}
+                                                    >
+                                                        {s.label}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
+                                        <button 
+                                            onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
+                                            className="px-6 py-3 bg-white border border-zinc-100 rounded-full text-[12px] font-bold text-zinc-600 hover:bg-zinc-50 transition-all flex items-center gap-2 uppercase mr-1 shadow-sm"
+                                        >
+                                            <ListFilter size={14} className="text-[#FF7D00]" /> {sortOrder === 'DESC' ? '최신순' : '과거순'}
+                                        </button>
                                     </div>
-                                    <button 
-                                        onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
-                                        className="px-8 py-3.5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all flex items-center gap-3 shadow-xl shadow-zinc-100"
-                                    >
-                                        <Clock size={16} /> {sortOrder === 'DESC' ? 'Latest' : 'Oldest'}
-                                    </button>
                                 </div>
 
                                 <div className="grid gap-10 mt-4">
@@ -665,7 +646,7 @@ export default function ClientDashboardPage() {
                                         onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
                                         className="px-8 py-3.5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all flex items-center gap-3 shadow-xl shadow-zinc-100"
                                     >
-                                        <Clock size={16} /> {sortOrder === 'DESC' ? 'Latest' : 'Oldest'}
+                                        <Clock size={16} /> {sortOrder === 'DESC' ? '최신순' : '과거순'}
                                     </button>
                                 </div>
 
