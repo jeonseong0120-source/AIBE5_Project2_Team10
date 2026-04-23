@@ -4,6 +4,7 @@ import com.devnear.web.domain.application.ProjectApplication;
 import com.devnear.web.domain.application.ProjectApplicationRepository;
 import com.devnear.web.domain.enums.NotificationType;
 import com.devnear.web.domain.enums.ProjectStatus; // 🎯 봇의 요청대로 임포트 추가
+import com.devnear.web.domain.enums.ProposalStatus;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
 import com.devnear.web.domain.project.Project;
@@ -104,9 +105,22 @@ public class ApplicationService {
         FreelancerProfile freelancer = freelancerProfileRepository.findByUser_Id(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("프리랜서 프로필이 등록되어 있지 않습니다."));
 
-        // Repository에서 N+1 최적화된 쿼리로 꺼내서 DTO로 변환
-        return applicationRepository.findByFreelancerProfileIdWithProject(freelancer.getId()).stream()
+        // 1. 일반 지원 내역
+        List<MyApplicationResponse> applications = applicationRepository.findByFreelancerProfileIdWithProject(freelancer.getId()).stream()
                 .map(MyApplicationResponse::from)
+                .collect(Collectors.toList());
+
+        // 2. 수락된 역제안 중 결제 완료(진행 중 이상)된 내역 추가
+        List<MyApplicationResponse> proposals = proposalRepository.findAcceptedReceivedProposalsByFreelancerId(freelancer.getId()).stream()
+                .map(MyApplicationResponse::from)
+                .collect(Collectors.toList());
+
+        List<MyApplicationResponse> combined = new ArrayList<>(applications);
+        combined.addAll(proposals);
+
+        // 최신순 정렬 (지원일 기준)
+        return combined.stream()
+                .sorted(Comparator.comparing(MyApplicationResponse::getAppliedAt).reversed())
                 .collect(Collectors.toList());
     }
 
