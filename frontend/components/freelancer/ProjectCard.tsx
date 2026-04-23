@@ -8,14 +8,20 @@ import { useState } from 'react';
 interface ProjectCardProps {
     data: any;
     index: number;
+    onOpenProject?: (projectId: number) => void;
 }
 
-export default function ProjectCard({ data, index }: ProjectCardProps) {
+type SkillItem = string | { name: string };
+
+const getSkillName = (skill: SkillItem): string =>
+    typeof skill === 'string' ? skill : skill.name;
+
+export default function ProjectCard({ data, index, onOpenProject }: ProjectCardProps) {
     const router = useRouter();
     const [isBookmarked, setIsBookmarked] = useState(false);
 
     // [수정] 백엔드 로그 확인 결과: projectSkills가 아니라 skills로 오고 있음
-    const skillList = data.skills || [];
+    const skillList: SkillItem[] = data.skills || [];
 
     // D-Day 계산 로직
     const getDDay = (deadlineStr: string) => {
@@ -38,7 +44,11 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
 
         const id = data.projectId || data.id;
         if (id) {
-            router.push(`/freelancer/projects/${id}`);
+            if (onOpenProject) {
+                onOpenProject(Number(id));
+            } else {
+                router.push(`/freelancer/projects/${id}`);
+            }
         }
     };
 
@@ -135,12 +145,12 @@ export default function ProjectCard({ data, index }: ProjectCardProps) {
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 pt-8 border-t border-zinc-50">
                     {/* 기술 스택 */}
                     <div className="flex flex-wrap gap-2 flex-1">
-                        {skillList.slice(0, 8).map((skill: any, idx: number) => (
+                        {skillList.slice(0, 8).map((skill, idx: number) => (
                             <span
-                                key={idx}
+                                key={`${getSkillName(skill)}-${idx}`}
                                 className="px-3.5 py-1.5 bg-zinc-50 border border-zinc-100 rounded-xl text-[10px] font-black text-zinc-400 uppercase tracking-tighter font-mono group-hover:border-[#7A4FFF]/20 group-hover:text-[#7A4FFF] hover:bg-white transition-all shadow-sm"
                             >
-                                #{typeof skill === "object" ? skill.name : skill}
+                                #{getSkillName(skill)}
                             </span>
                         ))}
                         {skillList.length > 8 && (

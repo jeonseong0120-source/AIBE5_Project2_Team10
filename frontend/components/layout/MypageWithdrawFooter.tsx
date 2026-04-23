@@ -25,7 +25,7 @@ export default function MypageWithdrawFooter() {
             await api.delete('/v1/users/me/account');
             alert('회원 탈퇴가 완료되었습니다.');
             logout();
-            router.push('/login');
+            router.push('/');
         } catch (error: unknown) {
             const message =
                 typeof error === 'object' &&
