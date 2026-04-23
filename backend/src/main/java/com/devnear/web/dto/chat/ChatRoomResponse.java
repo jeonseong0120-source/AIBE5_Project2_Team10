@@ -16,7 +16,6 @@ public class ChatRoomResponse {
     private String opponentName;
     private String opponentNickname;
 
-    // 채팅방 생성 후, 현재 로그인한 사용자 기준으로 상대방 정보를 담아 응답
     public static ChatRoomResponse from(ChatRoom room, User me) {
         User opponent = room.getOpponent(me);
 

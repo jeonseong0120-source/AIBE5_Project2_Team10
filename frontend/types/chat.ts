@@ -1,20 +1,13 @@
-export interface ChatRoomResponse {
-    roomId: number;
-    otherUserId: number;
-    otherNickname: string;
-    lastMessage: string | null;
-    lastMessageTime: string | null;
-    unreadCount: number;
-}
-
 export interface ChatMessageResponse {
-    id: number;
+    messageId: number;
     roomId: number;
     senderId: number;
+    senderName: string;
     senderNickname: string;
-    message: string;
-    createdAt: string;
+    content: string;
     read: boolean;
+    systemMessage: boolean;
+    createdAt: string;
 }
 
 export interface ChatMessageSendRequest {
@@ -22,10 +15,23 @@ export interface ChatMessageSendRequest {
     message: string;
 }
 
-export interface ChatRoomCreateRequest {
-    targetUserId: number;
-}
-
 export interface ChatRoomCreateResponse {
     roomId: number;
+    projectId: number;
+    projectName: string;
+    opponentUserId: number;
+    opponentName: string;
+    opponentNickname: string;
+}
+
+export interface ChatRoomListResponse {
+    roomId: number;
+    projectId: number;
+    projectName: string;
+    opponentUserId: number;
+    opponentName: string;
+    opponentNickname: string;
+    lastMessage: string | null;
+    lastMessageTime: string | null;
+    unreadCount: number;
 }
