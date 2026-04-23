@@ -1,5 +1,6 @@
 import { Client, IMessage, StompSubscription } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { resolveSockJsUrl } from "./wsUrl";
 
 let client: Client | null = null;
 let connectingPromise: Promise<Client> | null = null;
@@ -9,8 +10,6 @@ function getAccessToken(): string | null {
     return localStorage.getItem("accessToken");
 }
 
-import { resolveSockJsUrl } from "./wsUrl";
-
 function resolveChatSocketUrl(): string {
     return process.env.NEXT_PUBLIC_WS_URL?.trim() || resolveSockJsUrl();
 }
@@ -18,16 +17,16 @@ function resolveChatSocketUrl(): string {
 export function connectChatSocket(onConnect?: () => void) {
     if (client?.active) return client;
 
-    const token = getAccessToken();
-
     client = new Client({
         webSocketFactory: () => new SockJS(resolveChatSocketUrl()),
         reconnectDelay: 5000,
         debug: () => {},
         beforeConnect: () => {
-            const t = getAccessToken();
-            client!.connectHeaders = t ? { Authorization: `Bearer ${t}` } : {};
-            },
+            const token = getAccessToken();
+            client!.connectHeaders = token
+                ? { Authorization: `Bearer ${token}` }
+                : {};
+        },
         onConnect: () => {
             onConnect?.();
         },
@@ -87,11 +86,8 @@ export function disconnectChatSocket() {
 export async function subscribeChatRoom(
     roomId: number,
     callback: (message: IMessage) => void
-    ): Promise<StompSubscription> {
-const c = await ensureChatSocketConnected();
-return c.subscribe(`/sub/chat/rooms/${roomId}`, callback);
-}
+): Promise<StompSubscription> {
+    const socketClient = await ensureChatSocketConnected();
+    return socketClient.subscribe(`/sub/chat/rooms/${roomId}`, callback);
 
-export function isChatSocketConnected() {
-    return !!client?.connected;
 }

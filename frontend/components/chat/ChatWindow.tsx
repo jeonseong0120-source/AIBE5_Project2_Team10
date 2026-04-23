@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ChatInput from "./ChatInput";
 import ChatMessageBubble from "./ChatMessageBubble";
-import type { ChatMessageResponse, ChatRoomResponse } from "../../types/chat";
+import type { ChatMessageResponse, ChatRoomListResponse } from "../../types/chat";
 import { formatChatTime } from "../../app/lib/chatTime";
 
 interface ChatWindowProps {
     isOpen: boolean;
     onClose: () => void;
-    rooms: ChatRoomResponse[];
+    rooms: ChatRoomListResponse[];
     selectedRoomId: number | null;
     onSelectRoom: (roomId: number) => void | Promise<void>;
     messages: ChatMessageResponse[];
@@ -103,7 +103,7 @@ export default function ChatWindow({
                             >
                                 <div className="min-w-0 flex-1">
                                     <div className="truncate text-sm font-medium text-gray-900">
-                                        {room.otherNickname}
+                                        {room.opponentNickname}
                                     </div>
                                     <div className="truncate text-xs text-gray-400">
                                         {room.lastMessage || "대화를 시작해보세요"}
@@ -132,10 +132,10 @@ export default function ChatWindow({
                         <p className="mt-1 text-xs">첫 메시지를 보내보세요.</p>
                     </div>
                 ) : (
-                    messages.map((msg, index) => (
+                    messages.map((msg) => (
                         <ChatMessageBubble
-                            key={msg.id ?? `${msg.roomId}-${msg.createdAt}-${msg.senderId}-${index}`}
-                            message={msg.message}
+                            key={msg.messageId}
+                            message={msg.content}
                             time={formatChatTime(msg.createdAt)}
                             isMine={currentUserId !== null && msg.senderId === currentUserId}
                             senderNickname={msg.senderNickname}

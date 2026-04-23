@@ -70,8 +70,90 @@ export default function ProjectDetailPage() {
             }
         };
 
+
+        fetchProjectDetail();
+    }, [id]);
+
+    const handleBookmarkToggle = async () => {
+        if (!project) return;
+
+        try {
+            if (isBookmarked) {
+                await api.delete(`/v1/bookmarks/projects/${id}`);
+                setIsBookmarked(false);
+            } else {
+                await api.post(`/v1/bookmarks/projects/${id}`);
+                setIsBookmarked(true);
+            }
+        } catch {
+            alert('찜하기 처리에 실패했습니다.');
+        }
+    };
+
+    const handleApplySubmit = async () => {
+        if (!bidPrice || !message) return alert('금액과 메시지를 입력해 주세요.');
+
+        setSubmitting(true);
+        try {
+            await api.post('/applications', {
+                projectId: Number(id),
+                bidPrice: Number(bidPrice),
+                message: message.trim(),
+            });
+
+            alert('지원이 완료되었습니다!');
+            setIsApplied(true);
+            setIsModalOpen(false);
+        } catch {
+            alert('지원 중 오류가 발생했습니다.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleStartChat = async () => {
+        if (!project || chatLoading) return;
+
+        const targetUserId =
+            project.clientUserId ??
+            project.userId ??
+            project.clientId ??
+            project.writerId ??
+            project.ownerUserId ??
+            null;
+
+        const currentUserId = getCurrentUserId();
+
+        if (currentUserId !== null && targetUserId === currentUserId) {
+            alert('본인에게는 문의할 수 없습니다.');
+            return;
+        }
+
+        if (!targetUserId) {
+            console.error('프로젝트 응답에 작성자 userId가 없습니다.', project);
+            alert('채팅 대상 정보가 없습니다.');
+            return;
+        }
+
+        try {
+            setChatLoading(true);
+
+            const response = await createOrGetChatRoom(
+                targetUserId,
+                project.projectId // 🔥 핵심 추가
+            );
+
+            openChat(response.roomId);
+        } catch (error) {
+            console.error('채팅방 생성/조회 실패:', error);
+            alert('문의하기를 열지 못했습니다.');
+        } finally {
+            setChatLoading(false);
+        }
+    };
+
         void fetchNavbarData();
-    }, []);
+
 
     const formatBudget = (amount: number) => {
         return new Intl.NumberFormat('ko-KR', {

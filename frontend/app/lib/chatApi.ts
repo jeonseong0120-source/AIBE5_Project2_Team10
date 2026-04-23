@@ -3,20 +3,25 @@ import type {
     ChatMessageResponse,
     ChatMessageSendRequest,
     ChatRoomCreateResponse,
-    ChatRoomResponse,
+    ChatRoomListResponse,
 } from "../../types/chat";
 import { ensureChatSocketConnected } from "./chatSocket";
 
-export async function getChatRooms(): Promise<ChatRoomResponse[]> {
-    const { data } = await api.get<ChatRoomResponse[]>("/chat/rooms");
+export async function getChatRooms(): Promise<ChatRoomListResponse[]> {
+    const { data } = await api.get<ChatRoomListResponse[]>("/chat/rooms");
     return data;
 }
 
 export async function getChatMessages(
-    roomId: number
+    roomId: number,
+    page = 0,
+    size = 50
 ): Promise<ChatMessageResponse[]> {
     const { data } = await api.get<ChatMessageResponse[]>(
-        `/chat/rooms/${roomId}/messages`
+        `/chat/rooms/${roomId}/messages`,
+        {
+            params: { page, size },
+        }
     );
     return data;
 }
@@ -40,10 +45,12 @@ export async function sendChatMessage(
 }
 
 export async function createOrGetChatRoom(
-    targetUserId: number
+    targetUserId: number,
+    projectId: number
 ): Promise<ChatRoomCreateResponse> {
     const { data } = await api.post<ChatRoomCreateResponse>("/chat/rooms", {
         targetUserId,
+        projectId,
     });
     return data;
 }

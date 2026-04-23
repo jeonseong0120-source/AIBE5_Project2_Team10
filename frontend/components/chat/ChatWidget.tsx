@@ -13,12 +13,13 @@ import {
     connectChatSocket,
     disconnectChatSocket,
     subscribeChatRoom,
+    ensureChatSocketConnected,
 } from "../../app/lib/chatSocket";
 import { getCurrentUserId } from "../../app/lib/auth";
 import { useChatStore } from "../../app/store/chatStore";
-import type { ChatMessageResponse, ChatRoomResponse } from "../../types/chat";
+import type { ChatMessageResponse, ChatRoomListResponse } from "../../types/chat";
 
-function sortRoomsByLatest(roomList: ChatRoomResponse[]) {
+function sortRoomsByLatest(roomList: ChatRoomListResponse[]) {
     return [...roomList].sort((a, b) => {
         const aTime = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
         const bTime = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
@@ -26,20 +27,9 @@ function sortRoomsByLatest(roomList: ChatRoomResponse[]) {
     });
 }
 
-function safeUnsubscribe(subscription: unknown) {
-    if (
-        subscription &&
-        typeof subscription === "object" &&
-        "unsubscribe" in subscription &&
-        typeof (subscription as { unsubscribe: unknown }).unsubscribe === "function"
-    ) {
-        (subscription as { unsubscribe: () => void }).unsubscribe();
-    }
-}
-
 export default function ChatWidget() {
     const [input, setInput] = useState("");
-    const [rooms, setRooms] = useState<ChatRoomResponse[]>([]);
+    const [rooms, setRooms] = useState<ChatRoomListResponse[]>([]);
     const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
@@ -50,11 +40,28 @@ export default function ChatWidget() {
     const { isOpen, selectedRoomId, openChat, closeChat, setRoom } = useChatStore();
 
     const selectedRoomIdRef = useRef<number | null>(null);
+    const currentUserIdRef = useRef<number | null>(null);
     const latestMessageReqId = useRef(0);
-    const subscriptionRef = useRef<StompSubscription | null>(null);
+    const subscriptionRef = useRef<StompSubscription | (() => void) | null>(null);
+
+    const cleanupSubscription = () => {
+        const current = subscriptionRef.current;
+
+        if (!current) return;
+
+        if (typeof current === "function") {
+            current();
+        } else if (typeof current.unsubscribe === "function") {
+            current.unsubscribe();
+        }
+
+        subscriptionRef.current = null;
+    };
 
     useEffect(() => {
-        setCurrentUserId(getCurrentUserId());
+        const userId = getCurrentUserId();
+        setCurrentUserId(userId);
+        currentUserIdRef.current = userId;
     }, []);
 
     useEffect(() => {
@@ -94,11 +101,12 @@ export default function ChatWidget() {
 
         try {
             setLoadingMessages(true);
-            const messageData = await getChatMessages(roomId);
 
+            const messageData = await getChatMessages(roomId);
             if (requestId !== latestMessageReqId.current) return;
 
             setMessages(messageData);
+
             await markChatAsRead(roomId);
 
             setRooms((prev) =>
@@ -129,8 +137,7 @@ export default function ChatWidget() {
         connectChatSocket();
 
         return () => {
-            safeUnsubscribe(subscriptionRef.current);
-            subscriptionRef.current = null;
+            cleanupSubscription();
             disconnectChatSocket();
         };
     }, [isOpen]);
@@ -138,52 +145,68 @@ export default function ChatWidget() {
     useEffect(() => {
         if (!isOpen || !selectedRoomId) return;
 
-        const subscribe = () => {
-            safeUnsubscribe(subscriptionRef.current);
+        let cancelled = false;
 
-            void subscribeChatRoom(selectedRoomId, async (frame) => {
-                try {
-                    const newMessage: ChatMessageResponse = JSON.parse(frame.body);
-                    const isCurrentRoom = selectedRoomIdRef.current === newMessage.roomId;
+        const subscribe = async () => {
+            try {
+                await ensureChatSocketConnected();
 
-                    if (isCurrentRoom) {
-                        setMessages((prev) => {
-                            const exists = prev.some((msg) => msg.id === newMessage.id);
-                            if (exists) return prev;
-                            return [...prev, newMessage];
+                if (cancelled) return;
+
+                cleanupSubscription();
+
+                const sub = subscribeChatRoom(selectedRoomId, async (frame) => {
+                    try {
+                        const newMessage: ChatMessageResponse = JSON.parse(frame.body);
+                        const isCurrentRoom = selectedRoomIdRef.current === newMessage.roomId;
+                        const isMyMessage =
+                            currentUserIdRef.current !== null &&
+                            newMessage.senderId === currentUserIdRef.current;
+
+                        if (isCurrentRoom) {
+                            setMessages((prev) => {
+                                const exists = prev.some(
+                                    (msg) => msg.messageId === newMessage.messageId
+                                );
+                                if (exists) return prev;
+                                return [...prev, newMessage];
+                            });
+
+                            if (!isMyMessage) {
+                                await markChatAsRead(newMessage.roomId);
+                            }
+                        }
+
+                        setRooms((prev) => {
+                            const updated = prev.map((room) => {
+                                if (room.roomId !== newMessage.roomId) return room;
+
+                                return {
+                                    ...room,
+                                    lastMessage: newMessage.content,
+                                    lastMessageTime: newMessage.createdAt,
+                                    unreadCount: isCurrentRoom ? 0 : room.unreadCount + 1,
+                                };
+                            });
+
+                            return sortRoomsByLatest(updated);
                         });
-
-                        await markChatAsRead(newMessage.roomId);
+                    } catch (error) {
+                        console.error("실시간 메시지 처리 실패", error);
                     }
+                });
 
-                    setRooms((prev) => {
-                        const updated = prev.map((room) => {
-                            if (room.roomId !== newMessage.roomId) return room;
-
-                            return {
-                                ...room,
-                                lastMessage: newMessage.message,
-                                lastMessageTime: newMessage.createdAt,
-                                unreadCount: isCurrentRoom ? 0 : room.unreadCount + 1,
-                            };
-                        });
-
-                        return sortRoomsByLatest(updated);
-                    });
-                } catch (error) {
-                    console.error("실시간 메시지 처리 실패", error);
-                }
-            }).then((sub) => {
                 subscriptionRef.current = sub;
-            });
+            } catch (error) {
+                console.error("채팅방 구독 실패", error);
+            }
         };
 
-        const timer = setTimeout(subscribe, 300);
+        subscribe();
 
         return () => {
-            clearTimeout(timer);
-            safeUnsubscribe(subscriptionRef.current);
-            subscriptionRef.current = null;
+            cancelled = true;
+            cleanupSubscription();
         };
     }, [isOpen, selectedRoomId]);
 
@@ -196,21 +219,16 @@ export default function ChatWidget() {
         }
     };
 
-    const handleSelectRoom = async (roomId: number) => {
+    const handleSelectRoom = (roomId: number) => {
         setRoom(roomId);
         setInput("");
         setMessages([]);
 
-        try {
-            await markChatAsRead(roomId);
-            setRooms((prev) =>
-                prev.map((room) =>
-                    room.roomId === roomId ? { ...room, unreadCount: 0 } : room
-                )
-            );
-        } catch (error) {
-            console.error("읽음 처리 실패", error);
-        }
+        setRooms((prev) =>
+            prev.map((room) =>
+                room.roomId === roomId ? { ...room, unreadCount: 0 } : room
+            )
+        );
     };
 
     const handleSend = async () => {
