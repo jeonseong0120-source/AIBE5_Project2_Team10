@@ -253,6 +253,7 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                         <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-all duration-300">
                              <motion.div 
                                  initial={{ scale: 0.9, opacity: 0 }}
+                                 animate={{ scale: 1, opacity: 1 }}
                                  whileHover={{ scale: 1.05 }}
                                  className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 shadow-2xl flex items-center gap-2 group/btn"
                              >

@@ -5,17 +5,17 @@ import { LucideIcon, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { UserData, ProfileData } from './GlobalNavbar';
 
-interface TabItem {
-    id: string;
+interface TabItem<T extends string> {
+    id: T;
     label: string;
     icon: React.ReactNode;
     badge?: number;
 }
 
-interface DashboardSidebarProps {
-    activeTab: string;
-    onTabChange: (id: any) => void;
-    tabs: TabItem[];
+interface DashboardSidebarProps<T extends string> {
+    activeTab: T;
+    onTabChange: (id: T) => void;
+    tabs: TabItem<T>[];
     mode: 'CLIENT' | 'FREELANCER';
     ctaLabel: string;
     ctaIcon: React.ReactNode;
@@ -24,7 +24,7 @@ interface DashboardSidebarProps {
     profile?: ProfileData | null;
 }
 
-export default function DashboardSidebar({
+export default function DashboardSidebar<T extends string>({
     activeTab,
     onTabChange,
     tabs,
@@ -34,7 +34,7 @@ export default function DashboardSidebar({
     onCtaClick,
     user,
     profile
-}: DashboardSidebarProps) {
+}: DashboardSidebarProps<T>) {
     const router = useRouter();
     const isClient = mode === 'CLIENT';
     const accentColor = isClient ? '#FF7D00' : '#7A4FFF';

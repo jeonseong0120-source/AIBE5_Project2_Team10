@@ -65,7 +65,7 @@ export default function FreelancerBookmarkCard({
                     <div className="w-px h-8 bg-zinc-100 self-center" />
                     <div className="flex flex-col">
                         <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest mb-1">완료 프로젝트</p>
-                        <p className="text-sm font-bold text-zinc-900">24+</p>
+                        <p className="text-sm font-bold text-zinc-900">{freelancer.completedProjects || 0}+</p>
                     </div>
                     <div className="w-px h-8 bg-zinc-100 self-center" />
                     <div className="flex flex-col">

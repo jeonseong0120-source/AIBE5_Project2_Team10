@@ -363,7 +363,7 @@ export default function FreelancerDashboardPage() {
                                                                     >
                                                                         <div className="flex items-center gap-2">
                                                                             <ArrowUpRight size={16} className="group-hover/work:translate-x-0.5 group-hover/work:-translate-y-0.5 transition-transform" />
-                                                                            <span className="text-[14px] font-black uppercase tracking-tighter">워크스페이스 입장</span>
+                                                                            <span className="text-[14px] font-black uppercase tracking-tighter">프로젝트 상세</span>
                                                                         </div>
                                                                     </button>
                                                                     

@@ -57,9 +57,12 @@ export default function ClientProjectCard({
                                 <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase border ${
                                     project.status === 'OPEN' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' : 
                                     project.status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-500 border-blue-100' : 
+                                    project.status === 'CLOSED' ? 'bg-red-50 text-red-500 border-red-100' :
                                     'bg-zinc-950 text-white border-zinc-950'
                                 }`}>
-                                    {project.status === 'OPEN' ? '모집 중' : project.status === 'IN_PROGRESS' ? '진행 중' : '완료됨'}
+                                    {project.status === 'OPEN' ? '모집 중' : 
+                                     project.status === 'IN_PROGRESS' ? '진행 중' : 
+                                     project.status === 'CLOSED' ? '마감됨' : '완료됨'}
                                 </span>
                                 
                                  {!isCompleted && !isInProgress && (
@@ -130,21 +133,25 @@ export default function ClientProjectCard({
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handleDemoPayment(project, acceptedApp); }} 
                                             disabled={paymentDisabled}
+                                            aria-label="데모 결제 진행"
+                                            title="테스트 환경에서 결제를 진행합니다"
                                             className={`group/pay px-8 py-4 bg-[#FF7D00] text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-orange-400/20 shadow-xl ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-2xl hover:shadow-orange-500/30 active:scale-95'}`}
                                         >
                                             <div className="flex items-center gap-2">
                                                 <CreditCard size={16} className="group-hover/pay:rotate-12 transition-transform" />
-                                                <span className="text-[11px] font-black uppercase tracking-widest">결제</span>
+                                                <span className="text-[11px] font-black uppercase tracking-widest">데모 결제</span>
                                             </div>
                                         </button>
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handlePayment(project, acceptedApp); }} 
                                             disabled={paymentDisabled}
+                                            aria-label="실제 결제 진행"
+                                            title="토스페이먼츠를 통한 실제 결제를 진행합니다"
                                             className={`group/pay px-8 py-4 bg-zinc-950 text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-zinc-800 shadow-xl ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-2xl hover:shadow-zinc-900/30 active:scale-95'}`}
                                         >
                                             <div className="flex items-center gap-2">
                                                 <ShieldCheck size={16} className="group-hover/pay:scale-110 transition-transform" />
-                                                <span className="text-[11px] font-black uppercase tracking-widest">결제</span>
+                                                <span className="text-[11px] font-black uppercase tracking-widest">실제 결제</span>
                                             </div>
                                         </button>
                                     </div>
@@ -288,17 +295,21 @@ export default function ClientProjectCard({
                                                                     <button 
                                                                         onClick={() => handleDemoPayment(project, app)} 
                                                                         disabled={paymentDisabled}
+                                                                        aria-label="데모 수락 진행"
+                                                                        title="테스트 환경에서 수락 및 결제를 진행합니다"
                                                                         className={`group/btn px-7 py-3 bg-[#FF7D00] text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-orange-400/20 shadow-lg ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-xl hover:shadow-orange-500/20 active:scale-95'}`}
                                                                     >
                                                                         <div className="flex items-center gap-2">
                                                                             <CreditCard size={14} className="group-hover/btn:rotate-12 transition-transform" />
-                                                                            <span className="text-[11px] font-bold uppercase tracking-widest">수락</span>
+                                                                            <span className="text-[11px] font-bold uppercase tracking-widest">데모 수락</span>
                                                                         </div>
                                                                     </button>
                                                                     
                                                                     <button 
                                                                         onClick={() => handlePayment(project, app)} 
                                                                         disabled={paymentDisabled}
+                                                                        aria-label="실제 수락 진행"
+                                                                        title="토스페이먼츠를 통한 실제 결제 및 수락을 진행합니다"
                                                                         className={`group/btn px-7 py-3 bg-zinc-950 text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-zinc-800 shadow-lg ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-xl hover:shadow-zinc-900/20 active:scale-95'}`}
                                                                     >
                                                                         <div className="flex items-center gap-2">

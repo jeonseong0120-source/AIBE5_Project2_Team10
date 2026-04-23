@@ -82,19 +82,19 @@ export default function ProposalSendModal({
             <div className="p-6 md:p-8 pb-4 flex-none">
                 <div className="flex items-start justify-between">
                     <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                            <div className="p-1.5 bg-purple-50 rounded-lg text-[#7A4FFF]">
-                                <Send size={16} strokeWidth={2.5} />
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="p-2 bg-purple-50 rounded-xl text-[#7A4FFF]">
+                                <Send size={18} strokeWidth={2.5} />
                             </div>
-                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#7A4FFF] font-mono">프로젝트_제안서</span>
+                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7A4FFF]">프로젝트 제안서</span>
                         </div>
-                        <h3 className="text-2xl font-black tracking-tighter text-zinc-950">
+                        <h3 className="text-3xl font-black tracking-tighter text-zinc-950">
                             프로젝트 <span className="text-zinc-400">제안 보내기</span>
                         </h3>
                         {targetName && (
-                            <div className="mt-2 flex items-center gap-2 px-2.5 py-1 bg-zinc-50 border border-zinc-100 rounded-xl w-fit">
-                                <Sparkles size={12} className="text-[#FF7D00]" />
-                                <p className="text-[11px] font-bold text-zinc-600">
+                            <div className="mt-3 flex items-center gap-2 px-3 py-1.5 bg-zinc-50 border border-zinc-100 rounded-xl w-fit">
+                                <Sparkles size={14} className="text-[#FF7D00]" />
+                                <p className="text-[13px] font-bold text-zinc-600">
                                     대상 요원: <span className="text-zinc-950 font-black">{targetName}</span>
                                 </p>
                             </div>
@@ -104,59 +104,59 @@ export default function ProposalSendModal({
                         type="button"
                         onClick={onClose}
                         aria-label="닫기"
-                        className="group relative flex h-9 w-9 items-center justify-center rounded-full bg-zinc-50 text-zinc-400 transition-all hover:bg-zinc-900 hover:text-white"
+                        className="group relative flex h-10 w-10 items-center justify-center rounded-full bg-zinc-50 text-zinc-400 transition-all hover:bg-zinc-900 hover:text-white"
                     >
-                        <XCircle size={20} />
+                        <XCircle size={24} />
                     </button>
                 </div>
 
                 {/* Mode Selector */}
-                <div className="mt-6 grid grid-cols-2 gap-1.5 rounded-xl bg-zinc-100 p-1">
+                <div className="mt-8 grid grid-cols-2 gap-2 rounded-[1.2rem] bg-zinc-100 p-1.5">
                     <button
                         type="button"
                         onClick={() => onChangeMode('PROJECT')}
-                        className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-[10px] font-black uppercase tracking-wider transition-all ${
+                        className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-black tracking-tight transition-all ${
                             mode === 'PROJECT'
-                                ? 'bg-white text-zinc-950 shadow-sm'
+                                ? 'bg-white text-zinc-950 shadow-md'
                                 : 'text-zinc-500 hover:text-zinc-900'
                         }`}
                     >
-                        <Briefcase size={12} />
+                        <Briefcase size={14} />
                         프로젝트 선택
                     </button>
                     <button
                         type="button"
                         onClick={() => onChangeMode('FORM')}
-                        className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-[10px] font-black uppercase tracking-wider transition-all ${
+                        className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-black tracking-tight transition-all ${
                             mode === 'FORM'
-                                ? 'bg-white text-zinc-950 shadow-sm'
+                                ? 'bg-white text-zinc-950 shadow-md'
                                 : 'text-zinc-500 hover:text-zinc-900'
                         }`}
                     >
-                        <FileText size={12} />
+                        <FileText size={14} />
                         제안서 직접 작성
                     </button>
                 </div>
             </div>
 
             {/* Scrollable Content section */}
-            <div className="flex-1 overflow-y-auto no-scrollbar p-6 md:p-8 pt-0 space-y-5">
+            <div className="flex-1 overflow-y-auto no-scrollbar p-6 md:p-8 pt-2 space-y-6">
                 {/* Project Selection or Info */}
                 <div>
-                    <div className="mb-1.5 flex items-center gap-2">
-                        <Target size={12} className="text-[#7A4FFF]" />
-                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 font-mono">연결_프로젝트</label>
+                    <div className="mb-2 flex items-center gap-2">
+                        <Target size={14} className="text-[#7A4FFF]" />
+                        <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">연결_프로젝트</label>
                     </div>
                     {mode === 'PROJECT' ? (
                         <div className="relative">
                             {projectsLoading ? (
-                                <div className="flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-[10px] font-bold text-zinc-400 animate-pulse font-mono">
-                                    진행_중인_프로젝트_조회_중...
+                                <div className="flex h-14 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-[12px] font-bold text-zinc-400 animate-pulse">
+                                    진행 중인 프로젝트 조회 중...
                                 </div>
                             ) : projects.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-center">
-                                    <Briefcase size={20} className="mb-2 text-zinc-200" />
-                                    <p className="text-[10px] font-bold text-zinc-400 leading-relaxed">
+                                <div className="flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center">
+                                    <Briefcase size={24} className="mb-3 text-zinc-200" />
+                                    <p className="text-[13px] font-bold text-zinc-400 leading-relaxed">
                                         연결할 수 있는 프로젝트가 없습니다.<br />
                                         '제안서 직접 작성' 모드를 이용해 주세요.
                                     </p>
@@ -165,7 +165,7 @@ export default function ProposalSendModal({
                                 <select
                                     value={selectedProjectId ?? ''}
                                     onChange={(e) => onChangeProjectId(Number(e.target.value))}
-                                    className="w-full appearance-none rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-bold text-zinc-900 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white focus:ring-4 focus:ring-purple-50"
+                                    className="w-full appearance-none rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-[15px] font-black text-zinc-900 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white focus:ring-4 focus:ring-purple-50"
                                 >
                                     <option value="" disabled>제안할 프로젝트를 선택해 주세요</option>
                                     {projects.map((p) => (
@@ -177,11 +177,11 @@ export default function ProposalSendModal({
                             )}
                         </div>
                     ) : (
-                        <div className="flex items-center gap-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 px-4 py-3">
-                            <Sparkles size={16} className="text-[#FF7D00]" />
-                            <p className="text-[10px] font-bold text-zinc-500 leading-relaxed">
+                        <div className="flex items-center gap-4 rounded-[2rem] border border-dashed border-zinc-200 bg-zinc-50/50 px-5 py-4">
+                            <Sparkles size={18} className="text-[#FF7D00]" />
+                            <p className="text-[12px] font-bold text-zinc-500 leading-relaxed">
                                 제안 전송 시 입력하신 정보를 기반으로 <br />
-                                <span className="text-[#FF7D00]">전용 프로젝트가 자동으로 생성</span>됩니다.
+                                <span className="text-[#FF7D00] font-black">전용 프로젝트가 자동으로 생성</span>됩니다.
                             </p>
                         </div>
                     )}
@@ -189,9 +189,9 @@ export default function ProposalSendModal({
 
                 {/* Offered Price */}
                 <div>
-                    <div className="mb-1.5 flex items-center gap-2">
-                        <DollarSign size={12} className="text-[#FF7D00]" />
-                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 font-mono">제안_금액</label>
+                    <div className="mb-2 flex items-center gap-2">
+                        <DollarSign size={14} className="text-[#FF7D00]" />
+                        <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">제안_금액</label>
                     </div>
                     <div className="group relative">
                         <input
@@ -200,53 +200,53 @@ export default function ProposalSendModal({
                             value={offeredPrice}
                             onChange={(e) => onChangeOfferedPrice(e.target.value)}
                             placeholder="예: 3,000,000"
-                            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 pr-12 text-base font-black text-zinc-950 outline-none transition-all placeholder:text-zinc-300 focus:border-[#FF7D00] focus:bg-white focus:ring-4 focus:ring-orange-50"
+                            className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-6 py-4.5 pr-14 text-xl font-black text-zinc-950 outline-none transition-all placeholder:text-zinc-300 focus:border-[#FF7D00] focus:bg-white focus:ring-4 focus:ring-orange-50"
                         />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-400">원</span>
+                        <span className="absolute right-6 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-400">원</span>
                     </div>
                 </div>
 
                 {/* Mode Specific Fields */}
                 {mode === 'FORM' && (
-                    <div className="grid gap-5">
+                    <div className="grid gap-6">
                         <div>
-                            <div className="mb-1.5 flex items-center gap-2">
-                                <Target size={12} className="text-zinc-400" />
-                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 font-mono">모집_포지션</label>
+                            <div className="mb-2 flex items-center gap-2">
+                                <Target size={14} className="text-zinc-400" />
+                                <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">모집_포지션</label>
                             </div>
                             <input
                                 type="text"
                                 value={positionTitle}
                                 onChange={(e) => onChangePositionTitle(e.target.value)}
                                 placeholder="예: 프론트엔드 리드 개발자"
-                                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-bold text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white"
+                                className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-[15px] font-black text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white"
                             />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <div className="mb-1.5 flex items-center gap-2">
-                                    <Clock size={12} className="text-zinc-400" />
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 font-mono">예상_작업_기간</label>
+                                <div className="mb-2 flex items-center gap-2">
+                                    <Clock size={14} className="text-zinc-400" />
+                                    <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">예상_작업_기간</label>
                                 </div>
                                 <input
                                     type="text"
                                     value={workingPeriod}
                                     onChange={(e) => onChangeWorkingPeriod(e.target.value)}
                                     placeholder="예: 6주"
-                                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-bold text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white"
+                                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-[15px] font-black text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white"
                                 />
                             </div>
                             <div>
-                                <div className="mb-1.5 flex items-center gap-2">
-                                    <FileText size={12} className="text-zinc-400" />
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 font-mono">주요_업무_범위</label>
+                                <div className="mb-2 flex items-center gap-2">
+                                    <FileText size={14} className="text-zinc-400" />
+                                    <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">주요_업무_범위</label>
                                 </div>
                                 <textarea
                                     value={workScope}
                                     onChange={(e) => onChangeWorkScope(e.target.value)}
                                     rows={1}
                                     placeholder="주요 업무 내용 요약"
-                                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-bold text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white resize-none"
+                                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-[15px] font-black text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white resize-none"
                                 />
                             </div>
                         </div>
@@ -255,29 +255,29 @@ export default function ProposalSendModal({
 
                 {/* Additional Message */}
                 <div>
-                    <div className="mb-1.5 flex items-center gap-2">
-                        <MessageSquare size={12} className="text-zinc-400" />
-                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 font-mono">
+                    <div className="mb-2 flex items-center gap-2">
+                        <MessageSquare size={14} className="text-zinc-400" />
+                        <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">
                             {mode === 'PROJECT' ? '상세_제안_내용' : '상세_문의_사항'}
                         </label>
                     </div>
                     <textarea
                         value={message}
                         onChange={(e) => onChangeMessage(e.target.value)}
-                        rows={3}
+                        rows={4}
                         placeholder="프리랜서에게 전달할 구체적인 제안 내용을 입력해 주세요."
-                        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-bold text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white resize-none"
+                        className="w-full rounded-[2rem] border border-zinc-200 bg-zinc-50 px-6 py-5 text-[15px] font-bold text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white resize-none leading-relaxed"
                     />
                 </div>
             </div>
 
             {/* Actions - Fixed Footer */}
             <div className="p-6 md:p-8 flex-none border-t border-zinc-100 bg-zinc-50/50 backdrop-blur-sm">
-                <div className="flex flex-col-reverse md:flex-row justify-end gap-2">
+                <div className="flex flex-col-reverse md:flex-row justify-end gap-3">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-xl px-6 py-3 text-xs font-black text-zinc-400 transition-all hover:bg-zinc-100 hover:text-zinc-600 font-mono uppercase tracking-widest"
+                        className="rounded-xl px-8 py-4 text-[13px] font-black text-zinc-400 transition-all hover:bg-zinc-100 hover:text-zinc-600 tracking-tight"
                     >
                         취소하기
                     </button>
@@ -289,16 +289,16 @@ export default function ProposalSendModal({
                             (mode === 'PROJECT' &&
                                 (projectsLoading || projects.length === 0 || selectedProjectId == null))
                         }
-                        className="group relative flex items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-zinc-950 px-8 py-3.5 text-xs font-black text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_8px_25px_rgba(122,79,255,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="group relative flex items-center justify-center gap-3 overflow-hidden rounded-2xl bg-zinc-950 px-10 py-4.5 text-[14px] font-black text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_12px_30px_rgba(122,79,255,0.4)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {sending ? (
                             <>
-                                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
                                 <span>전송 중...</span>
                             </>
                         ) : (
                             <>
-                                <Send size={14} strokeWidth={2.5} />
+                                <Send size={18} strokeWidth={2.5} />
                                 <span>제안 전송하기</span>
                             </>
                         )}

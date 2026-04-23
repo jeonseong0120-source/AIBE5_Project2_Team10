@@ -6,7 +6,7 @@ import api from '@/app/lib/axios';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
 import {
     User, Users, CheckCircle, XCircle, Edit, Trash2,
-    Calendar, DollarSign, Activity, ChevronRight,
+    Calendar, DollarSign, Activity, ChevronRight, Clock,
     Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, ArrowUpRight, Plus, RefreshCcw, Search,
     ListFilter, CreditCard, ShieldCheck, ExternalLink
 } from 'lucide-react';
@@ -646,7 +646,7 @@ export default function ClientDashboardPage() {
                                         onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
                                         className="px-8 py-3.5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all flex items-center gap-3 shadow-xl shadow-zinc-100"
                                     >
-                                        <Clock size={16} /> {sortOrder === 'DESC' ? 'Latest' : 'Oldest'}
+                                        <Clock size={16} /> {sortOrder === 'DESC' ? '최신순' : '과거순'}
                                     </button>
                                 </div>
 
