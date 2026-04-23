@@ -112,7 +112,9 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
                     <div className="flex gap-10 items-center">
                         <div className="hidden lg:flex items-center gap-10">
                             {menus.map((item) => {
-                                const isActive = pathname === item.path;
+                                const isActive = item.path === '/community'
+                                    ? pathname?.startsWith('/community')
+                                    : pathname === item.path;
                                 return (
                                     <button
                                         key={item.label}
