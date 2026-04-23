@@ -54,7 +54,7 @@ export default function ClientProjectCard({
                         {/* 📝 프로젝트 기본 정보 섹션 */}
                         <div className="flex-1 w-full">
                             <div className="flex items-center gap-4 mb-6">
-                                <span className={`px-4 py-1.5 rounded-full text-[9px] font-black tracking-[0.2em] uppercase font-mono border ${
+                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase border ${
                                     project.status === 'OPEN' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' : 
                                     project.status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-500 border-blue-100' : 
                                     'bg-zinc-950 text-white border-zinc-950'
@@ -82,29 +82,29 @@ export default function ClientProjectCard({
                                 )}
                             </div>
 
-                            <h3 className="text-4xl font-black text-zinc-950 group-hover:text-[#FF7D00] transition-colors tracking-tight leading-tight mb-8 max-w-2xl">
+                            <h3 className="text-3xl font-bold text-zinc-950 group-hover:text-[#FF7D00] transition-colors tracking-tight leading-tight mb-8 max-w-2xl">
                                 {project.projectName}
                             </h3>
 
                             <div className="flex flex-wrap items-center gap-x-10 gap-y-4">
                                 <div className="flex flex-col">
-                                    <span className="text-[8px] font-black text-zinc-300 uppercase tracking-widest mb-1">Expected_Budget</span>
-                                    <span className="flex items-center gap-2 text-sm font-black text-zinc-900 font-mono italic">
-                                        <DollarSign size={14} className="text-[#FF7D00]"/> ₩{project.budget?.toLocaleString()}
+                                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Expected Budget</span>
+                                    <span className="flex items-center gap-2 text-base font-bold text-zinc-900">
+                                        <DollarSign size={16} className="text-[#FF7D00]"/> ₩{project.budget?.toLocaleString()}
                                     </span>
                                 </div>
                                 <div className="w-px h-8 bg-zinc-100 hidden sm:block" />
                                 <div className="flex flex-col">
-                                    <span className="text-[8px] font-black text-zinc-300 uppercase tracking-widest mb-1">Application_Deadline</span>
-                                    <span className="flex items-center gap-2 text-sm font-black text-zinc-900 font-mono italic">
-                                        <Calendar size={14} className="text-[#FF7D00]"/> {project.deadline}
+                                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Application Deadline</span>
+                                    <span className="flex items-center gap-2 text-base font-bold text-zinc-900">
+                                        <Calendar size={16} className="text-[#FF7D00]"/> {project.deadline}
                                     </span>
                                 </div>
                                 <div className="w-px h-8 bg-zinc-100 hidden sm:block" />
                                 <div className="flex flex-col">
-                                    <span className="text-[8px] font-black text-zinc-300 uppercase tracking-widest mb-1">Working_Style</span>
-                                    <span className="flex items-center gap-2 text-sm font-black text-zinc-900 font-mono italic">
-                                        <Globe size={14} className="text-[#FF7D00]"/> {project.online ? '온라인' : '오프라인'}
+                                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Working Style</span>
+                                    <span className="flex items-center gap-2 text-base font-bold text-zinc-900">
+                                        <Globe size={16} className="text-[#FF7D00]"/> {project.online ? '온라인' : '오프라인'}
                                     </span>
                                 </div>
                             </div>
@@ -121,7 +121,6 @@ export default function ClientProjectCard({
                                         <CheckCircle size={16} className="group-hover/complete:scale-110 transition-transform" />
                                         <span className="text-[11px] font-black uppercase tracking-[0.15em]">프로젝트 완료하기</span>
                                     </div>
-                                    <span className="text-[8px] font-black font-mono opacity-50 tracking-tighter uppercase italic">Commit_&_Close</span>
                                 </button>
                             )}
 
@@ -137,7 +136,6 @@ export default function ClientProjectCard({
                                                 <CreditCard size={16} className="group-hover/pay:rotate-12 transition-transform" />
                                                 <span className="text-[11px] font-black uppercase tracking-widest">결제</span>
                                             </div>
-                                            <span className="text-[8px] font-black font-mono opacity-60 tracking-tighter uppercase italic">Demo_Checkout</span>
                                         </button>
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handlePayment(project, acceptedApp); }} 
@@ -148,7 +146,6 @@ export default function ClientProjectCard({
                                                 <ShieldCheck size={16} className="group-hover/pay:scale-110 transition-transform" />
                                                 <span className="text-[11px] font-black uppercase tracking-widest">결제</span>
                                             </div>
-                                            <span className="text-[8px] font-black font-mono opacity-60 tracking-tighter uppercase italic">Secure_Checkout</span>
                                         </button>
                                     </div>
                                 </div>
@@ -166,9 +163,8 @@ export default function ClientProjectCard({
                                     >
                                         <div className="flex items-center gap-2">
                                             <Sparkles size={16} className="group-hover/ai:animate-pulse" />
-                                            <span className="text-[11px] font-black uppercase tracking-[0.15em]">AI 심층 분석</span>
+                                            <span className="text-[13px] font-black uppercase tracking-tighter">AI 심층 분석</span>
                                         </div>
-                                        <span className="text-[8px] font-black font-mono opacity-50 tracking-tighter uppercase italic">Neural_Match_Active</span>
                                     </button>
                                 )}
                                 <button 
@@ -184,13 +180,10 @@ export default function ClientProjectCard({
                                 >
                                     <div className="flex items-center gap-3">
                                         <Users size={18} className="group-hover/console:scale-110 transition-transform" />
-                                        <span className="text-[11px] font-black uppercase tracking-[0.15em]">
+                                        <span className="text-[13px] font-black uppercase tracking-tighter">
                                             {isExpanded ? '관리 센터 닫기' : `지원자 관리 (${project.applicationCount || 0})`}
                                         </span>
                                     </div>
-                                    <span className="text-[8px] font-black font-mono opacity-40 tracking-tighter uppercase italic">
-                                        {isExpanded ? 'Exit_Console' : 'Open_Talent_Pipeline'}
-                                    </span>
                                 </button>
                             </div>
                         </div>
@@ -222,8 +215,7 @@ export default function ClientProjectCard({
                                         <Sparkles size={24} className="absolute inset-0 m-auto text-[#FF7D00] animate-pulse" />
                                     </div>
                                     <div className="text-center">
-                                        <p className="tracking-[0.5em] text-[10px] font-black font-mono text-zinc-400 uppercase mb-2">Analyzing_Profiles...</p>
-                                        <p className="text-[9px] font-bold text-zinc-300 italic">가장 완벽한 인재를 선별하는 중입니다.</p>
+                                        <p className="text-[13px] font-bold text-zinc-300">가장 완벽한 인재를 선별하는 중입니다.</p>
                                     </div>
                                 </div>
                             ) : (
@@ -270,15 +262,15 @@ export default function ClientProjectCard({
                                                 {/* 우측: 제안 금액 및 액션 */}
                                                 <div className="flex items-center gap-6 min-w-[280px] justify-end">
                                                     <div className="text-right">
-                                                        <p className="text-[8px] font-black text-zinc-300 uppercase tracking-widest leading-none mb-1">Bid_Price</p>
-                                                        <p className="text-lg font-black text-zinc-950 font-mono italic">₩{app.bidPrice?.toLocaleString()}</p>
+                                                        <p className="text-[8px] font-bold text-zinc-300 uppercase tracking-widest leading-none mb-1">Bid Price</p>
+                                                        <p className="text-lg font-bold text-zinc-950">₩{app.bidPrice?.toLocaleString()}</p>
                                                     </div>
                                                     <div className="flex gap-2">
                                                         {app.status === 'PENDING' ? (
                                                             app.source === 'PROPOSAL' ? (
-                                                                <div className="px-5 py-2.5 bg-zinc-50/80 text-zinc-400 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border border-zinc-100 font-mono italic flex items-center gap-2">
+                                                                <div className="px-5 py-2.5 bg-zinc-50/80 text-zinc-400 rounded-xl text-[9px] font-bold uppercase tracking-[0.2em] border border-zinc-100 flex items-center gap-2">
                                                                     <div className="w-1.5 h-1.5 bg-zinc-300 rounded-full animate-pulse" />
-                                                                    Waiting_Review
+                                                                     수락 대기중
                                                                 </div>
                                                             ) : (
                                                                 <>
@@ -288,9 +280,8 @@ export default function ClientProjectCard({
                                                                     >
                                                                         <div className="flex items-center gap-2">
                                                                             <XCircle size={14} className="group-hover/rej:rotate-90 transition-transform" />
-                                                                            <span className="text-[11px] font-black uppercase tracking-widest">거절</span>
+                                                                            <span className="text-[11px] font-bold uppercase tracking-widest">거절</span>
                                                                         </div>
-                                                                        <span className="text-[8px] font-black font-mono opacity-40 tracking-tighter uppercase italic">Reject_Profile</span>
                                                                     </button>
                                                                     
                                                                     <div className="flex gap-3 ml-2 border-l border-zinc-100 pl-6">
@@ -301,9 +292,8 @@ export default function ClientProjectCard({
                                                                     >
                                                                         <div className="flex items-center gap-2">
                                                                             <CreditCard size={14} className="group-hover/btn:rotate-12 transition-transform" />
-                                                                            <span className="text-[11px] font-black uppercase tracking-widest">수락</span>
+                                                                            <span className="text-[11px] font-bold uppercase tracking-widest">수락</span>
                                                                         </div>
-                                                                        <span className="text-[8px] font-black font-mono opacity-60 tracking-tighter uppercase italic">Demo_Payment</span>
                                                                     </button>
                                                                     
                                                                     <button 
@@ -313,9 +303,8 @@ export default function ClientProjectCard({
                                                                     >
                                                                         <div className="flex items-center gap-2">
                                                                             <ShieldCheck size={14} className="group-hover/btn:scale-110 transition-transform" />
-                                                                            <span className="text-[11px] font-black uppercase tracking-widest">수락</span>
+                                                                            <span className="text-[11px] font-bold uppercase tracking-widest">수락</span>
                                                                         </div>
-                                                                        <span className="text-[8px] font-black font-mono opacity-60 tracking-tighter uppercase italic">Secure_Payment</span>
                                                                     </button>
                                                                     </div>
                                                                 </>

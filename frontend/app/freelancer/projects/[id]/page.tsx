@@ -70,8 +70,7 @@ export default function ProjectDetailPage() {
             }
         };
 
-
-        fetchProjectDetail();
+        void fetchNavbarData();
     }, [id]);
 
     const handleBookmarkToggle = async () => {
@@ -151,9 +150,6 @@ export default function ProjectDetailPage() {
             setChatLoading(false);
         }
     };
-
-        void fetchNavbarData();
-
 
     const formatBudget = (amount: number) => {
         return new Intl.NumberFormat('ko-KR', {

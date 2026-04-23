@@ -54,7 +54,7 @@ export default function DashboardSidebar({
                 whileHover={{ scale: 1.02, translateY: -2 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onCtaClick}
-                className={`group relative overflow-hidden flex items-center justify-center gap-3 w-full py-5 ${accentBg} text-white rounded-[2rem] text-[11px] font-black transition-all shadow-2xl ${accentShadow} uppercase tracking-[0.2em]`}
+                className={`group relative overflow-hidden flex items-center justify-center gap-3 w-full py-5.5 ${accentBg} text-white rounded-[2rem] text-[16px] font-black transition-all shadow-2xl ${accentShadow} tracking-tighter`}
             >
                 <motion.div
                     animate={{ x: ['-100%', '100%'] }}
@@ -74,7 +74,7 @@ export default function DashboardSidebar({
                             <button
                                 key={tab.id}
                                 onClick={() => onTabChange(tab.id)}
-                                className={`group relative flex items-center justify-between w-full px-5 py-4 rounded-[1.4rem] transition-all duration-300 ${
+                                className={`group relative flex items-center justify-between w-full px-6 py-5 rounded-[1.4rem] transition-all duration-300 ${
                                     isActive
                                         ? 'text-zinc-950'
                                         : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/60'
@@ -92,7 +92,7 @@ export default function DashboardSidebar({
                                     <span className={`transition-colors duration-300 ${isActive ? accentText : 'group-hover:text-zinc-600'}`}>
                                         {tab.icon}
                                     </span>
-                                    <span className={`text-[10px] font-black tracking-wider transition-colors duration-300 ${isActive ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'}`}>
+                                    <span className={`text-[15px] font-bold tracking-tight transition-colors duration-300 ${isActive ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'}`}>
                                         {tab.label}
                                     </span>
                                 </div>
@@ -102,7 +102,7 @@ export default function DashboardSidebar({
                                         <motion.span
                                             initial={{ scale: 0 }}
                                             animate={{ scale: 1 }}
-                                            className={`flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[8px] font-black font-mono text-white ${accentBg} shadow-sm`}
+                                            className={`flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[8px] font-bold text-white ${accentBg} shadow-sm`}
                                         >
                                             {tab.badge}
                                         </motion.span>

@@ -17,12 +17,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html lang="ko" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-        <body className="min-h-full flex flex-col">
-        <NotificationProvider>
-            {children}
-            <ChatWidget />
-        </NotificationProvider>
-        </body>
+            <body className="min-h-full flex flex-col">
+                <NotificationProvider>
+                    {children}
+                    <ChatWidget />
+                </NotificationProvider>
+            </body>
         </html>
     );
 }

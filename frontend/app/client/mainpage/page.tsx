@@ -198,11 +198,7 @@ export default function ClientDashboard() {
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                         {/* 🎯 문구 교체 + 텍스트 그림자 + 글로우 효과 적용 */}
                         <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-10 text-zinc-900 leading-tight break-keep [text-shadow:0_4px_15px_rgba(0,0,0,0.06)]">
-                            데이터가 증명하는 완벽한 기술 교차점, <br />
-                            <span className="text-[#FF7D00] drop-shadow-[0_0_20px_rgba(255,125,0,0.4)] animate-[pulse_3s_ease-in-out_infinite]">
-                최적의 파트너
-            </span>
-                            를 찾으세요.
+                            최적의 <span className="text-[#FF7D00] drop-shadow-[0_0_20px_rgba(255,125,0,0.4)] animate-[pulse_3s_ease-in-out_infinite]">파트너</span>를 찾으세요.
                         </h1>
                     </motion.div>
 
@@ -230,8 +226,8 @@ export default function ClientDashboard() {
                     
                     {/* 1. 상단 탭: 근무 방식 필터 */}
                     <section>
-                        <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase mb-4 text-zinc-400 font-mono">
-                            <Briefcase size={14} /> 협업_근무_방식
+                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
+                            <Briefcase size={16} className="text-[#FF7D00]" /> 협업 근무 방식
                         </h3>
                         <div className="flex bg-white p-1 rounded-2xl border border-zinc-200 shadow-sm overflow-x-auto no-scrollbar">
                             {[
@@ -254,8 +250,8 @@ export default function ClientDashboard() {
 
                     {/* 2. 기술 스택 필터 (그리드 형태) - 가장 중요한 필터이므로 상단 배치 */}
                     <section>
-                        <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase mb-4 text-zinc-400 font-mono">
-                            <Sparkles size={14} /> 전문_기술_스택
+                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
+                            <Sparkles size={16} className="text-[#FF7D00]" /> 전문 기술 스택
                         </h3>
                         <div className="grid grid-cols-2 gap-2">
                             {presetSkills.map(s => {
@@ -287,8 +283,8 @@ export default function ClientDashboard() {
                     {/* 3. 활동 지역 필터 - 대한민국 전체 지역 (3열 컴팩트 그리드) */}
                     <section>
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="flex items-center gap-2 font-black text-[10px] tracking-widest uppercase text-zinc-400 font-mono">
-                                <MapPin size={14} /> 활동_지역
+                            <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight text-zinc-900">
+                                <MapPin size={16} className="text-[#FF7D00]" /> 활동 지역
                             </h3>
                             {filter.region && (
                                 <span className="text-[9px] font-black text-[#FF7D00] font-mono animate-pulse">FILTER_ACTIVE</span>
@@ -341,13 +337,13 @@ export default function ClientDashboard() {
                         <div>
                             <div className="mb-2 flex items-center gap-2">
                                 <span className="h-1.5 w-1.5 rounded-full bg-[#FF7D00] animate-pulse" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.35em] text-[#FF7D00] font-mono italic">live database</span>
+                                <span className="text-[10px] font-bold uppercase tracking-[0.35em] text-[#FF7D00]">live database</span>
                             </div>
-                            <h2 className="text-2xl font-black tracking-tight text-zinc-950 md:text-3xl uppercase font-mono">
-                                Total_Portfolios <span className="text-zinc-300 ml-1">/</span> <span className="text-[#FF7D00] ml-1">{freelancers.length}</span>
+                            <h2 className="text-2xl font-bold tracking-tight text-zinc-950 md:text-3xl">
+                                Total Portfolios <span className="text-zinc-300 ml-1">/</span> <span className="text-[#FF7D00] ml-1">{freelancers.length}</span>
                             </h2>
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase font-mono text-zinc-400">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-zinc-400">
                             SORT:
                             <select
                                 className="bg-transparent text-zinc-900 outline-none cursor-pointer hover:text-[#FF7D00] transition-colors font-bold"

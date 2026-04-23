@@ -7,8 +7,8 @@ import { NotificationBell } from '@/components/notifications/NotificationProvide
 import {
     User, Users, CheckCircle, XCircle, Edit, Trash2,
     Calendar, DollarSign, Activity, ChevronRight,
-    Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, Clock, ArrowUpRight, Plus, RefreshCcw, Search,
-    CreditCard, ShieldCheck, ExternalLink
+    Briefcase, Heart, Send, Sparkles, Star, MapPin, Globe, Loader2, ArrowUpRight, Plus, RefreshCcw, Search,
+    ListFilter, CreditCard, ShieldCheck, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProposalSendModal, { mapProjectsForProposalPicker, type ProjectOption } from '@/components/proposal/ProposalSendModal';
@@ -505,10 +505,6 @@ export default function ClientDashboardPage() {
 
                 <div className="max-w-4xl mx-auto relative z-10">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                        <div className="flex items-center justify-center gap-3 mb-6">
-                            <span className="w-12 h-[3px] bg-[#FF7D00] rounded-full"></span>
-                            <span className="text-[11px] font-black text-[#FF7D00] uppercase tracking-[0.4em] font-mono">관리 콘솔</span>
-                        </div>
                         <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 text-zinc-900 leading-tight">
                             클라이언트 <span className="text-[#FF7D00]">대시보드</span>
                         </h1>
@@ -542,30 +538,32 @@ export default function ClientDashboardPage() {
                     <div className="flex-1 min-w-0">
                         {activeMainTab === 'PROJECTS' && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                <div className="sticky top-4 z-40 backdrop-blur-md pb-6 flex items-center gap-4">
-                                    <div className="flex-1 bg-white/70 border border-zinc-100 rounded-full shadow-sm p-1.5">
-                                        <div className="grid grid-cols-4 gap-1">
-                                            {[{ id: 'ALL', label: '전체' }, { id: 'OPEN', label: '모집중' }, { id: 'IN_PROGRESS', label: '진행중' }, { id: 'COMPLETED', label: '마감됨' }].map((s) => (
-                                                <button 
-                                                    key={s.id} 
-                                                    onClick={() => setFilterStatus(s.id)} 
-                                                    className={`py-3 rounded-full text-[11px] font-black transition-all tracking-widest uppercase font-mono text-center ${
-                                                        filterStatus === s.id 
-                                                        ? 'bg-zinc-950 text-white shadow-xl scale-[1.02]' 
-                                                        : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/80'
-                                                    }`}
-                                                >
-                                                    {s.label}
-                                                </button>
-                                            ))}
+                                <div className="sticky top-4 z-40 backdrop-blur-md pb-6">
+                                    <div className="bg-white/70 border border-zinc-100 rounded-full shadow-sm p-1.5 flex items-center justify-between gap-4">
+                                        <div className="flex-1">
+                                            <div className="grid grid-cols-4 gap-1">
+                                                {[{ id: 'ALL', label: '전체' }, { id: 'OPEN', label: '모집중' }, { id: 'IN_PROGRESS', label: '진행중' }, { id: 'COMPLETED', label: '마감됨' }].map((s) => (
+                                                    <button 
+                                                        key={s.id} 
+                                                        onClick={() => setFilterStatus(s.id)} 
+                                                        className={`py-3.5 rounded-full text-[13px] font-bold transition-all tracking-wider text-center ${
+                                                            filterStatus === s.id 
+                                                            ? 'bg-zinc-950 text-white shadow-xl scale-[1.02]' 
+                                                            : 'text-zinc-400 hover:text-zinc-600 hover:bg-white/80'
+                                                        }`}
+                                                    >
+                                                        {s.label}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
+                                        <button 
+                                            onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
+                                            className="px-6 py-3 bg-white border border-zinc-100 rounded-full text-[12px] font-bold text-zinc-600 hover:bg-zinc-50 transition-all flex items-center gap-2 uppercase mr-1 shadow-sm"
+                                        >
+                                            <ListFilter size={14} className="text-[#FF7D00]" /> {sortOrder === 'DESC' ? '최신순' : '과거순'}
+                                        </button>
                                     </div>
-                                    <button 
-                                        onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
-                                        className="px-8 py-3.5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all flex items-center gap-3 shadow-xl shadow-zinc-100"
-                                    >
-                                        <Clock size={16} /> {sortOrder === 'DESC' ? 'Latest' : 'Oldest'}
-                                    </button>
                                 </div>
 
                                 <div className="grid gap-10 mt-4">
