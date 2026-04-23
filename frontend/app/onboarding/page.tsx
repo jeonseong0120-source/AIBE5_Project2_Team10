@@ -109,13 +109,15 @@ export default function OnboardingPage() {
 
             {/* 🛰️ 웅장한 행성급 로고 배경 */}
             <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center overflow-hidden">
-                <motion.img
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 0.07, scale: 1 }}
+                <img
                     src="/devnear-logo.png"
                     alt="Background Logo"
-                    className="w-[300vw] max-w-none blur-[60px] select-none transform scale-[1.4]"
+                    className="w-[140vw] max-w-none opacity-[0.14] scale-[1.4] select-none will-change-transform mix-blend-soft-light"
                 />
+
+
+                {/* subtle gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#FF7D00]/5 via-transparent to-[#7A4FFF]/5" />
             </div>
 
             <div className="relative z-10 max-w-6xl mx-auto min-h-screen flex items-center justify-center px-6 pt-12 pb-12">
