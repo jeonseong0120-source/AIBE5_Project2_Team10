@@ -251,7 +251,13 @@ export default function ChatWidget() {
 
                             if (!receipt.read) return;
                             if (receipt.roomId !== selectedRoomIdRef.current) return;
-
+                            // Only process when opponent reads; ignore own read events.
+                                    if (
+                                        currentUserIdRef.current !== null &&
+                                        receipt.readerId === currentUserIdRef.current
+                                    ) {
+                                        return;
+                                    }
                             setMessages((prev) =>
                                 prev.map((msg) => {
                                     const isMyMessage =

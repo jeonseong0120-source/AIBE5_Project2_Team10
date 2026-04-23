@@ -163,12 +163,6 @@ public class ChatService {
     }
 
     private ChatRoomResponse createOrGetRoom(User me, User target, Project project) {
-        // 같은 상대와 이미 대화한 방이 있으면 최신 방 재사용
-        List<ChatRoom> existingRooms = chatRoomRepository.findAllByUsers(me, target);
-        if (!existingRooms.isEmpty()) {
-            return ChatRoomResponse.from(existingRooms.get(0), me);
-        }
-
         AtomicBoolean createdNew = new AtomicBoolean(false);
         ChatRoom room = resolveOrCreateChatRoom(project, me, target, createdNew);
 
