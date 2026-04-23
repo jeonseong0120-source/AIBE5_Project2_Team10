@@ -21,16 +21,13 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     @Cacheable(value = "users", key = "#email", sync = true)
     public UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
-        // 1. 유저를 먼저 찾아서 변수에 담습니다.
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
 
-        // 2. 상태를 체크합니다. (UserStatus.WITHDRAWN 체크)
         if (user.getStatus() == UserStatus.WITHDRAWN) {
             throw new DisabledException("탈퇴한 계정입니다.");
         }
 
-        // 3. 마지막에 SecurityUser로 변환하여 반환합니다.
         return new SecurityUser(user);
     }
 }

@@ -7,34 +7,26 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
 
-    private final UserDetailsService userDetailsService;
-    private final SecretKey key; // final 유지
-    private final long validityInMilliseconds; // final 유지
+    private final SecretKey key;
+    private final long validityInMilliseconds;
 
-    // 2. 생성자를 통해 설정값(ConfigurationProperties)과 의존성을 한꺼번에 주입
-    public JwtTokenProvider(
-            UserDetailsService userDetailsService,
-            JwtProperties jwtProperties
-    ) {
-        this.userDetailsService = userDetailsService;
+    public JwtTokenProvider(JwtProperties jwtProperties) {
         this.validityInMilliseconds = jwtProperties.getExpiration();
-        // 주입받은 secretString으로 여기서 Key를 생성합니다.
         String secretString = jwtProperties.getSecret();
         this.key = Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
     }
 
-    // 1. 토큰 생성 (기존 로직 유지, 필드값 사용)
     public String createToken(Long userId, String email, String role) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
@@ -50,36 +42,48 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    /**
-     * 토큰의 유효성을 검사합니다.
-     * @throws JwtException | IllegalArgumentException 토큰이 유효하지 않을 경우 발생
-     */
     public void validateToken(String token) {
         try {
             Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token);
-            // 검증 성공 시 아무것도 하지 않고 통과
         } catch (JwtException | IllegalArgumentException e) {
-            // 에러를 삼키지 않고 다시 던짐
-            // 이렇게 해야 Filter의 catch 블록에서 로그를 상세히 남길 수 있음
             throw e;
         }
     }
 
+    /**
+     * 🎯 [최적화] DB 조회 없이 토큰의 Claim만으로 인증 객체를 생성합니다.
+     * 필터 단계에서의 불필요한 DB 조회를 제거하여 성능을 극대화합니다.
+     */
     public Authentication getAuthentication(String token) {
-        String email = getEmail(token);
-        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        Claims claims = getClaims(token);
+
+        Long userId = claims.get("userId", Long.class);
+        String email = claims.getSubject();
+        String role = claims.get("role", String.class);
+
+        // SecurityUser는 마스터의 프로젝트에 정의된 Principal 객체라고 가정합니다.
+        // DB 조회를 생략하고 토큰 정보로만 구성된 SecurityUser를 넘깁니다.
+        SecurityUser principal = new SecurityUser(userId, email, role);
+
+        return new UsernamePasswordAuthenticationToken(
+                principal,
+                "",
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+        );
+    }
+
+    public Claims getClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public String getEmail(String token) {
-        return Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload()
-                    .getSubject();
+        return getClaims(token).getSubject();
     }
 }

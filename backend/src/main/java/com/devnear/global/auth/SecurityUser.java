@@ -24,12 +24,27 @@ public class SecurityUser implements UserDetails {
     private String role;
     private String status;
 
+    /**
+     * 엔티티를 통한 생성자 (로그인 시점 등에 사용)
+     */
     public SecurityUser(User user) {
         this.id = user.getId();
         this.email = user.getEmail();
         this.password = user.getPassword();
         this.role = user.getRole().name();
         this.status = user.getStatus().name();
+    }
+
+    /**
+     * 🎯 [추가] 토큰 정보(Claims)를 통한 생성자
+     * DB 조회 없이 필터 단계에서 인증 객체를 생성하기 위해 사용됩니다.
+     */
+    public SecurityUser(Long id, String email, String role) {
+        this.id = id;
+        this.email = email;
+        this.role = role;
+        this.password = ""; // 토큰 인증 시 패스워드는 불필요합니다.
+        this.status = "ACTIVE"; // 토큰이 유효하다면 활성 상태로 간주합니다.
     }
 
     @JsonIgnore
@@ -46,8 +61,7 @@ public class SecurityUser implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        // 🎯 [수정] ACTIVE 또는 INACTIVE 상태일 때만 true를 반환
-        // 탈퇴(WITHDRAWN)나 정지 상태라면 false가 반환되어 시큐리티가 차단합
+        // ACTIVE 또는 INACTIVE 상태일 때만 true를 반환
         return "ACTIVE".equals(status) || "INACTIVE".equals(status);
     }
 }
