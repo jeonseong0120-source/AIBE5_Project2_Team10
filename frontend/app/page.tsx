@@ -11,6 +11,10 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 
+// ─── External Component Import ──────────────────────────────────────────────
+// 마스터가 지정하신 경로의 실제 로그인 모달을 연결합니다.
+import LoginModal from "@/components/auth/LoginModal";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SimState = "idle" | "loading" | "result";
@@ -393,7 +397,7 @@ function SimulatorSection() {
                           variants={slideInRight}
                           initial="hidden"
                           animate="visible"
-                          className="w-full max-w-lg bg-white p-8 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-zinc-100 hover:shadow-[0_30px_60px_-15px_rgba(255,125,0,0.15)] transition-shadow duration-500"
+                          className="w-full max-lg bg-white p-8 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-zinc-100 hover:shadow-[0_30px_60px_-15px_rgba(255,125,0,0.15)] transition-shadow duration-500"
                       >
                         <div className="flex justify-between items-start mb-6">
                           <div className="flex items-center gap-4">
@@ -983,6 +987,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [, setUser] = useState<UserData | null>(null);
 
+  // 🎯 마스터가 요청하신 로그인 모달 상태 추가
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
   useEffect(() => {
     const checkUser = async () => {
       const token = localStorage.getItem("accessToken");
@@ -1008,12 +1015,17 @@ export default function Home() {
     checkUser();
   }, [router]);
 
-  const handleCTA = useCallback(() => router.push("/login"), [router]);
+  // 🎯 버튼 클릭 시 /login 이동이 아닌 모달을 띄우도록 수정
+  const handleCTA = useCallback(() => setIsLoginModalOpen(true), []);
 
   if (loading) return <LoadingScreen />;
 
   return (
       <div className="relative min-h-screen bg-zinc-50 font-sans text-zinc-900 overflow-x-hidden selection:bg-[#7A4FFF]/30">
+
+        {/* 🎯 마스터의 실제 로그인 모달 배치 */}
+        <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+
         {/* Background grid */}
         <div
             className="fixed inset-0 z-0 opacity-[0.15] pointer-events-none"

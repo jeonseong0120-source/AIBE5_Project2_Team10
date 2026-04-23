@@ -114,7 +114,7 @@ export default function CommunityDetailPage() {
         const token = getAccessToken();
         if (!token) {
             alert("로그인 후 좋아요가 가능합니다.");
-            router.push("/login");
+            router.push("/");
             return;
         }
 
@@ -140,7 +140,7 @@ export default function CommunityDetailPage() {
         const token = getAccessToken();
         if (!token) {
             alert("로그인 후 댓글 작성이 가능합니다.");
-            router.push("/login");
+            router.push("/");
             return;
         }
 

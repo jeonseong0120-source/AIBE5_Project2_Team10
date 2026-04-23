@@ -51,7 +51,7 @@ export default function MypageSidebar({ tabs, activeTab, setActiveTab, accentCol
             {/* Logout Section */}
             <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-2 border border-zinc-100 shadow-sm">
                 <button
-                    onClick={() => { if (confirm('로그아웃 하시겠습니까?')) { logout(); router.push('/login'); } }}
+                    onClick={() => { if (confirm('로그아웃 하시겠습니까?')) { logout(); router.push('/'); } }}
                     className="w-full flex items-center gap-3 p-4 hover:bg-red-50 rounded-xl transition-all duration-300 text-[10px] font-black text-red-400 hover:text-red-500 uppercase font-mono tracking-widest"
                 >
                     <LogOut size={16} />

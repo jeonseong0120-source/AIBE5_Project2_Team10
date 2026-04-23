@@ -39,7 +39,7 @@ app:
     allowed-origins: http://localhost:3000
   oauth2:
     redirect-uri: http://localhost:3000/oauth/redirect
-    error-uri: http://localhost:3000/login
+    error-uri: http://localhost:3000/
 
 kakao:
   maps:

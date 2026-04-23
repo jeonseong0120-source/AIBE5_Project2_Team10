@@ -137,6 +137,16 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
                 )
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout") // 프론트에서 호출할 로그아웃 API 주소
+                        // 🎯 [수정] 리다이렉트 대신 204 No Content 반환
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_NO_CONTENT);
+                        })
+                        .permitAll()
+                )
+
+// ... 이후 설정 생략
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
 

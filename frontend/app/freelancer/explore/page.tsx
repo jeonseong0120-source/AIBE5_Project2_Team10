@@ -169,7 +169,7 @@ export default function FreelancerExplorePage() {
             const token = localStorage.getItem("accessToken");
             if (!token) {
                 alert("로그인이 필요합니다.");
-                router.replace("/login");
+                router.replace("/");
                 return;
             }
             try {
@@ -189,7 +189,7 @@ export default function FreelancerExplorePage() {
                 setUser({ ...res.data, role: normalizedRole as UserData['role'] });
                 setAuthorized(true);
             } catch (err) {
-                router.replace("/login");
+                router.replace("/");
             }
         };
         checkAccess();
@@ -306,10 +306,13 @@ export default function FreelancerExplorePage() {
 
                 <div className="max-w-4xl mx-auto relative z-10">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-10 text-zinc-900 leading-tight">
-                            나에게 맞는 <span className="text-[#7A4FFF]">프로젝트</span>를 찾으세요.
+                        {/* 🎯 문구 최적화 + 퍼플 글로우 + 텍스트 그림자 적용 */}
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-10 text-zinc-900 leading-tight break-keep [text-shadow:0_4px_15px_rgba(0,0,0,0.06)]">
+                            데이터가 증명하는 완벽한 기술 교차점, <br />
+                            최적의 <span className="text-[`#7A4FFF`] drop-shadow-[0_0_20px_rgba(122,79,255,0.4)] motion-safe:animate-[pulse_3s_ease-in-out_infinite] motion-reduce:animate-none">프로젝트</span>를 찾으세요.
                         </h1>
                     </motion.div>
+
 
                     {/* Premium Search Input */}
                     <div className="max-w-2xl mx-auto relative group">
