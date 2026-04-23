@@ -22,7 +22,7 @@ function tomorrowISODate(): string {
 interface ProjectRegisterFormProps {
     embedded?: boolean;
     onClose?: () => void;
-    onSaved?: () => void;
+    onSaved?: (projectId?: number) => void;
 }
 
 export default function ProjectRegisterForm({ embedded = false, onClose, onSaved }: ProjectRegisterFormProps) {
@@ -107,12 +107,8 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
 
             router.refresh();
             if (resultId) {
-                if (embedded) {
-                    onSaved?.();
-                } else {
-                    setNewProjectId(resultId);
-                    setIsModalOpen(true);
-                }
+                setNewProjectId(resultId);
+                setIsModalOpen(true);
             } else {
                 if (embedded) {
                     onSaved?.();
@@ -259,12 +255,16 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
 
             {/* 🎯 [ 모달 팝업 추가] */}
             <AnimatePresence>
-                {!embedded && isModalOpen && newProjectId && (
+                {isModalOpen && newProjectId && (
                     <MatchingresultForm
                         projectId={newProjectId}
                         onClose={() => {
                             setIsModalOpen(false);
-                            router.push("/client/dashboard"); // 닫으면 대시보드로 이동
+                            if (onSaved) {
+                                onSaved(newProjectId);
+                            } else {
+                                router.push("/client/dashboard");
+                            }
                         }}
                     />
                 )}

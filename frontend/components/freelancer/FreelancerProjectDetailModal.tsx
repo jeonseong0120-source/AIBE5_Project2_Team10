@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -39,6 +40,7 @@ function getFocusableElements(root: HTMLElement): HTMLElement[] {
 }
 
 export default function FreelancerProjectDetailModal({ projectId, open, onClose }: Props) {
+    const router = useRouter();
     const {
         project,
         loading,
@@ -203,16 +205,29 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                         ) : (
                             <>
                                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8" inert={isApplyOpen}>
-                                    <div>
-                                        <h2
-                                            id={DIALOG_TITLE_ID}
-                                            className="text-3xl font-black tracking-tight text-zinc-950"
+                                    <div className="flex items-start gap-5">
+                                        <button
+                                            type="button"
+                                            onClick={() => router.push(`/freelancer/projects/${project.projectId}`)}
+                                            className="h-16 w-16 md:h-20 md:w-20 shrink-0 overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50 p-1 shadow-sm transition-transform hover:scale-105 active:scale-95 group/logo"
                                         >
-                                            {project.projectName}
-                                        </h2>
-                                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-zinc-500">
-                                            <span className="px-3 py-1 rounded-full bg-zinc-100">{project.companyName}</span>
-                                            <span className="px-3 py-1 rounded-full bg-zinc-100">{project.location || '지역 미정'}</span>
+                                            <img
+                                                src={project.logoUrl || `https://ui-avatars.com/api/?name=${project.companyName || 'C'}&background=F4F4F5&color=A1A1AA`}
+                                                alt={project.companyName || 'Company logo'}
+                                                className="h-full w-full object-cover rounded-xl"
+                                            />
+                                        </button>
+                                        <div>
+                                            <h2
+                                                id={DIALOG_TITLE_ID}
+                                                className="text-3xl md:text-4xl font-black tracking-tighter text-zinc-950 leading-tight"
+                                            >
+                                                {project.projectName}
+                                            </h2>
+                                            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-widest font-mono text-zinc-400">
+                                                <span className="px-4 py-1.5 rounded-xl bg-zinc-100 border border-zinc-200/50">{project.companyName}</span>
+                                                <span className="px-4 py-1.5 rounded-xl bg-zinc-100 border border-zinc-200/50">{project.location || '지역 미정'}</span>
+                                            </div>
                                         </div>
                                     </div>
                                     <button
@@ -225,25 +240,25 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-8" inert={isApplyOpen}>
-                                    <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
-                                        <DollarSign size={16} className="text-[#FF7D00] mb-2" />
-                                        <p className="text-xs text-zinc-400">예산</p>
-                                        <p className="font-black">{formatBudget(project.budget)}</p>
+                                    <div className="p-5 rounded-[2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-lg group/stat">
+                                        <DollarSign size={18} className="text-[#FF7D00] mb-3" />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 font-mono mb-1">예산</p>
+                                        <p className="text-lg font-black tracking-tighter text-zinc-950">{formatBudget(project.budget)}</p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
-                                        <Calendar size={16} className="text-[#7A4FFF] mb-2" />
-                                        <p className="text-xs text-zinc-400">마감</p>
-                                        <p className="font-black">{project.deadline}</p>
+                                    <div className="p-5 rounded-[2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-lg group/stat">
+                                        <Calendar size={18} className="text-[#7A4FFF] mb-3" />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 font-mono mb-1">마감</p>
+                                        <p className="text-lg font-black tracking-tighter text-zinc-950">{project.deadline}</p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
-                                        <Globe size={16} className="text-blue-500 mb-2" />
-                                        <p className="text-xs text-zinc-400">근무형태</p>
-                                        <p className="font-black">{project.online && project.offline ? '온/오프 혼합' : project.online ? '원격' : '현장'}</p>
+                                    <div className="p-5 rounded-[2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-lg group/stat">
+                                        <Globe size={18} className="text-blue-500 mb-3" />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 font-mono mb-1">근무형태</p>
+                                        <p className="text-lg font-black tracking-tighter text-zinc-950">{project.online && project.offline ? '온/오프 혼합' : project.online ? '원격' : '현장'}</p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
-                                        <Clock size={16} className="text-emerald-500 mb-2" />
-                                        <p className="text-xs text-zinc-400">상태</p>
-                                        <p className="font-black">{project.status === 'OPEN' ? '모집 중' : '마감'}</p>
+                                    <div className="p-5 rounded-[2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-lg group/stat">
+                                        <Clock size={18} className="text-emerald-500 mb-3" />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 font-mono mb-1">상태</p>
+                                        <p className="text-lg font-black tracking-tighter text-zinc-950">{project.status === 'OPEN' ? '모집 중' : '마감'}</p>
                                     </div>
                                 </div>
 
@@ -260,7 +275,8 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
 
                                 <div className="mb-8" inert={isApplyOpen}>
                                     <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">상세 설명</h3>
-                                    <div className="p-5 rounded-2xl border border-zinc-100 bg-zinc-50 text-zinc-700 whitespace-pre-wrap">
+                                    <div className="p-8 rounded-[2.5rem] border border-zinc-100 bg-zinc-50 text-zinc-800 whitespace-pre-wrap text-lg italic font-bold leading-relaxed relative overflow-hidden group/detail">
+                                        <div className="absolute top-0 left-0 w-1.5 h-full bg-[#7A4FFF]/20 group-hover/detail:bg-[#7A4FFF] transition-colors"></div>
                                         {project.detail}
                                     </div>
                                 </div>

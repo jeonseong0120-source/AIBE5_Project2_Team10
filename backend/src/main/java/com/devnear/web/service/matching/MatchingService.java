@@ -38,6 +38,11 @@ public class MatchingService {
                     FreelancerProfile profile = tuple.get(freelancerProfile);
                     if (profile == null) return null;
 
+                    // 🎯 [유저 요청 사항] 겸업 유저(본인)는 본인이 생성한 프로젝트 추천 목록에서 제외합니다.
+                    if (profile.getUser().getId().equals(project.getClientProfile().getUser().getId())) {
+                        return null;
+                    }
+
                     // 숫자는 Number.class를 통해 안전하게 형변환 (기존 로직 유지 및 강화)
                     Number scoreNum = tuple.get(1, Number.class);
                     Double score = (scoreNum != null) ? scoreNum.doubleValue() : 0.0;
