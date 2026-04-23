@@ -38,7 +38,7 @@ export default function ChatInput({
                     onCompositionStart={() => setIsComposing(true)}
                     onCompositionEnd={() => setIsComposing(false)}
                     onKeyDown={(e) => {
-                        if (e.key === "Enter" && !disabled && !isComposing) {
+                        if (e.key === "Enter" && !e.shiftKey && !disabled && !isComposing) {
                             e.preventDefault();
                             onSend();
                         }

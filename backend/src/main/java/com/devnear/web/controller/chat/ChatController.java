@@ -1,7 +1,9 @@
 package com.devnear.web.controller.chat;
 
+import com.devnear.global.auth.LoginUser;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.chat.ChatMessageResponse;
+import com.devnear.web.dto.chat.ChatReadReceiptResponse;
 import com.devnear.web.dto.chat.ChatRoomCreateRequest;
 import com.devnear.web.dto.chat.ChatRoomListResponse;
 import com.devnear.web.dto.chat.ChatRoomResponse;
@@ -12,9 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import com.devnear.global.auth.LoginUser;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,8 +26,8 @@ import java.util.List;
 public class ChatController {
 
     private final ChatService chatService;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    // 채팅방 생성 API
     @Operation(summary = "채팅방 생성", description = "프로젝트 기준 1대1 채팅방을 생성하거나 기존 방을 반환합니다.")
     @PostMapping("/rooms")
     public ResponseEntity<ChatRoomResponse> createRoom(
@@ -38,7 +38,6 @@ public class ChatController {
                 .body(chatService.createRoom(user, request));
     }
 
-    // 내 채팅방 목록 조회 API
     @Operation(summary = "내 채팅방 목록 조회")
     @GetMapping("/rooms")
     public ResponseEntity<List<ChatRoomListResponse>> getMyRooms(
@@ -47,7 +46,6 @@ public class ChatController {
         return ResponseEntity.ok(chatService.getMyRooms(user));
     }
 
-    // 특정 채팅방 메시지 조회 API
     @Operation(summary = "채팅 메시지 조회")
     @GetMapping("/rooms/{roomId}/messages")
     public ResponseEntity<List<ChatMessageResponse>> getMessages(
@@ -58,18 +56,25 @@ public class ChatController {
     ) {
         if (page < 0) page = 0;
         if (size < 1) size = 1;
-        if (size > 100) size = 100; // Cap maximum page size
+        if (size > 100) size = 100;
         return ResponseEntity.ok(chatService.getMessages(user, roomId, page, size));
     }
 
-    // 특정 채팅방 읽음 처리 API
     @Operation(summary = "읽음 처리")
     @PatchMapping("/rooms/{roomId}/read")
     public ResponseEntity<Void> markAsRead(
             @LoginUser User user,
             @PathVariable Long roomId
     ) {
-        chatService.markAsRead(user, roomId);
+        int updatedCount = chatService.markAsRead(user, roomId);
+
+        if (updatedCount > 0) {
+            messagingTemplate.convertAndSend(
+                    "/sub/chat/rooms/" + roomId + "/read",
+                    ChatReadReceiptResponse.of(roomId, user.getId())
+            );
+        }
+
         return ResponseEntity.noContent().build();
     }
 }

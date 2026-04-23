@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -162,6 +163,12 @@ public class ChatService {
     }
 
     private ChatRoomResponse createOrGetRoom(User me, User target, Project project) {
+        // 같은 상대와 이미 대화한 방이 있으면 최신 방 재사용
+        List<ChatRoom> existingRooms = chatRoomRepository.findAllByUsers(me, target);
+        if (!existingRooms.isEmpty()) {
+            return ChatRoomResponse.from(existingRooms.get(0), me);
+        }
+
         AtomicBoolean createdNew = new AtomicBoolean(false);
         ChatRoom room = resolveOrCreateChatRoom(project, me, target, createdNew);
 
@@ -242,7 +249,15 @@ public class ChatService {
             return List.of();
         }
 
-        List<Long> roomIds = rooms.stream()
+        // 같은 상대와의 여러 방이 있더라도 최신 방 하나만 목록에 노출
+        Map<Long, ChatRoom> latestRoomByOpponentId = new LinkedHashMap<>();
+        for (ChatRoom room : rooms) {
+            Long opponentId = room.getOpponent(me).getId();
+            latestRoomByOpponentId.putIfAbsent(opponentId, room);
+        }
+
+        List<ChatRoom> deduplicatedRooms = latestRoomByOpponentId.values().stream().toList();
+        List<Long> roomIds = deduplicatedRooms.stream()
                 .map(ChatRoom::getId)
                 .toList();
 
@@ -264,7 +279,7 @@ public class ChatService {
             unreadCountMap.put(roomIdNum.longValue(), countNum.longValue());
         }
 
-        return rooms.stream()
+        return deduplicatedRooms.stream()
                 .map(room -> {
                     ChatMessage lastMessage = lastMessageMap.get(room.getId());
                     long unreadCount = unreadCountMap.getOrDefault(room.getId(), 0L);
@@ -297,13 +312,9 @@ public class ChatService {
     }
 
     @Transactional
-    public void markAsRead(User me, Long roomId) {
+    public int markAsRead(User me, Long roomId) {
         ChatRoom room = getValidatedRoom(me, roomId);
-
-        List<ChatMessage> unreadMessages =
-                chatMessageRepository.findByChatRoomAndSenderNotAndIsReadFalse(room, me);
-
-        unreadMessages.forEach(ChatMessage::markAsRead);
+        return chatMessageRepository.markAllAsRead(room, me);
     }
 
     @Transactional

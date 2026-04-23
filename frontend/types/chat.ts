@@ -32,6 +32,16 @@ export interface ChatRoomListResponse {
     opponentName: string;
     opponentNickname: string;
     lastMessage: string | null;
-    lastMessageTime: string | null;
+    lastMessageAt: string | null;
     unreadCount: number;
+
+    lastMessageMine: boolean;
+    lastMessageRead: boolean;
+    lastMessageSystem: boolean;
+}
+
+export interface ChatReadReceiptResponse {
+    roomId: number;
+    readerId: number;
+    read: boolean;
 }
