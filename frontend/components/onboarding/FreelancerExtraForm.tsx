@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useId } from "react"; // 🎯 고유 ID 생성을 위해 useId 추가
+import { useEffect, useState, useId } from "react";
 import api from "../../app/lib/axios";
 import { MAX_SELECTED_SKILLS } from "@/app/lib/skillLimits";
 import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
@@ -23,10 +23,11 @@ interface FreelancerExtraFormProps {
 export default function FreelancerExtraForm({ freelancerData, setFreelancerData }: FreelancerExtraFormProps) {
     const [availableSkills, setAvailableSkills] = useState<{skillId: number, name: string, category: string}[]>([]);
     const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim() ?? "";
-    const baseId = useId(); // 🎯 라디오 그룹 등을 위한 베이스 ID
+    const baseId = useId();
 
+    
     const inputStyle = "w-full pl-12 pr-4 py-4 bg-zinc-50/50 border border-zinc-100 rounded-2xl outline-none transition-all font-bold text-sm focus:ring-4 focus:ring-[#7A4FFF]/10 focus:border-[#7A4FFF] focus:bg-white";
-    const labelStyle = "text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest block mb-2 cursor-pointer";
+    const labelStyle = "text-[10px] font-black text-zinc-400 ml-1 uppercase tracking-widest block mb-2";
 
     useEffect(() => {
         const fetchSkills = async () => {
@@ -72,13 +73,15 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                     <p className="text-[10px] font-black text-[#7A4FFF] uppercase tracking-[0.2em]">Professional Arsenal</p>
                 </div>
 
-                {/* 🎯 한 줄 소개: id 및 htmlFor 연결 */}
+                {/* 한 줄 소개 */}
                 <div className="group">
-                    <label htmlFor="introduction" className={labelStyle}>One-line Introduction *</label>
+                    <label htmlFor={`${baseId}-intro`} className={`${labelStyle} cursor-pointer`}>
+                        One-line Introduction *
+                    </label>
                     <div className="relative">
                         <MessageSquare className="absolute left-4 top-4 text-zinc-300 group-focus-within:text-[#7A4FFF] transition-colors" size={18} />
                         <textarea
-                            id="introduction"
+                            id={`${baseId}-intro`}
                             value={freelancerData.introduction}
                             onChange={(e) => setFreelancerData({ ...freelancerData, introduction: e.target.value })}
                             placeholder="당신의 기술력과 경험을 짧게 소개해 주세요."
@@ -90,7 +93,9 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                 {/* 활동 지역 설정 */}
                 <div className="space-y-3">
                     <div className="flex items-center justify-between px-1">
-                        <label htmlFor="location-picker" className={labelStyle}>Activity Location</label>
+                        <label className={`${labelStyle}`}>
+                            Activity Location
+                        </label>
                         {freelancerData.location && (
                             <motion.span initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-[10px] font-black text-[#7A4FFF] bg-[#7A4FFF]/5 px-2 py-0.5 rounded border border-[#7A4FFF]/10">
                                 {freelancerData.location}
@@ -100,6 +105,7 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                     <div className="p-2 bg-zinc-50/50 rounded-3xl border border-zinc-100 overflow-hidden shadow-inner hover:bg-white hover:border-[#7A4FFF]/20 transition-all">
                         {kakaoJavascriptKey ? (
                             <KakaoLocationPicker
+                                // 🎯 [해결 2] KakaoLocationPicker의 Props에 id가 없으므로 제거했습니다.
                                 javascriptKey={kakaoJavascriptKey}
                                 value={{
                                     address: freelancerData.location,
@@ -116,7 +122,6 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                                 }}
                             />
                         ) : (
-                            /* 🎯 디버그 메시지 대신 사용자 친화적 메시지로 교체 */
                             <div className="p-10 text-center text-zinc-400 text-[11px] font-bold leading-relaxed">
                                 <MapPin className="mx-auto mb-2 opacity-20" size={24} />
                                 Kakao integration is unavailable.<br />
@@ -127,13 +132,15 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* 🎯 희망 시급: id 및 htmlFor 연결 */}
+                    {/* 희망 시급 */}
                     <div className="group">
-                        <label htmlFor="hourlyRate" className={labelStyle}>Hourly Rate (₩) *</label>
+                        <label htmlFor={`${baseId}-rate`} className={`${labelStyle} cursor-pointer`}>
+                            Hourly Rate (₩) *
+                        </label>
                         <div className="relative">
                             <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[#7A4FFF] transition-colors" size={18} />
                             <input
-                                id="hourlyRate"
+                                id={`${baseId}-rate`}
                                 type="text"
                                 value={formatNumber(freelancerData.hourlyRate)}
                                 onChange={handlePriceChange}
@@ -144,9 +151,9 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                         </div>
                     </div>
 
-                    {/* 🎯 작업 방식: 라디오 그룹으로 개편 */}
-                    <div role="radiogroup" aria-labelledby="workstyle-label">
-                        <label id="workstyle-label" className={labelStyle}>Work Style</label>
+                    {/* 작업 방식 */}
+                    <div role="radiogroup" aria-labelledby={`${baseId}-workstyle-label`}>
+                        <label id={`${baseId}-workstyle-label`} className={labelStyle}>Work Style</label>
                         <div className="flex p-1 bg-zinc-100 rounded-2xl gap-1 border border-zinc-200 shadow-inner">
                             {["ONLINE", "OFFLINE", "HYBRID"].map((style) => (
                                 <div key={style} className="flex-1">
@@ -157,7 +164,7 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                                         value={style}
                                         checked={freelancerData.workStyle === style}
                                         onChange={() => setFreelancerData({ ...freelancerData, workStyle: style })}
-                                        className="sr-only" // 시각적으로는 숨기고 보조 기술에는 노출
+                                        className="sr-only"
                                     />
                                     <label
                                         htmlFor={`${baseId}-${style}`}
@@ -176,10 +183,12 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                 </div>
 
                 {/* 기술 스택 선택 */}
-                <div className="space-y-3">
+                <div className="space-y-3" role="group" aria-labelledby={`${baseId}-skills-label`}>
                     <div className="flex justify-between items-center px-1">
-                        <label className={labelStyle}>Tech Stacks (Arsenal)</label>
-                        <span className="text-[10px] font-mono font-bold text-zinc-400">
+                        <span id={`${baseId}-skills-label`} className={labelStyle}>
+                            Tech Stacks (Arsenal)
+                        </span>
+                        <span className="text-[10px] font-mono font-bold text-zinc-400" aria-hidden="true">
                             {freelancerData.skillIds.length}/{MAX_SELECTED_SKILLS} Selected
                         </span>
                     </div>
@@ -195,7 +204,7 @@ export default function FreelancerExtraForm({ freelancerData, setFreelancerData 
                                         key={skill.skillId}
                                         type="button"
                                         disabled={atCap}
-                                        aria-pressed={on} // 접근성 보강
+                                        aria-pressed={on}
                                         onClick={() => toggleSkill(skill.skillId)}
                                         className={`rounded-xl border px-4 py-2 text-[11px] font-black transition-all ${
                                             on
