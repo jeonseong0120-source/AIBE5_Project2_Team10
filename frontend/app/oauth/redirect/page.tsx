@@ -36,7 +36,13 @@ export default function OAuthRedirect() {
                         const res = await api.get("/v1/users/me");
                         setStatus("AUTHORIZED");
                         setTimeout(() => { router.replace(postLoginPathForRole(res.data.role)); }, 800);
-                    } catch (err) { router.replace("/?error=auth_failed"); }
+                    } catch (err) {
+                        // 🎯 [수정] 검증 실패 시 유령 토큰 제거 및 상태 갱신
+                        localStorage.removeItem("accessToken");
+                        notifyAuthChanged();
+                        setStatus("UNAUTHORIZED");
+                        router.replace("/?error=auth_failed");
+                    }
                 } else { router.replace("/?error=token_missing"); }
             } else { router.replace("/?error=invalid_access"); }
         };

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react"; // 🎯 useRef, useEffect 추가
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { X, Mail, Lock, ArrowRight } from "lucide-react";
-import api from '@/app/lib/axios';
+import api, { resolveApiBaseUrl } from '@/app/lib/axios'; // 🎯 resolveApiBaseUrl 임포트
 import { notifyAuthChanged } from "@/app/lib/authEvents";
 import { postLoginPathForRole } from "@/app/lib/postLoginRedirect";
 
@@ -30,9 +30,31 @@ interface LoginModalProps {
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     const router = useRouter();
+    const modalRef = useRef<HTMLDivElement>(null); // 🎯 포커스 관리를 위한 Ref
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+
+    // 🎯 [추가] ESC 키 핸들러 및 포커스 트랩 기초 설정
+    useEffect(() => {
+        if (isOpen) {
+            // 모달 열릴 때 내부로 포커스 이동
+            modalRef.current?.focus();
+
+            const handleKeyDown = (e: KeyboardEvent) => {
+                if (e.key === "Escape") onClose();
+            };
+            window.addEventListener("keydown", handleKeyDown);
+
+            // 스크롤 방지 (선택 사항이나 권장됨)
+            document.body.style.overflow = "hidden";
+
+            return () => {
+                window.removeEventListener("keydown", handleKeyDown);
+                document.body.style.overflow = "unset";
+            };
+        }
+    }, [isOpen, onClose]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -45,7 +67,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 notifyAuthChanged();
                 try {
                     const me = await api.get<{ role?: string }>("/v1/users/me");
-                    onClose(); // 성공 시 모달 닫기
+                    onClose();
                     router.replace(postLoginPathForRole(me.data.role));
                 } catch {
                     router.replace("/");
@@ -59,7 +81,8 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     };
 
     const handleGoogleLogin = () => {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+        // 🎯 [수정] 하드코딩된 fallback 대신 공통 resolver 사용
+        const baseUrl = resolveApiBaseUrl();
         window.location.href = `${baseUrl}/oauth2/authorization/google`;
     };
 
@@ -72,23 +95,35 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     animate="visible"
                     exit="hidden"
                     onClick={(e) => e.target === e.currentTarget && onClose()}
+                    // 🎯 [추가] 다이얼로그 시맨틱 적용
+                    role="dialog"
+                    aria-modal="true"
                     className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm p-4"
                 >
                     <motion.div
+                        ref={modalRef}
                         variants={modalVariant}
-                        className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden relative"
+                        // 🎯 [추가] 접근성 속성: 제목 연결 및 포커스 가능하게 설정
+                        tabIndex={-1}
+                        aria-labelledby="modal-title"
+                        className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden relative outline-none"
                     >
                         {/* 상단 액센트 바 */}
                         <div className="h-1.5 w-full bg-gradient-to-r from-[#FF7D00] to-[#7A4FFF]" />
 
-                        <button onClick={onClose} className="absolute top-6 right-6 text-zinc-400 hover:text-zinc-900 transition-colors">
+                        <button
+                            onClick={onClose}
+                            aria-label="Close" // 🎯 [추가] 닫기 버튼 레이블
+                            className="absolute top-6 right-6 text-zinc-400 hover:text-zinc-900 transition-colors"
+                        >
                             <X size={20} />
                         </button>
 
                         <div className="p-8 md:p-10">
                             <div className="text-center mb-8">
                                 <img src="/devnear-logo.png" alt="Logo" className="h-7 mx-auto mb-5" />
-                                <h3 className="text-2xl font-black text-zinc-900 tracking-tight">서비스 접속</h3>
+                                {/* 🎯 id 부여하여 aria-labelledby와 연결 */}
+                                <h3 id="modal-title" className="text-2xl font-black text-zinc-900 tracking-tight">서비스 접속</h3>
                                 <p className="text-sm text-zinc-500 font-medium mt-1">자격 증명을 입력하고 기지에 연결하세요.</p>
                             </div>
 

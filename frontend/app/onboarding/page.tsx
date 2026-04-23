@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import api from "../lib/axios";
 import { notifyAuthChanged } from "../lib/authEvents";
+import { postLoginPathForRole } from "../lib/postLoginRedirect"; // 🎯 [추가] 공통 리다이렉트 경로 모듈
 import ClientExtraForm from "@/components/onboarding/ClientExtraForm";
 import FreelancerExtraForm from "@/components/onboarding/FreelancerExtraForm";
 
@@ -75,12 +76,24 @@ export default function OnboardingPage() {
             const onboardingPayload: any = { nickname: nickname.trim(), role: role };
             if (role === "CLIENT" || role === "BOTH") onboardingPayload.clientProfile = { ...clientData, nickname: nickname.trim() };
             if (role === "FREELANCER" || role === "BOTH") onboardingPayload.freelancerProfile = freelancerData;
+
             const res = await api.post("/v1/users/onboarding", onboardingPayload);
             const newToken = res.data.accessToken;
-            if (newToken) { localStorage.setItem("accessToken", newToken); notifyAuthChanged(); }
+
+            if (newToken) {
+                localStorage.setItem("accessToken", newToken);
+                notifyAuthChanged();
+            }
+
             alert("권한 설정 완료!");
-            router.replace(role === "FREELANCER" ? "/freelancer/main" : "/client/dashboard");
-        } catch (err: any) { alert("설정 중 오류가 발생했습니다."); } finally { setSubmitting(false); }
+            // 🎯 [수정] 하드코딩된 경로 대신 공통 모듈을 사용하여 일관성을 확보했습니다.
+            router.replace(postLoginPathForRole(role));
+
+        } catch (err: any) {
+            alert("설정 중 오류가 발생했습니다.");
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     if (loading) return (
@@ -94,18 +107,14 @@ export default function OnboardingPage() {
             <div className="fixed top-[-10%] right-[-5%] w-[800px] h-[800px] bg-[#7A4FFF] opacity-[0.04] blur-[150px] rounded-full z-0 pointer-events-none"></div>
             <div className="fixed bottom-[-10%] left-[-10%] w-[800px] h-[800px] bg-[#FF7D00] opacity-[0.04] blur-[150px] rounded-full z-0 pointer-events-none"></div>
 
-            {/* 🛰️ 웅장함을 넘어선 행성급 로고 배경 */}
+            {/* 🛰️ 웅장한 행성급 로고 배경 */}
             <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center overflow-hidden">
                 <motion.img
                     initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 0.07, scale: 1 }} // 🎯 은은함을 위해 opacity는 낮추고 스케일은 유지
+                    animate={{ opacity: 0.07, scale: 1 }}
                     src="/devnear-logo.png"
                     alt="Background Logo"
-                    className="w-[300vw] max-w-none blur-[0.005em] blur-px] select-none transform scale-[1.4]"
-                    /* w-[300vw]: 화면 가로의 3배 크기
-                       scale-[1.5]: 거기서 1.5배 더 확대
-                       blur-[60px]: 크기에 걸맞게 블러도 더 진하게!
-                    */
+                    className="w-[300vw] max-w-none blur-[60px] select-none transform scale-[1.4]"
                 />
             </div>
 

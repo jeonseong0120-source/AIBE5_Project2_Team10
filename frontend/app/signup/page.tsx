@@ -14,7 +14,7 @@ import {
     MapPin
 } from "lucide-react";
 import api from "../lib/axios";
-import { notifyAuthChanged } from "../lib/authEvents"; // 🎯 추가
+import { notifyAuthChanged } from "../lib/authEvents";
 
 const fadeUp: Variants = {
     hidden: { opacity: 0, y: 20 },
@@ -33,6 +33,7 @@ const staggerContainer: Variants = {
 export default function SignupPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [signupSuccess, setSignupSuccess] = useState(false); // 🎯 가입 성공 상태 추가
 
     const [formData, setFormData] = useState({
         email: "",
@@ -69,20 +70,29 @@ export default function SignupPage() {
             // 1. 회원가입 요청
             await api.post("/auth/signup", formData);
 
-            // 2. 🎯 자동 로그인 처리 (온보딩으로 즉시 진입을 위함)
-            const loginRes = await api.post("/auth/login", {
-                email: formData.email,
-                password: formData.password
-            });
+            // 2. 🎯 자동 로그인 시도 (가입과 로그인 에러를 분리하여 처리)
+            try {
+                const loginRes = await api.post("/auth/login", {
+                    email: formData.email,
+                    password: formData.password
+                });
 
-            const { accessToken } = loginRes.data;
-            if (accessToken) {
-                localStorage.setItem("accessToken", accessToken);
-                notifyAuthChanged();
-                // 3. 🚀 온보딩으로 바로 리다이렉트
-                router.push("/onboarding");
+                const { accessToken } = loginRes.data;
+                if (accessToken) {
+                    localStorage.setItem("accessToken", accessToken);
+                    notifyAuthChanged();
+                    router.push("/onboarding");
+                    return; // 성공 시 여기서 종료
+                }
+            } catch (loginErr) {
+                // 🎯 로그인만 실패한 경우: 가입 성공 상태로 전환
+                setSignupSuccess(true);
+                alert("회원가입에 성공했습니다! 생성하신 계정으로 로그인을 진행해 주세요.");
+                // 필요 시 로그인을 유도하는 모달을 띄우거나 이동
+                router.push("/"); // 혹은 로그인 페이지
             }
         } catch (err: any) {
+            // 회원가입 자체가 실패한 경우만 기존 에러 메시지 출력
             alert(err.response?.data?.message || "이미 등록된 이메일이거나 서버 오류가 발생했습니다.");
         } finally {
             setLoading(false);
@@ -90,7 +100,8 @@ export default function SignupPage() {
     };
 
     const handleGoogleLogin = () => {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+        // 🎯 [수정] axios 설정과 동일한 NEXT_PUBLIC_API_BASE_URL 사용
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
         window.location.href = `${baseUrl}/oauth2/authorization/google`;
     };
 
@@ -100,8 +111,6 @@ export default function SignupPage() {
                  style={{ backgroundImage: 'linear-gradient(#d4d4d8 1px, transparent 1px), linear-gradient(90deg, #d4d4d8 1px, transparent 1px)', backgroundSize: '44px 44px' }}></div>
             <div className="fixed top-[-10%] right-[-5%] w-[800px] h-[800px] bg-[#7A4FFF] opacity-[0.05] blur-[150px] rounded-full z-0 pointer-events-none"></div>
             <div className="fixed bottom-[-10%] left-[-10%] w-[800px] h-[800px] bg-[#FF7D00] opacity-[0.05] blur-[150px] rounded-full z-0 pointer-events-none"></div>
-
-            {/* 🛰️ 헤더 제거됨 */}
 
             <div className="relative z-10 max-w-6xl mx-auto min-h-screen flex items-center justify-center px-6">
                 <div className="w-full grid lg:grid-cols-2 gap-16 items-center py-12">

@@ -301,7 +301,7 @@ export default function FreelancerExplorePage() {
                         {/* 🎯 문구 최적화 + 퍼플 글로우 + 텍스트 그림자 적용 */}
                         <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-10 text-zinc-900 leading-tight break-keep [text-shadow:0_4px_15px_rgba(0,0,0,0.06)]">
                             데이터가 증명하는 완벽한 기술 교차점, <br />
-                            최적의 <span className="text-[#7A4FFF] drop-shadow-[0_0_20px_rgba(122,79,255,0.4)] animate-[pulse_3s_ease-in-out_infinite]">프로젝트</span>를 찾으세요.
+                            최적의 <span className="text-[`#7A4FFF`] drop-shadow-[0_0_20px_rgba(122,79,255,0.4)] motion-safe:animate-[pulse_3s_ease-in-out_infinite] motion-reduce:animate-none">프로젝트</span>를 찾으세요.
                         </h1>
                     </motion.div>
 
