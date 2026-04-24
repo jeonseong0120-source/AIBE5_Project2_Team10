@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Calendar, MapPin, ArrowUpRight, ShieldCheck, Heart, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { EstimatedBudgetBlock } from '@/components/freelancer/EstimatedBudgetBlock';
 
 interface ProjectCardProps {
     data: any;
@@ -162,14 +163,7 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
 
                     {/* 예산 및 액션 버튼 세트 */}
                     <div className="flex items-center gap-6 md:gap-10 shrink-0 w-full md:w-auto justify-between md:justify-end">
-                        <div className="text-right">
-                            <span className="block text-[11px] font-bold text-zinc-300 uppercase tracking-widest mb-1">예상 예산</span>
-                            <p className="text-2xl font-bold text-zinc-950 tracking-tighter group-hover:text-[#FF7D00] transition-colors duration-500">
-                                <span className="text-[#FF7D00] text-lg mr-1">₩</span>
-                                {((data.budget || 0) / 10000).toLocaleString()}
-                                <span className="text-zinc-300 text-xs ml-1 font-sans">만원</span>
-                            </p>
-                        </div>
+                        <EstimatedBudgetBlock budgetWon={data.budget} size="md" align="right" />
 
                         <motion.button
                             whileTap={{ scale: 0.97 }}

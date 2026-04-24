@@ -6,10 +6,18 @@ import { Search, MapPin, DollarSign, Cpu, RotateCcw, BarChart3, Activity, Sparkl
 import ProjectCard from "@/components/freelancer/ProjectCard";
 import FreelancerProjectDetailModal from '@/components/freelancer/FreelancerProjectDetailModal';
 import { useRouter } from 'next/navigation';
+import { Geist } from 'next/font/google';
 import api from '@/app/lib/axios';
 
 // 🎯 [추가] 대통합 네비게이션 바 불러오기!
 import GlobalNavbar, { type UserData, type ProfileData } from '../../../components/common/GlobalNavbar';
+import { EstimatedBudgetBlock } from '@/components/freelancer/EstimatedBudgetBlock';
+
+/** AI 추천 카드 영역 — 루트와 동일하게 Geist */
+const geistSans = Geist({
+    subsets: ['latin'],
+    display: 'swap',
+});
 
 export default function FreelancerExplorePage() {
     const router = useRouter();
@@ -327,8 +335,8 @@ export default function FreelancerExplorePage() {
                 </div>
             </header>
 
-            {/* 🎯 AI Recommended Projects Section - Slim & Compact Premium UI */}
-            <section className="relative z-10 max-w-7xl mx-auto px-8 pb-6">
+            {/* 🎯 AI Recommended Projects Section - Slim & Compact Premium UI (Geist + 만원 단위) */}
+            <section className={`relative z-10 max-w-7xl mx-auto px-8 pb-6 ${geistSans.className}`}>
                 <div className="group/container rounded-[2rem] border border-zinc-200/50 bg-white/80 backdrop-blur-xl p-8 md:p-10 shadow-xl shadow-purple-500/5 relative overflow-hidden">
                     
                     {/* Subtle Decorative Background */}
@@ -391,22 +399,22 @@ export default function FreelancerExplorePage() {
                     {aiRecLoading ? (
                         <div className="flex items-center justify-center py-12 gap-4">
                             <div className="w-10 h-10 border-3 border-[#7A4FFF]/10 border-t-[#7A4FFF] rounded-full animate-spin" />
-                            <p className="text-[10px] font-black text-zinc-400 font-mono uppercase tracking-[0.2em] animate-pulse">Analyzing...</p>
+                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] animate-pulse">Analyzing...</p>
                         </div>
                     ) : aiRecError ? (
                         <div className="rounded-2xl border border-red-50/50 bg-red-50/20 px-6 py-10 text-center backdrop-blur-sm">
-                            <p className="text-xs font-bold text-red-900 mb-4 font-mono uppercase tracking-tight">{aiRecError}</p>
+                            <p className="text-xs font-semibold text-red-900 mb-4 tracking-tight">{aiRecError}</p>
                             <button
                                 type="button"
                                 onClick={() => void loadAiRecommendations()}
-                                className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-[#7A4FFF] font-mono active:scale-95"
+                                className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-[#7A4FFF] active:scale-95"
                             >
                                 <RotateCcw size={12} /> RELOAD
                             </button>
                         </div>
                     ) : aiRecommendations.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-zinc-100 bg-zinc-50/30 py-16 text-center">
-                            <p className="text-xs font-black text-zinc-300 uppercase font-mono tracking-widest">No_Matched_Missions_Found</p>
+                            <p className="text-xs font-bold text-zinc-300 uppercase tracking-widest">No_Matched_Missions_Found</p>
                         </div>
                     ) : (
                         <div 
@@ -429,8 +437,8 @@ export default function FreelancerExplorePage() {
                                         <div className="absolute inset-0 bg-gradient-to-br from-purple-500/[0.02] to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
 
                                         <div className="mb-4 flex items-center justify-between relative z-10">
-                                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#7A4FFF]/5 border border-[#7A4FFF]/10">
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-[#7A4FFF] font-mono">
+                                            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#7A4FFF]/5 border border-[#7A4FFF]/10">
+                                                <span className="text-[12px] font-bold uppercase tracking-widest text-[#7A4FFF]">
                                                     {(p.similarityScore * 100).toFixed(0)}% MATCH
                                                 </span>
                                             </div>
@@ -445,29 +453,21 @@ export default function FreelancerExplorePage() {
                                         </div>
 
                                         <div className="mb-2">
-                                            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest font-mono mb-1">{p.companyName || '개인 클라이언트'}</p>
-                                            <h3 className="text-sm font-black leading-tight text-zinc-900 line-clamp-2 min-h-[40px] group-hover/card:text-[#7A4FFF] transition-colors duration-300 relative z-10">
+                                            <p className="text-[13px] font-bold text-zinc-400 uppercase tracking-widest mb-1">{p.companyName || '개인 클라이언트'}</p>
+                                            <h3 className="text-lg font-bold leading-tight text-zinc-900 line-clamp-2 min-h-[52px] group-hover/card:text-[#7A4FFF] transition-colors duration-300 relative z-10">
                                                 {p.projectName}
                                             </h3>
                                         </div>
 
                                         <div className="mt-auto pt-5 border-t border-zinc-50 relative z-10">
-                                            <div className="flex items-end justify-between mb-6">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[8px] font-black text-zinc-300 uppercase tracking-[0.2em] font-mono mb-1">Budget</span>
-                                                    <p className="font-mono text-xl font-black text-zinc-950 italic">
-                                                        ₩{Number(p.budget).toLocaleString()}
-                                                    </p>
-                                                </div>
-                                                <div className="w-10 h-10 rounded-xl bg-zinc-50 flex items-center justify-center group-hover/card:bg-zinc-950 group-hover/card:text-white transition-all duration-300">
-                                                    <ChevronRight size={16} className="transition-transform group-hover/card:translate-x-0.5" />
-                                                </div>
+                                            <div className="mb-6">
+                                                <EstimatedBudgetBlock budgetWon={p.budget} size="sm" align="left" />
                                             </div>
 
                                             <button
                                                 type="button"
                                                 onClick={() => openProjectModal(p.projectId)}
-                                                className="w-full relative overflow-hidden rounded-xl bg-zinc-950 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_10px_20px_rgba(122,79,255,0.2)] font-mono"
+                                                className="w-full relative overflow-hidden rounded-xl bg-zinc-950 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_10px_20px_rgba(122,79,255,0.2)]"
                                             >
                                                 <span className="relative z-10">OPEN_MISSION</span>
                                                 <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-1000" />

@@ -248,8 +248,12 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         if (!open) {
             return;
         }
+        // 벨 패널 열 때만 새로고침. GUEST는 백엔드에서 알림 API 403 → 역할 확인 후 호출
+        if (!me || me.role === "GUEST") {
+            return;
+        }
         void loadInbox();
-    }, [open, loadInbox]);
+    }, [open, loadInbox, me]);
 
     useEffect(() => {
         if (!open) {

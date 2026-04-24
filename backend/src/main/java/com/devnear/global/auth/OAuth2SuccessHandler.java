@@ -47,7 +47,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         Object idAttr = attributes.get("id");
         Long userId = (idAttr instanceof Integer) ? ((Integer) idAttr).longValue() : (Long) idAttr;
         String email = (String) attributes.get("email");
-        String role = authentication.getAuthorities().iterator().next().getAuthority();
+        String authority = authentication.getAuthorities().iterator().next().getAuthority();
+        // DefaultOAuth2User 권한은 "ROLE_FREELANCER" 형태 — JWT에는 enum 이름만 넣어야 이후 ROLE_ 중복이 없음
+        String role = authority.startsWith("ROLE_") ? authority.substring("ROLE_".length()) : authority;
 
         // 3. 우리 서비스 전용 JWT 토큰 발급
         String accessToken = jwtTokenProvider.createToken(userId, email, role);

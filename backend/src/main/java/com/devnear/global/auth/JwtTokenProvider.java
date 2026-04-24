@@ -62,7 +62,7 @@ public class JwtTokenProvider {
 
         Long userId = claims.get("userId", Long.class);
         String email = claims.getSubject();
-        String role = claims.get("role", String.class);
+        String role = normalizeRoleClaim(claims.get("role", String.class));
 
         // SecurityUser는 마스터의 프로젝트에 정의된 Principal 객체라고 가정합니다.
         // DB 조회를 생략하고 토큰 정보로만 구성된 SecurityUser를 넘깁니다.
@@ -81,6 +81,18 @@ public class JwtTokenProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    /**
+     * OAuth 성공 핸들러 등에서 JWT에 {@code ROLE_FREELANCER} 형태로 넣은 레거시 클레임과,
+     * 일반 로그인의 {@code FREELANCER} 형태를 모두 {@code FREELANCER}로 맞춥니다.
+     * 그렇지 않으면 권한이 {@code ROLE_ROLE_FREELANCER}가 되어 403이 납니다.
+     */
+    private static String normalizeRoleClaim(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return raw;
+        }
+        return raw.startsWith("ROLE_") ? raw.substring("ROLE_".length()) : raw;
     }
 
     public String getEmail(String token) {
