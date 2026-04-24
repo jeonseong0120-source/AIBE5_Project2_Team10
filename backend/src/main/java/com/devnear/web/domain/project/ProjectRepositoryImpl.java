@@ -17,7 +17,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.devnear.web.domain.project.QProject.project;
-import static com.devnear.web.domain.project.QProjectSkill.projectSkill;
 import static io.jsonwebtoken.lang.Strings.hasText;
 
 @RequiredArgsConstructor
@@ -33,8 +32,7 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                 .select(project).distinct()
                 .from(project)
                 .leftJoin(project.clientProfile).fetchJoin()
-                .leftJoin(project.projectSkills, projectSkill).fetchJoin()
-                .leftJoin(projectSkill.skill).fetchJoin()
+                .leftJoin(project.clientProfile.user).fetchJoin()
                 .where(
                         nameLike(cond.getKeyword()),
                         skillIdsIn(cond.getSkillIds()),

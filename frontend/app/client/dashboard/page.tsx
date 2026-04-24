@@ -123,13 +123,13 @@ export default function ClientDashboardPage() {
         if (!isLoadMore) { setBookmarksLoading(true); setBookmarkPage(0); }
         const targetPage = isLoadMore ? bookmarkPage + 1 : 0;
         try {
-            const { data } = await api.get(`/v1/bookmarks/freelancers?page=${targetPage}&size=9`);
+            const { data } = await api.get(`/v1/bookmarks/freelancers?page=${targetPage}&size=9&sort=createdAt,${bookmarksSortOrder.toLowerCase()}`);
             const newContent = data.content || [];
             setBookmarks(prev => isLoadMore ? [...prev, ...newContent] : newContent);
             setBookmarkPage(targetPage);
             setHasMoreBookmarks(!data.last);
         } catch (err) { console.error("찜 목록 로드 실패", err); } finally { setBookmarksLoading(false); }
-    }, [bookmarkPage]);
+    }, [bookmarkPage, bookmarksSortOrder]);
 
     const fetchSentProposals = async () => {
         setProposalsLoading(true);
@@ -613,7 +613,10 @@ export default function ClientDashboardPage() {
                                 <div className="sticky top-4 z-40 backdrop-blur-md pb-6 flex flex-wrap items-center justify-between gap-4">
                                     <button 
                                         type="button"
-                                        onClick={() => setBookmarksSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
+                                        onClick={() => {
+                                            setBookmarksSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC');
+                                            fetchBookmarks(false);
+                                        }}
                                         className="px-8 py-3.5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all flex items-center gap-3 shadow-xl shadow-zinc-100"
                                     >
                                         <Clock size={16} /> {bookmarksSortOrder === 'DESC' ? '찜한 순 (최신)' : '찜한 순 (과거)'}
@@ -640,7 +643,7 @@ export default function ClientDashboardPage() {
                                     <div className="py-24 text-center text-zinc-400 text-sm font-medium">관심 프리랜서를 불러오는 중…</div>
                                 ) : (
                                     <div className="grid grid-cols-1 gap-8">
-                                        {(bookmarksSortOrder === 'DESC' ? bookmarks : [...bookmarks].reverse()).map((freelancer, idx) => (
+                                        {bookmarks.map((freelancer, idx) => (
                                             <FreelancerBookmarkCard 
                                                 key={freelancer.profileId} 
                                                 freelancer={freelancer} 

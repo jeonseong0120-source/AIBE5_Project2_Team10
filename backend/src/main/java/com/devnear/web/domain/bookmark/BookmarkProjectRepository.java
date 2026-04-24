@@ -18,9 +18,7 @@ public interface BookmarkProjectRepository extends JpaRepository<BookmarkProject
     @EntityGraph(attributePaths = {
             "project",
             "project.clientProfile",
-            "project.clientProfile.user",
-            "project.projectSkills",
-            "project.projectSkills.skill"
+            "project.clientProfile.user"
     })
     Page<BookmarkProject> findAllByFreelancerProfile(FreelancerProfile freelancerProfile, Pageable pageable);
     boolean existsByFreelancerProfileAndProject(FreelancerProfile freelancerProfile, Project project);

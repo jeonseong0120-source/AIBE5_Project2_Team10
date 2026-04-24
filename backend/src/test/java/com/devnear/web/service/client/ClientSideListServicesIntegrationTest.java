@@ -343,7 +343,7 @@ class ClientSideListServicesIntegrationTest {
         assertThat(QueryCountHolder.selectExecutions())
                 .as("ProjectService 공개 공고 검색(마켓 목록)+지원 건수 집계")
                 .isPositive()
-                .isLessThanOrEqualTo(18);
+                .isLessThanOrEqualTo(2);
         assertThat(page.getContent().stream().anyMatch(p -> p.getProjectName() != null && p.getProjectName().contains("마켓노출")))
                 .isTrue();
     }
