@@ -22,6 +22,7 @@ import com.devnear.web.exception.ResourceNotFoundException;
 import com.devnear.web.exception.ResourceConflictException;
 import com.devnear.web.service.chat.ChatService;
 import com.devnear.web.service.notification.NotificationService;
+import com.devnear.web.service.project.ProjectDeadlineAutoCloseService;
 import com.devnear.web.service.project.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -31,6 +32,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.OptimisticLockException;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -40,6 +43,8 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ProposalService {
 
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+
     private final ProposalRepository proposalRepository;
     private final ProjectRepository projectRepository;
     private final ClientProfileRepository clientProfileRepository;
@@ -47,6 +52,7 @@ public class ProposalService {
     private final ChatService chatService;
     private final NotificationService notificationService;
     private final ProjectService projectService;
+    private final ProjectDeadlineAutoCloseService projectDeadlineAutoCloseService;
 
     /**
      * [CLI] 클라이언트가 특정 프리랜서에게 역제안을 전송합니다.
@@ -107,6 +113,11 @@ public class ProposalService {
     ) {
         FreelancerProfile freelancerProfile = freelancerProfileRepository.findById(freelancerProfileId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 프리랜서를 찾을 수 없습니다."));
+
+        LocalDate today = LocalDate.now(KST);
+        if (project.getDeadline().isBefore(today)) {
+            throw new IllegalStateException("마감일이 지난 공고에는 역제안을 보낼 수 없습니다.");
+        }
 
         if (proposalRepository.existsByProjectIdAndFreelancerProfileId(project.getId(), freelancerProfileId)) {
             throw new IllegalArgumentException("해당 프리랜서에게 이미 역제안을 보냈습니다. (ALREADY_PROPOSED)");
@@ -254,6 +265,8 @@ public class ProposalService {
             // 동시 요청으로 version 충돌 발생
             throw new ResourceConflictException("동시 요청으로 인해 처리에 실패했습니다. 다시 시도해주세요.");
         }
+
+        projectDeadlineAutoCloseService.tryAutoCloseIfReady(proposal.getProject().getId());
     }
 
     /**

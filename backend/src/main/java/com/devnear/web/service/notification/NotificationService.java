@@ -129,6 +129,7 @@ public class NotificationService {
             case REVIEW_LEFT_BY_CLIENT -> "/freelancer/mypage?tab=reviews";
             case REVIEW_LEFT_BY_FREELANCER -> "/client/mypage?tab=projects";
             case COMMUNITY_COMMENT_ON_MY_POST -> "/community/" + resourceId;
+            case PROJECT_DEADLINE_CLOSED -> "/client/dashboard";
         };
     }
 }

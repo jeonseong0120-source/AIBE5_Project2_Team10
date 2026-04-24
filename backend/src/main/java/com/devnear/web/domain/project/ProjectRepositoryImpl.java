@@ -31,6 +31,7 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
         List<Project> content = queryFactory
                 .selectFrom(project)
                 .leftJoin(project.clientProfile).fetchJoin()
+                .leftJoin(project.clientProfile.user).fetchJoin()
                 .where(
                         nameLike(cond.getKeyword()),
                         skillIdsIn(cond.getSkillIds()),
@@ -83,7 +84,7 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
         return project.projectSkills.any().skill.id.in(skillIds);
     }
 
-    /** :dart: [수정] 모든 스택을 포함하는 프로젝트만 노출 (AND 필터 + 입력값 정규화) */
+    /** 🎯 [수정] 모든 스택을 포함하는 프로젝트만 노출 (AND 필터 + 입력값 정규화) */
     private BooleanExpression skillNamesAllMatch(List<String> skillNames) {
         if (skillNames == null || skillNames.isEmpty()) return null;
 
