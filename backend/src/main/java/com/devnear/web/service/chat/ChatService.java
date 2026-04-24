@@ -104,7 +104,7 @@ public class ChatService {
             User freelancerUser
     ) {
         validateProjectClientAndPair(project, clientUser, freelancerUser);
-        return resolveOrCreateChatRoom(project, clientUser, freelancerUser, null);
+        return resolveOrCreateChatRoom(project, clientUser, freelancerUser, null, null);
     }
 
     @Transactional
@@ -117,7 +117,7 @@ public class ChatService {
         validateProjectClientAndPair(project, clientUser, freelancerUser);
 
         AtomicBoolean createdNew = new AtomicBoolean(false);
-        ChatRoom room = resolveOrCreateChatRoom(project, clientUser, freelancerUser, createdNew);
+        ChatRoom room = resolveOrCreateChatRoom(project, clientUser, freelancerUser, actingUser, createdNew);
 
         if (createdNew.get()) {
             User recipient = actingUser.getId().equals(clientUser.getId()) ? freelancerUser : clientUser;
@@ -150,7 +150,7 @@ public class ChatService {
 
     private ChatRoomResponse createOrGetRoom(User me, User target, Project project) {
         AtomicBoolean createdNew = new AtomicBoolean(false);
-        ChatRoom room = resolveOrCreateChatRoom(project, me, target, createdNew);
+        ChatRoom room = resolveOrCreateChatRoom(project, me, target, me, createdNew);
 
         if (createdNew.get()) {
             notificationService.notifyUser(
@@ -189,6 +189,7 @@ public class ChatService {
             Project project,
             User userA,
             User userB,
+            User initiator,
             AtomicBoolean createdFlag
     ) {
         User first = userA.getId() < userB.getId() ? userA : userB;
@@ -215,7 +216,9 @@ public class ChatService {
                         .orElseThrow(() -> e);
             }
         } else {
-            room.restoreFor(userA, userB);
+            if (initiator != null) {
+                room.restoreFor(initiator);
+            }
         }
 
         return room;

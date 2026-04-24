@@ -18,6 +18,7 @@ import {
     ensureChatSocketConnected,
 } from "../../app/lib/chatSocket";
 import { getCurrentUserId } from "../../app/lib/auth";
+import { DEVNEAR_AUTH_CHANGED } from "../../app/lib/authEvents";
 import { useChatStore } from "../../app/store/chatStore";
 import type {
     ChatMessageResponse,
@@ -114,15 +115,18 @@ export default function ChatWidget() {
                 syncAuthState();
             }
         };
+        const handleAuthChanged = () => syncAuthState();
 
         window.addEventListener("storage", handleStorage);
         window.addEventListener("focus", handleFocus);
         document.addEventListener("visibilitychange", handleVisibilityChange);
+        window.addEventListener(DEVNEAR_AUTH_CHANGED, handleAuthChanged);
 
         return () => {
             window.removeEventListener("storage", handleStorage);
             window.removeEventListener("focus", handleFocus);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
+            window.removeEventListener(DEVNEAR_AUTH_CHANGED, handleAuthChanged);
         };
     }, []);
 

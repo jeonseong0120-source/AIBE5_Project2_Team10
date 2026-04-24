@@ -93,16 +93,20 @@ public class ChatRoom extends BaseTimeEntity {
             return user2Exited;
         }
 
-        return true;
+        throw new IllegalArgumentException("User is not a participant: " + user.getId());
     }
 
-    public void restoreFor(User userA, User userB) {
-        if (user1.getId().equals(userA.getId()) || user1.getId().equals(userB.getId())) {
+    public void restoreFor(User initiator) {
+        if (user1.getId().equals(initiator.getId())) {
             this.user1Exited = false;
+            return;
         }
 
-        if (user2.getId().equals(userA.getId()) || user2.getId().equals(userB.getId())) {
+        if (user2.getId().equals(initiator.getId())) {
             this.user2Exited = false;
+            return;
         }
+
+        throw new IllegalArgumentException("User is not a participant: " + initiator.getId());
     }
 }
