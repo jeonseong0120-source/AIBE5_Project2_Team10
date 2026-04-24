@@ -31,6 +31,7 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
         List<Project> content = queryFactory
                 .selectFrom(project)
                 .leftJoin(project.clientProfile).fetchJoin()
+                .leftJoin(project.clientProfile.user).fetchJoin()
                 .where(
                         nameLike(cond.getKeyword()),
                         skillIdsIn(cond.getSkillIds()),
