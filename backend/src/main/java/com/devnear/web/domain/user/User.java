@@ -13,6 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import com.devnear.web.domain.client.ClientProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.Collection;
 import java.util.List;
@@ -68,9 +69,11 @@ public class User extends BaseTimeEntity implements UserDetails {
     @Column(name = "provider_id", length = 100)
     private String providerId;
 
+    @BatchSize(size = 100)
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private ClientProfile clientProfile;
 
+    @BatchSize(size = 100)
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private FreelancerProfile freelancerProfile;
 

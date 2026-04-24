@@ -23,7 +23,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
     /** 단건 조회는 페이징 문제가 없으므로 Fetch Join을 유지하여 한 번에 가져옴*/
     @Query("SELECT DISTINCT p FROM Project p " +
             "JOIN FETCH p.clientProfile cp " +
-            "JOIN FETCH cp.user " +
+            "JOIN FETCH cp.user u " +
+            "LEFT JOIN FETCH u.freelancerProfile " +
             "LEFT JOIN FETCH p.projectSkills ps " +
             "LEFT JOIN FETCH ps.skill " +
             "WHERE p.id = :projectId")
