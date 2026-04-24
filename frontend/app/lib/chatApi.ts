@@ -30,6 +30,10 @@ export async function markChatAsRead(roomId: number): Promise<void> {
     await api.patch(`/chat/rooms/${roomId}/read`);
 }
 
+export async function leaveChatRoom(roomId: number): Promise<void> {
+    await api.delete(`/chat/rooms/${roomId}`);
+}
+
 export async function sendChatMessage(
     body: ChatMessageSendRequest
 ): Promise<void> {
