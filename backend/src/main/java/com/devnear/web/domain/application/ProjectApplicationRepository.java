@@ -55,4 +55,6 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
     List<Object[]> countByProjectIdIn(@Param("projectIds") List<Long> projectIds);
 
     long countByProjectId(Long projectId);
+
+    boolean existsByProject_IdAndStatus(Long projectId, ApplicationStatus status);
 }

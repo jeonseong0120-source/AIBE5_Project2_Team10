@@ -14,6 +14,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -103,5 +104,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
     boolean existsByClientProfile_IdAndStatusIn(Long clientId, Collection<ProjectStatus> statuses);
 
     boolean existsByFreelancerProfile_IdAndStatusIn(Long freelancerId, Collection<ProjectStatus> statuses);
+
+    /** 마감일이 {@code before}보다 이전인 모집 중·미매칭 공고 (자동 마감 스케줄러용) */
+    List<Project> findAllByStatusAndFreelancerProfileIsNullAndDeadlineBefore(ProjectStatus status, LocalDate before);
 
 }

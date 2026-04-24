@@ -19,6 +19,7 @@ import com.devnear.web.exception.ProjectAccessDeniedException;
 import com.devnear.web.exception.ResourceNotFoundException;
 import com.devnear.web.exception.ResourceConflictException; // 🎯 충돌 예외 임포트 추가
 import com.devnear.web.service.notification.NotificationService;
+import com.devnear.web.service.project.ProjectDeadlineAutoCloseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.PessimisticLockingFailureException; // 🎯 락 실패 예외 임포트 추가
 import org.springframework.stereotype.Service;
@@ -26,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -43,6 +46,9 @@ public class ApplicationService {
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final NotificationService notificationService;
     private final ProposalRepository proposalRepository;
+    private final ProjectDeadlineAutoCloseService projectDeadlineAutoCloseService;
+
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
     /**
      * [FRE-04] 프리랜서가 특정 프로젝트에 지원서를 제출합니다.
@@ -59,6 +65,11 @@ public class ApplicationService {
 
         if (project.getStatus() != ProjectStatus.OPEN || project.getFreelancerProfile() != null) {
             throw new IllegalStateException("현재 모집 중이 아니거나 이미 매칭(결제 대기)이 완료된 공고입니다. (지원 불가)");
+        }
+
+        LocalDate today = LocalDate.now(KST);
+        if (project.getDeadline().isBefore(today)) {
+            throw new IllegalStateException("마감일이 지난 공고에는 지원할 수 없습니다.");
         }
 
         // 2.5 동일 계정(BOTH 등): 본인이 올린 공고에 프리랜서로 지원 불가
@@ -214,6 +225,8 @@ public class ApplicationService {
                 throw new ResourceConflictException("현재 다른 사용자가 매칭을 처리 중입니다. 잠시 후 다시 시도해주세요.");
             }
         }
+
+        projectDeadlineAutoCloseService.tryAutoCloseIfReady(application.getProject().getId());
     }
 
     private Double calculateMatchingRate(Project project, FreelancerProfile freelancer) {

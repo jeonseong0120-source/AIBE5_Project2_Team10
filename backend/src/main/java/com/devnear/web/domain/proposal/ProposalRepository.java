@@ -76,4 +76,6 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
     boolean existsByClientProfile_IdAndStatus(Long clientProfileId, ProposalStatus status);
 
     boolean existsByFreelancerProfile_IdAndStatus(Long freelancerProfileId, ProposalStatus status);
+
+    boolean existsByProject_IdAndStatus(Long projectId, ProposalStatus status);
 }
