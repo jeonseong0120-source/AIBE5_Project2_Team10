@@ -101,11 +101,6 @@ public class User extends BaseTimeEntity implements UserDetails {
         this.notifyCommunityComments = notifyCommunityComments;
     }
 
-    /**
-     * {@code findByEmailForUpdate} 등으로 User만 잠그면 역방향 OneToOne이 비어 있을 수 있습니다.
-     * 이때 flush 시 {@code orphanRemoval}으로 프로필이 삭제되면 타인의 찜 등 FK가 깨질 수 있어,
-     * 저장소에서 읽은 프로필로 필드를 맞춥니다.
-     */
     public void attachManagedProfiles(ClientProfile clientProfile, FreelancerProfile freelancerProfile) {
         if (clientProfile != null) {
             this.clientProfile = clientProfile;
@@ -132,9 +127,6 @@ public class User extends BaseTimeEntity implements UserDetails {
         this.profileImageUrl = profileImageUrl;
     }
 
-    /**
-     * 회원탈퇴: 로그인 불가·PII 제거. 프로필/리뷰 등 연관 엔티티는 서비스에서 별도 스크럽합니다.
-     */
     public void markWithdrawnAndAnonymize(String uniqueEmail, String uniqueNickname, String encodedPasswordPlaceholder) {
         this.email = uniqueEmail;
         this.password = encodedPasswordPlaceholder;
@@ -147,9 +139,19 @@ public class User extends BaseTimeEntity implements UserDetails {
         this.status = UserStatus.WITHDRAWN;
     }
 
-    // 🔍 [추가] 닉네임 수정을 위한 세터 메서드
     public void setNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    // ==========================================
+    // 🎯 [핵심 추가] JPA 삭제 방어용 Setter 메서드
+    // ==========================================
+    public void setClientProfile(ClientProfile clientProfile) {
+        this.clientProfile = clientProfile;
+    }
+
+    public void setFreelancerProfile(FreelancerProfile freelancerProfile) {
+        this.freelancerProfile = freelancerProfile;
     }
 
     // ================= UserDetails 필수 구현 메서드 =================
