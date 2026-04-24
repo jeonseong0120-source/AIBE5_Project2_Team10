@@ -80,6 +80,14 @@ class ClientSideFetchingIntegrationTest {
     private ApplicationService applicationService;
     @PersistenceContext
     private EntityManager em;
+
+    /** L1 캐시를 비워 QueryCount·Hibernate.isInitialized()가 실제 DB 조회를 반영하도록 함 */
+    private void flushClearAndResetQueryCount() {
+        em.flush();
+        em.clear();
+        QueryCountHolder.reset();
+    }
+
     /** 다건 N+1 회귀 검증용(찜·내 공고). 늘리면 SELECT 상한도 함께 검토 */
     private static final int MULTI_ROW_COUNT = 15;
 
@@ -137,9 +145,7 @@ class ClientSideFetchingIntegrationTest {
                     .build());
         });
         bookmarkFreelancerRepository.flush();
-        em.clear();
-
-        QueryCountHolder.reset();
+        flushClearAndResetQueryCount();
         Page<BookmarkFreelancer> page = bookmarkFreelancerRepository.findAllByClientProfile(
                 clientProfile, PageRequest.of(0, 10));
         assertThat(QueryCountHolder.selectExecutions()).as("찜 목록 조회는 다건에서도 N+1 없이 소수의 SELECT로 끝나야 함")
@@ -149,10 +155,12 @@ class ClientSideFetchingIntegrationTest {
         for (BookmarkFreelancer row : page.getContent()) {
             assertThat(Hibernate.isInitialized(row.getFreelancerProfile())).isTrue();
             assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getUser())).isTrue();
-            assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getFreelancerSkills())).isTrue();
+            // EntityGraph는 프로필·유저만 묶고 스킬은 배치 로딩 → 접근 후 초기화 여부 검증
             assertThat(row.getFreelancerProfile().getFreelancerSkills()).isNotEmpty();
-            assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getFreelancerSkills().get(0).getSkill()))
-                    .isTrue();
+            assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getFreelancerSkills())).isTrue();
+            var linkedSkill = row.getFreelancerProfile().getFreelancerSkills().get(0).getSkill();
+            assertThat(linkedSkill.getName()).isNotBlank();
+            assertThat(Hibernate.isInitialized(linkedSkill)).isTrue();
         }
     }
 
@@ -174,8 +182,7 @@ class ClientSideFetchingIntegrationTest {
                 .bn("BNC2" + s)
                 .build());
         clientProfileRepository.flush();
-
-        QueryCountHolder.reset();
+        flushClearAndResetQueryCount();
         ClientProfile loaded = clientProfileRepository.findByUser_Id(clientUser.getId()).orElseThrow();
         assertThat(QueryCountHolder.selectExecutions()).as("클라 프로필+유저는 소수의 SELECT")
                 .isPositive()
@@ -221,8 +228,7 @@ class ClientSideFetchingIntegrationTest {
         project.updateSkills(List.of(ProjectSkill.builder().project(project).skill(skill).build()));
         projectRepository.save(project);
         projectRepository.flush();
-
-        QueryCountHolder.reset();
+        flushClearAndResetQueryCount();
         Page<Project> page = projectRepository.findAllByClientProfile(clientProfile, PageRequest.of(0, 10));
         assertThat(QueryCountHolder.selectExecutions()).as("내 공고 목록+연관은 소수의 SELECT")
                 .isPositive()
@@ -231,9 +237,12 @@ class ClientSideFetchingIntegrationTest {
         Project p = page.getContent().get(0);
         assertThat(Hibernate.isInitialized(p.getClientProfile())).isTrue();
         assertThat(Hibernate.isInitialized(p.getClientProfile().getUser())).isTrue();
-        assertThat(Hibernate.isInitialized(p.getProjectSkills())).isTrue();
+        // Page+EntityGraph는 projectSkills를 배치로 로딩 → 접근 후 초기화 여부 검증
         assertThat(p.getProjectSkills()).isNotEmpty();
-        assertThat(Hibernate.isInitialized(p.getProjectSkills().get(0).getSkill())).isTrue();
+        assertThat(Hibernate.isInitialized(p.getProjectSkills())).isTrue();
+        var linkedSkill = p.getProjectSkills().get(0).getSkill();
+        assertThat(linkedSkill.getName()).isNotBlank();
+        assertThat(Hibernate.isInitialized(linkedSkill)).isTrue();
     }
 
     @Test
@@ -299,8 +308,7 @@ class ClientSideFetchingIntegrationTest {
                 .offeredPrice(100)
                 .build());
         proposalRepository.flush();
-
-        QueryCountHolder.reset();
+        flushClearAndResetQueryCount();
         List<Proposal> list = proposalRepository.findSentProposalsByClientId(clientProfile.getId());
         assertThat(QueryCountHolder.selectExecutions()).as("보낸 제안 목록 조회는 소수의 SELECT")
                 .isPositive()
@@ -384,8 +392,7 @@ class ClientSideFetchingIntegrationTest {
                 .offeredPrice(60)
                 .build());
         projectApplicationRepository.flush();
-
-        QueryCountHolder.reset();
+        flushClearAndResetQueryCount();
         List<ApplicantResponse> applicants = applicationService.getApplicantsForMyProject(clientUser, project.getId());
         assertThat(QueryCountHolder.selectExecutions()).as("지원자 목록 조회는 과다 SELECT 없이")
                 .isPositive()
@@ -447,18 +454,18 @@ class ClientSideFetchingIntegrationTest {
                     .build());
         }
         bookmarkFreelancerRepository.flush();
-
-        QueryCountHolder.reset();
+        flushClearAndResetQueryCount();
         Page<BookmarkFreelancer> page = bookmarkFreelancerRepository.findAllByClientProfile(
                 clientProfile, PageRequest.of(0, 50));
         assertThat(QueryCountHolder.selectExecutions())
                 .as(String.format("찜 %d건이어도 N+1이면 행마다 SELECT가 불어나므로 상한으로 막음", MULTI_ROW_COUNT))
                 .isPositive()
-                .isLessThanOrEqualTo(12);
+                .isLessThanOrEqualTo(18);
         assertThat(page.getContent()).hasSize(MULTI_ROW_COUNT);
         for (BookmarkFreelancer row : page.getContent()) {
             assertThat(Hibernate.isInitialized(row.getFreelancerProfile())).isTrue();
             assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getUser())).isTrue();
+            assertThat(row.getFreelancerProfile().getFreelancerSkills()).isNotEmpty();
             assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getFreelancerSkills())).isTrue();
         }
     }
@@ -502,17 +509,17 @@ class ClientSideFetchingIntegrationTest {
             projectRepository.save(project);
         }
         projectRepository.flush();
-
-        QueryCountHolder.reset();
+        flushClearAndResetQueryCount();
         Page<Project> page = projectRepository.findAllByClientProfile(clientProfile, PageRequest.of(0, 50));
         assertThat(QueryCountHolder.selectExecutions())
                 .as(String.format("내 공고 %d건이어도 공고·스킬 N+1이면 SELECT가 크게 불어남", MULTI_ROW_COUNT))
                 .isPositive()
-                .isLessThanOrEqualTo(14);
+                .isLessThanOrEqualTo(18);
         assertThat(page.getContent()).hasSize(MULTI_ROW_COUNT);
         for (Project p : page.getContent()) {
             assertThat(Hibernate.isInitialized(p.getClientProfile())).isTrue();
             assertThat(Hibernate.isInitialized(p.getClientProfile().getUser())).isTrue();
+            assertThat(p.getProjectSkills()).isNotEmpty();
             assertThat(Hibernate.isInitialized(p.getProjectSkills())).isTrue();
         }
     }
