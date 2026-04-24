@@ -32,7 +32,7 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
         try {
             const { data } = await api.get<MeApi>("/v1/users/me");
             setCommunityOn(data.notifyCommunityComments !== false);
-            return data.role;
+            return data.role ? data.role.replace(/^ROLE_/, "") : undefined;
         } catch {
             setToast("알림 설정을 불러오지 못했습니다.");
             return undefined;

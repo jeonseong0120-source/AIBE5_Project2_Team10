@@ -439,7 +439,7 @@ export default function FreelancerExplorePage() {
                                         <div className="mb-4 flex items-center justify-between relative z-10">
                                             <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#7A4FFF]/5 border border-[#7A4FFF]/10">
                                                 <span className="text-[12px] font-bold uppercase tracking-widest text-[#7A4FFF]">
-                                                    {(p.similarityScore * 100).toFixed(0)}% MATCH
+                                                    {Number.isFinite(p.similarityScore) ? (p.similarityScore * 100).toFixed(0) : '—'}% MATCH
                                                 </span>
                                             </div>
                                             {/* 🎯 AI PICK 로고 추가 */}

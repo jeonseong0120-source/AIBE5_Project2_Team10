@@ -156,7 +156,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         }
         api.get<MeResponse>("/v1/users/me")
             .then((res) => {
-                setMe(res.data);
+                const role = (res.data.role ?? "").replace(/^ROLE_/, "");
+                setMe({ ...res.data, role });
             })
             .catch(() => {
                 setMe(null);

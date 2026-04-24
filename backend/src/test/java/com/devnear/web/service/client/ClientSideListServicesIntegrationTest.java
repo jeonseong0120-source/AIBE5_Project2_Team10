@@ -42,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -80,6 +81,9 @@ class ClientSideListServicesIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    /** 찜 프리랜서 N+1 회귀 검증: 단건이면 배치·지연 로딩 차이를 못 잡음 */
+    private static final int BOOKMARK_FREELANCER_MULTI = 3;
+
     @Test
     void bookmarkService_getBookmarkedFreelancers_boundedSelects() {
         String s = UUID.randomUUID().toString().substring(0, 8);
@@ -107,38 +111,42 @@ class ClientSideListServicesIntegrationTest {
         FreelancerGrade grade = freelancerGradeRepository.save(FreelancerGrade.builder()
                 .name("G-cli-bm-svc-" + s)
                 .build());
-        User flUser = userRepository.save(User.builder()
-                .email("cli-bm-svc-f-" + s + "@test.dev")
-                .password("pw")
-                .name("프리")
-                .nickname("cli-bm-svc-f-" + s)
-                .role(Role.FREELANCER)
-                .provider("test")
-                .providerId("pbmsf-" + s)
-                .build());
-        FreelancerProfile fp = freelancerProfileRepository.save(FreelancerProfile.builder()
-                .user(flUser)
-                .introduction("intro")
-                .grade(grade)
-                .build());
-        fp.updateSkills(List.of(FreelancerSkill.builder().freelancerProfile(fp).skill(skill).build()));
-        freelancerProfileRepository.save(fp);
-        bookmarkFreelancerRepository.save(BookmarkFreelancer.builder()
-                .clientProfile(clientProfile)
-                .freelancerProfile(fp)
-                .build());
+
+        IntStream.range(0, BOOKMARK_FREELANCER_MULTI).forEach(i -> {
+            User flUser = userRepository.save(User.builder()
+                    .email("cli-bm-svc-f-" + s + "-" + i + "@test.dev")
+                    .password("pw")
+                    .name("프리")
+                    .nickname("cli-bm-svc-f-" + s + "-" + i)
+                    .role(Role.FREELANCER)
+                    .provider("test")
+                    .providerId("pbmsf-" + s + "-" + i)
+                    .build());
+            FreelancerProfile fp = freelancerProfileRepository.save(FreelancerProfile.builder()
+                    .user(flUser)
+                    .introduction("intro-" + i)
+                    .grade(grade)
+                    .build());
+            fp.updateSkills(List.of(FreelancerSkill.builder().freelancerProfile(fp).skill(skill).build()));
+            freelancerProfileRepository.save(fp);
+            bookmarkFreelancerRepository.save(BookmarkFreelancer.builder()
+                    .clientProfile(clientProfile)
+                    .freelancerProfile(fp)
+                    .build());
+        });
         bookmarkFreelancerRepository.flush();
 
         QueryCountHolder.reset();
         Page<FreelancerProfileResponse> page = bookmarkService.getBookmarkedFreelancers(clientUser, PageRequest.of(0, 10));
         assertThat(QueryCountHolder.selectExecutions())
-                .as("BookmarkService 찜 목록: 프로필 조회+페이지+스킬 배치")
+                .as("BookmarkService 찜 목록: 클라 프로필+찜 페이지(EntityGraph)+등급·스킬 배치(다건에서도 SELECT 폭주 없음)")
                 .isPositive()
-                .isLessThanOrEqualTo(10);
-        assertThat(page.getContent()).hasSize(1);
-        FreelancerProfileResponse row = page.getContent().get(0);
-        assertThat(row.getUserName()).isNotBlank();
-        assertThat(row.getSkills()).isNotEmpty();
+                .isLessThanOrEqualTo(8);
+        assertThat(page.getContent()).hasSize(BOOKMARK_FREELANCER_MULTI);
+        assertThat(page.getContent())
+                .allMatch(row -> row.getUserName() != null && !row.getUserName().isBlank());
+        assertThat(page.getContent())
+                .allMatch(row -> row.getSkills() != null && !row.getSkills().isEmpty());
     }
 
     @Test

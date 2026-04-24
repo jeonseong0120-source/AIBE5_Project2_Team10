@@ -42,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -79,6 +80,9 @@ class ClientSideFetchingIntegrationTest {
     /** 다건 N+1 회귀 검증용(찜·내 공고). 늘리면 SELECT 상한도 함께 검토 */
     private static final int MULTI_ROW_COUNT = 15;
 
+    /** 찜 프리랜서 EntityGraph 페이지: 단건이면 N+1 회귀를 놓치기 쉬움 */
+    private static final int BOOKMARK_FREELANCER_PAGE_MULTI = 3;
+
     @Test
     void clientBookmarkFreelancerPage_initializesFreelancerUserAndSkills() {
         String s = UUID.randomUUID().toString().substring(0, 8);
@@ -107,43 +111,45 @@ class ClientSideFetchingIntegrationTest {
                 .name("G-cl-" + s)
                 .build());
 
-        User flUser = userRepository.save(User.builder()
-                .email("cl-bm-f-" + s + "@test.dev")
-                .password("pw")
-                .name("프리")
-                .nickname("cl-bm-f-" + s)
-                .role(Role.FREELANCER)
-                .provider("test")
-                .providerId("pcf-" + s)
-                .build());
-        FreelancerProfile fp = freelancerProfileRepository.save(FreelancerProfile.builder()
-                .user(flUser)
-                .introduction("intro")
-                .grade(grade)
-                .build());
-        fp.updateSkills(List.of(FreelancerSkill.builder().freelancerProfile(fp).skill(skill).build()));
-        freelancerProfileRepository.save(fp);
-
-        bookmarkFreelancerRepository.save(BookmarkFreelancer.builder()
-                .clientProfile(clientProfile)
-                .freelancerProfile(fp)
-                .build());
+        IntStream.range(0, BOOKMARK_FREELANCER_PAGE_MULTI).forEach(i -> {
+            User flUser = userRepository.save(User.builder()
+                    .email("cl-bm-f-" + s + "-" + i + "@test.dev")
+                    .password("pw")
+                    .name("프리")
+                    .nickname("cl-bm-f-" + s + "-" + i)
+                    .role(Role.FREELANCER)
+                    .provider("test")
+                    .providerId("pcf-" + s + "-" + i)
+                    .build());
+            FreelancerProfile fp = freelancerProfileRepository.save(FreelancerProfile.builder()
+                    .user(flUser)
+                    .introduction("intro-" + i)
+                    .grade(grade)
+                    .build());
+            fp.updateSkills(List.of(FreelancerSkill.builder().freelancerProfile(fp).skill(skill).build()));
+            freelancerProfileRepository.save(fp);
+            bookmarkFreelancerRepository.save(BookmarkFreelancer.builder()
+                    .clientProfile(clientProfile)
+                    .freelancerProfile(fp)
+                    .build());
+        });
         bookmarkFreelancerRepository.flush();
 
         QueryCountHolder.reset();
         Page<BookmarkFreelancer> page = bookmarkFreelancerRepository.findAllByClientProfile(
                 clientProfile, PageRequest.of(0, 10));
-        assertThat(QueryCountHolder.selectExecutions()).as("찜 목록 조회는 N+1 없이 소수의 SELECT로 끝나야 함")
+        assertThat(QueryCountHolder.selectExecutions()).as("찜 목록 조회는 다건에서도 N+1 없이 소수의 SELECT로 끝나야 함")
                 .isPositive()
-                .isLessThanOrEqualTo(5);
-        assertThat(page.getContent()).hasSize(1);
-        BookmarkFreelancer row = page.getContent().get(0);
-        assertThat(Hibernate.isInitialized(row.getFreelancerProfile())).isTrue();
-        assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getUser())).isTrue();
-        assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getFreelancerSkills())).isTrue();
-        assertThat(row.getFreelancerProfile().getFreelancerSkills()).isNotEmpty();
-        assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getFreelancerSkills().get(0).getSkill()))
-                .isTrue();
+                .isLessThanOrEqualTo(6);
+        assertThat(page.getContent()).hasSize(BOOKMARK_FREELANCER_PAGE_MULTI);
+        for (BookmarkFreelancer row : page.getContent()) {
+            assertThat(Hibernate.isInitialized(row.getFreelancerProfile())).isTrue();
+            assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getUser())).isTrue();
+            assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getFreelancerSkills())).isTrue();
+            assertThat(row.getFreelancerProfile().getFreelancerSkills()).isNotEmpty();
+            assertThat(Hibernate.isInitialized(row.getFreelancerProfile().getFreelancerSkills().get(0).getSkill()))
+                    .isTrue();
+        }
     }
 
     @Test

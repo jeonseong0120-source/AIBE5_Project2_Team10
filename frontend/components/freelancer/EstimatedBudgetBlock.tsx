@@ -5,7 +5,8 @@ function manWonFromBudget(budgetWon: number | null | undefined): number | null {
     if (!Number.isFinite(n) || n <= 0) {
         return null;
     }
-    return Math.round(n / 10_000);
+    const man = Math.round(n / 10_000);
+    return man > 0 ? man : null;
 }
 
 type Props = {
