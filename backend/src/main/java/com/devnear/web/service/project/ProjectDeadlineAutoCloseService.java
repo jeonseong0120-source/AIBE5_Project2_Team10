@@ -58,7 +58,7 @@ public class ProjectDeadlineAutoCloseService {
         int closed = 0;
         for (Project p : candidates) {
             try {
-                if (tryAutoCloseIfReadyInternal(p.getId())) {
+                if (tryCloseIfEligible(p)) {
                     closed++;
                 }
             } catch (Exception ex) {
