@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Briefcase, Grid3X3, Heart, ArrowUpRight, MapPin, Star, Sparkles } from 'lucide-react';
+import { ChevronLeft, Briefcase, Grid3X3, Heart, ArrowUpRight, MapPin, Star, Sparkles, User, Quote } from 'lucide-react';
 import api from '@/app/lib/axios';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile, ReviewResponse } from '@/types/freelancer';
 import PortfolioDetailModal from '@/components/portfolio/PortfolioDetailModal';
@@ -460,24 +460,23 @@ export default function FreelancerProfileDetail({
                             <div className="w-full flex-1">
                                 <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center">
                                     <div className="flex flex-col gap-1.5">
-                                        <div className="flex justify-center md:justify-start">
-                                            <span className="rounded-full bg-[#7A4FFF] px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.15em] text-white shadow-lg shadow-purple-200 ring-1 ring-purple-100/20">
+                                        <div className="flex flex-col items-center gap-3 md:flex-row md:items-center md:gap-4">
+                                            <h1 className="text-4xl font-black tracking-tight text-zinc-950">
+                                                {freelancer.nickname}
+                                            </h1>
+                                            <span className="rounded-2xl bg-[#7A4FFF] px-4 py-1.5 text-[16px] font-black uppercase tracking-[0.1em] text-white shadow-xl shadow-purple-200 ring-1 ring-purple-100/20">
                                                 {freelancer.gradeName || '일반'}
                                             </span>
                                         </div>
 
-                                        <h1 className="text-center text-4xl font-black tracking-tighter md:text-left text-zinc-950">
-                                            {freelancer.nickname}
-                                        </h1>
-
-                                        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] font-bold text-zinc-500 md:justify-start">
-                                            <div className="flex items-center gap-2 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-1">
-                                                <MapPin size={13} className="text-[#7A4FFF]" />
+                                        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[13px] font-bold text-zinc-500 md:justify-start">
+                                            <div className="flex items-center gap-2 rounded-xl border border-zinc-100 bg-zinc-50 px-3.5 py-1.5">
+                                                <MapPin size={14} className="text-[#7A4FFF]" />
                                                 {freelancer.location}
                                             </div>
-                                            <div className="flex items-center gap-2 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-1">
-                                                <Briefcase size={13} className="text-[#7A4FFF]" />
-                                                <span className="font-mono text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                            <div className="flex items-center gap-2 rounded-xl border border-zinc-100 bg-zinc-50 px-3.5 py-1.5">
+                                                <Briefcase size={14} className="text-[#7A4FFF]" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
                                                     STYLE:
                                                 </span>
                                                 {freelancer.workStyle || 'HYBRID'}
@@ -544,9 +543,9 @@ export default function FreelancerProfileDetail({
                         </section>
 
                         <section className="w-full border-t border-zinc-100 pt-8">
-                            <div className="rounded-[2.5rem] border border-zinc-100/50 bg-zinc-50/30 p-8">
-                                <p className="max-w-4xl text-base font-bold leading-relaxed text-zinc-600 italic">
-                                    &quot;{freelancer.introduction}&quot;
+                            <div className="rounded-[2.5rem] border border-zinc-100/50 bg-white p-8 shadow-sm">
+                                <p className="max-w-4xl text-[17px] font-medium leading-relaxed text-zinc-600">
+                                    {freelancer.introduction}
                                 </p>
                             </div>
                         </section>
@@ -556,7 +555,7 @@ export default function FreelancerProfileDetail({
                         {freelancer.skills.map((skill) => (
                             <span
                                 key={skill.id}
-                                className="cursor-default rounded-2xl bg-zinc-950 px-6 py-3 font-mono text-xs font-black uppercase tracking-wider text-white shadow-xl shadow-zinc-200 transition-all hover:scale-105 hover:bg-[#7A4FFF]"
+                                className="cursor-default rounded-2xl bg-zinc-950 px-6 py-3.5 text-[13px] font-black uppercase tracking-tight text-white shadow-xl shadow-zinc-200 transition-all hover:scale-105 hover:bg-[#7A4FFF]"
                             >
                                 {skill.name}
                             </span>
@@ -725,27 +724,50 @@ export default function FreelancerProfileDetail({
                                         reviews.map((rev, idx) => (
                                             <motion.div
                                                 key={rev.id}
-                                                initial={{ opacity: 0, x: -10 }}
-                                                animate={{ opacity: 1, x: 0 }}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
                                                 transition={{ delay: idx * 0.05 }}
-                                                className="p-8 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] hover:border-[#7A4FFF]/20 transition-all group"
+                                                className="p-8 bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm hover:shadow-md hover:border-[#7A4FFF]/30 transition-all group relative overflow-hidden"
                                             >
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="flex items-center gap-1 text-[#FF7D00]">
-                                                        {[...Array(5)].map((_, i) => (
-                                                            <Star
-                                                                key={i}
-                                                                size={12}
-                                                                fill={i < Math.floor(rev.averageScore || 0) ? "currentColor" : "none"}
-                                                            />
-                                                        ))}
-                                                        <span className="ml-2 text-xs font-black text-zinc-950 font-mono">{(rev.averageScore || 0).toFixed(1)}</span>
+                                                {/* Top Decorator */}
+                                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-50/50 to-transparent" />
+
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-[#7A4FFF]">
+                                                            <User size={20} />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-black text-zinc-950">{rev.reviewerNickname || '익명 클라이언트'}</div>
+                                                            <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                                                                {new Date(rev.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                                <span className="w-1 h-1 rounded-full bg-zinc-200" />
+                                                                VERIFIED_CLIENT
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <span className="text-[10px] font-bold text-zinc-300 font-mono tracking-widest">VERIFIED_CLIENT</span>
+                                                    
+                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50/50 rounded-full">
+                                                        <div className="flex items-center gap-0.5 text-[#7A4FFF]">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <Star
+                                                                    key={i}
+                                                                    size={12}
+                                                                    fill={i < Math.floor(rev.averageScore || 0) ? "currentColor" : "none"}
+                                                                    strokeWidth={2.5}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                        <span className="text-xs font-black text-[#7A4FFF] font-mono">{(rev.averageScore || 0).toFixed(1)}</span>
+                                                    </div>
                                                 </div>
-                                                <p className="text-zinc-700 text-base leading-relaxed font-bold italic group-hover:text-zinc-950 transition-colors">
-                                                    &quot;{rev.comment || '상세 후기 내용이 없습니다.'}&quot;
-                                                </p>
+
+                                                <div className="relative">
+                                                    <Quote size={24} className="absolute -top-2 -left-2 text-purple-100/50 -z-10" />
+                                                    <p className="text-zinc-600 text-[15px] leading-relaxed font-medium group-hover:text-zinc-900 transition-colors whitespace-pre-wrap">
+                                                        {rev.comment || '상세 후기 내용이 없습니다.'}
+                                                    </p>
+                                                </div>
                                             </motion.div>
                                         ))
                                     )}
@@ -759,27 +781,45 @@ export default function FreelancerProfileDetail({
             {variant === 'client' && (
                 <AnimatePresence>
                     <motion.div
-                        initial={{ y: 100 }}
-                        animate={{ y: 0 }}
-                        className="fixed bottom-6 left-1/2 z-[60] w-[90%] max-w-2xl -translate-x-1/2"
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="fixed bottom-8 left-1/2 z-[60] w-[92%] max-w-2xl -translate-x-1/2"
                     >
-                        <div className="flex items-center justify-between rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
-                            <div className="border-l-4 border-[#7A4FFF] pl-6">
-                                <div className="mb-1 font-mono text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                                    Estimated Rate
+                        <div className="group relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-zinc-950/90 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+                            {/* Inner Glow Decorator */}
+                            <div className="absolute inset-0 bg-gradient-to-tr from-[#7A4FFF]/5 via-transparent to-transparent pointer-events-none" />
+                            
+                            <div className="relative flex items-center justify-between px-2">
+                                <div className="flex items-center gap-6">
+                                    <div className="h-10 w-1 bg-gradient-to-b from-[#7A4FFF] to-[#A78BFF] rounded-full shadow-[0_0_15px_rgba(122,79,255,0.5)]" />
+                                    <div>
+                                        <div className="mb-1 flex items-center gap-2">
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 font-mono">Estimated Rate</span>
+                                            <div className="h-1 w-1 rounded-full bg-[#7A4FFF]" />
+                                        </div>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-3xl font-black tracking-tighter text-white">
+                                                ₩{(freelancer.hourlyRate || 0).toLocaleString()}
+                                            </span>
+                                            <span className="font-mono text-[11px] font-bold text-zinc-500 tracking-widest ml-1">/HOUR</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="text-2xl font-black tracking-tighter text-white">
-                                    ₩{(freelancer.hourlyRate || 0).toLocaleString()}{' '}
-                                    <span className="font-mono text-xs text-zinc-400">/HR</span>
-                                </div>
+                                
+                                <button
+                                    type="button"
+                                    onClick={openProposalModal}
+                                    className="group relative flex items-center gap-3 overflow-hidden rounded-2xl bg-white px-10 py-4 text-[15px] font-black text-zinc-950 transition-all hover:bg-white hover:shadow-[0_15px_35px_rgba(122,79,255,0.15)] hover:-translate-y-0.5 active:scale-95 border border-zinc-100"
+                                >
+                                    <span className="relative z-10 transition-colors group-hover:text-[#7A4FFF]">제안하기</span>
+                                    <div className="relative z-10 flex h-6 w-6 items-center justify-center rounded-full bg-zinc-950 text-white transition-all group-hover:bg-[#7A4FFF] group-hover:rotate-45">
+                                        <ArrowUpRight size={14} strokeWidth={3} />
+                                    </div>
+                                    
+                                    {/* Subtle Ambient Light */}
+                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-tr from-purple-50/50 via-transparent to-transparent transition-opacity duration-500" />
+                                </button>
                             </div>
-                            <button
-                                type="button"
-                                onClick={openProposalModal}
-                                className="rounded-2xl bg-white px-8 py-3.5 font-mono text-sm font-black uppercase tracking-tighter text-zinc-900 shadow-[0_0_20px_rgba(122,79,255,0.2)] transition-all hover:bg-[#7A4FFF] hover:text-white active:scale-95"
-                            >
-                                Offer_Project
-                            </button>
                         </div>
                     </motion.div>
                 </AnimatePresence>
