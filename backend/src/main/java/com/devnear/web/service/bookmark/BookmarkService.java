@@ -1,5 +1,6 @@
 package com.devnear.web.service.bookmark;
 
+import com.devnear.web.domain.application.ProjectApplicationRepository;
 import com.devnear.web.domain.bookmark.BookmarkFreelancer;
 import com.devnear.web.domain.bookmark.BookmarkFreelancerRepository;
 import com.devnear.web.domain.bookmark.BookmarkProject;
@@ -37,6 +38,7 @@ public class BookmarkService {
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final PortfolioRepository portfolioRepository;
     private final ProjectRepository projectRepository;
+    private final ProjectApplicationRepository projectApplicationRepository;
 
     // ── 프리랜서 찜 ──
 
@@ -106,8 +108,25 @@ public class BookmarkService {
 
     public Page<ProjectResponse> getBookmarkedProjects(User user, Pageable pageable) {
         FreelancerProfile freelancerProfile = findFreelancerProfileByUser(user);
-        return bookmarkProjectRepository.findAllByFreelancerProfile(freelancerProfile, pageable)
-                .map(bookmark -> ProjectResponse.from(bookmark.getProject(), null, true));
+        Page<BookmarkProject> bookmarkPage = bookmarkProjectRepository.findAllByFreelancerProfile(freelancerProfile, pageable);
+
+        java.util.List<Long> projectIds = bookmarkPage.getContent().stream()
+                .map(b -> b.getProject().getId())
+                .collect(java.util.stream.Collectors.toList());
+
+        java.util.Map<Long, Long> countMap = new java.util.HashMap<>();
+        if (!projectIds.isEmpty()) {
+            java.util.List<Object[]> counts = projectApplicationRepository.countByProjectIdIn(projectIds);
+            for (Object[] row : counts) {
+                countMap.put((Long) row[0], (Long) row[1]);
+            }
+        }
+
+        return bookmarkPage.map(bookmark -> ProjectResponse.from(
+                bookmark.getProject(),
+                countMap.getOrDefault(bookmark.getProject().getId(), 0L),
+                true
+        ));
     }
 
     // ── 포트폴리오 좋아요 (프리랜서 찜으로 처리) ──

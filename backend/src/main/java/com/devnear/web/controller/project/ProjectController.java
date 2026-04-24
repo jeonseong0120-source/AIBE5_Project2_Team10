@@ -117,10 +117,11 @@ public class ProjectController {
     @Operation(summary = "특정 프리랜서의 프로젝트 목록 조회", description = "특정 프리랜서가 수행 중이거나 완료한 프로젝트를 조회합니다.")
     @GetMapping("/freelancers/{freelancerId}")
     public ResponseEntity<Page<ProjectResponse>> getFreelancerProjects(
+            @Nullable @LoginUser User viewer,
             @PathVariable Long freelancerId,
             @RequestParam(defaultValue = "COMPLETED") ProjectStatus status,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(projectService.getFreelancerProjectList(freelancerId, status, pageable));
+        return ResponseEntity.ok(projectService.getFreelancerProjectList(freelancerId, status, viewer, pageable));
     }
 
     @Operation(summary = "프로젝트 공고 단건 조회", description = "프로젝트 공고 상세를 조회합니다.")

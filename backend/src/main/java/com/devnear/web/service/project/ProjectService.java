@@ -38,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -288,7 +289,7 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProjectResponse> getFreelancerProjectList(Long freelancerId, ProjectStatus status, Pageable pageable) {
+    public Page<ProjectResponse> getFreelancerProjectList(Long freelancerId, ProjectStatus status, User viewer, Pageable pageable) {
         FreelancerProfile freelancerProfile = freelancerProfileRepository.findById(freelancerId)
                 .orElseThrow(() -> new ResourceNotFoundException("프리랜서 프로필을 찾을 수 없습니다."));
 
@@ -298,7 +299,7 @@ public class ProjectService {
         } else {
             projects = projectRepository.findAllByFreelancerProfile(freelancerProfile, pageable);
         }
-        return mapToResponsesWithCounts(projects, null);
+        return mapToResponsesWithCounts(projects, viewer);
     }
 
     private Page<ProjectResponse> mapToResponsesWithCounts(Page<Project> projectPage, User viewer) {
@@ -315,10 +316,11 @@ public class ProjectService {
         }
 
         Set<Long> bookmarkedProjectIds = Collections.emptySet();
-        if (viewer != null && !projectIds.isEmpty()) {
+        // [최적화] 뷰어가 있고 프리랜서/BOTH 역할인 경우에만 찜 목록 조회
+        if (viewer != null && !projectIds.isEmpty() && (viewer.getRole() == com.devnear.web.domain.user.Role.FREELANCER || viewer.getRole() == com.devnear.web.domain.user.Role.BOTH)) {
             Optional<FreelancerProfile> freelancerProfile = freelancerProfileRepository.findByUser_Id(viewer.getId());
             if (freelancerProfile.isPresent()) {
-                bookmarkedProjectIds = new java.util.HashSet<>(bookmarkProjectRepository.findBookmarkedProjectIds(freelancerProfile.get(), projectIds));
+                bookmarkedProjectIds = new HashSet<>(bookmarkProjectRepository.findBookmarkedProjectIds(freelancerProfile.get(), projectIds));
             }
         }
 

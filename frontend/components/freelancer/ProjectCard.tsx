@@ -21,34 +21,52 @@ const getSkillName = (skill: SkillItem): string =>
 export default function ProjectCard({ data, index, onOpenProject }: ProjectCardProps) {
     const router = useRouter();
     const [isBookmarked, setIsBookmarked] = useState(data.bookmarked || false);
+    const [isToggling, setIsToggling] = useState(false);
 
-    // [추가] 외부에서 data가 변경될 때 (예: 검색 결과 갱신) 상태 동기화
+    // [수정] 찜 처리 중(isToggling)일 때는 외부 데이터로 인한 강제 동기화 방지
     useEffect(() => {
-        setIsBookmarked(data.bookmarked || false);
-    }, [data.bookmarked]);
+        if (!isToggling) {
+            setIsBookmarked(data.bookmarked || false);
+        }
+    }, [data.bookmarked, isToggling]);
 
     const toggleBookmark = async (e: React.MouseEvent) => {
-        e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
+        e.stopPropagation();
+        
+        // [추가] 인증 체크
+        const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+        if (!token) {
+            alert('로그인 후 이용 가능합니다.');
+            // 여기서 로그인 모달을 띄우거나 이동할 수 있음
+            return;
+        }
+
         const id = data.projectId || data.id;
-        if (!id) return;
+        if (!id || isToggling) return;
 
         const originalState = isBookmarked;
+        setIsToggling(true);
         // 낙관적 업데이트
         setIsBookmarked(!originalState);
 
         try {
             if (originalState) {
-                // 이미 찜한 상태라면 삭제
                 await api.delete(`/v1/bookmarks/projects/${id}`);
             } else {
-                // 찜하지 않은 상태라면 추가
                 await api.post(`/v1/bookmarks/projects/${id}`);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("찜 처리 중 오류 발생:", err);
             // 에러 발생 시 원복
             setIsBookmarked(originalState);
-            alert("찜 처리에 실패했습니다. 다시 시도해 주세요.");
+            
+            if (err.response?.status === 401) {
+                alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
+            } else {
+                alert("찜 처리에 실패했습니다. 다시 시도해 주세요.");
+            }
+        } finally {
+            setIsToggling(false);
         }
     };
 

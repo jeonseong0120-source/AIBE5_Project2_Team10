@@ -100,7 +100,7 @@ export function useProjectDetail(projectId: number | null) {
                 if (signal.aborted) return;
 
                 setProject(response.data);
-                setIsBookmarked(response.data.bookmarked || false);
+                setIsBookmarked(response.data.bookmarked);
 
                 if (bidPriceSeededForProjectIdRef.current !== projectId) {
                     setBidPrice(String(response.data.budget ?? ''));
@@ -142,7 +142,6 @@ export function useProjectDetail(projectId: number | null) {
             } else {
                 if (signal.aborted) return;
                 setIsApplied(false);
-                setIsBookmarked(false);
             }
 
             if (!signal.aborted) {
