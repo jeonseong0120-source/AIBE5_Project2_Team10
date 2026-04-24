@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PencilLine, Search, Loader2, Flame, Clock, MessageSquare, Sparkles } from "lucide-react";
+import { PencilLine, Search, Loader2, Flame, Clock, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import { getCommunityPosts } from "@/app/lib/communityApi";
 import type { CommunityPost } from "@/types/community";
@@ -101,10 +101,9 @@ LIMIT 10 OFFSET 0;`}
             <header className="relative pt-28 pb-12 px-8 overflow-hidden max-w-6xl mx-auto z-10">
                 <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
                     <div>
-                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 mb-4">
-                            <span className="w-10 h-[3px] bg-gradient-to-r from-[#7A4FFF] to-[#FF7D00] rounded-full"></span>
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
                             <span className="text-[12px] font-black text-zinc-500 uppercase tracking-[0.3em] font-mono flex items-center gap-1">
-                                <Sparkles size={14} className="text-[#FF7D00]" /> Devnear Network
+                                Devnear Network
                             </span>
                         </motion.div>
 
@@ -112,7 +111,7 @@ LIMIT 10 OFFSET 0;`}
                         <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-zinc-950 flex items-center gap-4">
                             데브니어 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7A4FFF] to-[#FF7D00]">커뮤니티</span>
                         </h1>
-                        <p className="mt-6 text-[15px] font-medium text-zinc-500 max-w-md leading-relaxed">
+                        <p className="mt-6 text-[15px] font-medium text-zinc-500 leading-relaxed">
                             프리랜서와 클라이언트가 자유롭게 지식을 공유하고 소통하는 열린 공간입니다.
                         </p>
                     </div>
@@ -120,11 +119,13 @@ LIMIT 10 OFFSET 0;`}
                     {/* 화려한 그라데이션 버튼 + 호버 이펙트 */}
                     <button
                         onClick={handleMoveWrite}
-                        className="group relative flex h-[60px] items-center justify-center gap-3 rounded-[1.25rem] bg-gradient-to-r from-[#7A4FFF] to-[#FF7D00] px-8 text-sm font-black text-white transition-all hover:scale-105 hover:shadow-[0_15px_30px_-5px_rgba(255,125,0,0.4)] focus:outline-none overflow-hidden"
+                        className="group relative h-[56px] px-8 bg-zinc-950 text-white rounded-2xl font-black text-[14px] transition-all hover:bg-zinc-800 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.2)] active:scale-95 overflow-hidden flex items-center justify-center gap-3"
                     >
-                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                        <PencilLine size={20} className="relative z-10 transition-transform group-hover:-translate-y-1 group-hover:rotate-12" />
-                        <span className="relative z-10 tracking-wide">새 글 작성</span>
+                        {/* Shimmer Effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
+                        
+                        <PencilLine size={18} className="transition-all duration-300 group-hover:-translate-y-0.5 group-hover:rotate-12" />
+                        <span className="tracking-tighter uppercase font-black">새 글 작성</span>
                     </button>
                 </div>
             </header>

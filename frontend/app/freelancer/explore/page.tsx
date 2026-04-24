@@ -306,7 +306,7 @@ export default function FreelancerExplorePage() {
 
                 {/* 데코레이션 아이콘 */}
                 <div className="absolute left-[-20px] bottom-4 opacity-5 hidden lg:block text-[#7A4FFF]">
-                    <BarChart3 size={200} strokeWidth={0.5} />
+                    <Cpu size={200} strokeWidth={0.5} />
                 </div>
                 <div className="absolute right-[-40px] top-10 opacity-5 hidden lg:block rotate-12 text-[#FF7D00]">
                     <Activity size={240} strokeWidth={0.5} />

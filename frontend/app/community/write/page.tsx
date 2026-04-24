@@ -83,15 +83,11 @@ export default function CommunityWritePage() {
 
             <div className="max-w-4xl mx-auto px-8 relative z-10 pt-12">
                 <div className="mb-12">
-                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3 mb-6">
-                        <span className="w-12 h-[3px] bg-[#7A4FFF] rounded-full"></span>
-                        <span className="text-[11px] font-black text-[#7A4FFF] uppercase tracking-[0.4em] font-mono">새 지식 공유</span>
-                    </motion.div>
-                    <h1 className="text-5xl font-black tracking-tighter text-zinc-950">
-                        커뮤니티 <span className="text-zinc-400">글쓰기</span>
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-950">
+                        커뮤니티 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7A4FFF] to-[#FF7D00]">글쓰기</span>
                     </h1>
-                    <p className="mt-4 text-sm font-medium text-zinc-500 max-w-md italic">
-                        마스터의 소중한 경험과 지식을 자유롭게 공유해보세요.
+                    <p className="mt-4 text-[15px] font-medium text-zinc-400 max-w-xl leading-relaxed">
+                        커뮤니티의 발전을 위해 소중한 경험과 지식을 자유롭게 나누어주세요.
                     </p>
                 </div>
 
@@ -102,7 +98,7 @@ export default function CommunityWritePage() {
                 >
                     <div className="flex flex-col gap-10">
                         <div className="space-y-3">
-                            <label className="text-[11px] font-black text-zinc-400 uppercase tracking-widest font-mono ml-1">
+                            <label className="text-[12px] font-bold text-zinc-500 tracking-wide ml-1">
                                 게시글 제목
                             </label>
                             <input
@@ -110,12 +106,12 @@ export default function CommunityWritePage() {
                                 placeholder="모두의 이목을 끌 수 있는 멋진 제목을 지어주세요"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                className="w-full rounded-2xl border border-zinc-200 bg-zinc-50/30 px-8 py-5 text-lg font-black text-zinc-900 outline-none transition-all placeholder:text-zinc-300 focus:border-[#7A4FFF] focus:bg-white focus:ring-4 focus:ring-[#7A4FFF]/5"
+                                className="w-full rounded-2xl border border-zinc-200 bg-zinc-50/50 px-8 py-6 text-lg font-bold text-zinc-900 outline-none transition-all placeholder:text-zinc-300 focus:border-[#7A4FFF] focus:bg-white focus:ring-4 focus:ring-[#7A4FFF]/5 shadow-sm"
                             />
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-[11px] font-black text-zinc-400 uppercase tracking-widest font-mono ml-1">
+                            <label className="text-[12px] font-bold text-zinc-500 tracking-wide ml-1">
                                 상세 내용
                             </label>
                             <textarea
@@ -130,19 +126,19 @@ export default function CommunityWritePage() {
                         <div className="flex items-center justify-end gap-4 pt-6 border-t border-zinc-50">
                             <button
                                 onClick={handleCancel}
-                                className="flex items-center gap-2 rounded-2xl px-8 py-4 text-xs font-black uppercase tracking-widest text-zinc-400 transition-all hover:text-zinc-600 font-mono focus:outline-none focus:ring-2 focus:ring-zinc-400/30"
+                                className="flex items-center gap-2 rounded-2xl px-8 py-4 text-[13px] font-bold text-zinc-400 transition-all hover:text-zinc-900 focus:outline-none"
                             >
-                                <X size={16} />
+                                <X size={18} />
                                 작성 취소
                             </button>
 
                             <button
                                 onClick={handleSubmit}
                                 disabled={loading}
-                                className="flex items-center gap-3 rounded-[1.25rem] bg-zinc-950 px-10 py-4 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_10px_20px_-5px_rgba(122,79,255,0.4)] disabled:opacity-50 shadow-xl font-mono focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                                className="flex items-center gap-3 rounded-[1.25rem] bg-zinc-950 px-10 py-4 text-[14px] font-black text-white transition-all hover:bg-zinc-800 hover:shadow-[0_15px_30px_-5px_rgba(0,0,0,0.2)] disabled:opacity-50 shadow-xl active:scale-95"
                             >
-                                {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                                {loading ? "게시물 등록 중..." : "게시물 등록 완료"}
+                                {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                {loading ? "게시물 등록 중..." : "게시물 등록하기"}
                             </button>
                         </div>
                     </div>
