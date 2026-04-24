@@ -29,11 +29,8 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
         List<Project> content = queryFactory
-                .select(project).distinct()
-                .from(project)
+                .selectFrom(project)
                 .leftJoin(project.clientProfile).fetchJoin()
-                .leftJoin(project.clientProfile.user).fetchJoin()
-                .leftJoin(project.clientProfile.user.freelancerProfile).fetchJoin()
                 .where(
                         nameLike(cond.getKeyword()),
                         skillIdsIn(cond.getSkillIds()),
@@ -86,7 +83,7 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
         return project.projectSkills.any().skill.id.in(skillIds);
     }
 
-    /** 🎯 [수정] 모든 스택을 포함하는 프로젝트만 노출 (AND 필터 + 입력값 정규화) */
+    /** :dart: [수정] 모든 스택을 포함하는 프로젝트만 노출 (AND 필터 + 입력값 정규화) */
     private BooleanExpression skillNamesAllMatch(List<String> skillNames) {
         if (skillNames == null || skillNames.isEmpty()) return null;
 
