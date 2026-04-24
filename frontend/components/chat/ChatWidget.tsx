@@ -6,6 +6,7 @@ import ChatWindow from "./ChatWindow";
 import {
     getChatMessages,
     getChatRooms,
+    leaveChatRoom,
     markChatAsRead,
     sendChatMessage,
 } from "../../app/lib/chatApi";
@@ -39,16 +40,23 @@ function sortRoomsByLatest(roomList: ChatRoomListResponse[]) {
     });
 }
 
+function hasToken() {
+    if (typeof window === "undefined") return false;
+    return !!localStorage.getItem("accessToken");
+}
+
 export default function ChatWidget() {
     const [view, setView] = useState<ChatView>("list");
     const [input, setInput] = useState("");
     const [rooms, setRooms] = useState<ChatRoomListResponse[]>([]);
     const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const [loggedIn, setLoggedIn] = useState(false);
 
     const [loadingRooms, setLoadingRooms] = useState(false);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [sending, setSending] = useState(false);
+    const [leaving, setLeaving] = useState(false);
 
     const { isOpen, selectedRoomId, openChat, closeChat, setRoom } = useChatStore();
 
@@ -74,10 +82,48 @@ export default function ChatWidget() {
         ref.current = null;
     };
 
-    useEffect(() => {
+    const syncAuthState = () => {
+        const tokenExists = hasToken();
         const userId = getCurrentUserId();
+
+        setLoggedIn(tokenExists);
         setCurrentUserId(userId);
         currentUserIdRef.current = userId;
+
+        if (!tokenExists) {
+            cleanupSubscription(messageSubscriptionRef);
+            cleanupSubscription(readSubscriptionRef);
+            disconnectChatSocket();
+
+            setInput("");
+            setMessages([]);
+            setRooms([]);
+            setRoom(null);
+            setView("list");
+            closeChat();
+        }
+    };
+
+    useEffect(() => {
+        syncAuthState();
+
+        const handleStorage = () => syncAuthState();
+        const handleFocus = () => syncAuthState();
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                syncAuthState();
+            }
+        };
+
+        window.addEventListener("storage", handleStorage);
+        window.addEventListener("focus", handleFocus);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener("storage", handleStorage);
+            window.removeEventListener("focus", handleFocus);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
     }, []);
 
     useEffect(() => {
@@ -95,6 +141,8 @@ export default function ChatWidget() {
     }, [isOpen, selectedRoomId]);
 
     const fetchRooms = async () => {
+        if (!hasToken()) return;
+
         try {
             setLoadingRooms(true);
 
@@ -128,6 +176,8 @@ export default function ChatWidget() {
     };
 
     const fetchMessages = async (roomId: number) => {
+        if (!hasToken()) return;
+
         const requestId = ++latestMessageReqId.current;
 
         try {
@@ -153,17 +203,17 @@ export default function ChatWidget() {
     };
 
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen || !loggedIn) return;
         fetchRooms();
-    }, [isOpen]);
+    }, [isOpen, loggedIn]);
 
     useEffect(() => {
-        if (!isOpen || !selectedRoomId || view !== "room") return;
+        if (!isOpen || !loggedIn || !selectedRoomId || view !== "room") return;
         fetchMessages(selectedRoomId);
-    }, [isOpen, selectedRoomId, view]);
+    }, [isOpen, loggedIn, selectedRoomId, view]);
 
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen || !loggedIn) return;
 
         connectChatSocket();
 
@@ -172,10 +222,10 @@ export default function ChatWidget() {
             cleanupSubscription(readSubscriptionRef);
             disconnectChatSocket();
         };
-    }, [isOpen]);
+    }, [isOpen, loggedIn]);
 
     useEffect(() => {
-        if (!isOpen || !selectedRoomId) return;
+        if (!isOpen || !loggedIn || !selectedRoomId) return;
 
         let cancelled = false;
 
@@ -257,7 +307,7 @@ export default function ChatWidget() {
 
                                 if (!receipt.read) return;
                                 if (receipt.roomId !== selectedRoomIdRef.current) return;
-                                // Only process when opponent reads; ignore own read events.
+
                                 if (
                                     currentUserIdRef.current !== null &&
                                     receipt.readerId === currentUserIdRef.current
@@ -306,9 +356,15 @@ export default function ChatWidget() {
             cleanupSubscription(messageSubscriptionRef);
             cleanupSubscription(readSubscriptionRef);
         };
-    }, [isOpen, selectedRoomId]);
+    }, [isOpen, loggedIn, selectedRoomId]);
 
     const handleOpenToggle = () => {
+        syncAuthState();
+
+        if (!hasToken()) {
+            return;
+        }
+
         if (isOpen) {
             setInput("");
             setMessages([]);
@@ -338,6 +394,34 @@ export default function ChatWidget() {
         setView("list");
         setInput("");
         await fetchRooms();
+    };
+
+    const handleLeaveRoom = async () => {
+        if (!selectedRoomId || leaving) return;
+
+        const ok = window.confirm("채팅방을 나가시겠습니까?");
+        if (!ok) return;
+
+        try {
+            setLeaving(true);
+            await leaveChatRoom(selectedRoomId);
+
+            cleanupSubscription(messageSubscriptionRef);
+            cleanupSubscription(readSubscriptionRef);
+
+            setRooms((prev) => prev.filter((room) => room.roomId !== selectedRoomId));
+            setMessages([]);
+            setInput("");
+            setRoom(null);
+            setView("list");
+
+            await fetchRooms();
+        } catch (error) {
+            console.error("채팅방 나가기 실패", error);
+            alert("채팅방 나가기에 실패했습니다. 다시 시도해주세요.");
+        } finally {
+            setLeaving(false);
+        }
     };
 
     const handleSend = async () => {
@@ -392,32 +476,36 @@ export default function ChatWidget() {
     return (
         <>
             <ChatWindow
-                isOpen={isOpen}
+                isOpen={isOpen && loggedIn}
                 view={view}
                 onClose={closeChat}
                 onBack={handleBack}
+                onLeaveRoom={handleLeaveRoom}
                 rooms={rooms}
                 selectedRoom={selectedRoom}
                 selectedRoomId={selectedRoomId}
-                onSelectRoom={handleSelectRoom}
                 messages={messages}
                 input={input}
                 onChangeInput={setInput}
+                onSelectRoom={handleSelectRoom}
                 onSend={handleSend}
                 loadingRooms={loadingRooms}
                 loadingMessages={loadingMessages}
                 sending={sending}
+                leaving={leaving}
                 currentUserId={currentUserId}
             />
 
-            <button
-                type="button"
-                onClick={handleOpenToggle}
-                className="fixed bottom-6 right-6 z-[9999] flex h-16 w-16 items-center justify-center rounded-full bg-violet-600 text-2xl text-white shadow-xl transition hover:scale-105 hover:bg-violet-700"
-                aria-label="채팅 열기"
-            >
-                💬
-            </button>
+            {loggedIn && (
+                <button
+                    type="button"
+                    onClick={handleOpenToggle}
+                    className="fixed bottom-6 right-6 z-[9999] flex h-16 w-16 items-center justify-center rounded-full bg-violet-600 text-2xl text-white shadow-xl transition hover:scale-105 hover:bg-violet-700"
+                    aria-label="채팅 열기"
+                >
+                    💬
+                </button>
+            )}
         </>
     );
 }

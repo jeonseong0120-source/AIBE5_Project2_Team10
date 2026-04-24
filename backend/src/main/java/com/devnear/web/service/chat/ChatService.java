@@ -51,11 +51,6 @@ public class ChatService {
     private final NotificationService notificationService;
     private final ApplicationEventPublisher eventPublisher;
 
-    /**
-     * 채팅방 생성/조회 정책
-     * 1) 프리랜서 -> 클라이언트 문의: 허용
-     * 2) 클라이언트 -> 프리랜서: 해당 프로젝트로 역제안을 보낸 경우만 허용
-     */
     @Transactional
     public ChatRoomResponse createRoom(User me, ChatRoomCreateRequest request) {
         if (me.getId().equals(request.getTargetUserId())) {
@@ -77,14 +72,12 @@ public class ChatService {
         boolean meIsClient = me.getId().equals(clientUserId);
         boolean targetIsClient = target.getId().equals(clientUserId);
 
-        // 1. 프리랜서 -> 클라이언트 문의 허용
         if (!meIsClient && targetIsClient) {
             freelancerProfileRepository.findByUser_Id(me.getId())
                     .orElseThrow(() -> new ChatAccessDeniedException("프리랜서만 프로젝트 문의 채팅을 시작할 수 있습니다."));
             return createOrGetRoom(me, target, project);
         }
 
-        // 2. 클라이언트 -> 프리랜서 채팅은 역제안이 있는 경우만 허용
         if (meIsClient && !targetIsClient) {
             FreelancerProfile freelancerProfile = freelancerProfileRepository.findByUser_Id(target.getId())
                     .orElseThrow(() -> new ResourceNotFoundException("프리랜서 프로필을 찾을 수 없습니다."));
@@ -104,10 +97,6 @@ public class ChatService {
         throw new ChatAccessDeniedException("채팅방을 생성할 수 없습니다.");
     }
 
-    /**
-     * 프로젝트 등록 클라이언트와 지정 프리랜서 간 채팅방을 조회하거나 생성합니다.
-     * 제안(Proposal) 문의 등, 아직 프로젝트에 프리랜서가 배정되지 않은 경우에도 사용합니다.
-     */
     @Transactional
     public ChatRoom resolveOrCreateChatRoomForClientAndFreelancer(
             Project project,
@@ -118,9 +107,6 @@ public class ChatService {
         return resolveOrCreateChatRoom(project, clientUser, freelancerUser, null);
     }
 
-    /**
-     * 위 메서드와 동일하되, 호출자 기준 ChatRoomResponse로 반환합니다.
-     */
     @Transactional
     public ChatRoomResponse getOrCreateRoomForProjectClientAndFreelancer(
             User actingUser,
@@ -179,9 +165,6 @@ public class ChatService {
         return ChatRoomResponse.from(room, me);
     }
 
-    /**
-     * 시스템 안내 메시지를 저장하고, 구독 중인 클라이언트에 웹소켓으로 전달합니다.
-     */
     @Transactional
     public ChatMessageResponse saveSystemMessageAndBroadcast(ChatRoom room, User technicalSender, String content) {
         if (content == null || content.isBlank()) {
@@ -231,19 +214,23 @@ public class ChatService {
                 room = chatRoomRepository.findByProjectAndUser1AndUser2(project, first, second)
                         .orElseThrow(() -> e);
             }
+        } else {
+            room.restoreFor(userA, userB);
         }
 
         return room;
     }
 
     public List<ChatRoomListResponse> getMyRooms(User me) {
-        List<ChatRoom> rooms = chatRoomRepository.findAllByUser1OrUser2OrderByUpdatedAtDesc(me, me);
+        List<ChatRoom> rooms = chatRoomRepository.findAllByUser1OrUser2OrderByUpdatedAtDesc(me, me)
+                .stream()
+                .filter(room -> !room.isExited(me))
+                .toList();
 
         if (rooms.isEmpty()) {
             return List.of();
         }
 
-        // 같은 상대와의 여러 방이 있더라도 최신 방 하나만 목록에 노출
         Map<Long, ChatRoom> latestRoomByOpponentId = new LinkedHashMap<>();
         for (ChatRoom room : rooms) {
             Long opponentId = room.getOpponent(me).getId();
@@ -312,6 +299,12 @@ public class ChatService {
     }
 
     @Transactional
+    public void leaveRoom(User me, Long roomId) {
+        ChatRoom room = getValidatedRoom(me, roomId);
+        room.exit(me);
+    }
+
+    @Transactional
     public ChatMessageResponse saveMessage(User me, ChatMessageSendRequest request) {
         ChatRoom room = getValidatedRoom(me, request.getRoomId());
 
@@ -336,6 +329,10 @@ public class ChatService {
 
         if (!room.isParticipant(me)) {
             throw new ChatAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
+        }
+
+        if (room.isExited(me)) {
+            throw new ChatAccessDeniedException("나간 채팅방에는 접근할 수 없습니다.");
         }
 
         return room;
