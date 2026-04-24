@@ -6,7 +6,8 @@ import lombok.*;
 
 @Entity
 @Table(name = "project_skills",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"project_id", "skill_id"}))  // 추가
+        uniqueConstraints = @UniqueConstraint(columnNames = {"project_id", "skill_id"}),
+        indexes = @Index(name = "idx_project_skill_skill_id", columnList = "skill_id"))  // 추가
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProjectSkill {
