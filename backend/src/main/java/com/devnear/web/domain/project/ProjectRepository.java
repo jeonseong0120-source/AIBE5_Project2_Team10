@@ -23,7 +23,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
     /** 단건 조회는 페이징 문제가 없으므로 Fetch Join을 유지하여 한 번에 가져옴*/
     @Query("SELECT DISTINCT p FROM Project p " +
             "JOIN FETCH p.clientProfile cp " +
-            "JOIN FETCH cp.user " +
+            "JOIN FETCH cp.user u " +
+            "LEFT JOIN FETCH u.freelancerProfile " +
             "LEFT JOIN FETCH p.projectSkills ps " +
             "LEFT JOIN FETCH ps.skill " +
             "WHERE p.id = :projectId")
@@ -37,23 +38,23 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
      * Batch Size 설정에 의해 스킬 데이터는 IN 쿼리로 효율적으로 로딩
      */
     @Override
-    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user"})
+    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "clientProfile.user.freelancerProfile"})
     Page<Project> findAll(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user"})
+    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "clientProfile.user.freelancerProfile"})
     Page<Project> findAllByClientProfile(ClientProfile clientProfile, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user"})
+    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "clientProfile.user.freelancerProfile"})
     Page<Project> findAllByClientProfileAndStatus(ClientProfile clientProfile, ProjectStatus status, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user"})
+    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "clientProfile.user.freelancerProfile"})
     Page<Project> findAllByFreelancerProfileAndStatus(FreelancerProfile freelancerProfile, ProjectStatus status, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user"})
+    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "clientProfile.user.freelancerProfile"})
     Page<Project> findAllByFreelancerProfile(FreelancerProfile freelancerProfile, Pageable pageable);
 
     /** [최적화] 검색 쿼리 역시 컬렉션 조인을 제거하여 메모리 페이징 발생을 원천 봉쇄합니다. */
-    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user"})
+    @EntityGraph(attributePaths = {"clientProfile", "clientProfile.user", "clientProfile.user.freelancerProfile"})
     @Query(value = "SELECT DISTINCT p FROM Project p " +
             "WHERE p.status = 'OPEN' " +
             "AND (p.listingKind IS NULL OR p.listingKind = :marketplace) " +
