@@ -48,7 +48,6 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
 
     // 글로벌 북마크 상태 동기화
     useEffect(() => {
-        const projectId = data.projectId || data.id;
         if (!projectId) return;
 
         const handleBookmarkChange = (e: Event) => {
@@ -60,7 +59,7 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
 
         window.addEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
         return () => window.removeEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
-    }, [data.projectId, data.id]);
+    }, [projectId]);
 
     // [수정] 백엔드 로그 확인 결과: projectSkills가 아니라 skills로 오고 있음
     const skillList: SkillItem[] = data.skills || [];
@@ -179,7 +178,6 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                             e.stopPropagation();
                             if (isToggling) return;
                             
-                            const projectId = data.projectId || data.id;
                             if (!projectId) return;
 
                             setIsToggling(true);
