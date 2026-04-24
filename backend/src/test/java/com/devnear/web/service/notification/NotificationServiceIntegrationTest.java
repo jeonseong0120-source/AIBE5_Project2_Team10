@@ -7,10 +7,15 @@ import com.devnear.web.domain.notification.NotificationRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.notification.NotificationInboxResponse;
+import com.devnear.test.config.QueryCountingTestConfiguration;
+import com.devnear.test.support.QueryCountExtension;
+import com.devnear.test.support.QueryCountHolder;
 import com.devnear.web.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +26,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Transactional
+@Import(QueryCountingTestConfiguration.class)
+@ExtendWith(QueryCountExtension.class)
 class NotificationServiceIntegrationTest {
 
     @Autowired
@@ -51,9 +58,12 @@ class NotificationServiceIntegrationTest {
         );
         notificationRepository.flush();
 
-        assertThat(notificationRepository.countUnreadByUserId(user.getId())).isEqualTo(1);
-
+        QueryCountHolder.reset();
         NotificationInboxResponse inbox = notificationService.getInbox(user.getId(), PageRequest.of(0, 10));
+        assertThat(QueryCountHolder.selectExecutions())
+                .as("인박스 조회(getInbox: 미읽음 카운트+페이지)는 소수의 SELECT")
+                .isPositive()
+                .isLessThanOrEqualTo(6);
         assertThat(inbox.unreadCount()).isEqualTo(1);
         assertThat(inbox.content()).hasSize(1);
         assertThat(inbox.content().get(0).title()).isEqualTo("새 공고 지원");
@@ -64,7 +74,13 @@ class NotificationServiceIntegrationTest {
 
         Notification persisted = notificationRepository.findById(id).orElseThrow();
         assertThat(persisted.isRead()).isTrue();
+
+        QueryCountHolder.reset();
         assertThat(notificationService.getInbox(user.getId(), PageRequest.of(0, 10)).unreadCount()).isEqualTo(0);
+        assertThat(QueryCountHolder.selectExecutions())
+                .as("읽음 처리 후 인박스 재조회도 소수의 SELECT")
+                .isPositive()
+                .isLessThanOrEqualTo(6);
     }
 
     @Test
@@ -84,13 +100,29 @@ class NotificationServiceIntegrationTest {
         Long id = notificationRepository.findByUser_IdOrderByCreatedAtDesc(user.getId(), PageRequest.of(0, 1))
                 .getContent().get(0).getId();
 
+        QueryCountHolder.reset();
         assertThat(notificationService.getInbox(user.getId(), PageRequest.of(0, 10), true).content()).hasSize(1);
+        assertThat(QueryCountHolder.selectExecutions())
+                .as("미읽음만 인박스 조회는 소수의 SELECT")
+                .isPositive()
+                .isLessThanOrEqualTo(6);
 
         notificationService.markNotificationRead(user.getId(), id);
         notificationRepository.flush();
 
+        QueryCountHolder.reset();
         assertThat(notificationService.getInbox(user.getId(), PageRequest.of(0, 10), true).content()).isEmpty();
+        assertThat(QueryCountHolder.selectExecutions())
+                .as("읽음 처리 후 미읽음 전용 인박스는 소수의 SELECT")
+                .isPositive()
+                .isLessThanOrEqualTo(6);
+
+        QueryCountHolder.reset();
         assertThat(notificationService.getInbox(user.getId(), PageRequest.of(0, 10), false).content()).hasSize(1);
+        assertThat(QueryCountHolder.selectExecutions())
+                .as("전체 인박스 조회도 소수의 SELECT")
+                .isPositive()
+                .isLessThanOrEqualTo(6);
     }
 
     @Test
@@ -119,7 +151,12 @@ class NotificationServiceIntegrationTest {
         Long nid = notificationRepository.findByUser_IdOrderByCreatedAtDesc(a.getId(), PageRequest.of(0, 1))
                 .getContent().get(0).getId();
 
+        QueryCountHolder.reset();
         assertThatThrownBy(() -> notificationService.markNotificationRead(b.getId(), nid))
                 .isInstanceOf(ResourceNotFoundException.class);
+        assertThat(QueryCountHolder.selectExecutions())
+                .as("타인 알림 읽음 처리 실패 시 조회는 소수의 SELECT")
+                .isPositive()
+                .isLessThanOrEqualTo(4);
     }
 }

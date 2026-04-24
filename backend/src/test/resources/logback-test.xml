@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger -- %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Spring 컨텍스트보다 먼저 찍히는 Spring Test 프레임워크 INFO -->
+    <logger name="org.springframework.test.context.support" level="WARN"/>
+    <logger name="org.springframework.boot.test.context" level="WARN"/>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

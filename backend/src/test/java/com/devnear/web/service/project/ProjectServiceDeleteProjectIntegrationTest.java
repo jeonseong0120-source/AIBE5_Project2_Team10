@@ -27,12 +27,16 @@ import com.devnear.web.domain.review.ClientReview;
 import com.devnear.web.domain.review.ClientReviewRepository;
 import com.devnear.web.domain.review.FreelancerReview;
 import com.devnear.web.domain.review.FreelancerReviewRepository;
+import com.devnear.test.config.QueryCountingTestConfiguration;
+import com.devnear.test.support.QueryCountExtension;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -41,13 +45,14 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
 /**
-+ * 공고 삭제 시 종속 행 제거 검증.
+ * 공고 삭제 시 종속 행 제거 검증.
  * {@link ProjectService#deleteProjectDependents} 주석 참조: 새 종속 테이블 추가 시 이 테스트도 확장해야 합니다.
  */
-
+@SpringBootTest
+@Transactional
+@Import(QueryCountingTestConfiguration.class)
+@ExtendWith(QueryCountExtension.class)
 class ProjectServiceDeleteProjectIntegrationTest {
 
     @Autowired

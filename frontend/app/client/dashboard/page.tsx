@@ -35,6 +35,8 @@ export default function ClientDashboardPage() {
 
     const [bookmarks, setBookmarks] = useState<any[]>([]);
     const [bookmarksLoading, setBookmarksLoading] = useState(false);
+    /** 첫 북마크 fetch 완료 전에는 빈 목록 UI를 보이지 않음 */
+    const [bookmarksFetched, setBookmarksFetched] = useState(false);
     const [bookmarkPage, setBookmarkPage] = useState(0);
     const [hasMoreBookmarks, setHasMoreBookmarks] = useState(true);
 
@@ -43,6 +45,8 @@ export default function ClientDashboardPage() {
 
     const [expandedProjectId, setExpandedProjectId] = useState<number | null>(null);
     const [sortOrder, setSortOrder] = useState<'DESC' | 'ASC'>('DESC');
+    /** 북마크 탭만: API는 찜한 시각(createdAt) DESC — 프로젝트/제안 탭의 sortOrder와 분리 */
+    const [bookmarksSortOrder, setBookmarksSortOrder] = useState<'DESC' | 'ASC'>('DESC');
     const [applicantsByProject, setApplicantsByProject] = useState<{ [key: number]: any[] }>({});
     const [loadingApplicants, setLoadingApplicants] = useState<{ [key: number]: boolean }>({});
     const [applicantsErrorByProject, setApplicantsErrorByProject] = useState<{ [key: number]: boolean }>({});
@@ -81,9 +85,7 @@ export default function ClientDashboardPage() {
         const checkAccess = async () => {
             try {
                 const res = await api.get("/v1/users/me");
-                console.log("🔥 [진실의 로그] 대시보드 권한 데이터:", res.data);
                 const roles = res.data.role || "";
-
                 if (!roles.includes("CLIENT") && !roles.includes("BOTH")) {
                     alert("클라이언트 또는 BOTH 계정만 접근 가능합니다.");
                     if (roles.includes("FREELANCER")) return router.replace("/");
@@ -123,13 +125,16 @@ export default function ClientDashboardPage() {
         if (!isLoadMore) { setBookmarksLoading(true); setBookmarkPage(0); }
         const targetPage = isLoadMore ? bookmarkPage + 1 : 0;
         try {
-            const { data } = await api.get(`/v1/bookmarks/freelancers?page=${targetPage}&size=9`);
+            const { data } = await api.get(`/v1/bookmarks/freelancers?page=${targetPage}&size=9&sort=createdAt,${bookmarksSortOrder.toLowerCase()}`);
             const newContent = data.content || [];
             setBookmarks(prev => isLoadMore ? [...prev, ...newContent] : newContent);
             setBookmarkPage(targetPage);
             setHasMoreBookmarks(!data.last);
-        } catch (err) { console.error("찜 목록 로드 실패", err); } finally { setBookmarksLoading(false); }
-    }, [bookmarkPage]);
+        } catch (err) { console.error("찜 목록 로드 실패", err); } finally {
+            setBookmarksLoading(false);
+            setBookmarksFetched(true);
+        }
+    }, [bookmarkPage, bookmarksSortOrder]);
 
     const fetchSentProposals = async () => {
         setProposalsLoading(true);
@@ -283,6 +288,10 @@ export default function ClientDashboardPage() {
             setProposalSending(false);
         }
     };
+
+    useEffect(() => {
+        if (authorized && activeMainTab === 'BOOKMARKS') fetchBookmarks(false);
+    }, [authorized, activeMainTab, bookmarksSortOrder]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (authorized) {
@@ -610,16 +619,31 @@ export default function ClientDashboardPage() {
                         {/* 북마크 및 제안 탭은 기존 고도화된 스타일 유지하면서 좌측 사이드바와 조화롭게 배치 */}
                         {activeMainTab === 'BOOKMARKS' && (
                             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
-                                <div className="sticky top-4 z-40 backdrop-blur-md pb-6 flex items-center justify-between">
+                                <div className="sticky top-4 z-40 backdrop-blur-md pb-6 flex flex-wrap items-center justify-between gap-4">
                                     <button 
-                                        onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
+                                        type="button"
+                                        onClick={() => {
+                                            setBookmarksSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC');
+                                        }}
                                         className="px-8 py-3.5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all flex items-center gap-3 shadow-xl shadow-zinc-100"
                                     >
-                                        <Clock size={16} /> {sortOrder === 'DESC' ? 'Latest' : 'Oldest'}
+                                        <Clock size={16} /> {bookmarksSortOrder === 'DESC' ? '찜한 순 (최신)' : '찜한 순 (과거)'}
                                     </button>
+                                    {hasMoreBookmarks && (
+                                        <button
+                                            type="button"
+                                            disabled={bookmarksLoading}
+                                            onClick={() => void fetchBookmarks(true)}
+                                            className="px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest border border-zinc-200 bg-white text-zinc-600 hover:border-[#FF7D00] hover:text-[#FF7D00] disabled:opacity-50"
+                                        >
+                                            {bookmarksLoading ? '불러오는 중…' : '더 보기'}
+                                        </button>
+                                    )}
                                 </div>
                                 
-                                {bookmarks.length === 0 ? (
+                                {!bookmarksFetched || (bookmarks.length === 0 && bookmarksLoading) ? (
+                                    <div className="py-24 text-center text-zinc-400 text-sm font-medium">관심 프리랜서를 불러오는 중…</div>
+                                ) : bookmarks.length === 0 && !bookmarksLoading ? (
                                     <div className="text-center py-48 bg-white/30 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200">
                                         <Heart size={64} className="text-zinc-200 mx-auto mb-8" strokeWidth={0.5} />
                                         <h3 className="text-zinc-300 font-black text-2xl font-mono uppercase tracking-[0.3em]">Empty_Library</h3>
@@ -627,7 +651,7 @@ export default function ClientDashboardPage() {
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 gap-8">
-                                        {[...bookmarks].sort((a,b) => sortOrder === 'DESC' ? b.profileId - a.profileId : a.profileId - b.profileId).map((freelancer, idx) => (
+                                        {bookmarks.map((freelancer, idx) => (
                                             <FreelancerBookmarkCard 
                                                 key={freelancer.profileId} 
                                                 freelancer={freelancer} 

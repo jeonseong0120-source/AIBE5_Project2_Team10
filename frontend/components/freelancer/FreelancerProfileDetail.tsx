@@ -23,6 +23,8 @@ type Props = {
     profileId: string;
     variant: FreelancerProfileDetailVariant;
     showFallbackHeader?: boolean;
+    /** URL 등에서 온 북마크 힌트(?bm=1|0). API 동기화 전까지 하트 UI 깜빡임 완화 */
+    initialBookmarkedHint?: boolean;
 };
 
 const VARIANT_CONFIG = {
@@ -42,6 +44,7 @@ export default function FreelancerProfileDetail({
                                                     profileId,
                                                     variant,
                                                     showFallbackHeader = true,
+                                                    initialBookmarkedHint,
                                                 }: Props) {
     const router = useRouter();
     const cfg = VARIANT_CONFIG[variant];
@@ -67,7 +70,7 @@ export default function FreelancerProfileDetail({
     const [isSendingProposal, setIsSendingProposal] = useState(false);
     const { setToast } = useNotifications();
 
-    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [isBookmarked, setIsBookmarked] = useState(initialBookmarkedHint ?? false);
     const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
     // 🎯 [추가] 탭 상태 및 리뷰 데이터

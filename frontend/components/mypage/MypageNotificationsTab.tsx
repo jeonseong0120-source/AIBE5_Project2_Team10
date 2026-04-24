@@ -13,6 +13,7 @@ type InboxApiResponse = {
 };
 
 type MeApi = {
+    role?: string;
     notifyCommunityComments?: boolean;
 };
 
@@ -25,13 +26,16 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
     const [prefsLoading, setPrefsLoading] = useState(true);
     const [toast, setToast] = useState<string | null>(null);
 
-    const loadPrefs = useCallback(async () => {
+    /** 성공 시 role 반환. 실패 시 undefined. */
+    const loadPrefs = useCallback(async (): Promise<string | undefined> => {
         setPrefsLoading(true);
         try {
             const { data } = await api.get<MeApi>("/v1/users/me");
             setCommunityOn(data.notifyCommunityComments !== false);
+            return data.role ? data.role.replace(/^ROLE_/, "") : undefined;
         } catch {
             setToast("알림 설정을 불러오지 못했습니다.");
+            return undefined;
         } finally {
             setPrefsLoading(false);
         }
@@ -54,9 +58,21 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
     }, []);
 
     useEffect(() => {
-        void loadPrefs();
-        void loadInbox();
-        }, [loadPrefs, loadInbox]);
+        void (async () => {
+            const role = await loadPrefs();
+            if (role === undefined) {
+                setLoading(false);
+                return;
+            }
+            if (role === "GUEST") {
+                setItems([]);
+                setUnreadCount(0);
+                setLoading(false);
+                return;
+            }
+            void loadInbox();
+        })();
+    }, [loadPrefs, loadInbox]);
 
 
         const extractErrorMessage = (err: unknown, fallback: string) => {

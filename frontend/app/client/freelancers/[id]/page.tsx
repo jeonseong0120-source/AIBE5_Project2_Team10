@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import api from '@/app/lib/axios';
 import FreelancerProfileDetail from '@/components/freelancer/FreelancerProfileDetail';
 import GlobalNavbar from '@/components/common/GlobalNavbar';
 
-export default function ClientFreelancerProfilePage() {
+function ClientFreelancerProfileContent() {
     const { id } = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const bm = searchParams.get('bm');
+    const initialBookmarkedHint = bm === '1' ? true : bm === '0' ? false : undefined;
     const [authorized, setAuthorized] = useState(false);
     const [checking, setChecking] = useState(true);
 
@@ -33,7 +36,6 @@ export default function ClientFreelancerProfilePage() {
                 setUser(res.data);
                 setAuthorized(true);
 
-                // 🎯 Navbar용 프로필 데이터는 여기서 한 번만 호출
                 api.get('/client/profile')
                     .then(pRes => setProfile(pRes.data))
                     .catch(err => console.error("프로필 로드 실패", err));
@@ -69,8 +71,26 @@ export default function ClientFreelancerProfilePage() {
             <GlobalNavbar user={user} profile={profile} />
 
             <div className="relative z-10">
-                <FreelancerProfileDetail profileId={profileId} variant="client" />
+                <FreelancerProfileDetail
+                    profileId={profileId}
+                    variant="client"
+                    initialBookmarkedHint={initialBookmarkedHint}
+                />
             </div>
         </div>
+    );
+}
+
+export default function ClientFreelancerProfilePage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-mono text-sm font-black uppercase tracking-widest text-[#FF7D00] animate-pulse">
+                    Verifying_Client_Session...
+                </div>
+            }
+        >
+            <ClientFreelancerProfileContent />
+        </Suspense>
     );
 }

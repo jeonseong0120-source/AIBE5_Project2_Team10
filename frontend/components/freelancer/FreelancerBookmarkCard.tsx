@@ -26,7 +26,7 @@ export default function FreelancerBookmarkCard({
             className="group bg-white p-8 rounded-[3rem] border border-zinc-100 hover:border-[#FF7D00] hover:shadow-2xl transition-all relative flex flex-col xl:flex-row items-center gap-10"
         >
             {/* 좌측: 아바타 섹션 */}
-            <div className="relative group/avatar cursor-pointer shrink-0" onClick={() => router.push(`/client/freelancers/${freelancer.profileId}`)}>
+            <div className="relative group/avatar cursor-pointer shrink-0" onClick={() => router.push(`/client/freelancers/${freelancer.profileId}?bm=1`)}>
                 <div className="w-32 h-32 rounded-[2.5rem] bg-zinc-100 border-4 border-white overflow-hidden shadow-xl transition-transform duration-500 group-hover/avatar:scale-105">
                     {freelancer.profileImageUrl ? (
                         <img src={freelancer.profileImageUrl} alt="" className="w-full h-full object-cover" />
@@ -84,7 +84,7 @@ export default function FreelancerBookmarkCard({
                     파트너십 제안하기
                 </button>
                 <button 
-                    onClick={() => router.push(`/client/freelancers/${freelancer.profileId}`)} 
+                    onClick={() => router.push(`/client/freelancers/${freelancer.profileId}?bm=1`)} 
                     className="w-full py-4 bg-zinc-50 text-zinc-500 hover:bg-zinc-100 rounded-2xl text-[13px] font-bold uppercase tracking-wider transition-all"
                 >
                     프로필 상세보기

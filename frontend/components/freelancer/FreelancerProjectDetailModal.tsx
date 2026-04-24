@@ -16,6 +16,7 @@ import {
     CheckCircle2,
 } from 'lucide-react';
 import { SkillItem, useProjectDetail } from '@/app/hooks/useProjectDetail';
+import { EstimatedBudgetBlock } from '@/components/freelancer/EstimatedBudgetBlock';
 
 type Props = {
     projectId: number | null;
@@ -59,9 +60,6 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
         startChat,
         apply,
     } = useProjectDetail(open ? projectId : null);
-
-    const formatBudget = (amount: number) =>
-        new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 }).format(amount);
 
     const isProjectOpen = project?.status === 'OPEN';
     const disableApplication = isApplied || !isProjectOpen;
@@ -243,8 +241,7 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-8" inert={isApplyOpen}>
                                     <div className="p-5 rounded-[2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-lg group/stat">
                                         <DollarSign size={18} className="text-[#FF7D00] mb-3" />
-                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 font-mono mb-1">예산</p>
-                                        <p className="text-lg font-black tracking-tighter text-zinc-950">{formatBudget(project.budget)}</p>
+                                        <EstimatedBudgetBlock budgetWon={project.budget} size="md" align="left" />
                                     </div>
                                     <div className="p-5 rounded-[2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-lg group/stat">
                                         <Calendar size={18} className="text-[#7A4FFF] mb-3" />

@@ -1,5 +1,30 @@
 # 통합 테스트 전용: 인메모리 H2 + 필수 더미 설정
+# 콘솔: 쿼리 카운트(System.out)만 두드러지게, 스프링·하이버네이트·데이터 계층 INFO는 대부분 숨김
+logging:
+  level:
+    root: WARN
+    com.devnear: WARN
+    org.springframework: WARN
+    org.hibernate: WARN
+    org.hibernate.orm.jdbc: WARN
+    org.springframework.data: WARN
+    com.zaxxer.hikari: WARN
+    org.springdoc: ERROR
+    org.springframework.messaging: WARN
+    org.springframework.web.socket: WARN
+    org.springframework.security: WARN
+    org.springframework.orm.jpa: WARN
+    org.springframework.boot.autoconfigure: WARN
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 spring:
+  main:
+    banner-mode: "off"
   datasource:
     url: jdbc:h2:mem:devneartest;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
@@ -8,11 +33,12 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+    open-in-view: false
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
         format_sql: false
+        default_batch_fetch_size: 100
   security:
     oauth2:
       client:

@@ -12,6 +12,7 @@ export type SkillItem = string | { name: string };
 export interface ProjectDetail {
     projectId: number;
     companyName: string;
+    logoUrl?: string;
     projectName: string;
     budget: number;
     deadline: string;

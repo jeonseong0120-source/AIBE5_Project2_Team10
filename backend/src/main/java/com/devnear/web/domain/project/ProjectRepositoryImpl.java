@@ -29,7 +29,8 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
         List<Project> content = queryFactory
-                .selectFrom(project)
+                .select(project).distinct()
+                .from(project)
                 .leftJoin(project.clientProfile).fetchJoin()
                 .leftJoin(project.clientProfile.user).fetchJoin()
                 .leftJoin(project.clientProfile.user.freelancerProfile).fetchJoin()
