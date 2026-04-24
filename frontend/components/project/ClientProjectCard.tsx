@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Users, CheckCircle, XCircle, Edit, Trash2,
-    Calendar, DollarSign, Globe, Sparkles, CreditCard, ShieldCheck
+    Calendar, DollarSign, Globe, Cpu, CreditCard, ShieldCheck
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -169,7 +169,7 @@ export default function ClientProjectCard({
                                         className="group/ai flex-1 px-8 py-4 bg-white border border-zinc-100 text-[#FF7D00] rounded-[1.2rem] transition-all hover:bg-orange-50 hover:border-orange-200 flex flex-col items-center justify-center gap-0.5 shadow-sm hover:shadow-md active:scale-[0.98]"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <Sparkles size={16} className="group-hover/ai:animate-pulse" />
+                                            <Cpu size={16} className="group-hover/ai:animate-pulse" />
                                             <span className="text-[13px] font-black tracking-tighter">AI 심층 분석</span>
                                         </div>
                                     </button>
@@ -219,7 +219,7 @@ export default function ClientProjectCard({
                                 <div className="py-24 flex flex-col items-center justify-center gap-8">
                                     <div className="relative">
                                         <div className="w-20 h-20 border-4 border-zinc-100 border-t-[#FF7D00] rounded-full animate-spin" />
-                                        <Sparkles size={24} className="absolute inset-0 m-auto text-[#FF7D00] animate-pulse" />
+                                        <div className="absolute inset-0 m-auto w-4 h-4 bg-[#FF7D00] rounded-full blur-[2px] animate-pulse" />
                                     </div>
                                     <div className="text-center">
                                         <p className="text-[13px] font-bold text-zinc-300">가장 완벽한 인재를 선별하는 중입니다.</p>
