@@ -89,5 +89,12 @@ export async function subscribeChatRoom(
 ): Promise<StompSubscription> {
     const socketClient = await ensureChatSocketConnected();
     return socketClient.subscribe(`/sub/chat/rooms/${roomId}`, callback);
+}
 
+export async function subscribeChatReadReceipt(
+    roomId: number,
+    callback: (message: IMessage) => void
+): Promise<StompSubscription> {
+    const socketClient = await ensureChatSocketConnected();
+    return socketClient.subscribe(`/sub/chat/rooms/${roomId}/read`, callback);
 }

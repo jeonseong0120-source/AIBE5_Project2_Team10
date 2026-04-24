@@ -4,8 +4,13 @@ import { resolveApiBaseUrl } from "./axios";
 export function resolveSockJsUrl(): string {
     const api = resolveApiBaseUrl();
     const url = new URL(api);
+
     url.search = "";
     url.hash = "";
-    const basePath = url.pathname.replace(/\/api\/?$/i, "").replace(/\/+$/, "");
-    return `${url.origin}${basePath}/ws-chat`;
+
+    const basePath = url.pathname
+        .replace(/\/api\/?$/i, "")
+        .replace(/\/+$/, "");
+
+    return `${url.origin}${basePath}/ws`;
 }

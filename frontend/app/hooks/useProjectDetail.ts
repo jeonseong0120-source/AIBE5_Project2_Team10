@@ -28,7 +28,6 @@ export interface ProjectDetail {
     clientId?: number;
     writerId?: number;
     ownerUserId?: number;
-    logoUrl?: string;
 }
 
 function isAbortError(err: unknown): boolean {
@@ -184,7 +183,7 @@ export function useProjectDetail(projectId: number | null) {
 
         try {
             setChatLoading(true);
-            const response = await createOrGetChatRoom(targetUserId, project.projectId);
+            const response = await createOrGetChatRoom(targetUserId);
             openChat(response.roomId);
             onSuccess?.();
         } catch (error) {

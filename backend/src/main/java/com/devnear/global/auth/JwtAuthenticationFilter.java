@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
 
         //  웹소켓 핸드셰이크는 필터 통과
-        if (uri.equals("/ws-chat") || uri.startsWith("/ws-chat/")) {
+        if (uri.equals("/ws") || uri.startsWith("/ws/")) {
             filterChain.doFilter(request, response);
             return;
         }

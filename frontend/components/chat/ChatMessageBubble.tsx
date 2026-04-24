@@ -2,24 +2,38 @@ interface ChatMessageBubbleProps {
     message: string;
     time: string;
     isMine: boolean;
+    isRead?: boolean;
     senderNickname?: string;
+    systemMessage?: boolean;
 }
 
 export default function ChatMessageBubble({
                                               message,
                                               time,
                                               isMine,
+                                              isRead = false,
                                               senderNickname,
+                                              systemMessage = false,
                                           }: ChatMessageBubbleProps) {
+    if (systemMessage) {
+        return (
+            <div className="flex justify-center">
+                <div className="max-w-[85%] rounded-full bg-gray-200 px-3 py-1.5 text-center text-[11px] text-gray-600">
+                    {message}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
             <div
-                className={`flex max-w-[75%] flex-col ${
+                className={`flex max-w-[78%] flex-col ${
                     isMine ? "items-end" : "items-start"
                 }`}
             >
                 {!isMine && senderNickname && (
-                    <span className="mb-1 px-1 text-[11px] text-gray-400">
+                    <span className="mb-1 px-1 text-[11px] font-medium text-gray-500">
                         {senderNickname}
                     </span>
                 )}
@@ -34,7 +48,16 @@ export default function ChatMessageBubble({
                     {message}
                 </div>
 
-                <span className="mt-1 px-1 text-[11px] text-gray-400">{time}</span>
+                {(time || isMine) && (
+                    <div className="mt-1 flex items-center gap-1 px-1 text-[11px] text-gray-400">
+                        {isMine && (
+                            <span className={isRead ? "text-violet-600" : "text-gray-400"}>
+                                {isRead ? "읽음" : "전송됨"}
+                            </span>
+                        )}
+                        {time && <span>{time}</span>}
+                    </div>
+                )}
             </div>
         </div>
     );

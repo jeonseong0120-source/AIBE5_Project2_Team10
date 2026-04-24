@@ -13,16 +13,24 @@ import java.util.Optional;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
-    // 특정 프로젝트 안에서 user1, user2 조합의 채팅방이 있는지 찾기
-    // EntityGraph를 사용해서 user, project를 함께 가져오면 N+1 문제를 줄일 수 있음
+    // 특정 프로젝트 안에서 user1, user2 조합의 채팅방 조회
     @EntityGraph(attributePaths = {"user1", "user2", "project", "project.clientProfile", "project.freelancerProfile"})
     Optional<ChatRoom> findByProjectAndUser1AndUser2(Project project, User user1, User user2);
 
     // 내가 참여한 모든 채팅방 조회
-    // user1 또는 user2 중 하나라도 나이면 조회
-    // updatedAt 기준 최신순 정렬
     @EntityGraph(attributePaths = {"user1", "user2", "project"})
     List<ChatRoom> findAllByUser1OrUser2OrderByUpdatedAtDesc(User user1, User user2);
+
+    // 같은 두 유저 사이의 모든 채팅방 조회 (프로젝트 무관)
+    @EntityGraph(attributePaths = {"user1", "user2", "project"})
+    @Query("""
+        SELECT cr
+        FROM ChatRoom cr
+        WHERE (cr.user1 = :user1 AND cr.user2 = :user2)
+           OR (cr.user1 = :user2 AND cr.user2 = :user1)
+        ORDER BY cr.updatedAt DESC
+    """)
+    List<ChatRoom> findAllByUsers(@Param("user1") User user1, @Param("user2") User user2);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM ChatRoom c WHERE c.project.id = :projectId")
