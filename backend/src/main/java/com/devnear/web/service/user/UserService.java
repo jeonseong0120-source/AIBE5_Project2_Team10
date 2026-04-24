@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -80,10 +81,10 @@ public class UserService {
                 user.getClientProfile().update(request.getClientProfile());
             } else {
                 ClientProfile clientProfile = request.getClientProfile().toEntity(user);
-                clientProfileRepository.save(clientProfile);
 
-                // 🎯 [방어막 작동] 메모리의 User에게 프로필 연결!
-                user.setClientProfile(clientProfile);
+                // 🎯 [수정] save()가 반환하는 영속(Managed) 객체를 받아서 연결
+                ClientProfile savedClientProfile = clientProfileRepository.save(clientProfile);
+                user.setClientProfile(savedClientProfile);
                 log.info("🎯 Client Profile Linked & Saved for User: {}", user.getId());
             }
         }
@@ -103,17 +104,30 @@ public class UserService {
                         .isActive(true)
                         .build();
 
-                List<FreelancerSkill> skills = fReq.getSkillIds().stream()
-                        .map(skillId -> {
-                            Skill skill = skillRepository.findById(skillId).orElseThrow();
-                            return FreelancerSkill.builder().freelancerProfile(profile).skill(skill).build();
-                        }).toList();
+                // 스킬 유효성 검증 및 N+1 문제 해결 (이전 수정본 반영)
+                List<FreelancerSkill> skills = new ArrayList<>();
+                List<Long> requestedSkillIds = fReq.getSkillIds();
+
+                if (requestedSkillIds != null && !requestedSkillIds.isEmpty()) {
+                    List<Skill> validSkills = skillRepository.findAllById(requestedSkillIds);
+
+                    if (validSkills.size() != requestedSkillIds.size()) {
+                        throw new IllegalArgumentException("존재하지 않는 기술 스택 ID가 포함되어 있습니다.");
+                    }
+
+                    skills = validSkills.stream()
+                            .map(skill -> FreelancerSkill.builder()
+                                    .freelancerProfile(profile)
+                                    .skill(skill)
+                                    .build())
+                            .toList();
+                }
 
                 profile.updateSkills(skills);
-                freelancerProfileRepository.save(profile);
 
-                // 🎯 [방어막 작동] 메모리의 User에게 프로필 연결!
-                user.setFreelancerProfile(profile);
+                // 🎯 [수정] save()가 반환하는 영속(Managed) 객체를 받아서 연결합니다.
+                FreelancerProfile savedFreelancerProfile = freelancerProfileRepository.save(profile);
+                user.setFreelancerProfile(savedFreelancerProfile);
                 log.info("🎯 Freelancer Profile Linked & Saved for User: {}", user.getId());
             }
         }
@@ -133,13 +147,28 @@ public class UserService {
     @Transactional
     public UserInfoResponse updateNotificationPreferences(String email, NotificationPreferencePatchRequest request) {
         User user = userContext.getRequiredCurrentUser();
-        if (request.getNotifyCommunityComments() != null) user.setNotifyCommunityComments(request.getNotifyCommunityComments());
+
+        // 탈퇴 계정 방어막
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
+            throw new IllegalArgumentException("탈퇴 계정입니다.");
+        }
+
+        if (request.getNotifyCommunityComments() != null) {
+            user.setNotifyCommunityComments(request.getNotifyCommunityComments());
+        }
         return new UserInfoResponse(user);
     }
 
     @CacheEvict(value = "users", allEntries = true)
     @Transactional
     public void updateProfileImage(String email, String newImageUrl) {
-        userContext.getRequiredCurrentUser().updateProfileImageUrl(newImageUrl);
+        User user = userContext.getRequiredCurrentUser();
+
+        // 탈퇴 계정 방어막
+        if (user.getStatus() == UserStatus.WITHDRAWN) {
+            throw new IllegalArgumentException("탈퇴 계정입니다.");
+        }
+
+        user.updateProfileImageUrl(newImageUrl);
     }
 }
