@@ -77,4 +77,14 @@ public class ChatController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "채팅방 나가기")
+    @DeleteMapping("/rooms/{roomId}")
+    public ResponseEntity<Void> leaveRoom(
+            @LoginUser User user,
+            @PathVariable Long roomId
+    ) {
+        chatService.leaveRoom(user, roomId);
+        return ResponseEntity.noContent().build();
+    }
 }
