@@ -10,6 +10,10 @@ export interface BookmarkChangeEventDetail {
 // In-memory cache to preserve optimistic UI state across component mounts
 const localBookmarkCache = new Map<number, boolean>();
 
+export function clearLocalBookmarkCache(): void {
+    localBookmarkCache.clear();
+}
+
 export function getLocalBookmarkState(projectId: number): boolean | undefined {
     return localBookmarkCache.get(projectId);
 }
