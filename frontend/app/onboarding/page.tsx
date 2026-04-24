@@ -78,16 +78,7 @@ export default function OnboardingPage() {
             if (role === "FREELANCER" || role === "BOTH") onboardingPayload.freelancerProfile = freelancerData;
 
             const res = await api.post("/v1/users/onboarding", onboardingPayload);
-            // 🎯 [이 줄을 추가하십시오!] 백엔드가 도대체 뭘 줬는지 통째로 출력해 봅니다.
-            console.log("🔥 백엔드 응답 전체 데이터:", res.data);
             const newToken = res.data.accessToken;
-
-            if (newToken) {
-                localStorage.setItem("accessToken", newToken); // 여기서 덮어씌워짐
-                notifyAuthChanged();
-            } else {
-                console.error("백엔드가 토큰을 안 줬습니다!"); // 만약 토큰이 안왔다면 여기서 걸립니다.
-            }
 
             if (newToken) {
                 localStorage.setItem("accessToken", newToken);
@@ -95,10 +86,8 @@ export default function OnboardingPage() {
             }
 
             alert("권한 설정 완료!");
-            setTimeout(() => {
-                // 🎯 백엔드 트랜잭션이 완전히 끝날 수 있도록 1초(1000ms)만 기다림
-                window.location.href = postLoginPathForRole(role);
-            }, 1000);
+            // 🎯 [수정] 하드코딩된 경로 대신 공통 모듈을 사용하여 일관성을 확보했습니다.
+            router.replace(postLoginPathForRole(role));
 
         } catch (err: any) {
             alert("설정 중 오류가 발생했습니다.");

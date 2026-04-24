@@ -81,9 +81,7 @@ export default function ClientDashboardPage() {
         const checkAccess = async () => {
             try {
                 const res = await api.get("/v1/users/me");
-                console.log("🔥 [진실의 로그] 대시보드 권한 데이터:", res.data);
                 const roles = res.data.role || "";
-
                 if (!roles.includes("CLIENT") && !roles.includes("BOTH")) {
                     alert("클라이언트 또는 BOTH 계정만 접근 가능합니다.");
                     if (roles.includes("FREELANCER")) return router.replace("/");

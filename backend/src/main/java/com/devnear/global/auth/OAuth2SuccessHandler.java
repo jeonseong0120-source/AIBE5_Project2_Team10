@@ -1,8 +1,5 @@
 package com.devnear.global.auth;
 
-import com.devnear.web.domain.enums.UserStatus;
-import com.devnear.web.domain.user.User;
-import com.devnear.web.domain.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +11,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -21,8 +19,8 @@ import java.io.IOException;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserRepository userRepository; // 🎯 확실한 정보 조회를 위해 DB 의존성 주입
 
+    // [보고] 프론트엔드 배포 환경을 고려하여 리다이렉트 URL을 외부화합니다.
     @Value("${app.oauth2.redirect-uri:http://localhost:3000/oauth/redirect}")
     private String redirectUri;
 
@@ -34,28 +32,27 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                                         Authentication authentication) throws IOException {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        String email = (String) oAuth2User.getAttributes().get("email");
+        Map<String, Object> attributes = oAuth2User.getAttributes();
 
-        // 1. 🎯 구글이 준 이메일로 우리 DB에서 '진짜' 유저 정보를 조회합니다.
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("OAuth2 인증 성공 후 유저를 찾을 수 없습니다: " + email));
-
-        // 2. 유저 상태 검증 (탈퇴 유저 입구 컷)
-        if (user.getStatus() == UserStatus.WITHDRAWN) {
-            log.warn("OAuth2 로그인 차단 - 탈퇴한 계정: {}", email);
+        // 1. 유저 상태 검증 (WITHDRAWN 상태인 탈퇴 유저만 입구 컷)
+        String status = (String) attributes.get("status");
+        if ("WITHDRAWN".equals(status)) {
+            log.warn("OAuth2 로그인 차단 - 탈퇴한 계정: {}", attributes.get("email"));
+            // 탈퇴한 계정임을 알리는 프론트엔드 에러 페이지로 리다이렉트
             getRedirectStrategy().sendRedirect(request, response, errorUri + "?error=account_withdrawn");
             return;
         }
 
-        // 3. 🎯 토큰 재료 준비 (안전하게 DB 엔티티 사용)
-        Long userId = user.getId();
-        String role = user.getRole().name();
-        String status = user.getStatus().name(); // 🎯 누락되었던 4번째 인자 추가
+        // 2. 토큰 재료 준비 (안전한 타입 변환)
+        Object idAttr = attributes.get("id");
+        Long userId = (idAttr instanceof Integer) ? ((Integer) idAttr).longValue() : (Long) idAttr;
+        String email = (String) attributes.get("email");
+        String role = authentication.getAuthorities().iterator().next().getAuthority();
 
-        // 4. 우리 서비스 전용 JWT 토큰 발급 (인자 4개 매칭 완료!)
-        String accessToken = jwtTokenProvider.createToken(userId, email, role, status);
+        // 3. 우리 서비스 전용 JWT 토큰 발급
+        String accessToken = jwtTokenProvider.createToken(userId, email, role);
 
-        // 5. 보안 강화를 위해 프래그먼트(#token=) 사용
+        // 4. 보안 강화를 위해 쿼리 스트링(?token=) 대신 프래그먼트(#token=) 사용
         String targetUrl = redirectUri + "#token=" + accessToken;
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);

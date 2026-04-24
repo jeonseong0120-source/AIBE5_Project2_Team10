@@ -50,12 +50,9 @@ public class SecurityUser implements UserDetails {
     @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // 🎯 [핵심 수정] 이미 ROLE_이 붙어있으면 또 붙이지 않도록 방어합니다!
-        if (role != null && role.startsWith("ROLE_")) {
-            return Collections.singleton(new SimpleGrantedAuthority(role));
-        }
         return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + role));
     }
+
     @Override public String getPassword() { return password; }
     @Override public String getUsername() { return email; }
     @Override public boolean isAccountNonExpired() { return true; }
