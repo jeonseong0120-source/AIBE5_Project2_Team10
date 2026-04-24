@@ -83,7 +83,7 @@ public class BookmarkService {
                 .orElseThrow(() -> new ResourceNotFoundException("프로젝트를 찾을 수 없습니다."));
         
         try {
-            bookmarkProjectRepository.save(BookmarkProject.builder()
+            bookmarkProjectRepository.saveAndFlush(BookmarkProject.builder()
                     .freelancerProfile(freelancerProfile)
                     .project(project)
                     .build());

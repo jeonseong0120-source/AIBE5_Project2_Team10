@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.Set;
+import java.util.List;
 
 public interface BookmarkProjectRepository extends JpaRepository<BookmarkProject, Long> {
     Optional<BookmarkProject> findByFreelancerProfileAndProject(FreelancerProfile freelancerProfile, Project project);
@@ -21,13 +23,14 @@ public interface BookmarkProjectRepository extends JpaRepository<BookmarkProject
             "project.clientProfile.user"
     })
     Page<BookmarkProject> findAllByFreelancerProfile(FreelancerProfile freelancerProfile, Pageable pageable);
+
     boolean existsByFreelancerProfile_IdAndProject_Id(Long profileId, Long projectId);
 
     @Query("SELECT b.project.id FROM BookmarkProject b WHERE b.freelancerProfile.id = :profileId AND b.project.id IN :projectIds")
-    java.util.List<Long> findBookmarkedProjectIdsByProfileIdAndProjectIds(@Param("profileId") Long profileId, @Param("projectIds") java.util.List<Long> projectIds);
+    Set<Long> findBookmarkedProjectIdsByProfileIdAndProjectIds(@Param("profileId") Long profileId, @Param("projectIds") List<Long> projectIds);
 
     @Query("SELECT b.project.id FROM BookmarkProject b WHERE b.freelancerProfile.id = :freelancerProfileId")
-    java.util.List<Long> findBookmarkedProjectIds(@Param("freelancerProfileId") Long freelancerProfileId);
+    Set<Long> findBookmarkedProjectIds(@Param("freelancerProfileId") Long freelancerProfileId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM BookmarkProject b WHERE b.project.id = :projectId")

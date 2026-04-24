@@ -130,7 +130,7 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                     <div className="h-16 w-16 md:h-20 md:w-20 shrink-0 overflow-hidden rounded-2xl md:rounded-[1.5rem] border border-zinc-100 bg-zinc-50 shadow-sm transition-all duration-500 group-hover:scale-105 group-hover:shadow-[#7A4FFF]/10 p-1">
                         <img 
                             src={data.logoUrl || `https://ui-avatars.com/api/?name=${data.companyName || 'C'}&background=F4F4F5&color=A1A1AA`} 
-                            alt={data.companyName || 'Company logo'}
+                            alt={data.companyName || '회사 로고'}
                             className="h-full w-full object-cover rounded-xl md:rounded-[1.2rem]"
                         />
                     </div>
@@ -142,7 +142,7 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                                 {data.projectName || "제목 없는 프로젝트"}
                             </h2>
                             <div className="flex items-center gap-1.5 shrink-0">
-                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${statusConfig.classes}`}>
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border ${statusConfig.classes}`}>
                                     {statusConfig.text}
                                 </span>
                                 {dDay && (
@@ -199,7 +199,7 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                                 setIsToggling(false);
                             }
                         }}
-                        aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+                        aria-label={isBookmarked ? '북마크 해제' : '북마크 추가'}
                         aria-pressed={isBookmarked}
                         className="bookmark-btn p-3.5 md:p-4 rounded-2xl border border-zinc-100 hover:border-red-100 hover:bg-red-50 text-zinc-200 hover:text-red-500 transition-all active:scale-90 bg-white/50 backdrop-blur-sm shadow-sm shrink-0"
                     >
@@ -232,7 +232,7 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
 
                         <motion.button
                             whileTap={{ scale: 0.97 }}
-                            className="bg-zinc-950 text-white h-12 md:h-14 px-6 md:px-8 rounded-xl md:rounded-2xl font-bold text-[13px] uppercase tracking-wider flex items-center justify-center gap-3 group-hover:bg-[#7A4FFF] transition-all shadow-xl group-hover:shadow-[#7A4FFF]/20"
+                            className="bg-zinc-950 text-white h-12 md:h-14 px-6 md:px-8 rounded-xl md:rounded-2xl font-bold text-[13px] tracking-wider flex items-center justify-center gap-3 group-hover:bg-[#7A4FFF] transition-all shadow-xl group-hover:shadow-[#7A4FFF]/20"
                         >
                             상세 정보 확인 <ArrowUpRight size={16} className="group-hover:rotate-45 transition-transform duration-500" />
                         </motion.button>

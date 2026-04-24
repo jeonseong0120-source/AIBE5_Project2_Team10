@@ -205,7 +205,7 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                                 data.workStyle === 'OFFLINE' ? 'bg-white/90 text-zinc-900 border-zinc-200' : 
                                 'bg-[#FF7D00]/90 text-white border-[#FF7D00]/20'
                             }`}>
-                                <span className="text-[8px] opacity-60 font-bold">STYLE:</span>
+                                <span className="text-[8px] opacity-60 font-bold">작업 형태:</span>
                                 {data.workStyle === 'ONLINE' ? '온라인' : data.workStyle === 'OFFLINE' ? '오프라인' : '하이브리드'}
                             </span>
                         </div>
@@ -285,10 +285,10 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                                         <div className="mb-1 flex items-center gap-2">
                                             <div className="flex items-center text-[11px] font-bold text-[#FF7D00] bg-orange-50 px-1.5 py-0.5 rounded-md">
                                                 <Star size={11} fill="currentColor" className="mr-1" />
-                                                <span className="font-sans">{data.averageRating.toFixed(1)}</span>
+                                                <span className="font-sans">{(Math.round((data.averageRating || 0) * 10) / 10).toFixed(1)}</span>
                                             </div>
                                             <span className="shrink-0 rounded-md bg-[#7A4FFF]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[#7A4FFF] ring-1 ring-[#7A4FFF]/20">
-                                                {data.gradeName || '일반'}
+                                                {data.gradeName || '일반 요원'}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2 max-w-full">
@@ -297,10 +297,6 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                                             </h3>
                                         </div>
                                     </div>
-                                </div>
-                                 <div className="text-right shrink-0">
-                                    <div className="text-base font-bold text-zinc-900 tracking-tighter">₩{data.hourlyRate.toLocaleString()}</div>
-                                    <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">시간당 금액</div>
                                 </div>
                             </div>
 
@@ -324,8 +320,12 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                                 )}
                             </div>
 
-                            <div className="flex items-center justify-between border-t border-zinc-100 pt-4">
-                                <div className="flex items-center text-[10px] font-bold text-zinc-400 group-hover:text-zinc-600 transition-colors">
+                            <div>
+                                <div className="flex items-center justify-start mb-3 text-[11px] font-black text-[#7A4FFF]">
+                                    <span className="text-[9px] opacity-60 mr-1.5 uppercase font-mono tracking-widest text-zinc-400">희망시급:</span>
+                                    {data.hourlyRate != null ? `₩${data.hourlyRate.toLocaleString()}` : "—"}
+                                </div>
+                                <div className="flex items-center text-[11px] font-bold text-zinc-400 group-hover:text-zinc-600 transition-colors">
                                     <MapPin size={12} className="mr-1.5 text-zinc-300" />
                                     {data.location}
                                 </div>

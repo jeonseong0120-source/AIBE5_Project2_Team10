@@ -1,5 +1,3 @@
-import api from './axios';
-
 export const DEVNEAR_BOOKMARK_CHANGED = "devnear-bookmark-changed";
 
 export interface BookmarkChangeEventDetail {

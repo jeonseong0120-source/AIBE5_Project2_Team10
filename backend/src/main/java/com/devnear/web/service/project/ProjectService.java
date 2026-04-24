@@ -317,7 +317,7 @@ public class ProjectService {
         // 찜 여부 확인
         Set<Long> bookmarkedProjectIds = Collections.emptySet();
         if (viewer != null && viewer.getFreelancerProfile() != null && !projectIds.isEmpty()) {
-            bookmarkedProjectIds = new HashSet<>(bookmarkProjectRepository.findBookmarkedProjectIdsByProfileIdAndProjectIds(viewer.getFreelancerProfile().getId(), projectIds));
+            bookmarkedProjectIds = bookmarkProjectRepository.findBookmarkedProjectIdsByProfileIdAndProjectIds(viewer.getFreelancerProfile().getId(), projectIds);
         }
 
         final Set<Long> finalBookmarkedProjectIds = bookmarkedProjectIds;
@@ -335,6 +335,7 @@ public class ProjectService {
 
         long count = projectApplicationRepository.countByProjectId(projectId);
 
+        boolean isBookmarked = false;
         if (viewer != null && viewer.getFreelancerProfile() != null) {
             isBookmarked = bookmarkProjectRepository.existsByFreelancerProfile_IdAndProject_Id(viewer.getFreelancerProfile().getId(), project.getId());
         }

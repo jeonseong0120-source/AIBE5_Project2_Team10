@@ -11,9 +11,12 @@ import {
     X,
     Heart,
     MessageCircle,
-    Sparkles,
+    Plus,
+    Activity,
     ChevronRight,
     CheckCircle2,
+    Building2,
+    MapPin,
 } from 'lucide-react';
 import { SkillItem, useProjectDetail } from '@/app/hooks/useProjectDetail';
 import { EstimatedBudgetBlock } from '@/components/freelancer/EstimatedBudgetBlock';
@@ -219,13 +222,19 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                                         <div>
                                             <h2
                                                 id={DIALOG_TITLE_ID}
-                                                className="text-3xl md:text-4xl font-black tracking-tighter text-zinc-950 leading-tight"
+                                                className="text-2xl md:text-3xl font-black tracking-tighter text-zinc-950 leading-[1.1] mb-2"
                                             >
                                                 {project.projectName}
                                             </h2>
-                                            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-widest font-mono text-zinc-400">
-                                                <span className="px-4 py-1.5 rounded-xl bg-zinc-100 border border-zinc-200/50">{project.companyName}</span>
-                                                <span className="px-4 py-1.5 rounded-xl bg-zinc-100 border border-zinc-200/50">{project.location || '지역 미정'}</span>
+                                            <div className="mt-4 flex flex-wrap gap-3">
+                                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-50/50 border border-[#7A4FFF]/10 shadow-sm transition-all hover:border-[#7A4FFF]/30">
+                                                    <Building2 size={13} className="text-[#7A4FFF]" />
+                                                    <span className="text-[12px] font-bold text-zinc-600">{project.companyName}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-50/50 border border-[#7A4FFF]/10 shadow-sm transition-all hover:border-[#7A4FFF]/30">
+                                                    <MapPin size={13} className="text-[#7A4FFF]" />
+                                                    <span className="text-[12px] font-bold text-zinc-600">{project.location || '지역 미정'}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -239,29 +248,49 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-8" inert={isApplyOpen}>
-                                    <div className="p-5 rounded-[2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-lg group/stat">
-                                        <DollarSign size={18} className="text-[#FF7D00] mb-3" />
-                                        <EstimatedBudgetBlock budgetWon={project.budget} size="md" align="left" />
+                                    <div className="p-6 rounded-[2.2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-xl group/stat flex flex-col justify-between">
+                                        <div className="flex items-center gap-2.5 mb-3">
+                                            <div className="p-2 rounded-lg bg-purple-50 text-[#7A4FFF]">
+                                                <DollarSign size={14} />
+                                            </div>
+                                            <p className="text-[11px] font-bold text-zinc-500">예상 예산</p>
+                                        </div>
+                                        <EstimatedBudgetBlock budgetWon={project.budget} size="lg" align="left" showLabel={false} />
                                     </div>
-                                    <div className="p-5 rounded-[2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-lg group/stat">
-                                        <Calendar size={18} className="text-[#7A4FFF] mb-3" />
-                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 font-mono mb-1">마감</p>
-                                        <p className="text-lg font-black tracking-tighter text-zinc-950">{project.deadline}</p>
+                                    <div className="p-6 rounded-[2.2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-xl group/stat flex flex-col justify-between">
+                                        <div className="flex items-center gap-2.5 mb-3">
+                                            <div className="p-2 rounded-lg bg-purple-50 text-[#7A4FFF]">
+                                                <Calendar size={14} />
+                                            </div>
+                                            <p className="text-[11px] font-bold text-zinc-500">모집 마감</p>
+                                        </div>
+                                        <p className="text-xl font-black tracking-tighter text-zinc-950">{project.deadline}</p>
                                     </div>
-                                    <div className="p-5 rounded-[2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-lg group/stat">
-                                        <Globe size={18} className="text-blue-500 mb-3" />
-                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 font-mono mb-1">근무형태</p>
-                                        <p className="text-lg font-black tracking-tighter text-zinc-950">{project.online && project.offline ? '온/오프 혼합' : project.online ? '원격' : '현장'}</p>
+                                    <div className="p-6 rounded-[2.2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-xl group/stat flex flex-col justify-between">
+                                        <div className="flex items-center gap-2.5 mb-3">
+                                            <div className="p-2 rounded-lg bg-purple-50 text-[#7A4FFF]">
+                                                <Globe size={14} />
+                                            </div>
+                                            <p className="text-[11px] font-bold text-zinc-500">근무 형태</p>
+                                        </div>
+                                        <p className="text-xl font-black tracking-tighter text-zinc-950">{project.online && project.offline ? '온/오프 혼합' : project.online ? '원격 근무' : '현장 출근'}</p>
                                     </div>
-                                    <div className="p-5 rounded-[2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-lg group/stat">
-                                        <Clock size={18} className="text-emerald-500 mb-3" />
-                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 font-mono mb-1">상태</p>
-                                        <p className="text-lg font-black tracking-tighter text-zinc-950">{project.status === 'OPEN' ? '모집 중' : '마감'}</p>
+                                    <div className="p-6 rounded-[2.2rem] bg-zinc-50 border border-zinc-100 transition-all hover:bg-white hover:shadow-xl group/stat flex flex-col justify-between">
+                                        <div className="flex items-center gap-2.5 mb-3">
+                                            <div className="p-2 rounded-lg bg-purple-50 text-[#7A4FFF]">
+                                                <Clock size={14} />
+                                            </div>
+                                            <p className="text-[11px] font-bold text-zinc-500">현재 상태</p>
+                                        </div>
+                                        <p className="text-xl font-black tracking-tighter text-zinc-950">{project.status === 'OPEN' ? '모집 중' : '마감됨'}</p>
                                     </div>
                                 </div>
 
                                 <div className="mb-8" inert={isApplyOpen}>
-                                    <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">필수 스택</h3>
+                                    <div className="flex items-center gap-3 mb-5">
+                                        <div className="h-5 w-1 rounded-full bg-[#7A4FFF]"></div>
+                                        <h3 className="text-[14px] font-black text-zinc-900 tracking-tight">요구 기술 스택</h3>
+                                    </div>
                                     <div className="flex flex-wrap gap-2">
                                         {(project.skills || []).map((skill, idx) => (
                                             <span key={`${getSkillName(skill)}-${idx}`} className="px-3 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50 text-xs font-bold">
@@ -272,9 +301,12 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                                 </div>
 
                                 <div className="mb-8" inert={isApplyOpen}>
-                                    <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">상세 설명</h3>
-                                    <div className="p-8 rounded-[2.5rem] border border-zinc-100 bg-zinc-50 text-zinc-800 whitespace-pre-wrap text-lg italic font-bold leading-relaxed relative overflow-hidden group/detail">
-                                        <div className="absolute top-0 left-0 w-1.5 h-full bg-[#7A4FFF]/20 group-hover/detail:bg-[#7A4FFF] transition-colors"></div>
+                                    <div className="flex items-center gap-3 mb-5">
+                                        <div className="h-5 w-1 rounded-full bg-[#7A4FFF]"></div>
+                                        <h3 className="text-[14px] font-black text-zinc-900 tracking-tight">프로젝트 상세 내용</h3>
+                                    </div>
+                                    <div className="p-10 rounded-[2.5rem] border border-zinc-100 bg-zinc-50/50 text-zinc-800 whitespace-pre-wrap text-[17px] font-medium leading-[1.8] relative overflow-hidden group/detail shadow-inner">
+                                        <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-[#7A4FFF] to-[#A78BFF] opacity-40 group-hover/detail:opacity-100 transition-opacity"></div>
                                         {project.detail}
                                     </div>
                                 </div>
@@ -288,7 +320,6 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                                             disableApplication ? 'bg-zinc-300 cursor-not-allowed' : 'bg-zinc-950 hover:bg-[#7A4FFF]'
                                         }`}
                                     >
-                                        {isApplied ? <CheckCircle2 size={18} /> : <Sparkles size={18} />}
                                         {isApplied ? '이미 지원한 프로젝트입니다' : !isProjectOpen ? '모집이 마감된 프로젝트입니다' : '프로젝트 지원하기'}
                                         {!disableApplication && <ChevronRight size={18} />}
                                     </button>
@@ -318,47 +349,73 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                                                 role="dialog"
                                                 aria-modal="true"
                                                 aria-labelledby="freelancer-apply-panel-title"
-                                                initial={{ opacity: 0, y: 20, scale: 0.97 }}
-                                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                exit={{ opacity: 0, y: 20, scale: 0.97 }}
-                                                className="relative z-[230] w-full max-w-lg rounded-[2rem] bg-white border border-zinc-100 p-6"
+                                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                                className="relative bg-white w-full max-w-lg rounded-[3rem] p-10 shadow-2xl border border-zinc-100 overflow-hidden"
                                             >
+                                                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#7A4FFF] to-[#A78BFF]"></div>
+                                                
                                                 <button
-                                                    ref={applyCloseButtonRef}
-                                                    type="button"
                                                     onClick={() => setIsApplyOpen(false)}
-                                                    className="absolute right-4 top-4 rounded-full bg-zinc-100 p-2 text-zinc-600"
-                                                    aria-label="지원서 닫기"
+                                                    className="absolute top-6 right-6 text-zinc-400 hover:text-zinc-950 transition-all p-2 bg-zinc-50 rounded-full"
                                                 >
-                                                    <X size={16} />
+                                                    <X size={20} />
                                                 </button>
-                                                <h4 id="freelancer-apply-panel-title" className="text-2xl font-black mb-5">지원서 작성</h4>
-                                                <div className="space-y-4">
-                                                    <div>
-                                                        <label className="text-xs font-bold text-zinc-500">입찰 금액</label>
-                                                        <input
-                                                            type="number"
-                                                            value={bidPrice}
-                                                            onChange={(e) => setBidPrice(e.target.value)}
-                                                            className="w-full mt-1 p-3 rounded-xl border border-zinc-200"
-                                                        />
+
+                                                <div className="mb-10">
+                                                    <h2 id="freelancer-apply-panel-title" className="text-3xl font-black text-zinc-950 mb-2 tracking-tighter">
+                                                        미션 지원하기
+                                                    </h2>
+                                                    <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">APPLICATION FORM</p>
+                                                </div>
+
+                                                <div className="space-y-6">
+                                                    <div className="space-y-3">
+                                                        <label className="flex items-center gap-2 text-[11px] font-bold text-zinc-500 uppercase tracking-wider ml-1">
+                                                            <DollarSign size={14} className="text-[#7A4FFF]" />
+                                                            입찰 제안 금액 (KRW)
+                                                        </label>
+                                                        <div className="relative group">
+                                                            <input
+                                                                type="number"
+                                                                className="w-full p-5 bg-zinc-50 border border-zinc-100 rounded-2xl font-black text-zinc-950 focus:bg-white focus:ring-2 focus:ring-[#7A4FFF]/20 focus:border-[#7A4FFF] outline-none transition-all text-2xl font-mono tabular-nums"
+                                                                value={bidPrice}
+                                                                onChange={(e) => setBidPrice(e.target.value)}
+                                                                placeholder="0"
+                                                            />
+                                                            <div className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-sm">원</div>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <label className="text-xs font-bold text-zinc-500">메시지</label>
+
+                                                    <div className="space-y-3">
+                                                        <label className="flex items-center gap-2 text-[11px] font-bold text-zinc-500 uppercase tracking-wider ml-1">
+                                                            <MessageCircle size={14} className="text-[#7A4FFF]" />
+                                                            협업 제안 메시지
+                                                        </label>
                                                         <textarea
+                                                            className="w-full p-6 bg-zinc-50 border border-zinc-100 rounded-2xl font-medium text-zinc-800 h-40 focus:bg-white focus:ring-2 focus:ring-[#7A4FFF]/20 focus:border-[#7A4FFF] outline-none transition-all resize-none leading-relaxed"
+                                                            placeholder="마스터님의 프로젝트 기여 방안을 자유롭게 적어주세요."
                                                             value={message}
                                                             onChange={(e) => setMessage(e.target.value)}
-                                                            className="w-full mt-1 p-3 rounded-xl border border-zinc-200 min-h-[130px]"
                                                         />
                                                     </div>
-                                                    <button
-                                                        type="button"
-                                                            onClick={() => void apply()}
+
+                                                    <motion.button
+                                                        whileTap={{ scale: 0.98 }}
+                                                        onClick={() => void apply()}
                                                         disabled={submitting}
-                                                        className="w-full py-3 rounded-xl bg-zinc-950 text-white font-bold disabled:opacity-60"
+                                                        className="w-full bg-zinc-950 text-white font-black py-6 rounded-2xl shadow-xl hover:bg-[#7A4FFF] transition-all disabled:opacity-50 flex items-center justify-center gap-3 group"
                                                     >
-                                                        {submitting ? '제출 중...' : '지원 확정하기'}
-                                                    </button>
+                                                        {submitting ? (
+                                                            <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                        ) : (
+                                                            <>
+                                                                <span>지원서 제출하기</span>
+                                                                <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                                            </>
+                                                        )}
+                                                    </motion.button>
                                                 </div>
                                             </motion.div>
                                         </div>

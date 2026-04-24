@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, DollarSign, Cpu, RotateCcw, BarChart3, Activity, Sparkles, Loader2, AlertCircle, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, MapPin, DollarSign, Cpu, RotateCcw, Activity, Loader2, AlertCircle, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import ProjectCard from "@/components/freelancer/ProjectCard";
 import FreelancerProjectDetailModal from '@/components/freelancer/FreelancerProjectDetailModal';
 import { useRouter } from 'next/navigation';
@@ -306,7 +306,7 @@ export default function FreelancerExplorePage() {
 
                 {/* 데코레이션 아이콘 */}
                 <div className="absolute left-[-20px] bottom-4 opacity-5 hidden lg:block text-[#7A4FFF]">
-                    <BarChart3 size={200} strokeWidth={0.5} />
+                    <Cpu size={200} strokeWidth={0.5} />
                 </div>
                 <div className="absolute right-[-40px] top-10 opacity-5 hidden lg:block rotate-12 text-[#FF7D00]">
                     <Activity size={240} strokeWidth={0.5} />
@@ -346,7 +346,7 @@ export default function FreelancerExplorePage() {
                         <div className="flex items-center gap-6">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <Sparkles className="text-[#7A4FFF]" size={14} />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#7A4FFF] animate-pulse" />
                                     <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-[#7A4FFF]">Recommended</span>
                                 </div>
                                 <h2 className="text-2xl font-bold tracking-tighter text-zinc-950 leading-none">
@@ -490,7 +490,7 @@ export default function FreelancerExplorePage() {
                     {/* 1. 협업 근무 방식 필터 */}
                     <section>
                         <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
-                            <BarChart3 size={16} className="text-[#7A4FFF]" /> 협업 근무 방식
+                            <Activity size={16} className="text-[#7A4FFF]" /> 협업 근무 방식
                         </h3>
                         <div className="flex bg-white p-1 rounded-2xl border border-zinc-200 shadow-sm overflow-x-auto no-scrollbar">
                             {['전체', '온라인', '오프라인'].map((tab) => (
@@ -510,7 +510,7 @@ export default function FreelancerExplorePage() {
                     {/* 2. 기술 스택 필터 (그리드 형태) */}
                     <section>
                         <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
-                            <Sparkles size={16} className="text-[#7A4FFF]" /> 프로젝트 기술 스택
+                            <Cpu size={16} className="text-[#7A4FFF]" /> 프로젝트 기술 스택
                         </h3>
                         <div className="grid grid-cols-2 gap-2">
                             {techStacks.map(tech => {
