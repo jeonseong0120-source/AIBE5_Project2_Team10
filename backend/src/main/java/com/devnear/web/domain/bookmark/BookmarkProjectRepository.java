@@ -23,6 +23,12 @@ public interface BookmarkProjectRepository extends JpaRepository<BookmarkProject
     Page<BookmarkProject> findAllByFreelancerProfile(FreelancerProfile freelancerProfile, Pageable pageable);
     boolean existsByFreelancerProfileAndProject(FreelancerProfile freelancerProfile, Project project);
 
+    @Query("SELECT COUNT(b) > 0 FROM BookmarkProject b WHERE b.freelancerProfile.id = :freelancerProfileId AND b.project.id = :projectId")
+    boolean existsByProfileIdAndProjectId(@Param("freelancerProfileId") Long freelancerProfileId, @Param("projectId") Long projectId);
+
+    @Query("SELECT b.project.id FROM BookmarkProject b WHERE b.freelancerProfile.id = :freelancerProfileId")
+    java.util.List<Long> findBookmarkedProjectIds(@Param("freelancerProfileId") Long freelancerProfileId);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM BookmarkProject b WHERE b.project.id = :projectId")
     void deleteByProjectId(@Param("projectId") Long projectId);

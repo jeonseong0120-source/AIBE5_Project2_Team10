@@ -38,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -249,9 +250,9 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProjectResponse> getProjectList(Pageable pageable) {
+    public Page<ProjectResponse> getProjectList(User viewer, Pageable pageable) {
         Page<Project> projects = projectRepository.findAll(pageable);
-        return mapToResponsesWithCounts(projects);
+        return mapToResponsesWithCounts(projects, viewer);
     }
 
     /**
@@ -259,7 +260,7 @@ public class ProjectService {
      * 컨트롤러에서 프리랜서 탐색 등에만 이 값을 넣도록 스코프를 제한합니다.
      */
     @Transactional(readOnly = true)
-    public Page<ProjectResponse> searchProjects(String keyword, String location, List<String> skills, Boolean online,
+    public Page<ProjectResponse> searchProjects(User viewer, String keyword, String location, List<String> skills, Boolean online,
                                                  Boolean offline, Long excludeOwnerUserId, Pageable pageable) {
         ProjectSearchCond cond = new ProjectSearchCond();
         cond.setKeyword(keyword);
@@ -270,7 +271,7 @@ public class ProjectService {
         cond.setExcludeOwnerUserId(excludeOwnerUserId);
 
         Page<Project> projects = projectRepository.search(cond, pageable);
-        return mapToResponsesWithCounts(projects);
+        return mapToResponsesWithCounts(projects, viewer);
     }
 
     @Transactional(readOnly = true)
@@ -283,11 +284,11 @@ public class ProjectService {
         } else {
             projects = projectRepository.findAllByClientProfile(clientProfile, pageable);
         }
-        return mapToResponsesWithCounts(projects);
+        return mapToResponsesWithCounts(projects, user);
     }
 
     @Transactional(readOnly = true)
-    public Page<ProjectResponse> getFreelancerProjectList(Long freelancerId, ProjectStatus status, Pageable pageable) {
+    public Page<ProjectResponse> getFreelancerProjectList(User viewer, Long freelancerId, ProjectStatus status, Pageable pageable) {
         FreelancerProfile freelancerProfile = freelancerProfileRepository.findById(freelancerId)
                 .orElseThrow(() -> new ResourceNotFoundException("프리랜서 프로필을 찾을 수 없습니다."));
 
@@ -297,10 +298,10 @@ public class ProjectService {
         } else {
             projects = projectRepository.findAllByFreelancerProfile(freelancerProfile, pageable);
         }
-        return mapToResponsesWithCounts(projects);
+        return mapToResponsesWithCounts(projects, viewer);
     }
 
-    private Page<ProjectResponse> mapToResponsesWithCounts(Page<Project> projectPage) {
+    private Page<ProjectResponse> mapToResponsesWithCounts(Page<Project> projectPage, User viewer) {
         List<Long> projectIds = projectPage.getContent().stream()
                 .map(Project::getId)
                 .collect(Collectors.toList());
@@ -313,16 +314,33 @@ public class ProjectService {
             }
         }
 
-        return projectPage.map(p -> ProjectResponse.from(p, countMap.getOrDefault(p.getId(), 0L)));
+        // 찜 여부 확인
+        Set<Long> bookmarkedProjectIds = Collections.emptySet();
+        if (viewer != null && viewer.getFreelancerProfile() != null) {
+            bookmarkedProjectIds = new HashSet<>(bookmarkProjectRepository.findBookmarkedProjectIds(viewer.getFreelancerProfile().getId()));
+        }
+
+        final Set<Long> finalBookmarkedProjectIds = bookmarkedProjectIds;
+        return projectPage.map(p -> ProjectResponse.from(
+                p,
+                countMap.getOrDefault(p.getId(), 0L),
+                finalBookmarkedProjectIds.contains(p.getId())
+        ));
     }
 
     @Transactional(readOnly = true)
-    public ProjectResponse getProject(Long projectId) {
+    public ProjectResponse getProject(User viewer, Long projectId) {
         Project project = projectRepository.findByIdWithClientProfile(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 프로젝트 공고를 찾을 수 없습니다. ID: " + projectId));
 
-        long count = projectApplicationRepository.countByProjectId(projectId); 
-        return ProjectResponse.from(project, count);
+        long count = projectApplicationRepository.countByProjectId(projectId);
+
+        boolean isBookmarked = false;
+        if (viewer != null && viewer.getFreelancerProfile() != null) {
+            isBookmarked = bookmarkProjectRepository.existsByProfileIdAndProjectId(viewer.getFreelancerProfile().getId(), project.getId());
+        }
+
+        return ProjectResponse.from(project, count, isBookmarked);
     }
 
     private ClientProfile findClientProfileByUser(User user) {

@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GlobalNavbar from '@/components/common/GlobalNavbar';
 import DashboardSidebar from '@/components/common/DashboardSidebar';
 import FreelancerProjectDetailModal from '@/components/freelancer/FreelancerProjectDetailModal';
+import { DEVNEAR_BOOKMARK_CHANGED, BookmarkChangeEventDetail, notifyBookmarkChanged } from '@/app/lib/bookmarkEvents';
 
 export default function FreelancerDashboardPage() {
     const router = useRouter();
@@ -138,10 +139,30 @@ export default function FreelancerDashboardPage() {
         try {
             await api.delete(`/v1/bookmarks/projects/${projectId}`);
             fetchBookmarks(false);
+            notifyBookmarkChanged(projectId, false);
         } catch (err) {
             alert("삭제에 실패했습니다.");
         }
     };
+
+    useEffect(() => {
+        const handleBookmarkChange = (e: Event) => {
+            const customEvent = e as CustomEvent<BookmarkChangeEventDetail>;
+            const { projectId, isBookmarked } = customEvent.detail;
+            
+            if (!isBookmarked) {
+                setBookmarkedProjects(prev => prev.filter(p => p.projectId !== projectId));
+                setTotalBookmarks(prev => Math.max(0, prev - 1));
+            } else {
+                // 추가되었을 때는 목록을 다시 불러오는 것이 간단하고 정확합니다.
+                // (이 페이지가 활성 탭일 때만 다시 불러와도 되지만, 전체적으로 새로고침하는 것이 안전합니다)
+                fetchBookmarks(false);
+            }
+        };
+
+        window.addEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
+        return () => window.removeEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
+    }, [fetchBookmarks]);
 
     const handleProposalStatus = async (proposalId: number, status: 'ACCEPTED' | 'REJECTED') => {
         const actionText = status === 'ACCEPTED' ? '수락' : '거절';

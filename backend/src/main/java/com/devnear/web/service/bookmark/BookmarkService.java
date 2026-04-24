@@ -81,13 +81,18 @@ public class BookmarkService {
         FreelancerProfile freelancerProfile = findFreelancerProfileByUser(user);
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("프로젝트를 찾을 수 없습니다."));
+        
+        if (bookmarkProjectRepository.existsByFreelancerProfileAndProject(freelancerProfile, project)) {
+            return;
+        }
+
         try {
             bookmarkProjectRepository.save(BookmarkProject.builder()
                     .freelancerProfile(freelancerProfile)
                     .project(project)
                     .build());
         } catch (DataIntegrityViolationException e) {
-            throw new DuplicateProfileException("이미 찜한 프로젝트입니다.");
+            log.info("Project already bookmarked by user: {}, projectId: {}", user.getId(), projectId);
         }
     }
 
@@ -97,11 +102,8 @@ public class BookmarkService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("프로젝트를 찾을 수 없습니다."));
 
-        BookmarkProject bookmark = bookmarkProjectRepository
-                .findByFreelancerProfileAndProject(freelancerProfile, project)
-                .orElseThrow(() -> new ResourceNotFoundException("찜한 프로젝트가 아닙니다."));
-
-        bookmarkProjectRepository.delete(bookmark);
+        bookmarkProjectRepository.findByFreelancerProfileAndProject(freelancerProfile, project)
+                .ifPresent(bookmarkProjectRepository::delete);
     }
 
     public Page<ProjectResponse> getBookmarkedProjects(User user, Pageable pageable) {
