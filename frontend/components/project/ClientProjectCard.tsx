@@ -54,7 +54,7 @@ export default function ClientProjectCard({
                         {/* 📝 프로젝트 기본 정보 섹션 */}
                         <div className="flex-1 w-full">
                             <div className="flex items-center gap-4 mb-6">
-                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase border ${
+                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest border ${
                                     project.status === 'OPEN' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' : 
                                     project.status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-500 border-blue-100' : 
                                     project.status === 'CLOSED' ? 'bg-red-50 text-red-500 border-red-100' :
@@ -70,14 +70,14 @@ export default function ClientProjectCard({
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handleEditProjectClick(project.projectId); }} 
                                             className="group/tool p-2.5 text-zinc-400 hover:text-[#FF7D00] hover:bg-white hover:shadow-sm rounded-lg transition-all"
-                                            title="Edit Project"
+                                            title="프로젝트 수정"
                                         >
                                             <Edit size={16} className="group-hover/tool:rotate-12 transition-transform" />
                                         </button>
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.projectId); }} 
                                             className="group/tool p-2.5 text-zinc-400 hover:text-red-500 hover:bg-white hover:shadow-sm rounded-lg transition-all"
-                                            title="Delete Project"
+                                            title="프로젝트 삭제"
                                         >
                                             <Trash2 size={16} className="group-hover/tool:scale-110 transition-transform" />
                                         </button>
@@ -91,21 +91,21 @@ export default function ClientProjectCard({
 
                             <div className="flex flex-wrap items-center gap-x-10 gap-y-4">
                                 <div className="flex flex-col">
-                                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Expected Budget</span>
+                                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">예상 예산</span>
                                     <span className="flex items-center gap-2 text-base font-bold text-zinc-900">
                                         <DollarSign size={16} className="text-[#FF7D00]"/> ₩{project.budget?.toLocaleString()}
                                     </span>
                                 </div>
                                 <div className="w-px h-8 bg-zinc-100 hidden sm:block" />
                                 <div className="flex flex-col">
-                                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Application Deadline</span>
+                                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">모집 마감일</span>
                                     <span className="flex items-center gap-2 text-base font-bold text-zinc-900">
                                         <Calendar size={16} className="text-[#FF7D00]"/> {project.deadline}
                                     </span>
                                 </div>
                                 <div className="w-px h-8 bg-zinc-100 hidden sm:block" />
                                 <div className="flex flex-col">
-                                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Working Style</span>
+                                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">작업 형태</span>
                                     <span className="flex items-center gap-2 text-base font-bold text-zinc-900">
                                         <Globe size={16} className="text-[#FF7D00]"/> {project.online ? '온라인' : '오프라인'}
                                     </span>
@@ -122,7 +122,7 @@ export default function ClientProjectCard({
                                 >
                                     <div className="flex items-center gap-2">
                                         <CheckCircle size={16} className="group-hover/complete:scale-110 transition-transform" />
-                                        <span className="text-[11px] font-black uppercase tracking-[0.15em]">프로젝트 완료하기</span>
+                                        <span className="text-[11px] font-black tracking-[0.15em]">프로젝트 완료하기</span>
                                     </div>
                                 </button>
                             )}
@@ -139,7 +139,7 @@ export default function ClientProjectCard({
                                         >
                                             <div className="flex items-center gap-2">
                                                 <CreditCard size={16} className="group-hover/pay:rotate-12 transition-transform" />
-                                                <span className="text-[11px] font-black uppercase tracking-widest">데모 결제</span>
+                                                <span className="text-[11px] font-black tracking-widest">데모 결제</span>
                                             </div>
                                         </button>
                                         <button 
@@ -151,7 +151,7 @@ export default function ClientProjectCard({
                                         >
                                             <div className="flex items-center gap-2">
                                                 <ShieldCheck size={16} className="group-hover/pay:scale-110 transition-transform" />
-                                                <span className="text-[11px] font-black uppercase tracking-widest">실제 결제</span>
+                                                <span className="text-[11px] font-black tracking-widest">실제 결제</span>
                                             </div>
                                         </button>
                                     </div>
@@ -170,7 +170,7 @@ export default function ClientProjectCard({
                                     >
                                         <div className="flex items-center gap-2">
                                             <Sparkles size={16} className="group-hover/ai:animate-pulse" />
-                                            <span className="text-[13px] font-black uppercase tracking-tighter">AI 심층 분석</span>
+                                            <span className="text-[13px] font-black tracking-tighter">AI 심층 분석</span>
                                         </div>
                                     </button>
                                 )}
@@ -187,7 +187,7 @@ export default function ClientProjectCard({
                                 >
                                     <div className="flex items-center gap-3">
                                         <Users size={18} className="group-hover/console:scale-110 transition-transform" />
-                                        <span className="text-[13px] font-black uppercase tracking-tighter">
+                                        <span className="text-[13px] font-black tracking-tighter">
                                             {isExpanded ? '관리 센터 닫기' : `지원자 관리 (${project.applicationCount || 0})`}
                                         </span>
                                     </div>
@@ -230,7 +230,7 @@ export default function ClientProjectCard({
                                     {projectApplicants.length === 0 ? (
                                         <div className="py-24 flex flex-col items-center justify-center text-center bg-zinc-50/50 rounded-[3rem] border-4 border-dashed border-zinc-100">
                                             <Users size={48} className="text-zinc-200 mb-6" strokeWidth={0.5} />
-                                            <h5 className="text-zinc-300 font-black text-lg font-mono uppercase tracking-[0.3em] mb-3">Zero_Pipeline</h5>
+                                            <h5 className="text-zinc-300 font-black text-lg font-mono tracking-widest mb-3">대기중인 지원자 없음</h5>
                                             <p className="text-zinc-400 text-[10px] max-w-xs leading-relaxed">아직 지원자가 없습니다. 프로젝트 공고를 매력적으로 수정하거나 인재에게 직접 제안해보세요.</p>
                                         </div>
                                     ) : (
@@ -269,7 +269,7 @@ export default function ClientProjectCard({
                                                 {/* 우측: 제안 금액 및 액션 */}
                                                 <div className="flex items-center gap-6 min-w-[280px] justify-end">
                                                     <div className="text-right">
-                                                        <p className="text-[8px] font-bold text-zinc-300 uppercase tracking-widest leading-none mb-1">Bid Price</p>
+                                                        <p className="text-[8px] font-bold text-zinc-300 tracking-widest leading-none mb-1">제안 금액</p>
                                                         <p className="text-lg font-bold text-zinc-950">₩{app.bidPrice?.toLocaleString()}</p>
                                                     </div>
                                                     <div className="flex gap-2">
@@ -301,7 +301,7 @@ export default function ClientProjectCard({
                                                                     >
                                                                         <div className="flex items-center gap-2">
                                                                             <CreditCard size={14} className="group-hover/btn:rotate-12 transition-transform" />
-                                                                            <span className="text-[11px] font-bold uppercase tracking-widest">데모 수락</span>
+                                                                            <span className="text-[11px] font-bold tracking-widest">데모 수락</span>
                                                                         </div>
                                                                     </button>
                                                                     
@@ -314,7 +314,7 @@ export default function ClientProjectCard({
                                                                     >
                                                                         <div className="flex items-center gap-2">
                                                                             <ShieldCheck size={14} className="group-hover/btn:scale-110 transition-transform" />
-                                                                            <span className="text-[11px] font-bold uppercase tracking-widest">수락</span>
+                                                                            <span className="text-[11px] font-bold tracking-widest">수락</span>
                                                                         </div>
                                                                     </button>
                                                                     </div>
@@ -322,9 +322,9 @@ export default function ClientProjectCard({
                                                             )
                                                         ) : (
                                                             <div className="flex items-center gap-3">
-                                                                <div className={`px-4 py-2.5 rounded-lg text-[9px] font-black flex items-center gap-2 uppercase border tracking-widest ${app.status === 'ACCEPTED' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' : 'bg-red-50 text-red-400 border-red-100'}`}>
+                                                                <div className={`px-4 py-2.5 rounded-lg text-[9px] font-black flex items-center gap-2 border tracking-widest ${app.status === 'ACCEPTED' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' : 'bg-red-50 text-red-400 border-red-100'}`}>
                                                                     {app.status === 'ACCEPTED' ? <CheckCircle size={14} /> : <XCircle size={14} />}
-                                                                    {app.status === 'ACCEPTED' ? 'CONFIRMED' : 'REJECTED'}
+                                                                    {app.status === 'ACCEPTED' ? '매칭 확정' : '거절됨'}
                                                                 </div>
                                                             </div>
                                                         )}

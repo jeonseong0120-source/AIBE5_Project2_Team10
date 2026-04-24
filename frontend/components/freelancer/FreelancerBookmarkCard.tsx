@@ -50,7 +50,7 @@ export default function FreelancerBookmarkCard({
                     <h3 className="text-3xl font-bold text-zinc-950 group-hover:text-[#FF7D00] transition-colors tracking-tight">
                         {freelancer.userName}
                     </h3>
-                    <span className="px-3 py-1 bg-zinc-950 text-white text-[9px] font-bold rounded-lg uppercase tracking-widest">
+                    <span className="px-3 py-1 bg-zinc-950 text-white text-[9px] font-bold rounded-lg tracking-widest">
                         {freelancer.gradeName}
                     </span>
                 </div>
@@ -59,18 +59,18 @@ export default function FreelancerBookmarkCard({
                 </p>
                 <div className="flex gap-10">
                      <div className="flex flex-col">
-                        <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest mb-1">리뷰 수</p>
+                        <p className="text-[10px] font-bold text-zinc-300 tracking-widest mb-1">리뷰 수</p>
                         <p className="text-sm font-bold text-zinc-900">{freelancer.reviewCount || 0}</p>
                     </div>
                     <div className="w-px h-8 bg-zinc-100 self-center" />
                     <div className="flex flex-col">
-                        <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest mb-1">완료 프로젝트</p>
+                        <p className="text-[10px] font-bold text-zinc-300 tracking-widest mb-1">완료 프로젝트</p>
                         <p className="text-sm font-bold text-zinc-900">{freelancer.completedProjects || 0}+</p>
                     </div>
                     <div className="w-px h-8 bg-zinc-100 self-center" />
                     <div className="flex flex-col">
-                        <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest mb-1">상태</p>
-                        <p className="text-[10px] font-bold text-green-500 uppercase">인증된 전문가</p>
+                        <p className="text-[10px] font-bold text-zinc-300 tracking-widest mb-1">상태</p>
+                        <p className="text-[10px] font-bold text-green-500">인증된 전문가</p>
                     </div>
                 </div>
             </div>
@@ -79,19 +79,19 @@ export default function FreelancerBookmarkCard({
             <div className="flex flex-col gap-3 min-w-[260px] w-full xl:w-auto xl:border-l xl:border-zinc-50 xl:pl-10">
                 <button 
                     onClick={() => onOpenProposal(freelancer)} 
-                    className="w-full py-4 bg-zinc-950 text-white hover:bg-[#FF7D00] rounded-2xl text-[13px] font-bold uppercase tracking-wider transition-all shadow-xl shadow-zinc-900/10"
+                    className="w-full py-4 bg-zinc-950 text-white hover:bg-[#FF7D00] rounded-2xl text-[13px] font-bold tracking-wider transition-all shadow-xl shadow-zinc-900/10"
                 >
                     파트너십 제안하기
                 </button>
                 <button 
                     onClick={() => router.push(`/client/freelancers/${freelancer.profileId}?bm=1`)} 
-                    className="w-full py-4 bg-zinc-50 text-zinc-500 hover:bg-zinc-100 rounded-2xl text-[13px] font-bold uppercase tracking-wider transition-all"
+                    className="w-full py-4 bg-zinc-50 text-zinc-500 hover:bg-zinc-100 rounded-2xl text-[13px] font-bold tracking-wider transition-all"
                 >
                     프로필 상세보기
                 </button>
                 <button 
                     onClick={() => onRemoveBookmark(freelancer.profileId)} 
-                    className="w-full py-2 text-zinc-300 hover:text-red-500 text-[8px] font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-2 text-zinc-300 hover:text-red-500 text-[8px] font-bold tracking-widest transition-colors flex items-center justify-center gap-2"
                 >
                     <Trash2 size={12} /> 관심 목록에서 제거
                 </button>

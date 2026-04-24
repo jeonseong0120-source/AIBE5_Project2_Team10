@@ -205,7 +205,7 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                                 data.workStyle === 'OFFLINE' ? 'bg-white/90 text-zinc-900 border-zinc-200' : 
                                 'bg-[#FF7D00]/90 text-white border-[#FF7D00]/20'
                             }`}>
-                                <span className="text-[8px] opacity-60 font-bold">STYLE:</span>
+                                <span className="text-[8px] opacity-60 font-bold">작업 형태:</span>
                                 {data.workStyle === 'ONLINE' ? '온라인' : data.workStyle === 'OFFLINE' ? '오프라인' : '하이브리드'}
                             </span>
                         </div>
