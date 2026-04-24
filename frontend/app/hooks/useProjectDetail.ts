@@ -6,6 +6,7 @@ import api from '@/app/lib/axios';
 import { getCurrentUserId } from '@/app/lib/auth';
 import { createOrGetChatRoom } from '@/app/lib/chatApi';
 import { useChatStore } from '@/app/store/chatStore';
+import { DEVNEAR_BOOKMARK_CHANGED, BookmarkChangeEventDetail, notifyBookmarkChanged, getLocalBookmarkState } from '@/app/lib/bookmarkEvents';
 
 export type SkillItem = string | { name: string };
 
@@ -62,6 +63,21 @@ export function useProjectDetail(projectId: number | null) {
         setRefetchTick((t) => t + 1);
     }, [projectId]);
 
+    // 글로벌 북마크 상태 동기화
+    useEffect(() => {
+        if (!projectId) return;
+
+        const handleBookmarkChange = (e: Event) => {
+            const customEvent = e as CustomEvent<BookmarkChangeEventDetail>;
+            if (customEvent.detail.projectId === Number(projectId)) {
+                setIsBookmarked(customEvent.detail.isBookmarked);
+            }
+        };
+
+        window.addEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
+        return () => window.removeEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
+    }, [projectId]);
+
     useEffect(() => {
         const prevId = prevProjectIdRef.current;
         const projectIdChanged = prevId !== projectId;
@@ -99,10 +115,18 @@ export function useProjectDetail(projectId: number | null) {
 
                 if (signal.aborted) return;
 
-                setProject(response.data);
+                const projectData = response.data;
+                setProject(projectData);
+                
+                const cachedState = getLocalBookmarkState(Number(projectId));
+                if (cachedState !== undefined) {
+                    setIsBookmarked(cachedState);
+                } else {
+                    setIsBookmarked(projectData.isBookmarked || false);
+                }
 
                 if (bidPriceSeededForProjectIdRef.current !== projectId) {
-                    setBidPrice(String(response.data.budget ?? ''));
+                    setBidPrice(String(projectData.budget ?? ''));
                     bidPriceSeededForProjectIdRef.current = projectId;
                 }
             } catch (err: unknown) {
@@ -138,24 +162,6 @@ export function useProjectDetail(projectId: number | null) {
                     if (signal.aborted || isAbortError(err)) return;
                     setIsApplied(false);
                 }
-
-                try {
-                    const myBookmarks = await api.get('/v1/bookmarks/projects?size=1000', { signal });
-
-                    if (signal.aborted) return;
-
-                    const bookmarkList = myBookmarks.data.content || [];
-
-                    setIsBookmarked(
-                        bookmarkList.some(
-                            (b: { projectId?: number }) =>
-                                b.projectId === Number(projectId)
-                        )
-                    );
-                } catch (err: unknown) {
-                    if (signal.aborted || isAbortError(err)) return;
-                    setIsBookmarked(false);
-                }
             } else {
                 if (signal.aborted) return;
                 setIsApplied(false);
@@ -173,16 +179,20 @@ export function useProjectDetail(projectId: number | null) {
     const toggleBookmark = useCallback(async () => {
         if (!projectId) return;
 
+        const prevState = isBookmarked;
+        setIsBookmarked(!prevState); // Optimistic UI
+        notifyBookmarkChanged(projectId, !prevState);
+
         try {
-            if (isBookmarked) {
+            if (prevState) {
                 await api.delete(`/v1/bookmarks/projects/${projectId}`);
-                setIsBookmarked(false);
             } else {
                 await api.post(`/v1/bookmarks/projects/${projectId}`);
-                setIsBookmarked(true);
             }
         } catch {
             alert('찜하기 처리에 실패했습니다.');
+            setIsBookmarked(prevState); // Rollback
+            notifyBookmarkChanged(projectId, prevState);
         }
     }, [isBookmarked, projectId]);
 

@@ -3,8 +3,10 @@
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, ArrowUpRight, ShieldCheck, Heart, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { EstimatedBudgetBlock } from '@/components/freelancer/EstimatedBudgetBlock';
+import api from '@/app/lib/axios';
+import { DEVNEAR_BOOKMARK_CHANGED, BookmarkChangeEventDetail, notifyBookmarkChanged, getLocalBookmarkState } from '@/app/lib/bookmarkEvents';
 
 interface ProjectCardProps {
     data: any;
@@ -19,7 +21,46 @@ const getSkillName = (skill: SkillItem): string =>
 
 export default function ProjectCard({ data, index, onOpenProject }: ProjectCardProps) {
     const router = useRouter();
-    const [isBookmarked, setIsBookmarked] = useState(false);
+    const projectId = data.projectId || data.id;
+    
+    // 로컬 메모리 캐시 상태를 가장 우선적으로 확인 (낙관적 UI 상태 유지)
+    const [isBookmarked, setIsBookmarked] = useState(() => {
+        if (projectId) {
+            const cachedState = getLocalBookmarkState(Number(projectId));
+            if (cachedState !== undefined) return cachedState;
+        }
+        return data.isBookmarked || false;
+    });
+    
+    const [isToggling, setIsToggling] = useState(false);
+
+    // 데이터 소스가 변경될 때 로컬 상태 동기화 (단, 캐시된 상태가 있다면 덮어쓰지 않음)
+    useEffect(() => {
+        if (projectId) {
+            const cachedState = getLocalBookmarkState(Number(projectId));
+            if (cachedState !== undefined) {
+                setIsBookmarked(cachedState);
+                return;
+            }
+        }
+        setIsBookmarked(data.isBookmarked || false);
+    }, [data.isBookmarked, projectId]);
+
+    // 글로벌 북마크 상태 동기화
+    useEffect(() => {
+        const projectId = data.projectId || data.id;
+        if (!projectId) return;
+
+        const handleBookmarkChange = (e: Event) => {
+            const customEvent = e as CustomEvent<BookmarkChangeEventDetail>;
+            if (customEvent.detail.projectId === Number(projectId)) {
+                setIsBookmarked(customEvent.detail.isBookmarked);
+            }
+        };
+
+        window.addEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
+        return () => window.removeEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
+    }, [data.projectId, data.id]);
 
     // [수정] 백엔드 로그 확인 결과: projectSkills가 아니라 skills로 오고 있음
     const skillList: SkillItem[] = data.skills || [];
@@ -133,7 +174,33 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                     {/* 북마크 버튼 */}
                     <button 
                         type="button"
-                        onClick={() => setIsBookmarked(!isBookmarked)}
+                        disabled={isToggling}
+                        onClick={async (e) => {
+                            e.stopPropagation();
+                            if (isToggling) return;
+                            
+                            const projectId = data.projectId || data.id;
+                            if (!projectId) return;
+
+                            setIsToggling(true);
+                            const prevState = isBookmarked;
+                            setIsBookmarked(!prevState); // Optimistic UI
+                            notifyBookmarkChanged(Number(projectId), !prevState); // 🚀 즉시 글로벌 알림 (Optimistic Sync)
+
+                            try {
+                                if (prevState) {
+                                    await api.delete(`/v1/bookmarks/projects/${projectId}`);
+                                } else {
+                                    await api.post(`/v1/bookmarks/projects/${projectId}`);
+                                }
+                            } catch (err) {
+                                console.error("Bookmark toggle failed:", err);
+                                setIsBookmarked(prevState); // Rollback
+                                notifyBookmarkChanged(Number(projectId), prevState); // 🔄 롤백 알림
+                            } finally {
+                                setIsToggling(false);
+                            }
+                        }}
                         aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
                         aria-pressed={isBookmarked}
                         className="bookmark-btn p-3.5 md:p-4 rounded-2xl border border-zinc-100 hover:border-red-100 hover:bg-red-50 text-zinc-200 hover:text-red-500 transition-all active:scale-90 bg-white/50 backdrop-blur-sm shadow-sm shrink-0"
