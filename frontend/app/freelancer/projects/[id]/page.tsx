@@ -134,12 +134,15 @@ export default function ProjectDetailPage() {
             <nav className="sticky top-24 z-40 max-w-6xl mx-auto py-6 px-8 flex items-center justify-between bg-zinc-50/85 backdrop-blur-md">
                 <button
                     onClick={() => router.back()}
-                    className="group flex items-center gap-3 text-zinc-400 hover:text-zinc-950 transition-all font-black text-xs uppercase tracking-widest font-mono"
+                    className="group flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white/50 px-5 py-2.5 font-mono text-[11px] font-black uppercase tracking-[0.1em] text-zinc-500 shadow-sm backdrop-blur-md transition-all hover:border-[#7A4FFF]/30 hover:bg-white hover:text-zinc-950 hover:shadow-md active:scale-95"
                 >
-                    <div className="p-3 bg-white rounded-2xl shadow-sm group-hover:bg-zinc-950 group-hover:text-white transition-all">
-                        <ArrowLeft size={18} />
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-50 transition-colors group-hover:bg-[#7A4FFF]/10">
+                        <ArrowLeft
+                            size={14}
+                            className="text-zinc-400 transition-transform group-hover:-translate-x-0.5 group-hover:text-[#7A4FFF]"
+                        />
                     </div>
-                    뒤로
+                    <span>뒤로 가기</span>
                 </button>
 
                 <div className="flex items-center gap-3">
@@ -177,15 +180,15 @@ export default function ProjectDetailPage() {
                                 {project.projectName}
                             </h1>
 
-                            <div className="flex flex-wrap items-center gap-6 text-zinc-400 font-bold uppercase text-[11px] font-mono tracking-widest">
-                                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-zinc-100 shadow-sm transition-all hover:border-[#7A4FFF]/30">
-                                    <ShieldCheck size={16} className="text-[#7A4FFF]" />
-                                    {project.companyName}
+                            <div className="flex flex-wrap items-center gap-4 text-zinc-400 font-black uppercase text-[11px] font-mono tracking-widest">
+                                <div className="flex items-center gap-2.5 px-5 py-3 bg-white rounded-2xl border border-zinc-100 shadow-sm transition-all hover:border-[#7A4FFF]/30 hover:shadow-md">
+                                    <ShieldCheck size={18} className="text-[#7A4FFF]" />
+                                    <span className="text-zinc-900">{project.companyName}</span>
                                 </div>
 
-                                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-zinc-100 shadow-sm transition-all hover:border-[#7A4FFF]/30">
-                                    <MapPin size={16} className="text-[#7A4FFF]" />
-                                    {project.location}
+                                <div className="flex items-center gap-2.5 px-5 py-3 bg-white rounded-2xl border border-zinc-100 shadow-sm transition-all hover:border-[#7A4FFF]/30 hover:shadow-md">
+                                    <MapPin size={18} className="text-[#7A4FFF]" />
+                                    <span className="text-zinc-900">{project.location || '전국'}</span>
                                 </div>
                             </div>
 
@@ -224,34 +227,34 @@ export default function ProjectDetailPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-16"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20"
                 >
-                    <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all group">
+                    <div className="bg-white p-8 rounded-[3rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all group hover:-translate-y-1">
                         <DollarSign className="w-6 h-6 text-[#FF7D00] mb-4" />
-                        <p className="text-zinc-400 text-[9px] font-black uppercase tracking-widest mb-1 font-mono">
+                        <p className="text-zinc-400 text-[11px] font-black uppercase tracking-[0.1em] mb-2 font-mono">
                             예상 예산
                         </p>
-                        <p className="text-xl font-black text-zinc-950 font-mono tracking-tighter">
+                        <p className="text-2xl font-black text-zinc-950 font-mono tracking-tighter whitespace-nowrap">
                             {formatBudget(project.budget)}
                         </p>
                     </div>
 
-                    <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all">
+                    <div className="bg-white p-8 rounded-[3rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
                         <Calendar className="w-6 h-6 text-[#7A4FFF] mb-4" />
-                        <p className="text-zinc-400 text-[9px] font-black uppercase tracking-widest mb-1 font-mono">
+                        <p className="text-zinc-400 text-[11px] font-black uppercase tracking-[0.1em] mb-2 font-mono">
                             마감 일자
                         </p>
-                        <p className="text-xl font-black text-zinc-950 font-mono tracking-tighter">
+                        <p className="text-2xl font-black text-zinc-950 font-mono tracking-tighter whitespace-nowrap">
                             {project.deadline}
                         </p>
                     </div>
 
-                    <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all">
+                    <div className="bg-white p-8 rounded-[3rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
                         <Globe className="w-6 h-6 text-blue-500 mb-4" />
-                        <p className="text-zinc-400 text-[9px] font-black uppercase tracking-widest mb-1 font-mono">
+                        <p className="text-zinc-400 text-[11px] font-black uppercase tracking-[0.1em] mb-2 font-mono">
                             근무 형태
                         </p>
-                        <p className="text-xl font-black text-zinc-950 font-mono tracking-tighter">
+                        <p className="text-2xl font-black text-zinc-950 tracking-tighter whitespace-nowrap">
                             {project.online && project.offline
                                 ? '온/오프 혼합'
                                 : project.online
@@ -260,12 +263,12 @@ export default function ProjectDetailPage() {
                         </p>
                     </div>
 
-                    <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all">
+                    <div className="bg-white p-8 rounded-[3rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
                         <Clock className="w-6 h-6 text-emerald-500 mb-4" />
-                        <p className="text-zinc-400 text-[9px] font-black uppercase tracking-widest mb-1 font-mono">
+                        <p className="text-zinc-400 text-[11px] font-black uppercase tracking-[0.1em] mb-2 font-mono">
                             활동 지역
                         </p>
-                        <p className="text-xl font-black text-zinc-950 font-mono tracking-tighter">
+                        <p className="text-2xl font-black text-zinc-950 tracking-tighter whitespace-nowrap">
                             {project.location ? project.location.split(' ')[0] : '전국'}
                         </p>
                     </div>
@@ -294,9 +297,11 @@ export default function ProjectDetailPage() {
                         <h3 className="text-sm font-black text-zinc-400 mb-8 uppercase tracking-[0.3em] font-mono flex items-center gap-3">
                             <span className="w-8 h-[1px] bg-zinc-200"></span> 상세 미션 브리핑
                         </h3>
-                        <div className="bg-white border border-zinc-100 p-12 rounded-[3.5rem] shadow-2xl shadow-zinc-100 leading-relaxed text-zinc-700 whitespace-pre-wrap text-lg italic font-medium relative overflow-hidden group">
+                         <div className="bg-white border border-zinc-100 p-12 rounded-[3.5rem] shadow-2xl shadow-zinc-100 leading-relaxed text-zinc-800 whitespace-pre-wrap text-xl italic font-bold relative overflow-hidden group">
                             <div className="absolute top-0 left-0 w-2 h-full bg-[#7A4FFF] opacity-20 group-hover:opacity-100 transition-opacity"></div>
-                            "{project.detail}"
+                            <span className="text-[#7A4FFF] text-4xl font-serif absolute top-4 left-4 opacity-10" aria-hidden="true">"</span>
+                            {project.detail}
+                            <span className="text-[#7A4FFF] text-4xl font-serif absolute bottom-4 right-4 opacity-10" aria-hidden="true">"</span>
                         </div>
                     </div>
                 </div>

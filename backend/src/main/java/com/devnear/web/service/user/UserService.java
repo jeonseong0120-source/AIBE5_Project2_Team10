@@ -1,6 +1,7 @@
 package com.devnear.web.service.user;
 
 import com.devnear.global.auth.JwtTokenProvider;
+import com.devnear.global.auth.UserContext;
 import com.devnear.web.domain.client.ClientProfileRepository;
 import com.devnear.web.domain.enums.Role;
 import com.devnear.web.domain.enums.UserStatus;
@@ -12,15 +13,10 @@ import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import com.devnear.web.dto.freelancer.FreelancerProfileRequest;
-import com.devnear.web.dto.user.NotificationPreferencePatchRequest;
-import com.devnear.web.dto.user.OnboardingRequest;
-import com.devnear.web.dto.user.TokenResponse;
-import com.devnear.web.dto.user.UserInfoResponse;
-import com.devnear.web.dto.user.UserLoginRequest;
-import com.devnear.web.dto.user.UserRegisterRequest;
+import com.devnear.web.dto.user.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.dao.DataIntegrityViolationException; // 👈 예외 처리 필수 임포트
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,27 +35,18 @@ public class UserService {
     private final ClientProfileRepository clientProfileRepository;
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final SkillRepository skillRepository;
+    private final UserContext userContext; // 🎯 보관함 주입
 
-    /**
-     * 회원 가입
-     * [수정] 동시성 이슈 대응을 위해 try-catch 블록 추가
-     */
     @Transactional
     public Long register(UserRegisterRequest request) {
-        // 1차 체크 (대부분 여기서 걸러짐)
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
         }
-
         try {
             String encodedPassword = passwordEncoder.encode(request.getPassword());
             User user = request.toEntity(encodedPassword);
-
-            // 2차 방어: DB Unique 제약 조건 위반 시 Catch
-            // saveAndFlush를 사용하여 메서드 내부에서 즉시 예외를 발생시키고 잡을 수 있게 함
             return userRepository.save(user).getId();
         } catch (DataIntegrityViolationException e) {
-            // 동시 가입 시도가 발생하여 1차 체크를 통과했더라도 DB 레이어에서 최종 차단
             throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
         }
     }
@@ -77,11 +64,13 @@ public class UserService {
         return new TokenResponse(token, "Bearer");
     }
 
-    @CacheEvict(value = "users", key = "#email")
+    /**
+     * 🎯 [최적화] email로 다시 조회하지 않고 UserContext에서 가져옵니다.
+     */
+    @CacheEvict(value = "users", allEntries = true)
     @Transactional
     public TokenResponse onboarding(String email, OnboardingRequest request) {
-        User user = userRepository.findByEmailForUpdate(email)
-                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        User user = userContext.getCurrentUser(); // 🚀 DB 안 가고 보관함에서 꺼냄
 
         if (user.getStatus() == UserStatus.WITHDRAWN) {
             throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
@@ -94,7 +83,6 @@ public class UserService {
 
         user.onboard(request.getNickname(), request.getRole());
 
-        // 클라이언트 프로필 처리
         if (request.getRole() == Role.CLIENT || request.getRole() == Role.BOTH) {
             if (user.getClientProfile() != null) {
                 user.getClientProfile().update(request.getClientProfile());
@@ -103,7 +91,6 @@ public class UserService {
             }
         }
 
-        // 프리랜서 프로필 처리
         if (request.getRole() == Role.FREELANCER || request.getRole() == Role.BOTH) {
             if (user.getFreelancerProfile() != null) {
                 throw new IllegalStateException("이미 프리랜서 프로필이 존재합니다.");
@@ -140,16 +127,17 @@ public class UserService {
         return new TokenResponse(newToken, "Bearer");
     }
 
+    /**
+     * 🎯 [최적화] 단순히 내 정보를 가져올 때도 UserContext 활용
+     */
     public UserInfoResponse getUserInfo(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        User user = userContext.getCurrentUser();
         return new UserInfoResponse(user);
     }
 
     @Transactional
     public UserInfoResponse updateNotificationPreferences(String email, NotificationPreferencePatchRequest request) {
-        User user = userRepository.findByEmailForUpdate(email)
-                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        User user = userContext.getCurrentUser();
         if (user.getStatus() == UserStatus.WITHDRAWN) {
             throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
         }
@@ -159,15 +147,10 @@ public class UserService {
         return new UserInfoResponse(user);
     }
 
-    /**
-     * [Cloudinary] 프로필 이미지 URL을 DB에 반영합니다.
-     * ImageController에서 Cloudinary 업로드 완료 후 호출됩니다.
-     */
-    @CacheEvict(value = "users", key = "#email")
+    @CacheEvict(value = "users", allEntries = true)
     @Transactional
     public void updateProfileImage(String email, String newImageUrl) {
-        User user = userRepository.findByEmailForUpdate(email)
-                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        User user = userContext.getCurrentUser();
         if (user.getStatus() == UserStatus.WITHDRAWN) {
             throw new IllegalArgumentException("탈퇴 처리된 계정입니다.");
         }
