@@ -71,6 +71,8 @@ public class ProjectController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
             @RequestParam(required = false, name = "skill") List<String> skills,
+            @RequestParam(required = false) Long minBudget,
+            @RequestParam(required = false) Long maxBudget,
             @RequestParam(required = false) Boolean online,
             @RequestParam(required = false) Boolean offline,
             @RequestParam(required = false) Boolean excludeOwn,
@@ -78,7 +80,7 @@ public class ProjectController {
 
         Long excludeOwnerUserId = resolveExcludeOwnerUserId(viewer, excludeOwn);
         Page<ProjectResponse> responses = projectService.searchProjects(
-                viewer, keyword, location, skills, online, offline, excludeOwnerUserId, pageable);
+                viewer, keyword, location, skills, minBudget, maxBudget, online, offline, excludeOwnerUserId, pageable);
         return ResponseEntity.ok(responses);
     }
 

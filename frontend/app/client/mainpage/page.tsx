@@ -5,16 +5,27 @@ import { useRouter } from 'next/navigation';
 import FreelancerCard from '@/components/freelancer/FreelancerCard';
 import { FreelancerProfile, ApiFreelancerDto, mapFreelancerDtoToProfile } from '@/types/freelancer';
 import api from '../../lib/axios';
-import { Search, MapPin, SlidersHorizontal, ArrowUpDown, Sparkles, Briefcase } from 'lucide-react';
+import { 
+    Search, MapPin, SlidersHorizontal, ArrowUpDown, Sparkles, 
+    Briefcase, ChevronDown, Check 
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// 🎯 1. 대통합 네비게이션 바 불러오기
 import GlobalNavbar, { type UserData, type ProfileData } from '@/components/common/GlobalNavbar';
+import FilterSidebar from '@/components/common/FilterSidebar';
+import { SKILL_CATEGORIES } from '@/constants/skills';
 
 export default function ClientDashboard() {
     const router = useRouter();
     const [freelancers, setFreelancers] = useState<FreelancerProfile[]>([]);
-    const [filter, setFilter] = useState({ skill: [] as string[], region: '', sort: 'id', workStyle: '' });
+    const [filter, setFilter] = useState({ 
+        skill: [] as string[], 
+        region: '', 
+        sort: 'id', 
+        workStyle: '',
+        minRate: undefined as number | undefined,
+        maxRate: undefined as number | undefined
+    });
     const [keyword, setKeyword] = useState('');
     const [loading, setLoading] = useState(true);
     const [authorized, setAuthorized] = useState(false);
@@ -113,32 +124,28 @@ export default function ClientDashboard() {
     const fetchFreelancers = useCallback(async () => {
         setLoading(true);
         try {
-            // 🎯 [리뷰 반영] 다중 스킬 검색 시 Fan-out 전략 (개별 요청 후 합치기)
-            if (filter.skill.length > 1) {
-                const requests = filter.skill.map(s => 
-                    api.get<ApiFreelancerDto[]>('/v1/freelancers', { params: { ...filter, skill: s } })
-                );
-                const responses = await Promise.all(requests);
-                
-                // 모든 결과를 하나로 합치고 profileId 기준으로 중복 제거
-                const allData = responses.flatMap(res => res.data);
-                const uniqueMap = new Map<number, ApiFreelancerDto>();
-                allData.forEach(item => uniqueMap.set(item.profileId, item));
-                
-                const dedupedData = Array.from(uniqueMap.values());
-                const mappedData = dedupedData.map(mapFreelancerDtoToProfile);
-                setFreelancers(mappedData);
-            } else {
-                // 단일 스킬 또는 키워드 검색
-                const combinedSkill = [filter.skill[0], keyword].filter(Boolean).join(',');
-                const { data } = await api.get<ApiFreelancerDto[]>('/v1/freelancers', { 
-                    params: { ...filter, skill: combinedSkill } 
-                });
-                const mappedData = data.map(mapFreelancerDtoToProfile);
-                setFreelancers(mappedData);
-            }
-        } catch {
-            // quiet
+            // 🎯 [최적화] 백엔드가 다중 스킬 검색 및 금액 범위를 지원함
+            const searchParams = new URLSearchParams();
+            if (filter.region) searchParams.append('region', filter.region);
+            if (filter.sort) searchParams.append('sort', filter.sort);
+            if (filter.workStyle) searchParams.append('workStyle', filter.workStyle);
+            if (filter.minRate !== undefined) searchParams.append('minHourlyRate', filter.minRate.toString());
+            if (filter.maxRate !== undefined) searchParams.append('maxHourlyRate', filter.maxRate.toString());
+            
+            // 모든 선택된 스킬을 skill=Java&skill=React 형태로 추가
+            filter.skill.forEach(s => searchParams.append('skill', s));
+            
+            // 키워드가 있다면 검색 조건에 포함
+            if (keyword) searchParams.append('keyword', keyword);
+
+            const { data } = await api.get<ApiFreelancerDto[]>('/v1/freelancers', { 
+                params: searchParams 
+            });
+            
+            const mappedData = data.map(mapFreelancerDtoToProfile);
+            setFreelancers(mappedData);
+        } catch (err) {
+            console.error("프리랜서 목록 로드 실패:", err);
         } finally {
             setLoading(false);
         }
@@ -159,11 +166,6 @@ export default function ClientDashboard() {
         }
     }, [authorized, fetchFreelancers]);
 
-    const presetSkills = [
-        'Java', 'Spring Boot', 'React', 'Next.js', 'TypeScript', 'Node.js', 'Python', 
-        'Kotlin', 'Go', 'Vue.js', 'PostgreSQL', 'MongoDB', 'AWS', 'Docker', 
-        'Kubernetes', 'Flutter', 'GraphQL', 'Tailwind CSS', 'Figma'
-    ];
 
     if (!authorized) {
         return <div className="min-h-screen bg-white flex items-center justify-center text-[#FF7D00] font-black tracking-widest animate-pulse font-mono uppercase text-xs">인증 정보를 확인 중입니다...</div>;
@@ -220,116 +222,30 @@ export default function ClientDashboard() {
             {/* MAIN CONTENT AREA - Sidebar + List (Alignment with Navbar max-w-7xl) */}
             <main className="max-w-7xl mx-auto px-8 py-12 flex flex-col lg:flex-row gap-12">
                 
-                {/* 🎯 LEFT SIDEBAR - Sticky & Optimized UI */}
-                <aside className="w-full lg:w-72 shrink-0 space-y-10">
-                    <div className="sticky top-28 space-y-10">
-                    
-                    {/* 1. 상단 탭: 근무 방식 필터 */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
-                            <Briefcase size={16} className="text-[#FF7D00]" /> 협업 근무 방식
-                        </h3>
-                        <div className="flex bg-white p-1 rounded-2xl border border-zinc-200 shadow-sm overflow-x-auto no-scrollbar">
-                            {[
-                                { label: '전체', value: '' },
-                                { label: '온라인', value: 'ONLINE' },
-                                { label: '오프라인', value: 'OFFLINE' }
-                            ].map((tab) => (
-                                <button
-                                    key={tab.label}
-                                    onClick={() => setFilter({ ...filter, workStyle: tab.value })}
-                                    className={`flex-1 py-2.5 rounded-xl text-[11px] font-black transition-all ${
-                                        filter.workStyle === tab.value ? 'bg-zinc-900 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-900'
-                                    }`}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* 2. 기술 스택 필터 (그리드 형태) - 가장 중요한 필터이므로 상단 배치 */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
-                            <Sparkles size={16} className="text-[#FF7D00]" /> 전문 기술 스택
-                        </h3>
-                        <div className="grid grid-cols-2 gap-2">
-                            {presetSkills.map(s => {
-                                const isSelected = filter.skill.includes(s);
-                                return (
-                                    <button
-                                        key={s}
-                                        onClick={() => {
-                                            if (isSelected) {
-                                                setFilter({ ...filter, skill: filter.skill.filter(item => item !== s) });
-                                            } else {
-                                                setFilter({ ...filter, skill: [...filter.skill, s] });
-                                            }
-                                        }}
-                                        className={`group flex items-center justify-between px-3 py-2.5 rounded-xl text-[10px] font-black transition-all border ${
-                                            isSelected 
-                                                ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' 
-                                                : 'bg-white border-zinc-100 text-zinc-400 hover:border-zinc-300 hover:text-zinc-900'
-                                        }`}
-                                    >
-                                        {s}
-                                        <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-[#FF7D00]' : 'bg-transparent group-hover:bg-zinc-200'}`} />
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </section>
-
-                    {/* 3. 활동 지역 필터 - 대한민국 전체 지역 (3열 컴팩트 그리드) */}
-                    <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight text-zinc-900">
-                                <MapPin size={16} className="text-[#FF7D00]" /> 활동 지역
-                            </h3>
-                            {filter.region && (
-                                <span className="text-[9px] font-black text-[#FF7D00] font-mono animate-pulse">FILTER_ACTIVE</span>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                            {[
-                                '전국', '서울', '경기', '인천', '부산', '대구', 
-                                '대전', '광주', '울산', '세종', '강원', '충북', 
-                                '충남', '전북', '전남', '경북', '경남', '제주'
-                            ].map(loc => (
-                                <button
-                                    key={loc}
-                                    onClick={() => setFilter({ ...filter, region: loc === '전국' ? '' : (filter.region === loc ? '' : loc) })}
-                                    className={`group flex flex-col items-center justify-center py-2 rounded-lg text-[9px] font-black transition-all border ${
-                                        (loc === '전국' && filter.region === '') || filter.region === loc
-                                            ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' 
-                                            : 'bg-white border-zinc-100 text-zinc-400 hover:border-zinc-300 hover:text-zinc-900'
-                                    }`}
-                                >
-                                    {loc}
-                                    <div className={`mt-1 w-1 h-1 rounded-full ${
-                                        (loc === '전국' && filter.region === '') || filter.region === loc
-                                            ? 'bg-[#FF7D00]' 
-                                            : 'bg-transparent group-hover:bg-zinc-200'
-                                    }`} />
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-
-
-
-                    {/* 초기화 버튼 */}
-                    {(filter.skill.length > 0 || filter.region !== '' || filter.workStyle !== '') && (
-                        <button
-                            onClick={() => setFilter({ skill: [], region: '', sort: 'id', workStyle: '' })}
-                            className="w-full flex items-center justify-center gap-2 py-4 bg-zinc-100 text-zinc-400 rounded-2xl text-[11px] font-black uppercase font-mono hover:bg-[#FF7D00] hover:text-white transition-all group shadow-sm"
-                        >
-                            <SlidersHorizontal size={14} className="group-hover:rotate-45 transition-transform" />
-                            필터_설정_초기화
-                        </button>
-                    )}
-                    </div>
-                </aside>
+                {/* 🎯 LEFT SIDEBAR - New Premium Filter Sidebar */}
+                <FilterSidebar 
+                    mode="CLIENT"
+                    selectedSkills={filter.skill}
+                    onSkillChange={(skills) => setFilter({ ...filter, skill: skills })}
+                    selectedLocation={filter.region}
+                    onLocationChange={(loc) => setFilter({ ...filter, region: loc })}
+                    workStyle={filter.workStyle}
+                    onWorkStyleChange={(style) => setFilter({ ...filter, workStyle: style })}
+                    minPrice={filter.minRate}
+                    maxPrice={filter.maxRate}
+                    onPriceChange={(min, max) => setFilter({ ...filter, minRate: min, maxRate: max })}
+                    onReset={() => {
+                        setFilter({
+                            skill: [],
+                            region: '',
+                            workStyle: '',
+                            sort: 'id',
+                            minRate: undefined,
+                            maxRate: undefined
+                        });
+                        setKeyword('');
+                    }}
+                />
 
                 {/* 🎯 RIGHT LIST AREA */}
                 <section className="flex-1">

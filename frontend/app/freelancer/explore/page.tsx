@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, DollarSign, Cpu, RotateCcw, Activity, Loader2, AlertCircle, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { 
+    Search, MapPin, DollarSign, Cpu, RotateCcw, Activity, Loader2, 
+    AlertCircle, ChevronLeft, ChevronRight, ChevronDown, Check, Sparkles 
+} from 'lucide-react';
 import ProjectCard from "@/components/freelancer/ProjectCard";
 import FreelancerProjectDetailModal from '@/components/freelancer/FreelancerProjectDetailModal';
 import { useRouter } from 'next/navigation';
@@ -11,7 +14,9 @@ import api from '@/app/lib/axios';
 
 // 🎯 [추가] 대통합 네비게이션 바 불러오기!
 import GlobalNavbar, { type UserData, type ProfileData } from '../../../components/common/GlobalNavbar';
+import FilterSidebar from '@/components/common/FilterSidebar';
 import { EstimatedBudgetBlock } from '@/components/freelancer/EstimatedBudgetBlock';
+import { SKILL_CATEGORIES } from '@/constants/skills';
 
 /** AI 추천 카드 영역 — 루트와 동일하게 Geist */
 const geistSans = Geist({
@@ -36,6 +41,8 @@ export default function FreelancerExplorePage() {
     const [selectedTechs, setSelectedTechs] = useState<string[]>([]);
     const [activeTab, setActiveTab] = useState('전체');
     const [sort, setSort] = useState('createdAt');
+    const [minBudget, setMinBudget] = useState<number | undefined>(undefined);
+    const [maxBudget, setMaxBudget] = useState<number | undefined>(undefined);
     const [isSortOpen, setIsSortOpen] = useState(false);
     
     // 🔥 [최적화] 마우스 글로우 효과를 위한 Ref + rAF 방식 사용 (리렌더링 방지)
@@ -149,28 +156,6 @@ export default function FreelancerExplorePage() {
         }
     }, []);
 
-    const locations = ['전국', '서울', '경기', '인천', '부산', '대구', '대전', '광주', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
-    const techStacks = [
-        'Java',
-        'Spring Boot',
-        'React',
-        'Next.js',
-        'TypeScript',
-        'Node.js',
-        'Python',
-        'Kotlin',
-        'Go',
-        'Vue.js',
-        'PostgreSQL',
-        'MongoDB',
-        'AWS',
-        'Docker',
-        'Kubernetes',
-        'Flutter',
-        'GraphQL',
-        'Tailwind CSS',
-        'Figma',
-    ];
 
     useEffect(() => {
         const checkAccess = async () => {
@@ -220,13 +205,15 @@ export default function FreelancerExplorePage() {
             const onlineFilter = activeTab === '온라인' ? 'true' : undefined;
             const offlineFilter = activeTab === '오프라인' ? 'true' : undefined;
 
-            // 🎯 [최적화] URLSearchParams를 사용하여 skill=A&skill=B 형태로 반복 전달 (Axios 기본 배열 직렬화 해결)
+            // 🎯 [최적화] URLSearchParams를 사용하고 금액 범위 필터 추가
             const searchParams = new URLSearchParams();
             if (searchQuery) searchParams.append('keyword', searchQuery);
             if (selectedLocation) searchParams.append('location', selectedLocation);
             selectedTechs.forEach(tech => searchParams.append('skill', tech));
             if (onlineFilter) searchParams.append('online', onlineFilter);
             if (offlineFilter) searchParams.append('offline', offlineFilter);
+            if (minBudget !== undefined) searchParams.append('minBudget', minBudget.toString());
+            if (maxBudget !== undefined) searchParams.append('maxBudget', maxBudget.toString());
             
             searchParams.append('sort', sort === 'budget' ? 'budget,asc' : `${sort},desc`);
             searchParams.append('page', pageNum.toString());
@@ -250,7 +237,14 @@ export default function FreelancerExplorePage() {
     };
 
     const resetFilters = () => {
-        setSearchQuery(''); setSelectedLocation(''); setSelectedTechs([]); setActiveTab('전체'); setSort('createdAt'); setPage(0);
+        setSearchQuery(''); 
+        setSelectedLocation(''); 
+        setSelectedTechs([]); 
+        setActiveTab('전체'); 
+        setSort('createdAt'); 
+        setPage(0);
+        setMinBudget(undefined);
+        setMaxBudget(undefined);
     };
 
     // 🎯 [분리] 프로필 데이터는 인증 직후 1회만 로드
@@ -269,7 +263,7 @@ export default function FreelancerExplorePage() {
             const timeoutId = setTimeout(() => { fetchProjects(0, false); }, 300);
             return () => clearTimeout(timeoutId);
         }
-    }, [searchQuery, selectedLocation, selectedTechs, activeTab, sort, authorized]);
+    }, [searchQuery, selectedLocation, selectedTechs, activeTab, sort, authorized, minBudget, maxBudget]);
 
     const handleLoadMore = () => {
         if (fetchingMore) return;
@@ -483,120 +477,23 @@ export default function FreelancerExplorePage() {
 
             <main className="max-w-7xl mx-auto px-8 py-12 flex flex-col lg:flex-row gap-12">
                 
-                {/* 🎯 LEFT SIDEBAR - Sticky & Optimized UI */}
-                <aside className="w-full lg:w-72 shrink-0 space-y-10">
-                    <div className="sticky top-28 space-y-10">
-                    
-                    {/* 1. 협업 근무 방식 필터 */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
-                            <Activity size={16} className="text-[#7A4FFF]" /> 협업 근무 방식
-                        </h3>
-                        <div className="flex bg-white p-1 rounded-2xl border border-zinc-200 shadow-sm overflow-x-auto no-scrollbar">
-                            {['전체', '온라인', '오프라인'].map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`flex-1 py-2.5 rounded-xl text-[11px] font-black transition-all ${
-                                        activeTab === tab ? 'bg-zinc-900 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-900'
-                                    }`}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* 2. 기술 스택 필터 (그리드 형태) */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
-                            <Cpu size={16} className="text-[#7A4FFF]" /> 프로젝트 기술 스택
-                        </h3>
-                        <div className="grid grid-cols-2 gap-2">
-                            {techStacks.map(tech => {
-                                const isSelected = selectedTechs.includes(tech);
-                                return (
-                                    <button
-                                        key={tech}
-                                        onClick={() => {
-                                            setSelectedTechs(prev => 
-                                                prev.includes(tech) 
-                                                    ? prev.filter(t => t !== tech)
-                                                    : [...prev, tech]
-                                            );
-                                        }}
-                                        className={`group flex items-center justify-between px-3 py-2.5 rounded-xl text-[10px] font-black transition-all border ${
-                                            isSelected 
-                                                ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' 
-                                                : 'bg-white border-zinc-100 text-zinc-400 hover:border-zinc-300 hover:text-zinc-900'
-                                        }`}
-                                    >
-                                        {tech}
-                                        <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-[#7A4FFF]' : 'bg-transparent group-hover:bg-zinc-200'}`} />
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </section>
-
-                    {/* 3. 활동 지역 필터 (3열 컴팩트 그리드 - Client Mainpage 스타일) */}
-                    <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight text-zinc-900">
-                                <MapPin size={16} className="text-[#7A4FFF]" /> 활동 지역
-                            </h3>
-                            {selectedLocation && (
-                                <span className="text-[9px] font-black text-[#7A4FFF] font-mono animate-pulse">FILTER_ACTIVE</span>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                            {locations.map(loc => {
-                                const isActive = (loc === '전국' && selectedLocation === '') || selectedLocation === loc;
-                                return (
-                                    <button
-                                        key={loc}
-                                        onClick={() => setSelectedLocation(loc === '전국' ? '' : (selectedLocation === loc ? '' : loc))}
-                                        className={`group flex flex-col items-center justify-center py-2 rounded-lg text-[9px] font-black transition-all border ${
-                                            isActive
-                                                ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' 
-                                                : 'bg-white border-zinc-100 text-zinc-400 hover:border-zinc-300 hover:text-zinc-900'
-                                        }`}
-                                    >
-                                        {loc}
-                                        <div className={`mt-1 w-1 h-1 rounded-full ${
-                                            isActive
-                                                ? 'bg-[#7A4FFF]' 
-                                                : 'bg-transparent group-hover:bg-zinc-200'
-                                        }`} />
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </section>
-
-                    {/* 4. 희망 예산 브랜딩 (Coming Soon 스타일로 유지하되 세련되게) */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
-                            <DollarSign size={16} className="text-[#7A4FFF]" /> 프로젝트 예산
-                        </h3>
-                         <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-                            <div className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest py-2">
-                                Deep Analysis Mode
-                            </div>
-                        </div>
-                    </section>
-
-                    {isFiltered && (
-                        <button
-                            onClick={resetFilters}
-                            className="w-full flex items-center justify-center gap-2 py-4 bg-zinc-100 text-zinc-400 rounded-2xl text-[11px] font-black uppercase font-mono hover:bg-[#7A4FFF] hover:text-white transition-all group shadow-sm"
-                        >
-                            <RotateCcw size={14} className="group-hover:rotate-[-45deg] transition-transform" />
-                            필터_설정_초기화
-                        </button>
-                    )}
-                    </div>
-                </aside>
+                {/* 🎯 LEFT SIDEBAR - New Premium Filter Sidebar */}
+                <FilterSidebar 
+                    mode="FREELANCER"
+                    selectedSkills={selectedTechs}
+                    onSkillChange={(skills) => setSelectedTechs(skills)}
+                    selectedLocation={selectedLocation}
+                    onLocationChange={(loc) => setSelectedLocation(loc)}
+                    workStyle={activeTab}
+                    onWorkStyleChange={(style) => setActiveTab(style === '' ? '전체' : style)}
+                    minPrice={minBudget}
+                    maxPrice={maxBudget}
+                    onPriceChange={(min, max) => {
+                        setMinBudget(min);
+                        setMaxBudget(max);
+                    }}
+                    onReset={resetFilters}
+                />
 
                 {/* 우측 공고 리스트 */}
                 <section className="flex-1">

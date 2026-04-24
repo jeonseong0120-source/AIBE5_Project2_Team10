@@ -465,7 +465,7 @@ export default function FreelancerProfileDetail({
                                                 {freelancer.nickname}
                                             </h1>
                                             <span className="rounded-2xl bg-[#7A4FFF] px-4 py-1.5 text-[16px] font-black uppercase tracking-[0.1em] text-white shadow-xl shadow-purple-200 ring-1 ring-purple-100/20">
-                                                {freelancer.gradeName || '일반 요원'}
+                                                {freelancer.gradeName || '일반'}
                                             </span>
                                         </div>
 

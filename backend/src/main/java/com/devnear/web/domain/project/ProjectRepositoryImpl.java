@@ -40,6 +40,8 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                         statusEq(cond.getStatus()),
                         isOnline(cond.getOnline()),
                         isOffline(cond.getOffline()),
+                        budgetGoe(cond.getMinBudget()),
+                        budgetLoe(cond.getMaxBudget()),
                         excludeOwner(cond.getExcludeOwnerUserId()),
                         project.status.eq(ProjectStatus.OPEN), // 탐색 페이지 노출 로직 (OPEN만 노출)
                         isNotExpired(today),
@@ -61,6 +63,8 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                         statusEq(cond.getStatus()),
                         isOnline(cond.getOnline()),
                         isOffline(cond.getOffline()),
+                        budgetGoe(cond.getMinBudget()),
+                        budgetLoe(cond.getMaxBudget()),
                         excludeOwner(cond.getExcludeOwnerUserId()),
                         project.status.eq(ProjectStatus.OPEN), // 탐색 페이지 노출 로직
                         isNotExpired(today),
@@ -126,6 +130,14 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
 
     private BooleanExpression isNotExpired(LocalDate today) {
         return project.deadline.goe(today);
+    }
+
+    private BooleanExpression budgetGoe(Long minBudget) {
+        return minBudget != null ? project.budget.goe(minBudget) : null;
+    }
+
+    private BooleanExpression budgetLoe(Long maxBudget) {
+        return maxBudget != null ? project.budget.loe(maxBudget) : null;
     }
 
     /** 제안서 단독 공고는 QueryDSL 검색에서 제외 (null = 레거시 마켓 공고) */

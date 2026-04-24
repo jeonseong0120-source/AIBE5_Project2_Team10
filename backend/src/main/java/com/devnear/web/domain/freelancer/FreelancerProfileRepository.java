@@ -40,13 +40,16 @@ public interface FreelancerProfileRepository extends JpaRepository<FreelancerPro
            "AND (:excludeUserId IS NULL OR fp.user.id <> :excludeUserId) " +
            "AND (:region IS NULL OR fp.location LIKE %:region%) " +
            "AND (:workStyle IS NULL OR (fp.workStyle = :workStyle OR fp.workStyle = com.devnear.web.domain.enums.WorkStyle.HYBRID)) " +
-           "AND (:skill IS NULL OR EXISTS (" +
-           "    SELECT 1 FROM FreelancerSkill sub_fs JOIN sub_fs.skill sub_s " +
-           "    WHERE sub_fs.freelancerProfile = fp AND sub_s.name LIKE %:skill%" +
-           "))")
+           "AND (:keyword IS NULL OR (fp.introduction LIKE %:keyword% OR fp.user.nickname LIKE %:keyword%)) " +
+           "AND (:minHourlyRate IS NULL OR fp.hourlyRate >= :minHourlyRate) " +
+           "AND (:maxHourlyRate IS NULL OR fp.hourlyRate <= :maxHourlyRate) " +
+           "AND (:skills IS NULL OR fs.skill.name IN :skills)")
     List<FreelancerProfile> searchFreelancers(
-            @Param("skill") String skill,
+            @Param("skills") List<String> skills,
             @Param("region") String region,
             @Param("workStyle") com.devnear.web.domain.enums.WorkStyle workStyle,
+            @Param("keyword") String keyword,
+            @Param("minHourlyRate") Integer minHourlyRate,
+            @Param("maxHourlyRate") Integer maxHourlyRate,
             @Param("excludeUserId") Long excludeUserId);
 }

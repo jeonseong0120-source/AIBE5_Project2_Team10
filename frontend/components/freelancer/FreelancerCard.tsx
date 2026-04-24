@@ -288,7 +288,7 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                                                 <span className="font-sans">{(Math.round((data.averageRating || 0) * 10) / 10).toFixed(1)}</span>
                                             </div>
                                             <span className="shrink-0 rounded-md bg-[#7A4FFF]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[#7A4FFF] ring-1 ring-[#7A4FFF]/20">
-                                                {data.gradeName || '일반 요원'}
+                                                {data.gradeName || '일반'}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2 max-w-full">

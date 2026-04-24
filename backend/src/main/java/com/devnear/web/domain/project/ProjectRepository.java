@@ -62,7 +62,9 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
             "AND (:excludeOwnerUserId IS NULL OR p.clientProfile.user.id <> :excludeOwnerUserId) " +
             "AND (:keyword IS NULL OR p.projectName LIKE %:keyword% OR p.clientProfile.companyName LIKE %:keyword%) " +
             "AND (:location IS NULL OR p.location LIKE %:location%) " +
-            "AND (:skill IS NULL OR EXISTS (SELECT 1 FROM ProjectSkill ps JOIN ps.skill s WHERE ps.project = p AND s.name LIKE %:skill%)) " +
+            "AND (:skills IS NULL OR EXISTS (SELECT 1 FROM ProjectSkill ps JOIN ps.skill s WHERE ps.project = p AND s.name IN :skills)) " +
+            "AND (:minBudget IS NULL OR p.budget >= :minBudget) " +
+            "AND (:maxBudget IS NULL OR p.budget <= :maxBudget) " +
             "AND (:online IS NULL OR p.online = :online) " +
             "AND (:offline IS NULL OR p.offline = :offline)",
             countQuery = "SELECT COUNT(DISTINCT p) FROM Project p " +
@@ -71,12 +73,16 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
                     "AND (:excludeOwnerUserId IS NULL OR p.clientProfile.user.id <> :excludeOwnerUserId) " +
                     "AND (:keyword IS NULL OR p.projectName LIKE %:keyword% OR p.clientProfile.companyName LIKE %:keyword%) " +
                     "AND (:location IS NULL OR p.location LIKE %:location%) " +
-                    "AND (:skill IS NULL OR EXISTS (SELECT 1 FROM ProjectSkill ps JOIN ps.skill s WHERE ps.project = p AND s.name LIKE %:skill%)) " +
+                    "AND (:skills IS NULL OR EXISTS (SELECT 1 FROM ProjectSkill ps JOIN ps.skill s WHERE ps.project = p AND s.name IN :skills)) " +
+                    "AND (:minBudget IS NULL OR p.budget >= :minBudget) " +
+                    "AND (:maxBudget IS NULL OR p.budget <= :maxBudget) " +
                     "AND (:online IS NULL OR p.online = :online) " +
                     "AND (:offline IS NULL OR p.offline = :offline)")
     Page<Project> searchProjects(@Param("keyword") String keyword,
                                  @Param("location") String location,
-                                 @Param("skill") String skill,
+                                 @Param("skills") List<String> skills,
+                                 @Param("minBudget") Long minBudget,
+                                 @Param("maxBudget") Long maxBudget,
                                  @Param("online") Boolean online,
                                  @Param("offline") Boolean offline,
                                  @Param("marketplace") ProjectListingKind marketplace,
