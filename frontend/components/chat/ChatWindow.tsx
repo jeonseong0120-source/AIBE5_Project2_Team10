@@ -12,6 +12,7 @@ interface ChatWindowProps {
     view: "list" | "room";
     onClose: () => void;
     onBack: () => void;
+    onLeaveRoom: () => void | Promise<void>;
     rooms: ChatRoomListResponse[];
     selectedRoom: ChatRoomListResponse | null;
     selectedRoomId: number | null;
@@ -23,6 +24,7 @@ interface ChatWindowProps {
     loadingRooms: boolean;
     loadingMessages: boolean;
     sending: boolean;
+    leaving?: boolean;
     currentUserId?: number | null;
 }
 
@@ -89,6 +91,7 @@ export default function ChatWindow({
                                        view,
                                        onClose,
                                        onBack,
+                                       onLeaveRoom,
                                        rooms,
                                        selectedRoom,
                                        selectedRoomId,
@@ -100,6 +103,7 @@ export default function ChatWindow({
                                        loadingRooms,
                                        loadingMessages,
                                        sending,
+                                       leaving = false,
                                        currentUserId = null,
                                    }: ChatWindowProps) {
     const [mounted, setMounted] = useState(false);
@@ -173,14 +177,27 @@ export default function ChatWindow({
                     </div>
                 )}
 
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="text-xl text-gray-400 hover:text-gray-600"
-                    aria-label="채팅 닫기"
-                >
-                    ×
-                </button>
+                <div className="flex items-center gap-3">
+                    {view === "room" && (
+                        <button
+                            type="button"
+                            onClick={onLeaveRoom}
+                            disabled={leaving || !selectedRoomId}
+                            className="text-xs font-medium text-red-500 transition hover:text-red-600 disabled:cursor-not-allowed disabled:text-gray-300"
+                        >
+                            {leaving ? "나가는 중" : "나가기"}
+                        </button>
+                    )}
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-xl text-gray-400 hover:text-gray-600"
+                        aria-label="채팅 닫기"
+                    >
+                        ×
+                    </button>
+                </div>
             </div>
 
             {view === "list" ? (
@@ -295,9 +312,9 @@ export default function ChatWindow({
                         value={input}
                         onChange={onChangeInput}
                         onSend={onSend}
-                        disabled={sending || !selectedRoomId}
+                        disabled={sending || !selectedRoomId || leaving}
                         sending={sending}
-                        canSend={!!selectedRoomId}
+                        canSend={!!selectedRoomId && !leaving}
                     />
                 </>
             )}
