@@ -32,6 +32,7 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                 .selectFrom(project)
                 .leftJoin(project.clientProfile).fetchJoin()
                 .leftJoin(project.clientProfile.user).fetchJoin()
+                .leftJoin(project.clientProfile.user.freelancerProfile).fetchJoin()
                 .where(
                         nameLike(cond.getKeyword()),
                         skillIdsIn(cond.getSkillIds()),
