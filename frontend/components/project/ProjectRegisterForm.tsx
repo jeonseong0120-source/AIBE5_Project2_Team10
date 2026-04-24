@@ -6,7 +6,7 @@ import { createProject, type CreateProjectBody } from "@/app/lib/projectApi";
 import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
 import SkillTagSelector from "@/components/project/SkillTagSelector";
 import { MAX_PROJECT_SKILLS } from "@/app/lib/skillLimits";
-import { DollarSign, MapPin, ArrowLeft, XCircle, Briefcase, FileText, Target, Calendar, Globe, Building2, Sparkles, Send } from "lucide-react";
+import { DollarSign, MapPin, ArrowLeft, XCircle, Briefcase, FileText, Target, Calendar, Globe, Building2, Cpu, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MatchingresultForm from "./MatchingresultForm";
 
@@ -143,7 +143,7 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <span className="w-6 h-[2px] bg-[#FF7D00]"></span>
-                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono">Mission_Creator</span>
+                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono">MISSION_CREATOR</span>
                             </div>
                             <h1 className="text-4xl font-black tracking-tight text-zinc-950">프로젝트 등록</h1>
                         </div>
@@ -165,7 +165,7 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                                     <div className="p-2 bg-purple-50 rounded-xl text-[#7A4FFF]">
                                         <Briefcase size={18} strokeWidth={2.5} />
                                     </div>
-                                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7A4FFF]">Mission Creator</span>
+                                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7A4FFF]">NEW_PROJECT</span>
                                 </div>
                                 <h3 className="text-3xl font-black tracking-tighter text-zinc-950">
                                     새 프로젝트 <span className="text-zinc-400">등록하기</span>
@@ -192,7 +192,7 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                         <div>
                             <div className="mb-2 flex items-center gap-2">
                                 <Target size={14} className="text-[#7A4FFF]" />
-                                <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">프로젝트_제목</label>
+                                <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">프로젝트 제목</label>
                             </div>
                             <input 
                                 required 
@@ -208,7 +208,7 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                             <div>
                                 <div className="mb-2 flex items-center gap-2">
                                     <DollarSign size={14} className="text-[#FF7D00]" />
-                                    <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">예산_(원)</label>
+                                    <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">예상 예산 (원)</label>
                                 </div>
                                 <div className="relative group">
                                     <input 
@@ -226,7 +226,7 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                             <div>
                                 <div className="mb-2 flex items-center gap-2">
                                     <Calendar size={14} className="text-zinc-400" />
-                                    <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">마감일</label>
+                                    <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">모집 마감일</label>
                                 </div>
                                 <input 
                                     type="date" 
@@ -242,7 +242,7 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                         <div>
                             <div className="mb-2 flex items-center gap-2">
                                 <FileText size={14} className="text-zinc-400" />
-                                <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">프로젝트_상세내용</label>
+                                <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">프로젝트 상세 내용</label>
                             </div>
                             <textarea 
                                 className="w-full rounded-[2rem] border border-zinc-200 bg-zinc-50 px-6 py-5 text-[15px] font-bold text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white resize-none min-h-[160px] leading-relaxed" 
@@ -256,7 +256,7 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                         <div>
                             <div className="mb-2 flex items-center gap-2">
                                 <Globe size={14} className="text-zinc-400" />
-                                <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">근무_형태</label>
+                                <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">근무 형태 설정</label>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <label className={`flex cursor-pointer items-center justify-center gap-3 rounded-2xl border px-5 py-4 transition-all ${online ? 'border-[#7A4FFF] bg-purple-50 text-[#7A4FFF]' : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'}`}>
@@ -277,7 +277,7 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                                     <div className="mt-4 rounded-[2rem] border border-orange-200 bg-orange-50/30 p-6 space-y-4">
                                         <div className="flex items-center gap-2">
                                             <Building2 size={14} className="text-[#FF7D00]" />
-                                            <span className="text-[12px] font-black text-[#FF7D00] uppercase tracking-widest">출근_위치_설정</span>
+                                            <span className="text-[12px] font-black text-[#FF7D00] uppercase tracking-[0.3em]">출근 위치 설정</span>
                                         </div>
 
                                         {kakaoJavascriptKey ? (
@@ -293,8 +293,8 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                         {/* Skills Requirement */}
                         <div>
                             <div className="mb-2 flex items-center gap-2">
-                                <Sparkles size={14} className="text-[#7A4FFF]" />
-                                <label className="text-[12px] font-black uppercase tracking-widest text-zinc-400">요구_기술스택</label>
+                                <Cpu size={14} className="text-[#7A4FFF]" />
+                                <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">요구 기술 스택</label>
                             </div>
                             <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-2 focus-within:border-[#7A4FFF] focus-within:bg-white focus-within:ring-4 focus-within:ring-purple-50 transition-all">
                                 <SkillTagSelector

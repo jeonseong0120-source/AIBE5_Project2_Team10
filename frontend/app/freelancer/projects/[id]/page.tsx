@@ -17,11 +17,15 @@ import {
     Heart,
     ShieldCheck,
     CheckCircle2,
-    MessageCircle
+    MessageCircle,
+    Building2,
+    Plus,
+    Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlobalNavbar, { type UserData, type ProfileData } from '@/components/common/GlobalNavbar';
 import { SkillItem, useProjectDetail } from '@/app/hooks/useProjectDetail';
+import { EstimatedBudgetBlock } from '@/components/freelancer/EstimatedBudgetBlock';
 
 const getSkillName = (skill: SkillItem): string =>
     typeof skill === 'string' ? skill : skill.name;
@@ -171,9 +175,7 @@ export default function ProjectDetailPage() {
                                     {project.status === 'OPEN' ? '모집 중' : '모집 마감'}
                                 </span>
 
-                                <div className="flex items-center gap-1.5 text-[#7A4FFF] text-[10px] font-black uppercase font-mono bg-white px-4 py-1.5 rounded-full shadow-sm border border-zinc-100">
-                                    <Sparkles size={12} /> 프리미엄 미션
-                                </div>
+
                             </div>
 
                             <h1 className="text-5xl md:text-6xl font-black text-zinc-950 tracking-tighter leading-[1.1] mb-8">
@@ -181,15 +183,17 @@ export default function ProjectDetailPage() {
                             </h1>
 
                             <div className="flex flex-wrap items-center gap-4 text-zinc-400 font-black uppercase text-[11px] font-mono tracking-widest">
-                                <div className="flex items-center gap-2.5 px-5 py-3 bg-white rounded-2xl border border-zinc-100 shadow-sm transition-all hover:border-[#7A4FFF]/30 hover:shadow-md">
-                                    <ShieldCheck size={18} className="text-[#7A4FFF]" />
-                                    <span className="text-zinc-900">{project.companyName}</span>
+                             <div className="flex flex-wrap gap-3 mt-4">
+                                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-zinc-100 shadow-sm transition-all hover:border-[#7A4FFF]/30 hover:shadow-md">
+                                    <Building2 size={14} className="text-[#7A4FFF]" />
+                                    <span className="text-[13px] font-bold text-zinc-600">{project.companyName}</span>
                                 </div>
 
-                                <div className="flex items-center gap-2.5 px-5 py-3 bg-white rounded-2xl border border-zinc-100 shadow-sm transition-all hover:border-[#7A4FFF]/30 hover:shadow-md">
-                                    <MapPin size={18} className="text-[#7A4FFF]" />
-                                    <span className="text-zinc-900">{project.location || '전국'}</span>
+                                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-zinc-100 shadow-sm transition-all hover:border-blue-500/30 hover:shadow-md">
+                                    <MapPin size={14} className="text-blue-500" />
+                                    <span className="text-[13px] font-bold text-zinc-600">{project.location || '전국'}</span>
                                 </div>
+                            </div>
                             </div>
 
                             <div className="mt-6">
@@ -227,34 +231,38 @@ export default function ProjectDetailPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-20"
                 >
-                    <div className="bg-white p-8 rounded-[3rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all group hover:-translate-y-1">
-                        <DollarSign className="w-6 h-6 text-[#FF7D00] mb-4" />
-                        <p className="text-zinc-400 text-[11px] font-black uppercase tracking-[0.1em] mb-2 font-mono">
-                            예상 예산
-                        </p>
-                        <p className="text-2xl font-black text-zinc-950 font-mono tracking-tighter whitespace-nowrap">
-                            {formatBudget(project.budget)}
-                        </p>
+                    <div className="p-8 rounded-[2.5rem] bg-white border border-zinc-100 transition-all hover:shadow-xl group/stat flex flex-col justify-between min-h-[160px]">
+                        <div className="flex items-center gap-2.5 mb-4">
+                            <div className="p-2 rounded-xl bg-orange-50 text-[#FF7D00]">
+                                <DollarSign size={16} />
+                            </div>
+                            <p className="text-[12px] font-bold text-zinc-500">예상 예산</p>
+                        </div>
+                        <EstimatedBudgetBlock budgetWon={project.budget} size="lg" align="left" showLabel={false} />
                     </div>
 
-                    <div className="bg-white p-8 rounded-[3rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
-                        <Calendar className="w-6 h-6 text-[#7A4FFF] mb-4" />
-                        <p className="text-zinc-400 text-[11px] font-black uppercase tracking-[0.1em] mb-2 font-mono">
-                            마감 일자
-                        </p>
-                        <p className="text-2xl font-black text-zinc-950 font-mono tracking-tighter whitespace-nowrap">
+                    <div className="p-8 rounded-[2.5rem] bg-white border border-zinc-100 transition-all hover:shadow-xl group/stat flex flex-col justify-between min-h-[160px]">
+                        <div className="flex items-center gap-2.5 mb-4">
+                            <div className="p-2 rounded-xl bg-purple-50 text-[#7A4FFF]">
+                                <Calendar size={16} />
+                            </div>
+                            <p className="text-[12px] font-bold text-zinc-500">모집 마감</p>
+                        </div>
+                        <p className="text-3xl font-black tracking-tighter text-zinc-950 font-mono">
                             {project.deadline}
                         </p>
                     </div>
 
-                    <div className="bg-white p-8 rounded-[3rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
-                        <Globe className="w-6 h-6 text-blue-500 mb-4" />
-                        <p className="text-zinc-400 text-[11px] font-black uppercase tracking-[0.1em] mb-2 font-mono">
-                            근무 형태
-                        </p>
-                        <p className="text-2xl font-black text-zinc-950 tracking-tighter whitespace-nowrap">
+                    <div className="p-8 rounded-[2.5rem] bg-white border border-zinc-100 transition-all hover:shadow-xl group/stat flex flex-col justify-between min-h-[160px]">
+                        <div className="flex items-center gap-2.5 mb-4">
+                            <div className="p-2 rounded-xl bg-blue-50 text-blue-500">
+                                <Globe size={16} />
+                            </div>
+                            <p className="text-[12px] font-bold text-zinc-500">근무 형태</p>
+                        </div>
+                        <p className="text-3xl font-black tracking-tighter text-zinc-950">
                             {project.online && project.offline
                                 ? '온/오프 혼합'
                                 : project.online
@@ -263,21 +271,23 @@ export default function ProjectDetailPage() {
                         </p>
                     </div>
 
-                    <div className="bg-white p-8 rounded-[3rem] border border-zinc-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
-                        <Clock className="w-6 h-6 text-emerald-500 mb-4" />
-                        <p className="text-zinc-400 text-[11px] font-black uppercase tracking-[0.1em] mb-2 font-mono">
-                            활동 지역
-                        </p>
-                        <p className="text-2xl font-black text-zinc-950 tracking-tighter whitespace-nowrap">
-                            {project.location ? project.location.split(' ')[0] : '전국'}
+                    <div className="p-8 rounded-[2.5rem] bg-white border border-zinc-100 transition-all hover:shadow-xl group/stat flex flex-col justify-between min-h-[160px]">
+                        <div className="flex items-center gap-2.5 mb-4">
+                            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-500">
+                                <Clock size={16} />
+                            </div>
+                            <p className="text-[12px] font-bold text-zinc-500">현재 상태</p>
+                        </div>
+                        <p className="text-3xl font-black tracking-tighter text-zinc-950">
+                            {project.status === 'OPEN' ? '모집 중' : '마감됨'}
                         </p>
                     </div>
                 </motion.section>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-20">
                     <div className="lg:col-span-1">
-                        <h3 className="text-sm font-black text-zinc-400 mb-8 uppercase tracking-[0.3em] font-mono flex items-center gap-3">
-                            <span className="w-8 h-[1px] bg-zinc-200"></span> 필수 스택
+                        <h3 className="text-sm font-black text-zinc-400 mb-8 uppercase tracking-[0.1em] flex items-center gap-3">
+                            <span className="w-8 h-[2px] bg-[#7A4FFF]"></span> 요구 기술 스택
                         </h3>
                         <div className="max-h-80 overflow-y-auto rounded-2xl border border-zinc-100 bg-zinc-50/40 p-3">
                             <div className="flex flex-wrap gap-2">
@@ -294,14 +304,12 @@ export default function ProjectDetailPage() {
                     </div>
 
                     <div className="lg:col-span-2">
-                        <h3 className="text-sm font-black text-zinc-400 mb-8 uppercase tracking-[0.3em] font-mono flex items-center gap-3">
-                            <span className="w-8 h-[1px] bg-zinc-200"></span> 상세 미션 브리핑
+                        <h3 className="text-sm font-black text-zinc-400 mb-8 uppercase tracking-[0.1em] flex items-center gap-3">
+                            <span className="w-8 h-[2px] bg-[#7A4FFF]"></span> 프로젝트 상세 내용
                         </h3>
-                         <div className="bg-white border border-zinc-100 p-12 rounded-[3.5rem] shadow-2xl shadow-zinc-100 leading-relaxed text-zinc-800 whitespace-pre-wrap text-xl italic font-bold relative overflow-hidden group">
-                            <div className="absolute top-0 left-0 w-2 h-full bg-[#7A4FFF] opacity-20 group-hover:opacity-100 transition-opacity"></div>
-                            <span className="text-[#7A4FFF] text-4xl font-serif absolute top-4 left-4 opacity-10" aria-hidden="true">"</span>
+                         <div className="bg-white border border-zinc-100 p-12 rounded-[3.5rem] shadow-2xl shadow-zinc-100 leading-[1.8] text-zinc-800 whitespace-pre-wrap text-[17px] font-medium relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-[#7A4FFF] to-[#A78BFF] opacity-20 group-hover:opacity-100 transition-opacity"></div>
                             {project.detail}
-                            <span className="text-[#7A4FFF] text-4xl font-serif absolute bottom-4 right-4 opacity-10" aria-hidden="true">"</span>
                         </div>
                     </div>
                 </div>
@@ -327,7 +335,7 @@ export default function ProjectDetailPage() {
                             '모집이 마감된 프로젝트입니다'
                         ) : (
                             <>
-                                <Sparkles size={24} />
+                                <Plus size={24} />
                                 이 미션에 지금 참가하기
                                 <ChevronRight size={24} className="group-hover:translate-x-2 transition-transform" />
                             </>
@@ -350,61 +358,70 @@ export default function ProjectDetailPage() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="relative bg-white w-full max-w-lg rounded-[3.5rem] p-12 shadow-2xl border border-zinc-100"
+                            className="relative bg-white w-full max-w-lg rounded-[3rem] p-10 shadow-2xl border border-zinc-100 overflow-hidden"
                         >
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#7A4FFF] to-[#FF7D00]"></div>
+                            
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                aria-label="지원서 닫기"
-                                className="absolute top-8 right-8 text-zinc-300 hover:text-zinc-950 transition-all p-2 bg-zinc-50 rounded-full"
+                                className="absolute top-6 right-6 text-zinc-400 hover:text-zinc-950 transition-all p-2 bg-zinc-50 rounded-full"
                             >
-                                <X size={24} />
+                                <X size={20} />
                             </button>
 
-                            <h2 className="text-4xl font-black text-zinc-950 mb-3 tracking-tighter">
-                                지원서 작성
-                            </h2>
-                            <p className="text-zinc-400 mb-10 font-bold text-xs uppercase tracking-widest font-mono">
-                                지원서 양식
-                            </p>
+                            <div className="mb-10">
+                                <h2 className="text-3xl font-black text-zinc-950 mb-2 tracking-tighter">
+                                    미션 지원하기
+                                </h2>
+                                <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">APPLICATION FORM</p>
+                            </div>
 
-                            <div className="space-y-8">
-                                <div>
-                                    <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3 ml-1 font-mono">
+                            <div className="space-y-6">
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-2 text-[11px] font-bold text-zinc-500 uppercase tracking-wider ml-1">
+                                        <DollarSign size={14} className="text-[#FF7D00]" />
                                         입찰 제안 금액 (KRW)
                                     </label>
-                                    <div className="relative">
-                                        <DollarSign
-                                            className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A4FFF]"
-                                            size={20}
-                                        />
+                                    <div className="relative group">
                                         <input
                                             type="number"
-                                            className="w-full p-5 pl-12 bg-zinc-50 border border-zinc-100 rounded-2xl font-black text-zinc-900 focus:ring-2 focus:ring-[#7A4FFF] outline-none transition-all text-xl font-mono"
+                                            className="w-full p-5 bg-zinc-50 border border-zinc-100 rounded-2xl font-black text-zinc-950 focus:bg-white focus:ring-2 focus:ring-[#7A4FFF]/20 focus:border-[#7A4FFF] outline-none transition-all text-2xl font-mono tabular-nums"
                                             value={bidPrice}
                                             onChange={(e) => setBidPrice(e.target.value)}
+                                            placeholder="0"
                                         />
+                                        <div className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-sm">원</div>
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-3 ml-1 font-mono">
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-2 text-[11px] font-bold text-zinc-500 uppercase tracking-wider ml-1">
+                                        <MessageCircle size={14} className="text-[#7A4FFF]" />
                                         협업 제안 메시지
                                     </label>
                                     <textarea
-                                        className="w-full p-6 bg-zinc-50 border border-zinc-100 rounded-[2rem] font-medium text-zinc-700 h-48 focus:ring-2 focus:ring-[#7A4FFF] outline-none transition-all resize-none italic"
-                                        placeholder="본 미션에 기여할 수 있는 마스터님의 강점을 적어주세요."
+                                        className="w-full p-6 bg-zinc-50 border border-zinc-100 rounded-2xl font-medium text-zinc-800 h-40 focus:bg-white focus:ring-2 focus:ring-[#7A4FFF]/20 focus:border-[#7A4FFF] outline-none transition-all resize-none leading-relaxed"
+                                        placeholder="마스터님의 프로젝트 기여 방안을 자유롭게 적어주세요."
                                         value={message}
                                         onChange={(e) => setMessage(e.target.value)}
                                     />
                                 </div>
 
-                                <button
+                                <motion.button
+                                    whileTap={{ scale: 0.98 }}
                                     onClick={() => void apply()}
                                     disabled={submitting}
-                                    className="w-full bg-zinc-950 text-white font-black py-6 rounded-2xl shadow-xl hover:bg-[#7A4FFF] transition-all active:scale-95 disabled:opacity-50 uppercase tracking-widest text-xs font-mono"
+                                    className="w-full bg-zinc-950 text-white font-black py-6 rounded-2xl shadow-xl hover:bg-[#7A4FFF] transition-all disabled:opacity-50 flex items-center justify-center gap-3 group"
                                 >
-                                    {submitting ? '제출 중...' : '지원 확정하기'}
-                                </button>
+                                    {submitting ? (
+                                        <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            <span>지원서 제출하기</span>
+                                            <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                        </>
+                                    )}
+                                </motion.button>
                             </div>
                         </motion.div>
                     </div>
