@@ -4,6 +4,8 @@ import com.devnear.web.domain.project.Project;
 import lombok.Builder;
 import lombok.Getter;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +27,8 @@ public class ProjectResponse {
     private Double longitude;
     private String logoUrl; // 클라이언트 로고 URL
     private List<String> skills; // 연결된 기술 스택 이름 목록
+
+    @JsonProperty("isBookmarked")
     private boolean isBookmarked;
     private Long applicationCount; // 지원자 수
     private Long clientUserId; // 문의 대상(클라이언트) userId 추가
