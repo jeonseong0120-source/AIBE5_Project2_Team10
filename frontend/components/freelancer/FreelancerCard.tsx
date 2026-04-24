@@ -321,16 +321,13 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                             </div>
 
                             <div className="flex items-center justify-between border-t border-zinc-100 pt-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center text-[11px] font-black text-[#7A4FFF]">
-                                        <span className="text-[9px] opacity-60 mr-1.5 uppercase font-mono tracking-widest text-zinc-400">Rate:</span>
-                                        ₩{data.hourlyRate.toLocaleString()}
-                                    </div>
-                                    <div className="w-1 h-1 rounded-full bg-zinc-200" />
-                                    <div className="flex items-center text-[11px] font-bold text-zinc-400 group-hover:text-zinc-600 transition-colors">
-                                        <MapPin size={12} className="mr-1.5 text-zinc-300" />
-                                        {data.location}
-                                    </div>
+                                <div className="flex items-center text-[11px] font-bold text-zinc-400 group-hover:text-zinc-600 transition-colors">
+                                    <MapPin size={12} className="mr-1.5 text-zinc-300" />
+                                    {data.location}
+                                </div>
+                                <div className="flex items-center text-[11px] font-black text-[#7A4FFF]">
+                                    <span className="text-[9px] opacity-60 mr-1.5 uppercase font-mono tracking-widest text-zinc-400">Rate:</span>
+                                    ₩{data.hourlyRate.toLocaleString()}
                                 </div>
                             </div>
                         </div>
