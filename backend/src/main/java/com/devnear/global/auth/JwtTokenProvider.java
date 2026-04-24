@@ -27,7 +27,7 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createToken(Long userId, String email, String role) {
+    public String createToken(Long userId, String email, String role, String status) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
 
@@ -36,6 +36,7 @@ public class JwtTokenProvider {
                 .subject(email)
                 .claim("userId", userId)
                 .claim("role", role)
+                .claim("status", status) // 🎯 이 부분도 필수!
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key)
@@ -60,21 +61,26 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
 
-        Long userId = claims.get("userId", Long.class);
+        // 🎯 [핵심 해결책] Integer든 Long이든 일단 Number로 안전하게 꺼낸 뒤, 강제로 Long으로 바꿉니다!
+        Number userIdNumber = claims.get("userId", Number.class);
+        Long userId = userIdNumber != null ? userIdNumber.longValue() : null;
+
         String email = claims.getSubject();
         String role = normalizeRoleClaim(claims.get("role", String.class));
 
-        // SecurityUser는 마스터의 프로젝트에 정의된 Principal 객체라고 가정합니다.
-        // DB 조회를 생략하고 토큰 정보로만 구성된 SecurityUser를 넘깁니다.
+        // ROLE_ 접두사가 없으면 붙여주는 안전장치 (스프링 시큐리티 꼰대질 방어)
+        if (role != null && !role.startsWith("ROLE_")) {
+            role = "ROLE_" + role;
+        }
+
         SecurityUser principal = new SecurityUser(userId, email, role);
 
         return new UsernamePasswordAuthenticationToken(
                 principal,
                 "",
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                Collections.singletonList(new SimpleGrantedAuthority(role))
         );
     }
-
     public Claims getClaims(String token) {
         return Jwts.parser()
                 .verifyWith(key)
