@@ -99,18 +99,21 @@ export default function ChatWidget() {
             setLoadingRooms(true);
 
             const roomData = await getChatRooms();
+            const currentSelectedRoomId = selectedRoomIdRef.current;
+
+            const existsSelected =
+                currentSelectedRoomId !== null &&
+                roomData.some((room) => room.roomId === currentSelectedRoomId);
 
             const filtered = roomData.filter(
-                (room) => room.lastMessage !== null || room.unreadCount > 0
+                (room) =>
+                    room.lastMessage !== null ||
+                    room.unreadCount > 0 ||
+                    room.roomId === currentSelectedRoomId
             );
 
             const sortedRooms = sortRoomsByLatest(filtered);
             setRooms(sortedRooms);
-
-            const currentSelectedRoomId = selectedRoomIdRef.current;
-            const existsSelected =
-                currentSelectedRoomId !== null &&
-                sortedRooms.some((room) => room.roomId === currentSelectedRoomId);
 
             if (!existsSelected && currentSelectedRoomId !== null) {
                 setRoom(null);
@@ -243,46 +246,54 @@ export default function ChatWidget() {
                     }
                 );
 
-                const readSub = await subscribeChatReadReceipt(
-                    selectedRoomId,
-                    (frame: IMessage) => {
-                        try {
-                            const receipt: ChatReadReceiptResponse = JSON.parse(frame.body);
-
-                            if (!receipt.read) return;
-                            if (receipt.roomId !== selectedRoomIdRef.current) return;
-                            // Only process when opponent reads; ignore own read events.
-                                    if (
-                                        currentUserIdRef.current !== null &&
-                                        receipt.readerId === currentUserIdRef.current
-                                    ) {
-                                        return;
-                                    }
-                            setMessages((prev) =>
-                                prev.map((msg) => {
-                                    const isMyMessage =
-                                        currentUserIdRef.current !== null &&
-                                        msg.senderId === currentUserIdRef.current;
-
-                                    return isMyMessage ? { ...msg, read: true } : msg;
-                                })
-                            );
-
-                            setRooms((prev) =>
-                                prev.map((room) =>
-                                    room.roomId === receipt.roomId && room.lastMessageMine
-                                        ? { ...room, lastMessageRead: true }
-                                        : room
-                                )
-                            );
-                        } catch (error) {
-                            console.error("읽음 이벤트 처리 실패", error);
-                        }
-                    }
-                );
-
                 messageSubscriptionRef.current = messageSub;
-                readSubscriptionRef.current = readSub;
+
+                try {
+                    const readSub = await subscribeChatReadReceipt(
+                        selectedRoomId,
+                        (frame: IMessage) => {
+                            try {
+                                const receipt: ChatReadReceiptResponse = JSON.parse(frame.body);
+
+                                if (!receipt.read) return;
+                                if (receipt.roomId !== selectedRoomIdRef.current) return;
+                                // Only process when opponent reads; ignore own read events.
+                                if (
+                                    currentUserIdRef.current !== null &&
+                                    receipt.readerId === currentUserIdRef.current
+                                ) {
+                                    return;
+                                }
+
+                                setMessages((prev) =>
+                                    prev.map((msg) => {
+                                        const isMyMessage =
+                                            currentUserIdRef.current !== null &&
+                                            msg.senderId === currentUserIdRef.current;
+
+                                        return isMyMessage ? { ...msg, read: true } : msg;
+                                    })
+                                );
+
+                                setRooms((prev) =>
+                                    prev.map((room) =>
+                                        room.roomId === receipt.roomId && room.lastMessageMine
+                                            ? { ...room, lastMessageRead: true }
+                                            : room
+                                    )
+                                );
+                            } catch (error) {
+                                console.error("읽음 이벤트 처리 실패", error);
+                            }
+                        }
+                    );
+
+                    readSubscriptionRef.current = readSub;
+                } catch (error) {
+                    cleanupSubscription(messageSubscriptionRef);
+                    cleanupSubscription(readSubscriptionRef);
+                    throw error;
+                }
             } catch (error) {
                 console.error("채팅방 구독 실패", error);
             }

@@ -181,9 +181,20 @@ export function useProjectDetail(projectId: number | null) {
             return;
         }
 
+        if (!project.projectId) {
+            console.error('프로젝트 응답에 projectId가 없습니다.', project);
+            alert('프로젝트 정보가 없습니다.');
+            return;
+        }
+
         try {
             setChatLoading(true);
-            const response = await createOrGetChatRoom(targetUserId);
+
+            const response = await createOrGetChatRoom(
+                targetUserId,
+                project.projectId
+            );
+
             openChat(response.roomId);
             onSuccess?.();
         } catch (error) {
