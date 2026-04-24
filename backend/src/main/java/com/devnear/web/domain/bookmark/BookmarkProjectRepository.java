@@ -4,6 +4,7 @@ import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.project.Project;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +14,14 @@ import java.util.Optional;
 
 public interface BookmarkProjectRepository extends JpaRepository<BookmarkProject, Long> {
     Optional<BookmarkProject> findByFreelancerProfileAndProject(FreelancerProfile freelancerProfile, Project project);
+
+    @EntityGraph(attributePaths = {
+            "project",
+            "project.clientProfile",
+            "project.clientProfile.user",
+            "project.projectSkills",
+            "project.projectSkills.skill"
+    })
     Page<BookmarkProject> findAllByFreelancerProfile(FreelancerProfile freelancerProfile, Pageable pageable);
     boolean existsByFreelancerProfileAndProject(FreelancerProfile freelancerProfile, Project project);
 

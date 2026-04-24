@@ -55,7 +55,7 @@ export default function BookmarkedFreelancers() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: idx * 0.04 }}
                             key={targetId}
-                            onClick={() => router.push(`/client/freelancers/${targetId}`)}
+                            onClick={() => router.push(`/client/freelancers/${targetId}?bm=1`)}
                             className="group relative flex flex-col md:flex-row items-center gap-6 p-5 bg-white rounded-[2rem] border border-zinc-100 hover:border-[#FF7D00]/30 hover:shadow-[0_15px_40px_rgba(0,0,0,0.04)] transition-all cursor-pointer overflow-hidden"
                         >
                             {/* 1. 프로필 이미지 영역 (왼쪽 고정) */}

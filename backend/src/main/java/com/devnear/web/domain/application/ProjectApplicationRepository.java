@@ -14,7 +14,7 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
     // 1. 중복 지원 검증용 쿼리
     boolean existsByProjectIdAndFreelancerProfileId(Long projectId, Long freelancerId);
 
-    // 2. [FRE-05] 프리랜서 본인이 지원한 프로젝트 목록 (프로젝트 정보 & 클라이언트 정보 Fetch Join)
+    // 2. [FRE-05] 프리랜서 본인 지원 목록 (프로젝트·클라이언트(공고 소유) fetch)
     @Query("SELECT a FROM ProjectApplication a " +
             "JOIN FETCH a.project p " +
             "JOIN FETCH p.clientProfile " +

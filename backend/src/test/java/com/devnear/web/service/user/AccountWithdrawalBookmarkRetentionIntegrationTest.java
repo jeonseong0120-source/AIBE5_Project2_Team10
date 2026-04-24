@@ -10,11 +10,15 @@ import com.devnear.web.domain.freelancer.FreelancerGrade;
 import com.devnear.web.domain.freelancer.FreelancerGradeRepository;
 import com.devnear.web.domain.freelancer.FreelancerProfile;
 import com.devnear.web.domain.freelancer.FreelancerProfileRepository;
+import com.devnear.test.config.QueryCountingTestConfiguration;
+import com.devnear.test.support.QueryCountExtension;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.domain.user.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -23,6 +27,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
+@Import(QueryCountingTestConfiguration.class)
+@ExtendWith(QueryCountExtension.class)
 class AccountWithdrawalBookmarkRetentionIntegrationTest {
 
     @Autowired

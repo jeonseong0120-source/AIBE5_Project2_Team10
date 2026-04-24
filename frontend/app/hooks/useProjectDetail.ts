@@ -183,7 +183,7 @@ export function useProjectDetail(projectId: number | null) {
 
         try {
             setChatLoading(true);
-            const response = await createOrGetChatRoom(targetUserId);
+            const response = await createOrGetChatRoom(targetUserId, project.projectId);
             openChat(response.roomId);
             onSuccess?.();
         } catch (error) {
