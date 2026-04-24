@@ -23,6 +23,9 @@ public interface BookmarkProjectRepository extends JpaRepository<BookmarkProject
     Page<BookmarkProject> findAllByFreelancerProfile(FreelancerProfile freelancerProfile, Pageable pageable);
     boolean existsByFreelancerProfileAndProject(FreelancerProfile freelancerProfile, Project project);
 
+    @Query("SELECT b.project.id FROM BookmarkProject b WHERE b.freelancerProfile = :freelancerProfile AND b.project.id IN :projectIds")
+    java.util.List<Long> findBookmarkedProjectIds(@Param("freelancerProfile") com.devnear.web.domain.freelancer.FreelancerProfile freelancerProfile, @Param("projectIds") java.util.List<Long> projectIds);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM BookmarkProject b WHERE b.project.id = :projectId")
     void deleteByProjectId(@Param("projectId") Long projectId);

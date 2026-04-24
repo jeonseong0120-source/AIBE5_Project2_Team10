@@ -3,8 +3,9 @@
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, ArrowUpRight, ShieldCheck, Heart, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { EstimatedBudgetBlock } from '@/components/freelancer/EstimatedBudgetBlock';
+import api from '@/app/lib/axios';
 
 interface ProjectCardProps {
     data: any;
@@ -19,7 +20,37 @@ const getSkillName = (skill: SkillItem): string =>
 
 export default function ProjectCard({ data, index, onOpenProject }: ProjectCardProps) {
     const router = useRouter();
-    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [isBookmarked, setIsBookmarked] = useState(data.bookmarked || false);
+
+    // [추가] 외부에서 data가 변경될 때 (예: 검색 결과 갱신) 상태 동기화
+    useEffect(() => {
+        setIsBookmarked(data.bookmarked || false);
+    }, [data.bookmarked]);
+
+    const toggleBookmark = async (e: React.MouseEvent) => {
+        e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
+        const id = data.projectId || data.id;
+        if (!id) return;
+
+        const originalState = isBookmarked;
+        // 낙관적 업데이트
+        setIsBookmarked(!originalState);
+
+        try {
+            if (originalState) {
+                // 이미 찜한 상태라면 삭제
+                await api.delete(`/v1/bookmarks/projects/${id}`);
+            } else {
+                // 찜하지 않은 상태라면 추가
+                await api.post(`/v1/bookmarks/projects/${id}`);
+            }
+        } catch (err) {
+            console.error("찜 처리 중 오류 발생:", err);
+            // 에러 발생 시 원복
+            setIsBookmarked(originalState);
+            alert("찜 처리에 실패했습니다. 다시 시도해 주세요.");
+        }
+    };
 
     // [수정] 백엔드 로그 확인 결과: projectSkills가 아니라 skills로 오고 있음
     const skillList: SkillItem[] = data.skills || [];
@@ -133,7 +164,7 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                     {/* 북마크 버튼 */}
                     <button 
                         type="button"
-                        onClick={() => setIsBookmarked(!isBookmarked)}
+                        onClick={toggleBookmark}
                         aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
                         aria-pressed={isBookmarked}
                         className="bookmark-btn p-3.5 md:p-4 rounded-2xl border border-zinc-100 hover:border-red-100 hover:bg-red-50 text-zinc-200 hover:text-red-500 transition-all active:scale-90 bg-white/50 backdrop-blur-sm shadow-sm shrink-0"

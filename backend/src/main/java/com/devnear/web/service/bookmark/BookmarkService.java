@@ -107,7 +107,7 @@ public class BookmarkService {
     public Page<ProjectResponse> getBookmarkedProjects(User user, Pageable pageable) {
         FreelancerProfile freelancerProfile = findFreelancerProfileByUser(user);
         return bookmarkProjectRepository.findAllByFreelancerProfile(freelancerProfile, pageable)
-                .map(bookmark -> ProjectResponse.from(bookmark.getProject()));
+                .map(bookmark -> ProjectResponse.from(bookmark.getProject(), null, true));
     }
 
     // ── 포트폴리오 좋아요 (프리랜서 찜으로 처리) ──

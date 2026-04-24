@@ -100,6 +100,7 @@ export function useProjectDetail(projectId: number | null) {
                 if (signal.aborted) return;
 
                 setProject(response.data);
+                setIsBookmarked(response.data.bookmarked || false);
 
                 if (bidPriceSeededForProjectIdRef.current !== projectId) {
                     setBidPrice(String(response.data.budget ?? ''));
@@ -137,24 +138,6 @@ export function useProjectDetail(projectId: number | null) {
                 } catch (err: unknown) {
                     if (signal.aborted || isAbortError(err)) return;
                     setIsApplied(false);
-                }
-
-                try {
-                    const myBookmarks = await api.get('/v1/bookmarks/projects?size=1000', { signal });
-
-                    if (signal.aborted) return;
-
-                    const bookmarkList = myBookmarks.data.content || [];
-
-                    setIsBookmarked(
-                        bookmarkList.some(
-                            (b: { projectId?: number }) =>
-                                b.projectId === Number(projectId)
-                        )
-                    );
-                } catch (err: unknown) {
-                    if (signal.aborted || isAbortError(err)) return;
-                    setIsBookmarked(false);
                 }
             } else {
                 if (signal.aborted) return;

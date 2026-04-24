@@ -78,7 +78,7 @@ public class ProjectController {
 
         Long excludeOwnerUserId = resolveExcludeOwnerUserId(viewer, excludeOwn);
         Page<ProjectResponse> responses = projectService.searchProjects(
-                keyword, location, skills, online, offline, excludeOwnerUserId, pageable);
+                keyword, location, skills, online, offline, excludeOwnerUserId, viewer, pageable);
         return ResponseEntity.ok(responses);
     }
 
@@ -125,8 +125,10 @@ public class ProjectController {
 
     @Operation(summary = "프로젝트 공고 단건 조회", description = "프로젝트 공고 상세를 조회합니다.")
     @GetMapping("/{projectId}")
-    public ResponseEntity<ProjectResponse> getProject(@PathVariable Long projectId) {
-        ProjectResponse response = projectService.getProject(projectId);
+    public ResponseEntity<ProjectResponse> getProject(
+            @Nullable @LoginUser User viewer,
+            @PathVariable Long projectId) {
+        ProjectResponse response = projectService.getProject(projectId, viewer);
         return ResponseEntity.ok(response);
     }
 

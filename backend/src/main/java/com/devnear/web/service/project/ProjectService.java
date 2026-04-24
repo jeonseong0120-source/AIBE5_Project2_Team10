@@ -42,6 +42,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -249,9 +250,9 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProjectResponse> getProjectList(Pageable pageable) {
+    public Page<ProjectResponse> getProjectList(User viewer, Pageable pageable) {
         Page<Project> projects = projectRepository.findAll(pageable);
-        return mapToResponsesWithCounts(projects);
+        return mapToResponsesWithCounts(projects, viewer);
     }
 
     /**
@@ -260,7 +261,7 @@ public class ProjectService {
      */
     @Transactional(readOnly = true)
     public Page<ProjectResponse> searchProjects(String keyword, String location, List<String> skills, Boolean online,
-                                                 Boolean offline, Long excludeOwnerUserId, Pageable pageable) {
+                                                 Boolean offline, Long excludeOwnerUserId, User viewer, Pageable pageable) {
         ProjectSearchCond cond = new ProjectSearchCond();
         cond.setKeyword(keyword);
         cond.setLocation(location);
@@ -270,7 +271,7 @@ public class ProjectService {
         cond.setExcludeOwnerUserId(excludeOwnerUserId);
 
         Page<Project> projects = projectRepository.search(cond, pageable);
-        return mapToResponsesWithCounts(projects);
+        return mapToResponsesWithCounts(projects, viewer);
     }
 
     @Transactional(readOnly = true)
@@ -283,7 +284,7 @@ public class ProjectService {
         } else {
             projects = projectRepository.findAllByClientProfile(clientProfile, pageable);
         }
-        return mapToResponsesWithCounts(projects);
+        return mapToResponsesWithCounts(projects, user);
     }
 
     @Transactional(readOnly = true)
@@ -297,10 +298,10 @@ public class ProjectService {
         } else {
             projects = projectRepository.findAllByFreelancerProfile(freelancerProfile, pageable);
         }
-        return mapToResponsesWithCounts(projects);
+        return mapToResponsesWithCounts(projects, null);
     }
 
-    private Page<ProjectResponse> mapToResponsesWithCounts(Page<Project> projectPage) {
+    private Page<ProjectResponse> mapToResponsesWithCounts(Page<Project> projectPage, User viewer) {
         List<Long> projectIds = projectPage.getContent().stream()
                 .map(Project::getId)
                 .collect(Collectors.toList());
@@ -313,16 +314,38 @@ public class ProjectService {
             }
         }
 
-        return projectPage.map(p -> ProjectResponse.from(p, countMap.getOrDefault(p.getId(), 0L)));
+        Set<Long> bookmarkedProjectIds = Collections.emptySet();
+        if (viewer != null && !projectIds.isEmpty()) {
+            Optional<FreelancerProfile> freelancerProfile = freelancerProfileRepository.findByUser_Id(viewer.getId());
+            if (freelancerProfile.isPresent()) {
+                bookmarkedProjectIds = new java.util.HashSet<>(bookmarkProjectRepository.findBookmarkedProjectIds(freelancerProfile.get(), projectIds));
+            }
+        }
+
+        final Set<Long> finalBookmarkedIds = bookmarkedProjectIds;
+        return projectPage.map(p -> ProjectResponse.from(
+                p,
+                countMap.getOrDefault(p.getId(), 0L),
+                finalBookmarkedIds.contains(p.getId())
+        ));
     }
 
     @Transactional(readOnly = true)
-    public ProjectResponse getProject(Long projectId) {
+    public ProjectResponse getProject(Long projectId, User viewer) {
         Project project = projectRepository.findByIdWithClientProfile(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("해당 프로젝트 공고를 찾을 수 없습니다. ID: " + projectId));
 
-        long count = projectApplicationRepository.countByProjectId(projectId); 
-        return ProjectResponse.from(project, count);
+        long count = projectApplicationRepository.countByProjectId(projectId);
+
+        boolean bookmarked = false;
+        if (viewer != null) {
+            Optional<FreelancerProfile> freelancerProfile = freelancerProfileRepository.findByUser_Id(viewer.getId());
+            if (freelancerProfile.isPresent()) {
+                bookmarked = bookmarkProjectRepository.existsByFreelancerProfileAndProject(freelancerProfile.get(), project);
+            }
+        }
+
+        return ProjectResponse.from(project, count, bookmarked);
     }
 
     private ClientProfile findClientProfileByUser(User user) {
