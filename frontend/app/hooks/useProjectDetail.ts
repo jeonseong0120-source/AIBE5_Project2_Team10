@@ -118,11 +118,16 @@ export function useProjectDetail(projectId: number | null) {
                 const projectData = response.data;
                 setProject(projectData);
                 
-                const cachedState = getLocalBookmarkState(Number(projectId));
-                if (cachedState !== undefined) {
-                    setIsBookmarked(cachedState);
+                // Prefer server value if it's explicitly provided as a boolean
+                if (typeof projectData.isBookmarked === 'boolean') {
+                    setIsBookmarked(projectData.isBookmarked);
                 } else {
-                    setIsBookmarked(projectData.isBookmarked || false);
+                    const cachedState = getLocalBookmarkState(Number(projectId));
+                    if (cachedState !== undefined) {
+                        setIsBookmarked(cachedState);
+                    } else {
+                        setIsBookmarked(false);
+                    }
                 }
 
                 if (bidPriceSeededForProjectIdRef.current !== projectId) {
