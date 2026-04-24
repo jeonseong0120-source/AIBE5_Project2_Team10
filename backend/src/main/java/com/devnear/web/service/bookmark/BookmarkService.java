@@ -82,17 +82,13 @@ public class BookmarkService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("프로젝트를 찾을 수 없습니다."));
         
-        if (bookmarkProjectRepository.existsByFreelancerProfileAndProject(freelancerProfile, project)) {
-            return;
-        }
-
         try {
-            bookmarkProjectRepository.save(BookmarkProject.builder()
+            bookmarkProjectRepository.saveAndFlush(BookmarkProject.builder()
                     .freelancerProfile(freelancerProfile)
                     .project(project)
                     .build());
         } catch (DataIntegrityViolationException e) {
-            log.info("Project already bookmarked by user: {}, projectId: {}", user.getId(), projectId);
+            throw new DuplicateProfileException("이미 찜한 프로젝트입니다.");
         }
     }
 
@@ -109,7 +105,7 @@ public class BookmarkService {
     public Page<ProjectResponse> getBookmarkedProjects(User user, Pageable pageable) {
         FreelancerProfile freelancerProfile = findFreelancerProfileByUser(user);
         return bookmarkProjectRepository.findAllByFreelancerProfile(freelancerProfile, pageable)
-                .map(bookmark -> ProjectResponse.from(bookmark.getProject()));
+                .map(bookmark -> ProjectResponse.from(bookmark.getProject(), 0L, true));
     }
 
     // ── 포트폴리오 좋아요 (프리랜서 찜으로 처리) ──

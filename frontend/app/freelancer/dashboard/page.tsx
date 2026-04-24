@@ -180,14 +180,16 @@ export default function FreelancerDashboardPage() {
 
     useEffect(() => {
         if (!authorized) return;
+        
+        // 🎯 사이드바 배지를 위해 초기 1회 제안 목록 로드
+        fetchReceivedProposals();
+    }, [authorized]);
+
+    useEffect(() => {
+        if (!authorized) return;
         if (activeMainTab === 'APPLICATIONS') fetchApplications();
         if (activeMainTab === 'RECEIVED_PROPOSALS') fetchReceivedProposals();
         if (activeMainTab === 'BOOKMARKS') fetchBookmarks(false);
-        
-        // 🎯 사이드바 배지를 위해 초기 1회 제안 목록 로드
-        if (activeMainTab !== 'RECEIVED_PROPOSALS') {
-            fetchReceivedProposals();
-        }
     }, [authorized, activeMainTab, sortOrder]);
 
     const handleToggleExpand = (uniqueId: string) => {

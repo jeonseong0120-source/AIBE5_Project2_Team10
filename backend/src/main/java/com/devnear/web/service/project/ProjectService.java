@@ -284,7 +284,7 @@ public class ProjectService {
         } else {
             projects = projectRepository.findAllByClientProfile(clientProfile, pageable);
         }
-        return mapToResponsesWithCounts(projects, user);
+        return mapToResponsesWithCounts(projects, null);
     }
 
     @Transactional(readOnly = true)
@@ -316,8 +316,8 @@ public class ProjectService {
 
         // 찜 여부 확인
         Set<Long> bookmarkedProjectIds = Collections.emptySet();
-        if (viewer != null && viewer.getFreelancerProfile() != null) {
-            bookmarkedProjectIds = new HashSet<>(bookmarkProjectRepository.findBookmarkedProjectIds(viewer.getFreelancerProfile().getId()));
+        if (viewer != null && viewer.getFreelancerProfile() != null && !projectIds.isEmpty()) {
+            bookmarkedProjectIds = bookmarkProjectRepository.findBookmarkedProjectIdsByProfileIdAndProjectIds(viewer.getFreelancerProfile().getId(), projectIds);
         }
 
         final Set<Long> finalBookmarkedProjectIds = bookmarkedProjectIds;
@@ -337,7 +337,7 @@ public class ProjectService {
 
         boolean isBookmarked = false;
         if (viewer != null && viewer.getFreelancerProfile() != null) {
-            isBookmarked = bookmarkProjectRepository.existsByProfileIdAndProjectId(viewer.getFreelancerProfile().getId(), project.getId());
+            isBookmarked = bookmarkProjectRepository.existsByFreelancerProfile_IdAndProject_Id(viewer.getFreelancerProfile().getId(), project.getId());
         }
 
         return ProjectResponse.from(project, count, isBookmarked);

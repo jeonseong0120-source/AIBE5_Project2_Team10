@@ -364,7 +364,7 @@ export default function FreelancerProjectDetailModal({ projectId, open, onClose 
                                                 </button>
 
                                                 <div className="mb-10">
-                                                    <h2 className="text-3xl font-black text-zinc-950 mb-2 tracking-tighter">
+                                                    <h2 id="freelancer-apply-panel-title" className="text-3xl font-black text-zinc-950 mb-2 tracking-tighter">
                                                         미션 지원하기
                                                     </h2>
                                                     <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">APPLICATION FORM</p>

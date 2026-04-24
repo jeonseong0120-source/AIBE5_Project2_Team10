@@ -6,7 +6,7 @@ import SkillTagSelector from "@/components/project/SkillTagSelector";
 import { MAX_PROJECT_SKILLS } from "@/app/lib/skillLimits";
 import api from "@/app/lib/axios";
 import { useRouter } from "next/navigation";
-import { DollarSign, MapPin, ArrowLeft, X, Type, Activity, List, Cpu, Briefcase, Target, FileText, Globe, Send, ChevronRight, Calendar, Building2 } from "lucide-react";
+import { DollarSign, MapPin, ArrowLeft, X, Type, Activity, List, Cpu, Briefcase, Target, FileText, Globe, Send, ChevronRight, Calendar, Building2, AlertTriangle } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface ProjectEditFormProps {
@@ -132,7 +132,7 @@ export default function ProjectEditForm({ projectId, initialData, embedded = fal
             if (embedded) {
                 onSaved?.();
             } else {
-                alert("✅ 프로젝트 수정이 완료되었습니다.");
+                onSaved?.();
                 router.push("/client/dashboard");
             }
         } catch (err: any) {
@@ -306,7 +306,10 @@ export default function ProjectEditForm({ projectId, initialData, embedded = fal
                                                 }}
                                             />
                                         ) : (
-                                            <div className="p-4 bg-red-50 text-red-600 text-[13px] font-bold rounded-xl border border-red-100">⚠️ API 키를 확인해주세요.</div>
+                                            <div className="p-4 bg-red-50 text-red-600 text-[13px] font-bold rounded-xl border border-red-100 flex items-center gap-2">
+                                                <AlertTriangle size={16} />
+                                                API 키를 확인해주세요.
+                                            </div>
                                         )}
                                     </div>
                                 </motion.div>
@@ -366,7 +369,7 @@ export default function ProjectEditForm({ projectId, initialData, embedded = fal
                             {submitting || isSkillsLoading ? (
                                 <>
                                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                                    <span>Processing...</span>
+                                    <span>저장 중...</span>
                                 </>
                             ) : (
                                 <>

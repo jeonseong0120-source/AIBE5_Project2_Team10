@@ -152,7 +152,7 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
             </section>
             )}
 
-            <form onSubmit={handleSubmit} className="mx-auto max-w-xl flex flex-col w-full overflow-hidden rounded-[2rem] border border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-xl relative z-10">
+            <form onSubmit={handleSubmit} className={`mx-auto max-w-xl flex flex-col w-full overflow-hidden rounded-[2rem] border border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-xl relative z-10 ${embedded ? 'max-h-[90vh]' : ''}`}>
                 {/* Top Accent Bar */}
                 <div className="h-1.5 w-full flex-none bg-gradient-to-r from-[#7A4FFF] via-[#FF7D00] to-[#7A4FFF]" />
 
@@ -259,11 +259,11 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                                 <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">근무 형태 설정</label>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                <label className={`flex cursor-pointer items-center justify-center gap-3 rounded-2xl border px-5 py-4 transition-all ${online ? 'border-[#7A4FFF] bg-purple-50 text-[#7A4FFF]' : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'}`}>
+                                <label className={`flex cursor-pointer items-center justify-center gap-3 rounded-2xl border px-5 py-4 transition-all focus-within:ring-2 focus-within:ring-[#7A4FFF] focus-within:ring-offset-2 ${online ? 'border-[#7A4FFF] bg-purple-50 text-[#7A4FFF]' : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'}`}>
                                     <input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)} className="sr-only" />
                                     <span className="text-[14px] font-black">온라인 (재택)</span>
                                 </label>
-                                <label className={`flex cursor-pointer items-center justify-center gap-3 rounded-2xl border px-5 py-4 transition-all ${offline ? 'border-[#FF7D00] bg-orange-50 text-[#FF7D00]' : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'}`}>
+                                <label className={`flex cursor-pointer items-center justify-center gap-3 rounded-2xl border px-5 py-4 transition-all focus-within:ring-2 focus-within:ring-[#FF7D00] focus-within:ring-offset-2 ${offline ? 'border-[#FF7D00] bg-orange-50 text-[#FF7D00]' : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'}`}>
                                     <input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} className="sr-only" />
                                     <span className="text-[14px] font-black">오프라인 (출근)</span>
                                 </label>
@@ -344,12 +344,12 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                             {submitting || isSkillsLoading ? (
                                 <>
                                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                                    <span>Processing...</span>
+                                    <span>등록 중...</span>
                                 </>
                             ) : (
                                 <>
                                     <Send size={20} strokeWidth={2.5} />
-                                    <span>프로젝트 등록 완료</span>
+                                    <span>프로젝트 등록하기</span>
                                 </>
                             )}
                             <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:animate-shimmer" />

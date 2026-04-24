@@ -465,7 +465,7 @@ export default function FreelancerProfileDetail({
                                                 {freelancer.nickname}
                                             </h1>
                                             <span className="rounded-2xl bg-[#7A4FFF] px-4 py-1.5 text-[16px] font-black uppercase tracking-[0.1em] text-white shadow-xl shadow-purple-200 ring-1 ring-purple-100/20">
-                                                {freelancer.gradeName || '일반'}
+                                                {freelancer.gradeName || '일반 요원'}
                                             </span>
                                         </div>
 
@@ -504,7 +504,7 @@ export default function FreelancerProfileDetail({
                                     </div>
                                     <div className="flex flex-col px-6 text-center md:text-left">
                                         <span className="text-2xl font-black tracking-tighter text-[#7A4FFF]">
-                                            {(freelancer.averageRating || 0).toFixed(1)}
+                                            {(Math.round((freelancer.averageRating || 0) * 10) / 10).toFixed(1)}
                                         </span>
                                         <span className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#7A4FFF]">
                                             Rating
@@ -734,15 +734,17 @@ export default function FreelancerProfileDetail({
 
                                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-[#7A4FFF]">
-                                                            <User size={20} />
+                                                        <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-[#7A4FFF] overflow-hidden border border-zinc-100">
+                                                            {rev.reviewerProfileImageUrl ? (
+                                                                <img src={rev.reviewerProfileImageUrl} alt={rev.reviewerNickname} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <User size={20} />
+                                                            )}
                                                         </div>
                                                         <div>
                                                             <div className="text-sm font-black text-zinc-950">{rev.reviewerNickname || '익명 클라이언트'}</div>
                                                             <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                                                                {new Date(rev.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                                                <span className="w-1 h-1 rounded-full bg-zinc-200" />
-                                                                VERIFIED_CLIENT
+                                                                {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) : '날짜 정보 없음'}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -750,15 +752,15 @@ export default function FreelancerProfileDetail({
                                                     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50/50 rounded-full">
                                                         <div className="flex items-center gap-0.5 text-[#7A4FFF]">
                                                             {[...Array(5)].map((_, i) => (
-                                                                <Star
-                                                                    key={i}
-                                                                    size={12}
-                                                                    fill={i < Math.floor(rev.averageScore || 0) ? "currentColor" : "none"}
-                                                                    strokeWidth={2.5}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                        <span className="text-xs font-black text-[#7A4FFF] font-mono">{(rev.averageScore || 0).toFixed(1)}</span>
+                                                                    <Star
+                                                                        key={i}
+                                                                        size={12}
+                                                                        fill={i < Math.round(rev.averageScore || 0) ? "currentColor" : "none"}
+                                                                        strokeWidth={2.5}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                            <span className="text-xs font-black text-[#7A4FFF] font-mono">{(Math.round((rev.averageScore || 0) * 10) / 10).toFixed(1)}</span>
                                                     </div>
                                                 </div>
 
@@ -783,6 +785,7 @@ export default function FreelancerProfileDetail({
                     <motion.div
                         initial={{ y: 100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 100, opacity: 0 }}
                         className="fixed bottom-8 left-1/2 z-[60] w-[92%] max-w-2xl -translate-x-1/2"
                     >
                         <div className="group relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-zinc-950/90 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">

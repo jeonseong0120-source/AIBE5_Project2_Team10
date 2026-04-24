@@ -4,7 +4,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
 import ModeToggle from '@/components/common/ModeToggle';
-import { Search, Plus, Rocket, Sparkles, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getActiveRole, setActiveRole } from '@/app/lib/auth';
 
@@ -94,9 +93,9 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
             >
                 <div className="absolute inset-0 bg-white/60 backdrop-blur-xl border-b border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.03)]" />
 
-                <div className="relative z-10 w-full max-w-7xl px-8 flex justify-between items-center">
+                <div className="relative z-10 w-full max-w-7xl px-8 flex items-center">
                     <button
-                        className="cursor-pointer flex items-center group overflow-visible outline-none focus-visible:ring-4 focus-visible:ring-zinc-950/10 rounded-2xl transition-all"
+                        className="cursor-pointer flex-shrink-0 flex items-center group overflow-visible outline-none focus-visible:ring-4 focus-visible:ring-zinc-950/10 rounded-2xl transition-all"
                         onClick={() => router.push(isClientPage ? "/client/mainpage" : "/freelancer/explore")}
                         aria-label="DevNear Home"
                     >
@@ -109,8 +108,8 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
                         </div>
                     </button>
 
-                    {/* 🎯 중앙 메뉴 배치 */}
-                    <div className="absolute left-1/2 -translate-x-1/2 hidden lg:flex items-center gap-12">
+                    {/* 🎯 중앙 메뉴 배치: flex-1과 justify-center를 사용하여 유연한 중앙 정렬 */}
+                    <div className="flex-1 hidden lg:flex items-center justify-center gap-12">
                         {menus.map((item) => {
                             const isActive = item.path === '/community'
                                 ? pathname?.startsWith('/community')
@@ -138,7 +137,7 @@ export default function GlobalNavbar({ user, profile }: GlobalNavbarProps) {
                     </div>
 
                     {/* 우측 액션 버튼들 */}
-                    <div className="flex items-center gap-6">
+                    <div className="flex-shrink-0 flex items-center gap-6">
                         <div className="hidden sm:flex items-center justify-center min-w-[44px]">
                             {user?.role === 'BOTH' && (
                                 <div className="p-1 bg-zinc-100/50 rounded-full border border-white/50 backdrop-blur-sm">

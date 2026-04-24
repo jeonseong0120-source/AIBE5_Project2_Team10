@@ -20,7 +20,7 @@ type Props = {
 };
 
 /**
- * 예산 표기 통일: 우측 상단 "예상 예산" + ₩(주황) + 숫자(검정) + 만원(회색)
+ * 예산 표기 통일: 우측 상단 "예상 예산" + ₩(보라) + 숫자(검정) + 만원(회색)
  */
 export function EstimatedBudgetBlock({
     budgetWon,
@@ -54,6 +54,12 @@ export function EstimatedBudgetBlock({
         ? 'text-base font-bold text-zinc-500 ml-1.5'
         : 'text-sm font-medium text-zinc-400 ml-1';
 
+    const fallbackCls = isSm 
+        ? 'text-lg font-bold text-zinc-400' 
+        : isLg 
+        ? 'text-2xl font-bold text-zinc-400' 
+        : 'text-xl font-bold text-zinc-400';
+
     return (
         <div className={`${rootAlign} ${className}`}>
             {showLabel && <span className={`block ${labelCls}`}>예상 예산</span>}
@@ -64,7 +70,7 @@ export function EstimatedBudgetBlock({
                     <span className={`${unitCls} leading-none`}>만원</span>
                 </div>
             ) : (
-                <p className={isSm ? 'text-lg font-bold text-zinc-400' : 'text-xl font-bold text-zinc-400'}>협의</p>
+                <p className={`${fallbackCls} leading-none`}>협의</p>
             )}
         </div>
     );

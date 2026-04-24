@@ -182,8 +182,7 @@ export default function ProjectDetailPage() {
                                 {project.projectName}
                             </h1>
 
-                            <div className="flex flex-wrap items-center gap-4 text-zinc-400 font-black uppercase text-[11px] font-mono tracking-widest">
-                             <div className="flex flex-wrap gap-3 mt-4">
+                            <div className="flex flex-wrap gap-3 mt-4">
                                 <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-zinc-100 shadow-sm transition-all hover:border-[#7A4FFF]/30 hover:shadow-md">
                                     <Building2 size={14} className="text-[#7A4FFF]" />
                                     <span className="text-[13px] font-bold text-zinc-600">{project.companyName}</span>
@@ -193,7 +192,6 @@ export default function ProjectDetailPage() {
                                     <MapPin size={14} className="text-blue-500" />
                                     <span className="text-[13px] font-bold text-zinc-600">{project.location || '전국'}</span>
                                 </div>
-                            </div>
                             </div>
 
                             <div className="mt-6">
