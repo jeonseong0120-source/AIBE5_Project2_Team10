@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
@@ -138,12 +138,16 @@ export default function FreelancerDashboardPage() {
         if (!confirm("관심 프로젝트에서 삭제하시겠습니까?")) return;
         try {
             await api.delete(`/v1/bookmarks/projects/${projectId}`);
-            fetchBookmarks(false);
             notifyBookmarkChanged(projectId, false);
         } catch (err) {
             alert("삭제에 실패했습니다.");
         }
     };
+
+    const fetchBookmarksRef = useRef(fetchBookmarks);
+    useEffect(() => {
+        fetchBookmarksRef.current = fetchBookmarks;
+    }, [fetchBookmarks]);
 
     useEffect(() => {
         const handleBookmarkChange = (e: Event) => {
@@ -154,15 +158,13 @@ export default function FreelancerDashboardPage() {
                 setBookmarkedProjects(prev => prev.filter(p => p.projectId !== projectId));
                 setTotalBookmarks(prev => Math.max(0, prev - 1));
             } else {
-                // 추가되었을 때는 목록을 다시 불러오는 것이 간단하고 정확합니다.
-                // (이 페이지가 활성 탭일 때만 다시 불러와도 되지만, 전체적으로 새로고침하는 것이 안전합니다)
-                fetchBookmarks(false);
+                fetchBookmarksRef.current(false);
             }
         };
 
         window.addEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
         return () => window.removeEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
-    }, [fetchBookmarks]);
+    }, []);
 
     const handleProposalStatus = async (proposalId: number, status: 'ACCEPTED' | 'REJECTED') => {
         const actionText = status === 'ACCEPTED' ? '수락' : '거절';

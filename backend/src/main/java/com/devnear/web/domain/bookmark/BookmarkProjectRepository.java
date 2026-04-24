@@ -23,9 +23,8 @@ public interface BookmarkProjectRepository extends JpaRepository<BookmarkProject
             "project.clientProfile.user"
     })
     Page<BookmarkProject> findAllByFreelancerProfile(FreelancerProfile freelancerProfile, Pageable pageable);
-    boolean existsByFreelancerProfileAndProject(FreelancerProfile freelancerProfile, Project project);
 
-    boolean existsByFreelancerProfile_IdAndProject_Id(Long freelancerProfileId, Long projectId);
+    boolean existsByFreelancerProfile_IdAndProject_Id(Long profileId, Long projectId);
 
     @Query("SELECT b.project.id FROM BookmarkProject b WHERE b.freelancerProfile.id = :profileId AND b.project.id IN :projectIds")
     Set<Long> findBookmarkedProjectIdsByProfileIdAndProjectIds(@Param("profileId") Long profileId, @Param("projectIds") List<Long> projectIds);
