@@ -45,21 +45,24 @@ public class ProjectDeadlineAutoCloseService {
      */
     @Transactional
     public void tryAutoCloseIfReady(Long projectId) {
-        projectRepository.findById(projectId).ifPresent(this::tryCloseIfEligible);
+        projectRepository.findByIdForUpdate(projectId).ifPresent(this::tryCloseIfEligible);
     }
 
     /**
      * 마감일이 지난 OPEN 공고를 스캔해 일괄 마감합니다. (스케줄러)
      */
-    @Transactional
     public void autoCloseAllEligibleOpenProjects() {
         LocalDate today = LocalDate.now(KST);
         List<Project> candidates = projectRepository
                 .findAllByStatusAndFreelancerProfileIsNullAndDeadlineBefore(ProjectStatus.OPEN, today);
         int closed = 0;
         for (Project p : candidates) {
-            if (tryCloseIfEligible(p)) {
-                closed++;
+            try {
+                if (tryAutoCloseIfReadyInternal(p.getId())) {
+                    closed++;
+                }
+            } catch (Exception ex) {
+                log.warn("[ProjectDeadline] 자동 마감 실패 projectId={}", p.getId(), ex);
             }
         }
         if (closed > 0) {

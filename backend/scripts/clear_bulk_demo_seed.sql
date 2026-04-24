@@ -213,5 +213,3 @@ WHERE email LIKE 'bulk-demo-%@local.test';
 SET SESSION sql_safe_updates = IFNULL(@__bulk_demo_seed_prev_safe, 1);
 
 COMMIT;
-
-//테스트
