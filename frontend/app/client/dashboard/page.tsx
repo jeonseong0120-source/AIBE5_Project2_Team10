@@ -35,6 +35,8 @@ export default function ClientDashboardPage() {
 
     const [bookmarks, setBookmarks] = useState<any[]>([]);
     const [bookmarksLoading, setBookmarksLoading] = useState(false);
+    /** 첫 북마크 fetch 완료 전에는 빈 목록 UI를 보이지 않음 */
+    const [bookmarksFetched, setBookmarksFetched] = useState(false);
     const [bookmarkPage, setBookmarkPage] = useState(0);
     const [hasMoreBookmarks, setHasMoreBookmarks] = useState(true);
 
@@ -83,9 +85,7 @@ export default function ClientDashboardPage() {
         const checkAccess = async () => {
             try {
                 const res = await api.get("/v1/users/me");
-                console.log("🔥 [진실의 로그] 대시보드 권한 데이터:", res.data);
                 const roles = res.data.role || "";
-
                 if (!roles.includes("CLIENT") && !roles.includes("BOTH")) {
                     alert("클라이언트 또는 BOTH 계정만 접근 가능합니다.");
                     if (roles.includes("FREELANCER")) return router.replace("/");
@@ -130,7 +130,10 @@ export default function ClientDashboardPage() {
             setBookmarks(prev => isLoadMore ? [...prev, ...newContent] : newContent);
             setBookmarkPage(targetPage);
             setHasMoreBookmarks(!data.last);
-        } catch (err) { console.error("찜 목록 로드 실패", err); } finally { setBookmarksLoading(false); }
+        } catch (err) { console.error("찜 목록 로드 실패", err); } finally {
+            setBookmarksLoading(false);
+            setBookmarksFetched(true);
+        }
     }, [bookmarkPage, bookmarksSortOrder]);
 
     const fetchSentProposals = async () => {
@@ -285,6 +288,10 @@ export default function ClientDashboardPage() {
             setProposalSending(false);
         }
     };
+
+    useEffect(() => {
+        if (authorized && activeMainTab === 'BOOKMARKS') fetchBookmarks(false);
+    }, [authorized, activeMainTab, bookmarksSortOrder]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (authorized) {
@@ -617,7 +624,6 @@ export default function ClientDashboardPage() {
                                         type="button"
                                         onClick={() => {
                                             setBookmarksSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC');
-                                            fetchBookmarks(false);
                                         }}
                                         className="px-8 py-3.5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all flex items-center gap-3 shadow-xl shadow-zinc-100"
                                     >
@@ -635,14 +641,14 @@ export default function ClientDashboardPage() {
                                     )}
                                 </div>
                                 
-                                {bookmarks.length === 0 && !bookmarksLoading ? (
+                                {!bookmarksFetched || (bookmarks.length === 0 && bookmarksLoading) ? (
+                                    <div className="py-24 text-center text-zinc-400 text-sm font-medium">관심 프리랜서를 불러오는 중…</div>
+                                ) : bookmarks.length === 0 && !bookmarksLoading ? (
                                     <div className="text-center py-48 bg-white/30 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200">
                                         <Heart size={64} className="text-zinc-200 mx-auto mb-8" strokeWidth={0.5} />
                                         <h3 className="text-zinc-300 font-black text-2xl font-mono uppercase tracking-[0.3em]">Empty_Library</h3>
                                         <p className="text-zinc-400 text-xs mt-2 italic">찜한 인재가 없습니다. 탐색 페이지에서 파트너를 찾아보세요.</p>
                                     </div>
-                                ) : bookmarks.length === 0 && bookmarksLoading ? (
-                                    <div className="py-24 text-center text-zinc-400 text-sm font-medium">관심 프리랜서를 불러오는 중…</div>
                                 ) : (
                                     <div className="grid grid-cols-1 gap-8">
                                         {bookmarks.map((freelancer, idx) => (

@@ -38,6 +38,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -76,7 +78,8 @@ class ClientSideFetchingIntegrationTest {
     private UserRepository userRepository;
     @Autowired
     private ApplicationService applicationService;
-
+    @PersistenceContext
+    private EntityManager em;
     /** 다건 N+1 회귀 검증용(찜·내 공고). 늘리면 SELECT 상한도 함께 검토 */
     private static final int MULTI_ROW_COUNT = 15;
 
@@ -134,6 +137,7 @@ class ClientSideFetchingIntegrationTest {
                     .build());
         });
         bookmarkFreelancerRepository.flush();
+        em.clear();
 
         QueryCountHolder.reset();
         Page<BookmarkFreelancer> page = bookmarkFreelancerRepository.findAllByClientProfile(
