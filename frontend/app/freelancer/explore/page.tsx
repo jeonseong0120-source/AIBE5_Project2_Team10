@@ -2,7 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, DollarSign, Cpu, RotateCcw, Activity, Loader2, AlertCircle, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import { 
+    Search, MapPin, DollarSign, Cpu, RotateCcw, Activity, Loader2, 
+    AlertCircle, ChevronLeft, ChevronRight, ChevronDown, Check, Sparkles,
+    Clock, CircleDollarSign, Calendar, Zap, ListFilter
+} from 'lucide-react';
 import ProjectCard from "@/components/freelancer/ProjectCard";
 import FreelancerProjectDetailModal from '@/components/freelancer/FreelancerProjectDetailModal';
 import { useRouter } from 'next/navigation';
@@ -11,7 +15,9 @@ import api from '@/app/lib/axios';
 
 // 🎯 [추가] 대통합 네비게이션 바 불러오기!
 import GlobalNavbar, { type UserData, type ProfileData } from '../../../components/common/GlobalNavbar';
+import FilterSidebar from '@/components/common/FilterSidebar';
 import { EstimatedBudgetBlock } from '@/components/freelancer/EstimatedBudgetBlock';
+import { SKILL_CATEGORIES } from '@/constants/skills';
 
 /** AI 추천 카드 영역 — 루트와 동일하게 Geist */
 const geistSans = Geist({
@@ -35,8 +41,13 @@ export default function FreelancerExplorePage() {
     const [selectedLocation, setSelectedLocation] = useState('');
     const [selectedTechs, setSelectedTechs] = useState<string[]>([]);
     const [activeTab, setActiveTab] = useState('전체');
+    
+    // 🎯 [개선] 정렬 방향 상태 추가
     const [sort, setSort] = useState('createdAt');
-    const [isSortOpen, setIsSortOpen] = useState(false);
+    const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+
+    const [minBudget, setMinBudget] = useState<number | undefined>(undefined);
+    const [maxBudget, setMaxBudget] = useState<number | undefined>(undefined);
     
     // 🔥 [최적화] 마우스 글로우 효과를 위한 Ref + rAF 방식 사용 (리렌더링 방지)
     const glowRef = useRef<HTMLDivElement>(null);
@@ -149,28 +160,6 @@ export default function FreelancerExplorePage() {
         }
     }, []);
 
-    const locations = ['전국', '서울', '경기', '인천', '부산', '대구', '대전', '광주', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
-    const techStacks = [
-        'Java',
-        'Spring Boot',
-        'React',
-        'Next.js',
-        'TypeScript',
-        'Node.js',
-        'Python',
-        'Kotlin',
-        'Go',
-        'Vue.js',
-        'PostgreSQL',
-        'MongoDB',
-        'AWS',
-        'Docker',
-        'Kubernetes',
-        'Flutter',
-        'GraphQL',
-        'Tailwind CSS',
-        'Figma',
-    ];
 
     useEffect(() => {
         const checkAccess = async () => {
@@ -220,15 +209,18 @@ export default function FreelancerExplorePage() {
             const onlineFilter = activeTab === '온라인' ? 'true' : undefined;
             const offlineFilter = activeTab === '오프라인' ? 'true' : undefined;
 
-            // 🎯 [최적화] URLSearchParams를 사용하여 skill=A&skill=B 형태로 반복 전달 (Axios 기본 배열 직렬화 해결)
+            // 🎯 [최적화] URLSearchParams를 사용하고 금액 범위 필터 추가
             const searchParams = new URLSearchParams();
             if (searchQuery) searchParams.append('keyword', searchQuery);
             if (selectedLocation) searchParams.append('location', selectedLocation);
             selectedTechs.forEach(tech => searchParams.append('skill', tech));
             if (onlineFilter) searchParams.append('online', onlineFilter);
             if (offlineFilter) searchParams.append('offline', offlineFilter);
+            if (minBudget !== undefined) searchParams.append('minBudget', minBudget.toString());
+            if (maxBudget !== undefined) searchParams.append('maxBudget', maxBudget.toString());
             
-            searchParams.append('sort', sort === 'budget' ? 'budget,asc' : `${sort},desc`);
+            // 🎯 [개선] 정렬 방향 반영
+            searchParams.append('sort', `${sort},${sortOrder}`);
             searchParams.append('page', pageNum.toString());
             searchParams.append('size', '10');
 
@@ -250,7 +242,15 @@ export default function FreelancerExplorePage() {
     };
 
     const resetFilters = () => {
-        setSearchQuery(''); setSelectedLocation(''); setSelectedTechs([]); setActiveTab('전체'); setSort('createdAt'); setPage(0);
+        setSearchQuery(''); 
+        setSelectedLocation(''); 
+        setSelectedTechs([]); 
+        setActiveTab('전체'); 
+        setSort('createdAt'); 
+        setSortOrder('desc');
+        setPage(0);
+        setMinBudget(undefined);
+        setMaxBudget(undefined);
     };
 
     // 🎯 [분리] 프로필 데이터는 인증 직후 1회만 로드
@@ -269,7 +269,7 @@ export default function FreelancerExplorePage() {
             const timeoutId = setTimeout(() => { fetchProjects(0, false); }, 300);
             return () => clearTimeout(timeoutId);
         }
-    }, [searchQuery, selectedLocation, selectedTechs, activeTab, sort, authorized]);
+    }, [searchQuery, selectedLocation, selectedTechs, activeTab, sort, sortOrder, authorized, minBudget, maxBudget]);
 
     const handleLoadMore = () => {
         if (fetchingMore) return;
@@ -280,6 +280,21 @@ export default function FreelancerExplorePage() {
     const openProjectModal = (projectId: number) => {
         setSelectedProjectId(projectId);
         setIsProjectModalOpen(true);
+    };
+
+    // 🎯 [추가] 정렬 옵션 정의 (심플하게 변경)
+    const sortOptions = [
+        { id: 'createdAt', label: '등록순' },
+        { id: 'budget', label: '예산순' },
+    ];
+
+    const handleSortClick = (id: string) => {
+        if (sort === id) {
+            setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+        } else {
+            setSort(id);
+            setSortOrder('desc');
+        }
     };
 
     if (!authorized) return <div className="min-h-screen bg-white flex items-center justify-center text-[#7A4FFF] font-black tracking-widest animate-pulse font-mono uppercase text-xs">인증 정보를 확인 중입니다...</div>;
@@ -300,7 +315,7 @@ export default function FreelancerExplorePage() {
             <GlobalNavbar user={user} profile={profile} />
 
             {/* HERO HEADER - 프리미엄 스타일로 업그레이드 */}
-            <header className="relative pt-24 pb-16 px-6 bg-white border-b border-zinc-100 overflow-hidden text-center">
+            <header className="relative pt-24 pb-12 px-6 bg-white border-b border-zinc-100 overflow-hidden text-center">
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
                     style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
@@ -395,262 +410,154 @@ export default function FreelancerExplorePage() {
                             </div>
                         )}
                     </div>
-
-                    {aiRecLoading ? (
-                        <div className="flex items-center justify-center py-12 gap-4">
-                            <div className="w-10 h-10 border-3 border-[#7A4FFF]/10 border-t-[#7A4FFF] rounded-full animate-spin" />
-                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] animate-pulse">Analyzing...</p>
-                        </div>
-                    ) : aiRecError ? (
-                        <div className="rounded-2xl border border-red-50/50 bg-red-50/20 px-6 py-10 text-center backdrop-blur-sm">
-                            <p className="text-xs font-semibold text-red-900 mb-4 tracking-tight">{aiRecError}</p>
-                            <button
-                                type="button"
-                                onClick={() => void loadAiRecommendations()}
-                                className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-[#7A4FFF] active:scale-95"
-                            >
-                                <RotateCcw size={12} /> RELOAD
-                            </button>
-                        </div>
-                    ) : aiRecommendations.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-zinc-100 bg-zinc-50/30 py-16 text-center">
-                            <p className="text-xs font-bold text-zinc-300 uppercase tracking-widest">No_Matched_Missions_Found</p>
-                        </div>
-                    ) : (
-                        <div 
-                            ref={carouselRef}
-                            onScroll={handleScroll}
-                            id="ai-carousel"
-                            className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-2 px-2 snap-x"
-                        >
-                            {aiRecommendations.map((p, idx) => (
-                                <motion.div
-                                    key={p.projectId}
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: idx * 0.05 }}
-                                    className="flex-none w-[280px] md:w-[320px] snap-start group/card py-2"
+                    
+                    {/* 🎯 AI 추천 영역 최소 높이 고정 */}
+                    <div className="min-h-[260px] flex flex-col justify-center">
+                        {aiRecLoading ? (
+                            <div className="flex items-center justify-center py-12 gap-4">
+                                <div className="w-10 h-10 border-3 border-[#7A4FFF]/10 border-t-[#7A4FFF] rounded-full animate-spin" />
+                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] animate-pulse">Analyzing...</p>
+                            </div>
+                        ) : aiRecError ? (
+                            <div className="rounded-2xl border border-red-50/50 bg-red-50/20 px-6 py-10 text-center backdrop-blur-sm">
+                                <p className="text-xs font-semibold text-red-900 mb-4 tracking-tight">{aiRecError}</p>
+                                <button
+                                    type="button"
+                                    onClick={() => void loadAiRecommendations()}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:bg-[#7A4FFF] active:scale-95"
                                 >
-                                    <div className="h-full flex flex-col rounded-[1.5rem] border border-zinc-100 bg-white p-6 transition-all duration-500 hover:border-[#7A4FFF]/20 hover:shadow-[0_20px_40px_rgba(0,0,0,0.04)] relative overflow-hidden">
-                                        
-                                        {/* Hover Gradient Overlay */}
-                                        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/[0.02] to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
+                                    <RotateCcw size={12} /> RELOAD
+                                </button>
+                            </div>
+                        ) : aiRecommendations.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-zinc-100 bg-zinc-50/30 py-16 text-center">
+                                <p className="text-xs font-bold text-zinc-300 uppercase tracking-widest">No_Matched_Missions_Found</p>
+                            </div>
+                        ) : (
+                            <div 
+                                ref={carouselRef}
+                                onScroll={handleScroll}
+                                id="ai-carousel"
+                                className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-2 px-2 snap-x"
+                            >
+                                {aiRecommendations.map((p, idx) => (
+                                    <motion.div
+                                        key={p.projectId}
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                        className="flex-none w-[280px] md:w-[320px] snap-start group/card py-2"
+                                    >
+                                        <div className="h-full flex flex-col rounded-[1.5rem] border border-zinc-100 bg-white p-6 transition-all duration-500 hover:border-[#7A4FFF]/20 hover:shadow-[0_20px_40px_rgba(0,0,0,0.04)] relative overflow-hidden">
+                                            
+                                            {/* Hover Gradient Overlay */}
+                                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/[0.02] to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
 
-                                        <div className="mb-4 flex items-center justify-between relative z-10">
-                                            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#7A4FFF]/5 border border-[#7A4FFF]/10">
-                                                <span className="text-[12px] font-bold uppercase tracking-widest text-[#7A4FFF]">
-                                                    {Number.isFinite(p.similarityScore) ? (p.similarityScore * 100).toFixed(0) : '—'}% MATCH
-                                                </span>
+                                            <div className="mb-4 flex items-center justify-between relative z-10">
+                                                <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#7A4FFF]/5 border border-[#7A4FFF]/10">
+                                                    <span className="text-[12px] font-bold uppercase tracking-widest text-[#7A4FFF]">
+                                                        {Number.isFinite(p.similarityScore) ? (p.similarityScore * 100).toFixed(0) : '—'}% MATCH
+                                                    </span>
+                                                </div>
+                                                {/* 🎯 AI PICK 로고 추가 */}
+                                                <div className="w-10 h-10 rounded-xl bg-white border border-zinc-100 p-1 shadow-sm overflow-hidden group-hover/card:border-[#7A4FFF]/30 transition-colors duration-300">
+                                                    <img 
+                                                        src={p.logoUrl || `https://ui-avatars.com/api/?name=${p.companyName || 'C'}&background=F4F4F5&color=A1A1AA`} 
+                                                        alt={p.companyName}
+                                                        className="w-full h-full object-cover rounded-lg"
+                                                    />
+                                                </div>
                                             </div>
-                                            {/* 🎯 AI PICK 로고 추가 */}
-                                            <div className="w-10 h-10 rounded-xl bg-white border border-zinc-100 p-1 shadow-sm overflow-hidden group-hover/card:border-[#7A4FFF]/30 transition-colors duration-300">
-                                                <img 
-                                                    src={p.logoUrl || `https://ui-avatars.com/api/?name=${p.companyName || 'C'}&background=F4F4F5&color=A1A1AA`} 
-                                                    alt={p.companyName}
-                                                    className="w-full h-full object-cover rounded-lg"
-                                                />
+
+                                            <div className="mb-2">
+                                                <p className="text-[13px] font-bold text-zinc-400 uppercase tracking-widest mb-1">{p.companyName || '개인 클라이언트'}</p>
+                                                <h3 className="text-lg font-bold leading-tight text-zinc-900 line-clamp-2 min-h-[52px] group-hover/card:text-[#7A4FFF] transition-colors duration-300 relative z-10">
+                                                    {p.projectName}
+                                                </h3>
+                                            </div>
+
+                                            <div className="mt-auto pt-5 border-t border-zinc-50 relative z-10">
+                                                <div className="mb-6">
+                                                    <EstimatedBudgetBlock budgetWon={p.budget} size="sm" align="left" />
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openProjectModal(p.projectId)}
+                                                    className="w-full relative overflow-hidden rounded-xl bg-zinc-950 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_10px_20px_rgba(122,79,255,0.2)]"
+                                                >
+                                                    <span className="relative z-10">OPEN_MISSION</span>
+                                                    <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-1000" />
+                                                </button>
                                             </div>
                                         </div>
-
-                                        <div className="mb-2">
-                                            <p className="text-[13px] font-bold text-zinc-400 uppercase tracking-widest mb-1">{p.companyName || '개인 클라이언트'}</p>
-                                            <h3 className="text-lg font-bold leading-tight text-zinc-900 line-clamp-2 min-h-[52px] group-hover/card:text-[#7A4FFF] transition-colors duration-300 relative z-10">
-                                                {p.projectName}
-                                            </h3>
-                                        </div>
-
-                                        <div className="mt-auto pt-5 border-t border-zinc-50 relative z-10">
-                                            <div className="mb-6">
-                                                <EstimatedBudgetBlock budgetWon={p.budget} size="sm" align="left" />
-                                            </div>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => openProjectModal(p.projectId)}
-                                                className="w-full relative overflow-hidden rounded-xl bg-zinc-950 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_10px_20px_rgba(122,79,255,0.2)]"
-                                            >
-                                                <span className="relative z-10">OPEN_MISSION</span>
-                                                <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-1000" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </section>
 
-            <main className="max-w-7xl mx-auto px-8 py-12 flex flex-col lg:flex-row gap-12">
+            <main className="max-w-7xl mx-auto px-8 py-10 flex flex-col lg:flex-row gap-12 items-start">
                 
-                {/* 🎯 LEFT SIDEBAR - Sticky & Optimized UI */}
-                <aside className="w-full lg:w-72 shrink-0 space-y-10">
-                    <div className="sticky top-28 space-y-10">
-                    
-                    {/* 1. 협업 근무 방식 필터 */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
-                            <Activity size={16} className="text-[#7A4FFF]" /> 협업 근무 방식
-                        </h3>
-                        <div className="flex bg-white p-1 rounded-2xl border border-zinc-200 shadow-sm overflow-x-auto no-scrollbar">
-                            {['전체', '온라인', '오프라인'].map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`flex-1 py-2.5 rounded-xl text-[11px] font-black transition-all ${
-                                        activeTab === tab ? 'bg-zinc-900 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-900'
-                                    }`}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* 2. 기술 스택 필터 (그리드 형태) */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
-                            <Cpu size={16} className="text-[#7A4FFF]" /> 프로젝트 기술 스택
-                        </h3>
-                        <div className="grid grid-cols-2 gap-2">
-                            {techStacks.map(tech => {
-                                const isSelected = selectedTechs.includes(tech);
-                                return (
-                                    <button
-                                        key={tech}
-                                        onClick={() => {
-                                            setSelectedTechs(prev => 
-                                                prev.includes(tech) 
-                                                    ? prev.filter(t => t !== tech)
-                                                    : [...prev, tech]
-                                            );
-                                        }}
-                                        className={`group flex items-center justify-between px-3 py-2.5 rounded-xl text-[10px] font-black transition-all border ${
-                                            isSelected 
-                                                ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' 
-                                                : 'bg-white border-zinc-100 text-zinc-400 hover:border-zinc-300 hover:text-zinc-900'
-                                        }`}
-                                    >
-                                        {tech}
-                                        <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-[#7A4FFF]' : 'bg-transparent group-hover:bg-zinc-200'}`} />
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </section>
-
-                    {/* 3. 활동 지역 필터 (3열 컴팩트 그리드 - Client Mainpage 스타일) */}
-                    <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight text-zinc-900">
-                                <MapPin size={16} className="text-[#7A4FFF]" /> 활동 지역
-                            </h3>
-                            {selectedLocation && (
-                                <span className="text-[9px] font-black text-[#7A4FFF] font-mono animate-pulse">FILTER_ACTIVE</span>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                            {locations.map(loc => {
-                                const isActive = (loc === '전국' && selectedLocation === '') || selectedLocation === loc;
-                                return (
-                                    <button
-                                        key={loc}
-                                        onClick={() => setSelectedLocation(loc === '전국' ? '' : (selectedLocation === loc ? '' : loc))}
-                                        className={`group flex flex-col items-center justify-center py-2 rounded-lg text-[9px] font-black transition-all border ${
-                                            isActive
-                                                ? 'bg-zinc-900 border-zinc-900 text-white shadow-md' 
-                                                : 'bg-white border-zinc-100 text-zinc-400 hover:border-zinc-300 hover:text-zinc-900'
-                                        }`}
-                                    >
-                                        {loc}
-                                        <div className={`mt-1 w-1 h-1 rounded-full ${
-                                            isActive
-                                                ? 'bg-[#7A4FFF]' 
-                                                : 'bg-transparent group-hover:bg-zinc-200'
-                                        }`} />
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </section>
-
-                    {/* 4. 희망 예산 브랜딩 (Coming Soon 스타일로 유지하되 세련되게) */}
-                    <section>
-                        <h3 className="flex items-center gap-2 font-bold text-[14px] tracking-tight mb-4 text-zinc-900">
-                            <DollarSign size={16} className="text-[#7A4FFF]" /> 프로젝트 예산
-                        </h3>
-                         <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-                            <div className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest py-2">
-                                Deep Analysis Mode
-                            </div>
-                        </div>
-                    </section>
-
-                    {isFiltered && (
-                        <button
-                            onClick={resetFilters}
-                            className="w-full flex items-center justify-center gap-2 py-4 bg-zinc-100 text-zinc-400 rounded-2xl text-[11px] font-black uppercase font-mono hover:bg-[#7A4FFF] hover:text-white transition-all group shadow-sm"
-                        >
-                            <RotateCcw size={14} className="group-hover:rotate-[-45deg] transition-transform" />
-                            필터_설정_초기화
-                        </button>
-                    )}
-                    </div>
-                </aside>
+                {/* 🎯 LEFT SIDEBAR - New Premium Filter Sidebar */}
+                <FilterSidebar 
+                    mode="FREELANCER"
+                    selectedSkills={selectedTechs}
+                    onSkillChange={(skills) => setSelectedTechs(skills)}
+                    selectedLocation={selectedLocation}
+                    onLocationChange={(loc) => setSelectedLocation(loc)}
+                    workStyle={activeTab}
+                    onWorkStyleChange={(style) => setActiveTab(style === '' ? '전체' : style)}
+                    minPrice={minBudget}
+                    maxPrice={maxBudget}
+                    onPriceChange={(min, max) => {
+                        setMinBudget(min);
+                        setMaxBudget(max);
+                    }}
+                    onReset={resetFilters}
+                />
 
                 {/* 우측 공고 리스트 */}
-                <section className="flex-1">
-                    <div className="flex justify-between items-center mb-8 border-b border-zinc-100 pb-8 relative z-20">
-                        <div /> {/* Left side empty */}
+                <section className="flex-1 w-full mt-0">
+                    <div className="mb-8 px-6 h-[62px] bg-white/70 backdrop-blur-md rounded-full border border-zinc-100 shadow-sm flex items-center justify-between gap-4 p-1.5 relative z-20">
+                        <div className="flex items-center gap-2.5 pl-1">
+                            <div className="h-5 w-1.5 rounded-full bg-gradient-to-b from-[#7A4FFF] to-purple-400 shadow-[0_0_15px_rgba(122,79,255,0.3)]" />
+                            <h2 className="text-xl font-black tracking-tight text-zinc-950">
+                                프로젝트 공고
+                            </h2>
+                        </div>
 
-                        {/* 🎯 [개선] 커스텀 프리미엄 정렬 드롭다운 */}
-                        <div className="relative group/sort">
-                            <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-black uppercase font-mono text-zinc-400 tracking-widest">Sort_By:</span>
-                                <button
-                                    onClick={() => setIsSortOpen(!isSortOpen)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-100 rounded-xl text-[11px] font-black font-mono text-zinc-900 transition-all hover:border-[#7A4FFF] hover:text-[#7A4FFF] shadow-sm active:scale-95"
-                                >
-                                    {sort === 'createdAt' ? 'LATEST (최신순)' : 'BUDGET (예산순)'}
-                                    <ChevronDown size={14} className={`transition-transform duration-300 ${isSortOpen ? 'rotate-180' : ''}`} />
-                                </button>
-                            </div>
+                        <div className="flex items-center gap-1.5 bg-white/50 p-1 rounded-full border border-zinc-50">
+                            {sortOptions.map((opt) => {
+                                const isActive = sort === opt.id;
+                                // 🎯 [개선] 최신순/오래된순 외에는 텍스트 고정
+                                const label = opt.label;
 
-                            <AnimatePresence>
-                                {isSortOpen && (
-                                    <>
-                                        {/* 외부 클릭 시 닫기 위한 오버레이 */}
-                                        <div className="fixed inset-0 z-10" onClick={() => setIsSortOpen(false)} />
-                                        
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            className="absolute right-0 mt-2 w-48 bg-white border border-zinc-100 rounded-2xl shadow-2xl shadow-zinc-950/20 overflow-hidden z-20"
-                                        >
-                                            {[
-                                                { label: 'LATEST (최신순)', value: 'createdAt' },
-                                                { label: 'BUDGET (예산순)', value: 'budget' }
-                                            ].map((option) => (
-                                                <button
-                                                    key={option.value}
-                                                    onClick={() => {
-                                                        setSort(option.value);
-                                                        setIsSortOpen(false);
-                                                    }}
-                                                    className={`w-full px-5 py-3.5 text-left text-[11px] font-black font-mono transition-colors ${
-                                                        sort === option.value 
-                                                            ? 'bg-zinc-50 text-[#7A4FFF]' 
-                                                            : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-950'
-                                                    }`}
-                                                >
-                                                    {option.label}
-                                                </button>
-                                            ))}
-                                        </motion.div>
-                                    </>
-                                )}
-                            </AnimatePresence>
+                                return (
+                                    <button
+                                        key={opt.id}
+                                        onClick={() => handleSortClick(opt.id)}
+                                        className={`px-5 py-2.5 rounded-full text-[11px] font-bold transition-all tracking-wider flex items-center gap-2 ${
+                                            isActive 
+                                                ? 'bg-[#7A4FFF] text-white shadow-lg shadow-purple-500/20 scale-[1.02]' 
+                                                : 'text-zinc-400 hover:text-zinc-600 hover:bg-white'
+                                        }`}
+                                    >
+                                        {label}
+                                        {isActive && (
+                                            <motion.div
+                                                initial={{ rotate: sortOrder === 'desc' ? 0 : 180 }}
+                                                animate={{ rotate: sortOrder === 'desc' ? 0 : 180 }}
+                                                transition={{ duration: 0.3 }}
+                                            >
+                                                <ListFilter size={12} />
+                                            </motion.div>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -684,7 +591,7 @@ export default function FreelancerExplorePage() {
                                 <h3 className="text-zinc-300 font-black text-xl font-mono uppercase tracking-tighter mb-6">일치하는_미션을_찾지_못함</h3>
                                 <button
                                     onClick={resetFilters}
-                                    className="px-10 py-4 bg-zinc-950 text-white rounded-2xl font-black text-[11px] tracking-widest font-mono hover:bg-[#FF7D00] shadow-xl active:scale-95 transition-all"
+                                    className="px-10 py-4 bg-[#7A4FFF] text-white rounded-2xl font-black text-[11px] tracking-widest font-mono hover:bg-zinc-950 shadow-xl active:scale-95 transition-all"
                                 >
                                     RELOAD_SYSTEM
                                 </button>

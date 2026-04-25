@@ -190,7 +190,7 @@ public class PortfolioService {
             freelancerProfileRepository.findByUser_Id(user.getId())
                     .ifPresent(freelancerGradeService::refreshGrade);
         } catch (Exception e) {
-            log.warn("[PortfolioService] 등급 재계산 실패 (userId={}) - 포s트폴리오 수정은 정상 완료: {}", user.getId(), e.getMessage());
+            log.warn("[PortfolioService] 등급 재계산 실패 (userId={}) - 포트폴리오 수정은 정상 완료: {}", user.getId(), e.getMessage());
         }
     }
 

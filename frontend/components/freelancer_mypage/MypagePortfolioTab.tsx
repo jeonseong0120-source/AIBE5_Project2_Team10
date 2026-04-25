@@ -56,11 +56,11 @@ export default function MypagePortfolioTab({
                         <ImageIcon size={24} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black tracking-tighter text-zinc-900">나의 포트폴리오</h2>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-[#7A4FFF] font-mono font-black uppercase tracking-widest flex items-center gap-1.5 bg-purple-50 px-2 py-0.5 rounded-md">
-                                <span className="w-1 h-1 rounded-full bg-[#7A4FFF] animate-pulse"></span>
-                                {portfolios.length}_ARTWORKS_ARCHIVED
+                        <h2 className="text-2xl font-black tracking-tight text-zinc-900">나의 포트폴리오</h2>
+                        <div className="flex items-center gap-2 mt-1.5">
+                            <span className="text-[12px] text-[#7A4FFF] font-bold tracking-tight flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-lg">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#7A4FFF] animate-pulse"></span>
+                                {portfolios.length}개의 작품 보관됨
                             </span>
                         </div>
                     </div>
@@ -73,14 +73,14 @@ export default function MypagePortfolioTab({
                     }} 
                     className="h-12 px-7 bg-zinc-950 hover:bg-[#7A4FFF] shadow-xl shadow-zinc-200 text-white rounded-2xl text-xs font-black transition-all font-mono tracking-widest uppercase flex items-center gap-3 group"
                 >
-                    <Plus size={18} className="group-hover:rotate-90 transition-transform duration-500" /> NEW_PROJECT
+                    <Plus size={18} className="group-hover:rotate-90 transition-transform duration-500" /> 새 프로젝트 추가
                 </button>
             </div>
 
             {portfolios.length === 0 ? (
                 <div className="text-center py-28 bg-zinc-50 rounded-[3.5rem] border-2 border-dashed border-zinc-200">
                     <ImageIcon className="w-12 h-12 text-zinc-200 mx-auto mb-4" />
-                    <h3 className="text-zinc-400 font-black text-sm mb-1 italic tracking-widest font-mono uppercase">DATA_NOT_FOUND</h3>
+                    <h3 className="text-zinc-400 font-black text-sm mb-1 italic tracking-widest font-mono uppercase">등록된 포트폴리오가 없습니다</h3>
                     <p className="text-zinc-300 text-[10px] font-mono">가장 멋진 프로젝트 결과물을 업로드하세요.</p>
                 </div>
             ) : (
@@ -112,7 +112,7 @@ export default function MypagePortfolioTab({
                                         {/* Action Overlay */}
                                         <div className="absolute inset-0 bg-zinc-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[2px] flex items-center justify-center">
                                             <div className="bg-white/90 backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                                                <span className="text-zinc-950 text-[10px] font-black font-mono tracking-[0.2em] uppercase">Open_Project</span>
+                                                <span className="text-zinc-950 text-[10px] font-black font-mono tracking-[0.2em] uppercase">상세 보기</span>
                                                 <ArrowUpRight size={14} className="text-[#7A4FFF]" />
                                             </div>
                                         </div>
@@ -120,21 +120,21 @@ export default function MypagePortfolioTab({
 
                                     {/* Content Info (Compact but high visibility) */}
                                     <div className="p-7 flex flex-col items-center text-center">
-                                        <h3 className="font-black text-lg leading-tight text-zinc-900 group-hover:text-[#7A4FFF] transition-colors line-clamp-2 max-w-[200px] mb-4 min-h-[3rem] flex items-center justify-center">
+                                        <h3 className="font-black text-xl leading-tight text-zinc-900 group-hover:text-[#7A4FFF] transition-colors line-clamp-2 max-w-[220px] mb-6 min-h-[3.5rem] flex items-center justify-center tracking-tight">
                                             {p.title}
                                         </h3>
                                         
-                                        <div className="flex flex-wrap justify-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+                                        <div className="flex flex-wrap justify-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity duration-500">
                                             {p.skills && p.skills.slice(0, 8).map((s: any, idx: number) => {
                                                 const sId = s.skillId || s.id;
                                                 return (
-                                                    <span key={`p-skill-${sId || idx}-${idx}`} className="px-3 py-1 bg-zinc-50 text-zinc-700 border border-zinc-100 rounded-lg text-[9px] font-bold uppercase font-mono tracking-tighter group-hover:border-[#7A4FFF]/30">
+                                                    <span key={`p-skill-${sId || idx}-${idx}`} className="px-3.5 py-1.5 bg-zinc-50 text-zinc-700 border border-zinc-100 rounded-xl text-[10px] font-bold tracking-tight group-hover:border-[#7A4FFF]/30">
                                                         #{s.name}
                                                     </span>
                                                 );
                                             })}
                                             {p.skills && p.skills.length > 8 && (
-                                                <span className="px-2 py-1 bg-zinc-950 text-white rounded-lg text-[8px] font-black font-mono">
+                                                <span className="px-3 py-1.5 bg-zinc-950 text-white rounded-xl text-[10px] font-black">
                                                     +{p.skills.length - 8}
                                                 </span>
                                             )}

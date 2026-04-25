@@ -8,7 +8,9 @@ import com.devnear.web.dto.freelancer.FreelancerProfileResponse;
 import com.devnear.web.service.ai.AiRecommendationService;
 import com.devnear.web.service.freelancer.FreelancerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -67,21 +69,40 @@ public class FreelancerController {
     @GetMapping
     public ResponseEntity<List<FreelancerProfileResponse>> searchFreelancers(
             @AuthenticationPrincipal SecurityUser principal,
-            @RequestParam(required = false) String skill,
+            @RequestParam(required = false) List<String> skill,
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String sort,
-            @RequestParam(required = false) String workStyle) {
+            @RequestParam(required = false) String workStyle,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer minHourlyRate,
+            @RequestParam(required = false) Integer maxHourlyRate) {
 
-        // [수정] 프론트에서 빈 문자열("")을 보낼 때 500 쿼리 에러나 필터 누락이 생기지 않도록 null로 치환
-        String safeSkill = (skill != null && skill.trim().isEmpty()) ? null : skill;
+        // [수정] 프론트에서 빈 문자열("")이 포함된 리스트를 보낼 때 필터링
+        List<String> safeSkills = (skill != null) 
+            ? skill.stream().filter(s -> s != null && !s.trim().isEmpty()).collect(java.util.stream.Collectors.toList())
+            : null;
+        if (safeSkills != null && safeSkills.isEmpty()) safeSkills = null;
+
         String safeRegion = (region != null && region.trim().isEmpty()) ? null : region;
         String safeSort = (sort != null && sort.trim().isEmpty()) ? null : sort;
         String safeWorkStyle = (workStyle != null && workStyle.trim().isEmpty()) ? null : workStyle;
-        // JWT principal은 User가 아니라 SecurityUser — 타입 불일치 시 null이 되어 본인이 목록에 노출됨
+        String safeKeyword = (keyword != null && keyword.trim().isEmpty()) ? null : keyword;
+        
         Long excludeUserId = (principal != null) ? principal.getId() : null;
 
+        // [검증] 시급 범위 파라미터 유효성 검사
+        if (minHourlyRate != null && minHourlyRate < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "minHourlyRate는 0 이상이어야 합니다.");
+        }
+        if (maxHourlyRate != null && maxHourlyRate < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "maxHourlyRate는 0 이상이어야 합니다.");
+        }
+        if (minHourlyRate != null && maxHourlyRate != null && minHourlyRate > maxHourlyRate) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "minHourlyRate는 maxHourlyRate보다 클 수 없습니다.");
+        }
+
         return ResponseEntity.ok(freelancerService.searchFreelancers(
-                safeSkill, safeRegion, safeSort, safeWorkStyle, excludeUserId));
+                safeSkills, safeRegion, safeSort, safeWorkStyle, safeKeyword, minHourlyRate, maxHourlyRate, excludeUserId));
     }
 
     /**

@@ -9,6 +9,7 @@ import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.freelancer.FreelancerProfileRequest;
 import com.devnear.web.dto.freelancer.FreelancerProfileResponse;
+import com.devnear.web.exception.DuplicateProfileException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,19 +28,14 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class FreelancerService {
 
-    /**
-     * 클라이언트 목록 등: 포트폴리오마다 대표 1장(썸네일 우선)만 넣어 캐러셀에 쓰고,
-     * 한 프리랜서당 최대 이 개수만큼의 서로 다른 포트폴리오 미리보기 URL을 반환한다.
-     */
     private static final int MAX_PORTFOLIO_PREVIEW_IMAGES = 10;
 
     private final FreelancerProfileRepository profileRepository;
     private final SkillRepository skillRepository;
     private final PortfolioRepository portfolioRepository;
+    private final com.devnear.web.domain.user.UserRepository userRepository;
 
-    // [조회] 내 프로필 상세 데이터 조회
     public FreelancerProfileResponse getMyProfile(User user) {
-        // N+1 문제 방지를 위해 Fetch Join 쿼리로 보유 스킬 일괄 로드
         FreelancerProfile profile = profileRepository.findByUserIdWithSkills(user.getId())
                 .orElse(null);
 
@@ -49,17 +45,14 @@ public class FreelancerService {
         return FreelancerProfileResponse.from(profile);
     }
 
-    // [수정] 내 프로필 등록 및 정보 일괄 업데이트
     @Transactional
     public FreelancerProfileResponse updateMyProfile(User user, FreelancerProfileRequest request) {
-        // 1. 기존 프로필 조회 (존재하지 않으면 신규 껍데기 생성) - 수정 시 스킬 컬렉션 Fetch Join 적용
         FreelancerProfile profile = profileRepository.findByUserIdWithSkills(user.getId())
                 .orElseGet(() -> FreelancerProfile.builder()
                         .user(user)
                         .isActive(true)
                         .build());
 
-        // 2. 기본 텍스트 및 속성 정보 덮어쓰기
         profile.updateProfile(
                 request.getProfileImageUrl(),
                 request.getIntroduction(),
@@ -70,12 +63,23 @@ public class FreelancerService {
                 request.getWorkStyle(),
                 request.getIsActive());
 
-        // 3. 스킬 목록 갱신
+        // 닉네임 업데이트 (User 엔티티 직접 수정 및 저장)
+        if (request.getUserName() != null && !request.getUserName().trim().isEmpty()) {
+            String newNickname = request.getUserName().trim();
+            User managedUser = profile.getUser();
+            
+            if (!newNickname.equals(managedUser.getNickname())) {
+                if (userRepository.existsByNickname(newNickname)) {
+                    throw new DuplicateProfileException("이미 사용 중인 닉네임입니다.");
+                }
+                managedUser.setNickname(newNickname);
+                userRepository.save(managedUser);
+            }
+        }
+
         if (request.getSkillIds() != null) {
-            // 선택된 스킬 엔티티 일괄 조회
             List<Skill> selectedSkills = skillRepository.findAllById(request.getSkillIds());
             
-            // 보유 스킬 ID 검증 (존재하지 않는 ID 방어)
             if (selectedSkills.size() != request.getSkillIds().size()) {
                 List<Long> foundIds = selectedSkills.stream().map(Skill::getId).collect(Collectors.toList());
                 List<Long> missingIds = request.getSkillIds().stream()
@@ -84,7 +88,6 @@ public class FreelancerService {
                 throw new IllegalArgumentException("존재하지 않는 스킬 ID가 포함되어 있습니다: " + missingIds);
             }
 
-            // 연결 엔티티(Bridge) 객체로 매핑
             List<FreelancerSkill> newFreelancerSkills = selectedSkills.stream()
                     .map(skill -> FreelancerSkill.builder()
                             .freelancerProfile(profile)
@@ -92,12 +95,9 @@ public class FreelancerService {
                             .build())
                     .collect(Collectors.toList());
 
-            // 컬렉션 스왑 시 고유 제약 조건(Unique Constraint) 위반을 막기 위해:
-            // 1. 기존 컬렉션을 통째로 지우고 Flush (DELETE 쿼리 강제 실행)
             profile.updateSkills(null);
             profileRepository.saveAndFlush(profile);
 
-            // 2. 새 컬렉션을 채우고 다시 반영 (INSERT 쿼리 실행)
             profile.updateSkills(newFreelancerSkills);
             FreelancerProfile saved = profileRepository.saveAndFlush(profile);
             return FreelancerProfileResponse.from(saved);
@@ -107,13 +107,14 @@ public class FreelancerService {
         return FreelancerProfileResponse.from(saved);
     }
 
-    // [탐색] 조건에 맞는 프리랜서 목록 검색
-    public List<FreelancerProfileResponse> searchFreelancers(String skill,
+    public List<FreelancerProfileResponse> searchFreelancers(List<String> skills,
                                                              String region,
                                                              String sort,
                                                              String workStyle,
+                                                             String keyword,
+                                                             Integer minHourlyRate,
+                                                             Integer maxHourlyRate,
                                                              Long excludeUserId) {
-        // String -> enum 변환 (필터링 정확도 향상)
         com.devnear.web.domain.enums.WorkStyle workStyleEnum = null;
         if (workStyle != null && !workStyle.isEmpty()) {
             try {
@@ -121,23 +122,81 @@ public class FreelancerService {
             } catch (IllegalArgumentException ignored) {}
         }
 
-        // 지역, 스킬, 근무 방식 조건 필터링 (+ 로그인 사용자 본인 제외)
-        List<FreelancerProfile> profiles = profileRepository.searchFreelancers(
-                skill, region, workStyleEnum, excludeUserId);
+        // 1단계: 검색어 특수문자 이스케이프 (LIKE 검색 시 %, _, \ 처리)
+        String escapedRegion = escapeLike(region);
+        String escapedKeyword = escapeLike(keyword);
 
-        // [수정] 500 에러 방지: 정렬 필드(rating, projects)가 null일 경우를 대비하여 안전한 비교 로직으로 수정
-        Comparator<FreelancerProfile> comparator;
-        if ("rating".equalsIgnoreCase(sort)) {
-            comparator = Comparator.comparing(FreelancerProfile::getAverageRating, Comparator.nullsLast(Comparator.reverseOrder()));
-        } else if ("projects".equalsIgnoreCase(sort)) {
-            comparator = Comparator.comparing(FreelancerProfile::getCompletedProjects, Comparator.nullsLast(Comparator.reverseOrder()));
-        } else if ("reviews".equalsIgnoreCase(sort)) {
-            comparator = Comparator.comparing(FreelancerProfile::getReviewCount, Comparator.nullsLast(Comparator.reverseOrder()));
-        } else if ("rate".equalsIgnoreCase(sort)) {
-            comparator = Comparator.comparing(FreelancerProfile::getHourlyRate, Comparator.nullsLast(Comparator.naturalOrder()));
-        } else {
-            comparator = Comparator.comparing(FreelancerProfile::getId, Comparator.reverseOrder());
+        // 1단계: 필터 조건에 맞는 프로필 ID 목록 조회 (스킬 JOIN FETCH 없이 경량 쿼리)
+        List<FreelancerProfile> filteredProfiles = profileRepository.searchFreelancers(
+                skills, escapedRegion, workStyleEnum, escapedKeyword, minHourlyRate, maxHourlyRate, excludeUserId);
+
+        if (filteredProfiles.isEmpty()) {
+            return List.of();
         }
+
+        List<Long> filteredIds = filteredProfiles.stream()
+                .map(FreelancerProfile::getId)
+                .collect(Collectors.toList());
+
+        // 2단계: 배치 JOIN FETCH — 전체 스킬 컬렉션을 완전하게 로드 (Hibernate 컬렉션 trimming 방지)
+        Map<Long, FreelancerProfile> profileWithSkillsMap = profileRepository
+                .findAllWithSkillsByProfileIds(filteredIds)
+                .stream()
+                .collect(Collectors.toMap(FreelancerProfile::getId, p -> p));
+
+        // 필터 순서를 유지하며 전체-스킬이 로드된 프로필 목록 조립
+        List<FreelancerProfile> profiles = filteredIds.stream()
+                .map(profileWithSkillsMap::get)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // 3단계: AND 필터 — 선택한 모든 스킬을 보유한 프리랜서만 최종 노출
+        if (skills != null && !skills.isEmpty()) {
+            Set<String> requiredSkills = new HashSet<>(skills);
+            profiles = profiles.stream()
+                    .filter(p -> {
+                        Set<String> profileSkillNames = p.getFreelancerSkills().stream()
+                                .map(fs -> fs.getSkill().getName())
+                                .collect(Collectors.toSet());
+                        return profileSkillNames.containsAll(requiredSkills);
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        // 🎯 [개선] 정렬 파라미터 파싱 및 동적 정렬 구현 ( Perfect Sort )
+        String sortField = "id";
+        String sortDir = "desc";
+
+        if (sort != null && !sort.isEmpty()) {
+            String[] parts = sort.split(",");
+            sortField = parts[0];
+            if (parts.length > 1) {
+                sortDir = parts[1];
+            }
+        }
+
+        final boolean isAsc = "asc".equalsIgnoreCase(sortDir);
+        Comparator<FreelancerProfile> comparator;
+
+        if ("rating".equalsIgnoreCase(sortField) || "averagerating".equalsIgnoreCase(sortField)) {
+            Comparator<Double> ratingComp = isAsc ? Comparator.naturalOrder() : Comparator.reverseOrder();
+            comparator = Comparator.comparing(FreelancerProfile::getAverageRating, Comparator.nullsLast(ratingComp));
+        } else if ("grade".equalsIgnoreCase(sortField) || "grade.id".equalsIgnoreCase(sortField)) {
+            // 등급 정렬: ID가 낮을수록(1: TOP) 높은 등급
+            // desc(기본)일 때 높은 등급(ID 1)이 먼저 오게 하려면 naturalOrder() 사용
+            Comparator<Long> gradeIdComp = isAsc ? Comparator.reverseOrder() : Comparator.naturalOrder();
+            comparator = Comparator.comparing(
+                p -> p.getGrade() != null ? p.getGrade().getId() : null,
+                Comparator.nullsLast(gradeIdComp)
+            );
+        } else if ("hourlyrate".equalsIgnoreCase(sortField) || "rate".equalsIgnoreCase(sortField)) {
+            Comparator<Integer> rateComp = isAsc ? Comparator.naturalOrder() : Comparator.reverseOrder();
+            comparator = Comparator.comparing(FreelancerProfile::getHourlyRate, Comparator.nullsLast(rateComp));
+        } else {
+            // 기본 정렬: 등록일(ID) 기준
+            comparator = isAsc ? Comparator.comparing(FreelancerProfile::getId) : Comparator.comparing(FreelancerProfile::getId).reversed();
+        }
+
         profiles.sort(comparator);
 
         List<Long> userIds = profiles.stream()
@@ -183,14 +242,12 @@ public class FreelancerService {
         return result;
     }
 
-    // [조회] 타인 프로필 상세 조회
     public FreelancerProfileResponse getFreelancerById(Long id) {
         FreelancerProfile profile = profileRepository.findByIdWithSkills(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프리랜서입니다."));
         return FreelancerProfileResponse.from(profile);
     }
 
-    // [수정] 내 활동 상태(토글) 단독 업데이트
     @Transactional
     public void updateStatus(User user, Boolean isActive) {
         if (isActive == null) {
@@ -200,7 +257,6 @@ public class FreelancerService {
         FreelancerProfile profile = profileRepository.findByUser_Id(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("프로필이 아직 생성되지 않았습니다."));
 
-        // 다른 정보는 유지하고 상태값만 덮어쓰기
         profile.updateProfile(
                 profile.getProfileImageUrl(),
                 profile.getIntroduction(),
@@ -212,11 +268,19 @@ public class FreelancerService {
                 isActive);
     }
 
-    // [삭제] 내 프리랜서 프로필 삭제
     @Transactional
     public void deleteMyProfile(User user) {
         FreelancerProfile profile = profileRepository.findByUser_Id(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("프로필이 존재하지 않습니다."));
         profileRepository.delete(profile);
+    }
+
+    private String escapeLike(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        return input.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
     }
 }

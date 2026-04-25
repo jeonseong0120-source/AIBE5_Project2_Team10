@@ -14,5 +14,7 @@ public class ProjectSearchCond {
     private Boolean online;
     private Boolean offline;
     private String location;
+    private Long minBudget;
+    private Long maxBudget;
     private Long excludeOwnerUserId;
 }

@@ -45,7 +45,7 @@ export default function ClientProjectCard({
 
     return (
         <div className="flex flex-col gap-6">
-            <motion.div 
+            <motion.div
                 layout
                 className={`group bg-white p-10 rounded-[2.5rem] border transition-all duration-500 overflow-hidden relative ${isExpanded ? 'border-[#FF7D00] shadow-2xl ring-1 ring-orange-50' : 'border-zinc-100 shadow-sm hover:shadow-xl hover:border-[#FF7D00]/30'}`}
             >
@@ -54,28 +54,27 @@ export default function ClientProjectCard({
                         {/* 📝 프로젝트 기본 정보 섹션 */}
                         <div className="flex-1 w-full">
                             <div className="flex items-center gap-4 mb-6">
-                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest border ${
-                                    project.status === 'OPEN' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' : 
-                                    project.status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-500 border-blue-100' : 
-                                    project.status === 'CLOSED' ? 'bg-red-50 text-red-500 border-red-100' :
-                                    'bg-zinc-950 text-white border-zinc-950'
-                                }`}>
-                                    {project.status === 'OPEN' ? '모집 중' : 
-                                     project.status === 'IN_PROGRESS' ? '진행 중' : 
-                                     project.status === 'CLOSED' ? '마감됨' : '완료됨'}
+                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest border ${project.status === 'OPEN' ? 'bg-orange-50 text-[#FF7D00] border-orange-100' :
+                                    project.status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-500 border-blue-100' :
+                                        project.status === 'CLOSED' ? 'bg-red-50 text-red-500 border-red-100' :
+                                            'bg-zinc-950 text-white border-zinc-950'
+                                    }`}>
+                                    {project.status === 'OPEN' ? '모집 중' :
+                                        project.status === 'IN_PROGRESS' ? '진행 중' :
+                                            project.status === 'CLOSED' ? '마감됨' : '완료됨'}
                                 </span>
-                                
-                                 {!isCompleted && !isInProgress && (
+
+                                {!isCompleted && !isInProgress && (
                                     <div className="flex gap-1 ml-auto xl:ml-0 bg-zinc-50/50 p-1 rounded-[1rem] border border-zinc-100/50">
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); handleEditProjectClick(project.projectId); }} 
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleEditProjectClick(project.projectId); }}
                                             className="group/tool p-2.5 text-zinc-400 hover:text-[#FF7D00] hover:bg-white hover:shadow-sm rounded-lg transition-all"
                                             title="프로젝트 수정"
                                         >
                                             <Edit size={16} className="group-hover/tool:rotate-12 transition-transform" />
                                         </button>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.projectId); }} 
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.projectId); }}
                                             className="group/tool p-2.5 text-zinc-400 hover:text-red-500 hover:bg-white hover:shadow-sm rounded-lg transition-all"
                                             title="프로젝트 삭제"
                                         >
@@ -93,21 +92,21 @@ export default function ClientProjectCard({
                                 <div className="flex flex-col">
                                     <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">예상 예산</span>
                                     <span className="flex items-center gap-2 text-base font-bold text-zinc-900">
-                                        <DollarSign size={16} className="text-[#FF7D00]"/> ₩{project.budget?.toLocaleString()}
+                                        <DollarSign size={16} className="text-[#FF7D00]" /> ₩{project.budget?.toLocaleString()}
                                     </span>
                                 </div>
                                 <div className="w-px h-8 bg-zinc-100 hidden sm:block" />
                                 <div className="flex flex-col">
                                     <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">모집 마감일</span>
                                     <span className="flex items-center gap-2 text-base font-bold text-zinc-900">
-                                        <Calendar size={16} className="text-[#FF7D00]"/> {project.deadline}
+                                        <Calendar size={16} className="text-[#FF7D00]" /> {project.deadline}
                                     </span>
                                 </div>
                                 <div className="w-px h-8 bg-zinc-100 hidden sm:block" />
                                 <div className="flex flex-col">
                                     <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">작업 형태</span>
                                     <span className="flex items-center gap-2 text-base font-bold text-zinc-900">
-                                        <Globe size={16} className="text-[#FF7D00]"/> {project.online ? '온라인' : '오프라인'}
+                                        <Globe size={16} className="text-[#FF7D00]" /> {project.online ? '온라인' : '오프라인'}
                                     </span>
                                 </div>
                             </div>
@@ -116,8 +115,8 @@ export default function ClientProjectCard({
                         {/* ⚡ 액션 버튼 섹션 */}
                         <div className="w-full xl:w-auto flex flex-col sm:flex-row xl:flex-col gap-3 shrink-0">
                             {isInProgress && (
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleCompleteProject(project); }} 
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleCompleteProject(project); }}
                                     className="group/complete w-full px-8 py-4 bg-zinc-950 text-white rounded-[1.2rem] transition-all hover:bg-emerald-600 hover:shadow-xl hover:shadow-emerald-500/20 active:scale-95 flex flex-col items-center justify-center gap-0.5 border border-zinc-800 hover:border-emerald-400/30 shadow-xl"
                                 >
                                     <div className="flex items-center gap-2">
@@ -130,8 +129,8 @@ export default function ClientProjectCard({
                             {!isCompleted && !isInProgress && acceptedApp && (
                                 <div className="flex flex-col gap-3 w-full">
                                     <div className="grid grid-cols-2 gap-3">
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); handleDemoPayment(project, acceptedApp); }} 
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDemoPayment(project, acceptedApp); }}
                                             disabled={paymentDisabled}
                                             aria-label="데모 결제 진행"
                                             title="테스트 환경에서 결제를 진행합니다"
@@ -142,8 +141,8 @@ export default function ClientProjectCard({
                                                 <span className="text-[11px] font-black tracking-widest">데모 결제</span>
                                             </div>
                                         </button>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); handlePayment(project, acceptedApp); }} 
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handlePayment(project, acceptedApp); }}
                                             disabled={paymentDisabled}
                                             aria-label="실제 결제 진행"
                                             title="토스페이먼츠를 통한 실제 결제를 진행합니다"
@@ -174,16 +173,15 @@ export default function ClientProjectCard({
                                         </div>
                                     </button>
                                 )}
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleViewApplicants(project); }} 
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleViewApplicants(project); }}
                                     disabled={(project.applicationCount || 0) === 0}
-                                    className={`group/console flex-1 px-10 py-4 min-w-[200px] rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 shadow-xl ${
-                                        (project.applicationCount || 0) === 0 
-                                        ? 'bg-zinc-50 text-zinc-300 cursor-not-allowed border border-zinc-100 shadow-none' 
-                                        : isExpanded 
-                                            ? 'bg-[#FF7D00] text-white shadow-orange-500/30 ring-4 ring-orange-500/10' 
+                                    className={`group/console flex-1 px-10 py-4 min-w-[200px] rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 shadow-xl ${(project.applicationCount || 0) === 0
+                                        ? 'bg-zinc-50 text-zinc-300 cursor-not-allowed border border-zinc-100 shadow-none'
+                                        : isExpanded
+                                            ? 'bg-[#FF7D00] text-white shadow-orange-500/30 ring-4 ring-orange-500/10'
                                             : 'bg-zinc-950 text-white hover:bg-zinc-800 shadow-zinc-900/20 active:scale-[0.98]'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="flex items-center gap-3">
                                         <Users size={18} className="group-hover/console:scale-110 transition-transform" />
@@ -201,10 +199,10 @@ export default function ClientProjectCard({
             {/* 지원자 집중 관리 센터 */}
             <AnimatePresence>
                 {isExpanded && (
-                    <motion.div 
-                        initial={{ height: 0, opacity: 0, scale: 0.98 }} 
-                        animate={{ height: "auto", opacity: 1, scale: 1 }} 
-                        exit={{ height: 0, opacity: 0, scale: 0.98 }} 
+                    <motion.div
+                        initial={{ height: 0, opacity: 0, scale: 0.98 }}
+                        animate={{ height: "auto", opacity: 1, scale: 1 }}
+                        exit={{ height: 0, opacity: 0, scale: 0.98 }}
                         className="overflow-hidden"
                     >
                         <div className="bg-white border border-zinc-100 shadow-sm rounded-[2rem] p-6 mb-10 relative">
@@ -234,15 +232,14 @@ export default function ClientProjectCard({
                                             <p className="text-zinc-400 text-[10px] max-w-xs leading-relaxed">아직 지원자가 없습니다. 프로젝트 공고를 매력적으로 수정하거나 인재에게 직접 제안해보세요.</p>
                                         </div>
                                     ) : (
-                                        [...projectApplicants].sort((a,b) => b.matchingRate - a.matchingRate).map((app: any, appIdx: number) => (
-                                            <motion.div 
-                                                initial={{ opacity: 0, y: 20 }} 
+                                        [...projectApplicants].sort((a, b) => b.matchingRate - a.matchingRate).map((app: any, appIdx: number) => (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 transition={{ delay: appIdx * 0.05 }}
-                                                key={app.applicationId} 
-                                                className={`group/card p-6 rounded-2xl border transition-all relative overflow-hidden flex flex-col md:flex-row items-center gap-6 ${
-                                                    app.status === 'ACCEPTED' ? 'border-[#FF7D00] bg-orange-50/10' : 'border-zinc-100 bg-white hover:border-zinc-200'
-                                                }`}
+                                                key={app.applicationId}
+                                                className={`group/card p-6 rounded-2xl border transition-all relative overflow-hidden flex flex-col md:flex-row items-center gap-6 ${app.status === 'ACCEPTED' ? 'border-[#FF7D00] bg-orange-50/10' : 'border-zinc-100 bg-white hover:border-zinc-200'
+                                                    }`}
                                             >
 
                                                 {/* 좌측: 아바타 및 기본정보 */}
@@ -277,12 +274,12 @@ export default function ClientProjectCard({
                                                             app.source === 'PROPOSAL' ? (
                                                                 <div className="px-5 py-2.5 bg-zinc-50/80 text-zinc-400 rounded-xl text-[9px] font-bold uppercase tracking-[0.2em] border border-zinc-100 flex items-center gap-2">
                                                                     <div className="w-1.5 h-1.5 bg-zinc-300 rounded-full animate-pulse" />
-                                                                     수락 대기중
+                                                                    수락 대기중
                                                                 </div>
                                                             ) : (
                                                                 <>
-                                                                    <button 
-                                                                        onClick={() => handleApplicationStatus(app.applicationId, 'REJECTED')} 
+                                                                    <button
+                                                                        onClick={() => handleApplicationStatus(app.applicationId, 'REJECTED')}
                                                                         className="group/rej px-6 py-3 bg-white border border-zinc-100 text-zinc-400 rounded-[1.2rem] transition-all hover:bg-red-50 hover:border-red-100 hover:text-red-500 active:scale-95 flex flex-col items-center justify-center gap-0.5 min-w-[100px] shadow-sm"
                                                                     >
                                                                         <div className="flex items-center gap-2">
@@ -290,33 +287,33 @@ export default function ClientProjectCard({
                                                                             <span className="text-[11px] font-bold uppercase tracking-widest">거절</span>
                                                                         </div>
                                                                     </button>
-                                                                    
+
                                                                     <div className="flex gap-3 ml-2 border-l border-zinc-100 pl-6">
-                                                                    <button 
-                                                                        onClick={() => handleDemoPayment(project, app)} 
-                                                                        disabled={paymentDisabled}
-                                                                        aria-label="데모 수락 진행"
-                                                                        title="테스트 환경에서 수락 및 결제를 진행합니다"
-                                                                        className={`group/btn px-7 py-3 bg-[#FF7D00] text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-orange-400/20 shadow-lg ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-xl hover:shadow-orange-500/20 active:scale-95'}`}
-                                                                    >
-                                                                        <div className="flex items-center gap-2">
-                                                                            <CreditCard size={14} className="group-hover/btn:rotate-12 transition-transform" />
-                                                                            <span className="text-[11px] font-bold tracking-widest">데모 수락</span>
-                                                                        </div>
-                                                                    </button>
-                                                                    
-                                                                    <button 
-                                                                        onClick={() => handlePayment(project, app)} 
-                                                                        disabled={paymentDisabled}
-                                                                        aria-label="실제 수락 진행"
-                                                                        title="토스페이먼츠를 통한 실제 결제 및 수락을 진행합니다"
-                                                                        className={`group/btn px-7 py-3 bg-zinc-950 text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-zinc-800 shadow-lg ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-xl hover:shadow-zinc-900/20 active:scale-95'}`}
-                                                                    >
-                                                                        <div className="flex items-center gap-2">
-                                                                            <ShieldCheck size={14} className="group-hover/btn:scale-110 transition-transform" />
-                                                                            <span className="text-[11px] font-bold tracking-widest">수락</span>
-                                                                        </div>
-                                                                    </button>
+                                                                        <button
+                                                                            onClick={() => handleDemoPayment(project, app)}
+                                                                            disabled={paymentDisabled}
+                                                                            aria-label="데모 수락 진행"
+                                                                            title="테스트 환경에서 수락 및 결제를 진행합니다"
+                                                                            className={`group/btn px-7 py-3 bg-[#FF7D00] text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-orange-400/20 shadow-lg ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-xl hover:shadow-orange-500/20 active:scale-95'}`}
+                                                                        >
+                                                                            <div className="flex items-center gap-2">
+                                                                                <CreditCard size={14} className="group-hover/btn:rotate-12 transition-transform" />
+                                                                                <span className="text-[11px] font-bold tracking-widest">데모 수락</span>
+                                                                            </div>
+                                                                        </button>
+
+                                                                        <button
+                                                                            onClick={() => handlePayment(project, app)}
+                                                                            disabled={paymentDisabled}
+                                                                            aria-label="실제 수락 진행"
+                                                                            title="토스페이먼츠를 통한 실제 결제 및 수락을 진행합니다"
+                                                                            className={`group/btn px-7 py-3 bg-zinc-950 text-white rounded-[1.2rem] transition-all flex flex-col items-center justify-center gap-0.5 min-w-[140px] border border-zinc-800 shadow-lg ${paymentDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.03] hover:shadow-xl hover:shadow-zinc-900/20 active:scale-95'}`}
+                                                                        >
+                                                                            <div className="flex items-center gap-2">
+                                                                                <ShieldCheck size={14} className="group-hover/btn:scale-110 transition-transform" />
+                                                                                <span className="text-[11px] font-bold tracking-widest">수락</span>
+                                                                            </div>
+                                                                        </button>
                                                                     </div>
                                                                 </>
                                                             )

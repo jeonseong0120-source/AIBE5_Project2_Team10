@@ -121,7 +121,7 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
     );
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-12">
             <AnimatePresence mode="wait">
                 {!isEditing ? (
                     <motion.div 
@@ -131,91 +131,110 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                         exit={{ opacity: 0, y: -10 }}
                         className="space-y-10"
                     >
-                        {/* 🏆 SAME HEADER AS FREELANCER MYPAGE */}
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-                            <div className="flex items-center gap-6">
-                                <div className="w-20 h-20 rounded-[2rem] bg-zinc-100 border-4 border-white shadow-xl overflow-hidden flex-shrink-0">
+                        {/* 🏆 Profile Header */}
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
+                            <div className="flex items-center gap-8">
+                                <div className="w-24 h-24 rounded-[2.5rem] bg-white border border-zinc-100 shadow-2xl shadow-zinc-200/50 overflow-hidden flex-shrink-0 flex items-center justify-center relative group">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#FF7D00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                     {originalData?.logoUrl ? (
-                                        <img src={originalData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                                        <img src={originalData.logoUrl} alt="Logo" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-zinc-300">
-                                            <User size={32} />
-                                        </div>
+                                        <User size={36} className="text-zinc-200" />
                                     )}
                                 </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3">
-                                        <h2 className="text-3xl font-black tracking-tighter text-zinc-900">
-                                            {originalData?.companyName || originalData?.nickname}
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-4">
+                                        <h2 className="text-5xl font-black tracking-tighter text-zinc-900 leading-none">
+                                            {originalData?.companyName || originalData?.nickname || '클라이언트'}
                                         </h2>
                                         {originalData?.verificationStatus === 'VERIFIED' && (
-                                            <span className="px-2.5 py-1 bg-green-50 text-green-600 text-[9px] font-black rounded-full border border-green-100 flex items-center gap-1 shadow-sm">
-                                                <CheckCircle2 size={10} /> VERIFIED
-                                            </span>
+                                            <div className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full border border-emerald-100 flex items-center gap-1.5 shadow-sm uppercase tracking-wider">
+                                                <CheckCircle2 size={12} /> 공식 인증 파트너
+                                            </div>
                                         )}
                                     </div>
-                                    <p className="text-[10px] text-[#FF7D00] font-mono font-black uppercase tracking-widest mt-1.5 flex items-center gap-2">
-                                        <Activity size={12} className="animate-pulse" /> {originalData?.grade || 'NORMAL'}_GRADE_CLIENT
+                                    <p className="text-[11px] text-[#FF7D00] font-black tracking-[0.2em] uppercase flex items-center gap-2">
+                                        <Activity size={12} className="animate-pulse" /> {originalData?.grade || 'NORMAL'} CLASS CLIENT
                                     </p>
                                 </div>
                             </div>
                             
                             <button
                                 onClick={() => { setIsEditing(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                                className="h-12 px-6 bg-zinc-950 hover:bg-[#FF7D00] text-white shadow-xl shadow-zinc-200 rounded-2xl text-xs font-black transition-all font-mono tracking-widest uppercase flex items-center gap-2 group"
+                                className="h-14 px-10 bg-zinc-900 hover:bg-[#FF7D00] text-white shadow-2xl shadow-zinc-200 rounded-[1.5rem] text-[13px] font-black transition-all flex items-center gap-3 group active:scale-95"
                             >
-                                <Settings size={14} className="group-hover:rotate-90 transition-transform duration-500" /> 프로필 편집하기
+                                <Settings size={16} className="group-hover:rotate-180 transition-transform duration-700" /> 프로필 상세 관리
                             </button>
                         </div>
 
-                        {/* 📝 기업 소개글 (Moved Up) */}
-                        <div className="bg-zinc-50 rounded-[2.5rem] p-8 border border-zinc-100 shadow-sm space-y-4">
-                            <p className="text-[10px] font-black font-mono uppercase text-[#FF7D00] tracking-widest mb-2 border-b border-zinc-200/50 pb-3 flex items-center gap-2">
-                                <FileText size={14} /> 기업 소개글
-                                {originalData?.homepageUrl && (
-                                    <a href={originalData.homepageUrl} target="_blank" rel="noreferrer" className="ml-auto flex items-center gap-1 hover:text-zinc-600 transition-colors">
-                                        <Globe size={12} /> <span className="text-[9px] lowercase italic">website_visit</span>
-                                    </a>
-                                )}
-                            </p>
-                            <p className="text-sm text-zinc-700 leading-relaxed italic font-medium">
-                                "{originalData?.introduction || '작성된 소개글이 없습니다.'}"
-                            </p>
-                        </div>
-
-                        {/* 📝 기업 인증 및 대표 정보 */}
-                        <div className="bg-zinc-50 rounded-[2.5rem] p-8 border border-zinc-100 shadow-sm space-y-5">
-                            <p className="text-[10px] font-black font-mono uppercase text-[#FF7D00] tracking-widest mb-2 border-b border-zinc-200/50 pb-3 flex items-center gap-2">
-                                <Landmark size={14} /> 기업 인증 및 대표 정보
-                            </p>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="flex flex-col gap-2">
-                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">사업자명</span>
-                                    <span className="font-black text-zinc-900 text-lg">{originalData?.companyName || '미설정'}</span>
-                                </div>
-                                <div className="flex flex-col gap-2 border-t md:border-t-0 md:border-l border-zinc-200/50 pt-4 md:pt-0 md:pl-6">
-                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">대표자 이름</span>
-                                    <span className="font-black text-zinc-900 text-lg">{originalData?.representativeName || '미설정'}</span>
-                                </div>
-                                <div className="flex flex-col gap-2 border-t md:border-t-0 md:border-l border-zinc-200/50 pt-4 md:pt-0 md:pl-6">
-                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest font-mono">Business No</span>
-                                    <span className="font-black text-zinc-800 text-lg font-mono">{originalData?.bn || '미등록'}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* 📝 Business Vision Section */}
+                            <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-zinc-200/40 relative overflow-hidden group transition-all hover:shadow-zinc-200/60 md:col-span-2">
+                                <div className="absolute top-0 left-0 w-1.5 h-full bg-[#FF7D00]/20" />
+                                <div className="relative z-10 space-y-6">
+                                    <div className="flex items-center justify-between border-b border-zinc-50 pb-5">
+                                        <p className="text-sm font-black text-[#FF7D00] tracking-[0.1em] uppercase">
+                                            비즈니스 가치 소개
+                                        </p>
+                                        {originalData?.homepageUrl && (
+                                            <a href={originalData.homepageUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-zinc-400 hover:text-[#FF7D00] transition-colors">
+                                                <Globe size={14} /> <span className="text-[10px] font-bold uppercase tracking-widest">OFFICIAL WEB</span>
+                                            </a>
+                                        )}
+                                    </div>
+                                    <blockquote className="text-base md:text-[18px] text-zinc-700 leading-[1.8] font-medium tracking-tight">
+                                        {originalData?.introduction ? (
+                                            `"${originalData.introduction}"`
+                                        ) : (
+                                            <span className="text-zinc-300 italic">아직 등록된 비즈니스 소개글이 없습니다. 기업의 비전과 가치를 프리랜서들에게 공유해주세요.</span>
+                                        )}
+                                    </blockquote>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="bg-zinc-50 rounded-[2.5rem] p-8 border border-zinc-100 shadow-sm space-y-4">
-                            <p className="text-[10px] font-black font-mono uppercase text-[#FF7D00] tracking-widest mb-2 border-b border-zinc-200/50 pb-3 flex items-center gap-2">
-                                <Phone size={14} /> 개인 연락처 및 식별 정보
-                            </p>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="flex flex-col gap-2">
-                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">닉네임</span>
-                                    <span className="font-black text-zinc-900 text-lg">{originalData?.nickname || '미설정'}</span>
+                            {/* 🏛️ Official Info Card */}
+                            <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-zinc-200/40 space-y-8 transition-all hover:shadow-zinc-200/60">
+                                <div className="flex items-center justify-between border-b border-zinc-50 pb-5">
+                                    <p className="text-sm font-black text-[#FF7D00] tracking-[0.1em] uppercase">
+                                        기업 공식 등록 정보
+                                    </p>
+                                    <Landmark size={16} className="text-zinc-200" />
                                 </div>
-                                <div className="flex flex-col gap-2 border-t md:border-t-0 md:border-l border-zinc-200/50 pt-4 md:pt-0 md:pl-6">
-                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">연락처</span>
-                                    <span className="font-black text-zinc-900 text-lg font-mono">{originalData?.phoneNum || '미설정'}</span>
+                                <div className="space-y-8">
+                                    <div className="grid grid-cols-2 gap-8">
+                                        <div className="space-y-1.5">
+                                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">법인명/기업명</span>
+                                            <p className="font-black text-zinc-950 text-xl tracking-tight leading-none">{originalData?.companyName || '미설정'}</p>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">대표자 이름</span>
+                                            <p className="font-black text-zinc-950 text-xl tracking-tight leading-none">{originalData?.representativeName || '미설정'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5 pt-6 border-t border-zinc-50">
+                                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">사업자 등록번호</span>
+                                        <p className="font-black text-zinc-950 text-2xl tracking-[0.05em] font-mono leading-none">{originalData?.bn || '미설정'}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 👤 Partner Contact Card */}
+                            <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-zinc-200/40 space-y-8 transition-all hover:shadow-zinc-200/60">
+                                <div className="flex items-center justify-between border-b border-zinc-50 pb-5">
+                                    <p className="text-sm font-black text-[#FF7D00] tracking-[0.1em] uppercase">
+                                        파트너 담당자 정보
+                                    </p>
+                                    <User size={16} className="text-zinc-200" />
+                                </div>
+                                <div className="space-y-8">
+                                    <div className="space-y-1.5">
+                                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">활동 닉네임</span>
+                                        <p className="font-black text-zinc-950 text-xl tracking-tight leading-none">{originalData?.nickname || '미설정'}</p>
+                                    </div>
+                                    <div className="space-y-1.5 pt-6 border-t border-zinc-50">
+                                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">직통 연락처</span>
+                                        <p className="font-black text-zinc-950 text-2xl tracking-[0.05em] font-mono leading-none">{originalData?.phoneNum || '미설정'}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -223,93 +242,96 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                 ) : (
                     <motion.form 
                         key="edit"
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
                         onSubmit={handleSubmit}
-                        className="space-y-8"
+                        className="space-y-10"
                     >
-                        {/* 📸 EDIT HEADER: SAME AS FREELANCER */}
-                        <div className="bg-orange-50/50 rounded-[2rem] p-6 border border-orange-100 flex items-center gap-6 shadow-sm mb-6">
-                            <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg relative bg-zinc-100 flex-shrink-0 group overflow-hidden">
+                        {/* 📸 Edit Header */}
+                        <div className="bg-orange-50/30 rounded-[3rem] p-8 border border-orange-100/50 flex flex-col md:flex-row items-center gap-10 shadow-sm">
+                            <div className="w-32 h-32 rounded-[2.5rem] border-4 border-white shadow-2xl relative bg-zinc-100 flex-shrink-0 group overflow-hidden">
                                 {isLogoUploading ? (
-                                    <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-200 animate-pulse">
-                                        <Loader2 className="animate-spin text-[#FF7D00] mb-1" size={20} />
-                                        <span className="text-[8px] font-mono font-black text-zinc-400">LOADING</span>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/10 backdrop-blur-sm z-20">
+                                        <Loader2 className="animate-spin text-[#FF7D00] mb-2" size={24} />
+                                        <span className="text-[10px] font-black text-[#FF7D00] tracking-widest">UPLOADING</span>
                                     </div>
                                 ) : formData.logoUrl ? (
-                                    <img src={formData.logoUrl} alt="Preview" className="w-full h-full object-cover" />
+                                    <img src={formData.logoUrl} alt="Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-zinc-300">
-                                        <User size={32} />
+                                    <div className="w-full h-full flex items-center justify-center text-zinc-200">
+                                        <User size={48} />
                                     </div>
                                 )}
-                                <label className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                    <Upload size={20} className="mb-1" />
-                                    <span className="text-[9px] font-black font-mono">CHANGE</span>
+                                <label className="absolute inset-0 bg-zinc-900/80 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer z-10">
+                                    <Upload size={24} className="mb-2 transform -translate-y-2 group-hover:translate-y-0 transition-transform" />
+                                    <span className="text-[10px] font-black tracking-widest">CHANGE LOGO</span>
                                     <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={isLogoUploading} />
                                 </label>
                             </div>
-                            <div>
-                                <h3 className="text-lg font-black text-zinc-900 tracking-tight">기업 로고 업데이트</h3>
-                                <p className="text-xs text-zinc-500 mt-1 font-medium leading-relaxed">회사를 상징하는 공식 로고를 업로드해주세요.<br />고급스러운 로고는 비즈니스의 첫인상입니다.</p>
+                            <div className="text-center md:text-left space-y-3">
+                                <h3 className="text-2xl font-black text-zinc-900 tracking-tight">클라이언트 프로필 커스터마이징</h3>
+                                <p className="text-[13px] text-zinc-500 font-medium leading-relaxed max-w-md">기업을 상징하는 공식 로고를 업로드하고 정보를 업데이트하세요.<br />신뢰도 높은 프로필은 더 우수한 프리랜서와의 매칭으로 이어집니다.</p>
                             </div>
                         </div>
 
-                        {/* ⌨️ FORM GRID: SAME AS FREELANCER */}
-                        <div className="bg-zinc-50 rounded-[2.5rem] p-8 md:p-10 border border-zinc-200 shadow-inner space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* ⌨️ Edit Form */}
+                        <div className="bg-white rounded-[3rem] p-8 md:p-12 border border-zinc-100 shadow-2xl shadow-zinc-200/40 space-y-12">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">관리자 닉네임</label>
-                                    <input type="text" required value={formData.nickname} onChange={(e) => setFormData({ ...formData, nickname: e.target.value })} className="w-full bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#FF7D00] hover:border-[#FF7D00]/50 text-sm font-black shadow-sm transition-all focus:ring-4 focus:ring-[#FF7D00]/10" />
+                                    <label className="text-[11px] font-black tracking-[0.1em] uppercase text-zinc-400 pl-1">활동 닉네임</label>
+                                    <input type="text" required value={formData.nickname} onChange={(e) => setFormData({ ...formData, nickname: e.target.value })} className="w-full bg-zinc-50/50 px-6 py-5 rounded-[1.5rem] border border-zinc-100 outline-none focus:border-[#FF7D00] focus:bg-white text-sm font-bold shadow-sm transition-all focus:ring-4 focus:ring-[#FF7D00]/5" placeholder="담당자 닉네임을 입력하세요." />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">연락처</label>
-                                    <input type="tel" required value={formData.phoneNum} onChange={(e) => setFormData({ ...formData, phoneNum: e.target.value })} className="w-full bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#FF7D00] hover:border-[#FF7D00]/50 text-sm font-black shadow-sm transition-all focus:ring-4 focus:ring-[#FF7D00]/10 font-mono" placeholder="010-0000-0000" />
+                                    <label className="text-[11px] font-black tracking-[0.1em] uppercase text-zinc-400 pl-1">담당자 연락처</label>
+                                    <input type="tel" required value={formData.phoneNum} onChange={(e) => setFormData({ ...formData, phoneNum: e.target.value })} className="w-full bg-zinc-50/50 px-6 py-5 rounded-[1.5rem] border border-zinc-100 outline-none focus:border-[#FF7D00] focus:bg-white text-sm font-bold shadow-sm transition-all focus:ring-4 focus:ring-[#FF7D00]/5 font-mono" placeholder="010-0000-0000" />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">대표자 명</label>
-                                    <input type="text" value={formData.representativeName} onChange={(e) => setFormData({ ...formData, representativeName: e.target.value })} className="w-full bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#FF7D00] hover:border-[#FF7D00]/50 text-sm font-black shadow-sm transition-all focus:ring-4 focus:ring-[#FF7D00]/10" />
+                                    <label className="text-[11px] font-black tracking-[0.1em] uppercase text-zinc-400 pl-1">대표자 성함</label>
+                                    <input type="text" value={formData.representativeName} onChange={(e) => setFormData({ ...formData, representativeName: e.target.value })} className="w-full bg-zinc-50/50 px-6 py-5 rounded-[1.5rem] border border-zinc-100 outline-none focus:border-[#FF7D00] focus:bg-white text-sm font-bold shadow-sm transition-all focus:ring-4 focus:ring-[#FF7D00]/5" placeholder="공식 대표자 이름을 입력하세요." />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">법인명/기업명</label>
-                                    <input type="text" value={formData.companyName} onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} className="w-full bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#FF7D00] hover:border-[#FF7D00]/50 text-sm font-black shadow-sm transition-all focus:ring-4 focus:ring-[#FF7D00]/10" />
+                                    <label className="text-[11px] font-black tracking-[0.1em] uppercase text-zinc-400 pl-1">법인 및 기업명</label>
+                                    <input type="text" value={formData.companyName} onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} className="w-full bg-zinc-50/50 px-6 py-5 rounded-[1.5rem] border border-zinc-100 outline-none focus:border-[#FF7D00] focus:bg-white text-sm font-bold shadow-sm transition-all focus:ring-4 focus:ring-[#FF7D00]/5" placeholder="공식 기업명을 입력하세요." />
                                 </div>
                                 
-                                <div className="space-y-3 md:col-span-2">
-                                    <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">사업자 등록번호</label>
-                                    <div className="flex gap-3">
+                                <div className="space-y-3 md:col-span-2 pt-6 border-t border-zinc-50">
+                                    <label className="text-[11px] font-black tracking-[0.1em] uppercase text-[#FF7D00] pl-1">사업자 등록번호 인증</label>
+                                    <div className="flex flex-col md:flex-row gap-4">
                                         <input
                                             type="text"
                                             placeholder="000-00-00000"
                                             value={formData.bn}
                                             onChange={(e) => { setFormData({ ...formData, bn: e.target.value }); setIsBnVerified(false); }}
-                                            className={`flex-[3] bg-white p-5 rounded-2xl border ${isBnVerified ? 'border-green-300' : 'border-zinc-200'} outline-none focus:border-[#FF7D00] text-sm font-mono font-black tracking-widest shadow-sm transition-all`}
+                                            className={`flex-[3] bg-zinc-50/50 px-6 py-5 rounded-[1.5rem] border ${isBnVerified ? 'border-emerald-300 bg-emerald-50/30' : 'border-zinc-100'} outline-none focus:border-[#FF7D00] text-sm font-mono font-black tracking-widest shadow-sm transition-all`}
                                         />
                                         <button
                                             type="button"
                                             onClick={handleBnCheck}
-                                            className={`flex-1 min-w-[100px] rounded-2xl text-xs font-black transition-all ${isBnVerified ? 'bg-green-500 text-white' : 'bg-zinc-950 text-white hover:bg-[#FF7D00]'}`}
+                                            className={`flex-1 min-h-[60px] rounded-[1.5rem] text-[11px] font-black transition-all uppercase tracking-widest ${isBnVerified ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' : 'bg-zinc-900 text-white hover:bg-[#FF7D00] shadow-lg shadow-zinc-100 hover:shadow-[#FF7D00]/20'}`}
                                         >
-                                            {isBnVerified ? '인증완료' : '번호인증'}
+                                            {isBnVerified ? '인증 완료' : '진위 확인'}
                                         </button>
                                     </div>
+                                    <p className="text-[10px] text-zinc-400 font-medium pl-1">정확한 파트너 등급 산정을 위해 사업자 번호 인증이 권장됩니다.</p>
                                 </div>
 
                                 <div className="space-y-3 md:col-span-2">
-                                    <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">회사 웹사이트 (URL)</label>
-                                    <input type="url" placeholder="https://..." value={formData.homepageUrl} onChange={(e) => setFormData({ ...formData, homepageUrl: e.target.value })} className="w-full bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#FF7D00] hover:border-[#FF7D00]/50 text-sm font-medium shadow-sm transition-all" />
+                                    <label className="text-[11px] font-black tracking-[0.1em] uppercase text-zinc-400 pl-1">공식 웹사이트 URL</label>
+                                    <input type="url" placeholder="https://www.your-company.com" value={formData.homepageUrl} onChange={(e) => setFormData({ ...formData, homepageUrl: e.target.value })} className="w-full bg-zinc-50/50 px-6 py-5 rounded-[1.5rem] border border-zinc-100 outline-none focus:border-[#FF7D00] focus:bg-white text-sm font-medium shadow-sm transition-all focus:ring-4 focus:ring-[#FF7D00]/5" />
                                 </div>
 
                                 <div className="space-y-3 md:col-span-2">
-                                    <label className="text-[10px] font-mono tracking-widest uppercase font-black text-zinc-400">회사 소개글</label>
-                                    <textarea rows={4} value={formData.introduction} onChange={(e) => setFormData({ ...formData, introduction: e.target.value })} className="w-full bg-white p-5 rounded-2xl border border-zinc-200 outline-none focus:border-[#FF7D00] hover:border-[#FF7D00]/50 text-sm font-medium shadow-sm transition-all resize-none leading-relaxed" placeholder="회사의 비전이나 강점을 설명해주세요." />
+                                    <div className="flex items-center justify-between pl-1">
+                                        <label className="text-[11px] font-black tracking-[0.1em] uppercase text-zinc-400">비즈니스 가치 소개</label>
+                                    </div>
+                                    <textarea rows={6} value={formData.introduction} onChange={(e) => setFormData({ ...formData, introduction: e.target.value })} className="w-full bg-zinc-50/50 px-6 py-6 rounded-[2rem] border border-zinc-100 outline-none focus:border-[#FF7D00] focus:bg-white text-sm font-medium shadow-sm transition-all focus:ring-4 focus:ring-[#FF7D00]/5 resize-none leading-relaxed" placeholder="기업의 미션과 프리랜서들에게 제공할 수 있는 가치를 설명해주세요." />
                                 </div>
                             </div>
                         </div>
 
-                        {/* SUBMIT BUTTONS: SAME AS FREELANCER */}
-                        <div className="flex gap-4">
+                        {/* 🎮 Actions */}
+                        <div className="flex flex-col md:flex-row gap-4 pt-4">
                             <button
                                 type="button"
                                 onClick={() => {
@@ -318,17 +340,17 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                                     setIsBnVerified(originalData.bn?.match(/^\d{3}-\d{2}-\d{5}$/) ? true : false);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
-                                className="flex-[1] py-5 bg-zinc-200 hover:bg-zinc-300 text-zinc-700 rounded-[1.5rem] text-xs font-black transition-colors uppercase tracking-widest font-mono"
+                                className="flex-1 py-5 bg-zinc-100 hover:bg-zinc-200 text-zinc-500 rounded-[1.5rem] text-sm font-black transition-all uppercase tracking-widest active:scale-95"
                             >
-                                취소
+                                변경 취소
                             </button>
                             <button
                                 type="submit"
                                 disabled={isSubmitting || (!!formData.bn && !isBnVerified) || isLogoUploading}
-                                className={`flex-[2] py-5 rounded-[1.5rem] text-white font-black text-xs uppercase tracking-widest font-mono flex items-center justify-center gap-2 shadow-xl transition-all ${isSubmitting || (!!formData.bn && !isBnVerified) || isLogoUploading ? 'bg-zinc-300 cursor-not-allowed' : 'bg-zinc-950 hover:bg-[#FF7D00] hover:-translate-y-1'}`}
+                                className={`flex-[1.5] py-5 rounded-[1.5rem] text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95 ${isSubmitting || (!!formData.bn && !isBnVerified) || isLogoUploading ? 'bg-zinc-200 cursor-not-allowed text-zinc-400 shadow-none' : 'bg-zinc-950 hover:bg-[#FF7D00] shadow-[#FF7D00]/10 hover:shadow-[#FF7D00]/20'}`}
                             >
-                                {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                                {isSubmitting ? '수정 중...' : '설정 저장하기'}
+                                {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                                {isSubmitting ? '데이터 동기화 중...' : '업데이트 완료'}
                             </button>
                         </div>
                     </motion.form>

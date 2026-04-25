@@ -260,12 +260,15 @@ public class ProjectService {
      * 컨트롤러에서 프리랜서 탐색 등에만 이 값을 넣도록 스코프를 제한합니다.
      */
     @Transactional(readOnly = true)
-    public Page<ProjectResponse> searchProjects(User viewer, String keyword, String location, List<String> skills, Boolean online,
+    public Page<ProjectResponse> searchProjects(User viewer, String keyword, String location, List<String> skills, 
+                                                 Long minBudget, Long maxBudget, Boolean online,
                                                  Boolean offline, Long excludeOwnerUserId, Pageable pageable) {
         ProjectSearchCond cond = new ProjectSearchCond();
         cond.setKeyword(keyword);
         cond.setLocation(location);
         cond.setSkillNames(skills);
+        cond.setMinBudget(minBudget);
+        cond.setMaxBudget(maxBudget);
         cond.setOnline(online);
         cond.setOffline(offline);
         cond.setExcludeOwnerUserId(excludeOwnerUserId);
