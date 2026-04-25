@@ -25,7 +25,7 @@ export default function MypageGradeTab({ profile }: MypageGradeTabProps) {
                     <Award size={44} className="relative z-10" />
                     <div className="absolute inset-0 border-[3px] border-[#FF7D00]/20 rounded-full animate-ping" />
                 </div>
-                <p className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase mb-2">등급 정보 / SECURITY_CLEARANCE</p>
+                <p className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase mb-2">등급 정보</p>
                 <h2 className="text-3xl font-black text-zinc-900 tracking-tighter mb-4">
                     {displayGrade}
                 </h2>
@@ -34,7 +34,7 @@ export default function MypageGradeTab({ profile }: MypageGradeTabProps) {
             <div className="w-full bg-zinc-50 p-8 rounded-2xl border border-zinc-100">
                 <div className="flex justify-between items-center mb-6 border-b border-zinc-200 pb-4">
                     <h3 className="text-xs font-black font-mono tracking-widest uppercase text-zinc-900 flex items-center gap-2">
-                        <Activity size={14} className="text-[#7A4FFF]" /> NEXT_LEVEL_REQUIREMENTS
+                        <Activity size={14} className="text-[#7A4FFF]" /> 다음 등급 달성 조건
                     </h3>
                     <span className="text-[10px] font-bold text-[#FF7D00] bg-[#FF7D00]/10 px-2 py-1 rounded">{nextGoal}</span>
                 </div>

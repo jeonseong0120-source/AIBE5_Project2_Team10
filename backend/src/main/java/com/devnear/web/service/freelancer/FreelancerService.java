@@ -32,6 +32,7 @@ public class FreelancerService {
     private final FreelancerProfileRepository profileRepository;
     private final SkillRepository skillRepository;
     private final PortfolioRepository portfolioRepository;
+    private final com.devnear.web.domain.user.UserRepository userRepository;
 
     public FreelancerProfileResponse getMyProfile(User user) {
         FreelancerProfile profile = profileRepository.findByUserIdWithSkills(user.getId())
@@ -60,6 +61,13 @@ public class FreelancerService {
                 request.getHourlyRate(),
                 request.getWorkStyle(),
                 request.getIsActive());
+
+        // 닉네임 업데이트 (User 엔티티 직접 수정 및 저장)
+        if (request.getUserName() != null && !request.getUserName().trim().isEmpty()) {
+            User managedUser = profile.getUser();
+            managedUser.setNickname(request.getUserName().trim());
+            userRepository.save(managedUser);
+        }
 
         if (request.getSkillIds() != null) {
             List<Skill> selectedSkills = skillRepository.findAllById(request.getSkillIds());

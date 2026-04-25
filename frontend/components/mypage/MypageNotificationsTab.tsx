@@ -138,10 +138,10 @@ export function MypageNotificationsTab({ accentColor }: { accentColor: string })
         <div className="space-y-8">
             <div>
                 <span
-                    className="mb-3 block text-[10px] font-black uppercase tracking-[0.35em]"
+                    className="mb-3 block text-[13px] font-bold tracking-widest uppercase"
                     style={{ color: accentColor }}
                 >
-                    Notifications
+                    알림 내역
                 </span>
                 <h2 className="text-3xl font-black tracking-tight text-zinc-900">알림</h2>
                 <p className="mt-2 text-sm text-zinc-500">

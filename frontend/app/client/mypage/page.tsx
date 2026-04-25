@@ -57,10 +57,8 @@ function mapClientMyPageUserToNavbarUser(u: UserProfile): UserData {
 }
 
 const TABS = [
-    { id: 'settings', label: 'ACCOUNT SETTINGS', icon: UserCircle },
-    { id: 'projects', label: 'MY PROJECTS', icon: Briefcase },
-    { id: 'bookmarks', label: 'BOOKMARKS', icon: Heart },
-    { id: 'notifications', label: 'NOTIFICATIONS', icon: Bell },
+    { id: 'settings', label: '계정 설정', icon: UserCircle },
+    { id: 'notifications', label: '알림', icon: Bell },
 ];
 
 export default function ClientMyPage() {
@@ -120,7 +118,7 @@ export default function ClientMyPage() {
 
     if (!authorized) return (
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#FF7D00] font-black text-xl animate-pulse uppercase font-mono tracking-[0.2em]">
-            SYSTEM_AUTHORIZING...
+            보안 인증 중...
         </div>
     );
 

@@ -14,6 +14,7 @@ import java.util.List;
 @Getter
 public class FreelancerProfileRequest {
 
+    private String userName;
     private String profileImageUrl;
 
     @Size(max = 4000, message = "소개글은 4000자 이내로 입력해 주세요.")

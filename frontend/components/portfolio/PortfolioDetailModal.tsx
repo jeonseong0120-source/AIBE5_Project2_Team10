@@ -76,226 +76,188 @@ export default function PortfolioDetailModal({
     return (
         <AnimatePresence>
             {portfolio && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-10">
-                    {/* 🎭 Backdrop - Click to close */}
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8">
+                    {/* 🎭 Backdrop - Deep Glassmorphism */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="absolute inset-0 bg-zinc-950/70 backdrop-blur-sm"
+                        className="absolute inset-0 bg-zinc-950/80 backdrop-blur-md"
                     />
 
                     <motion.div
                         key={portfolio.id}
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.9, y: 40 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 40 }}
                         transition={{ 
                             type: 'spring',
-                            damping: 25,
-                            stiffness: 300
+                            damping: 20,
+                            stiffness: 150
                         }}
-                        className="relative z-[210] flex h-full max-h-[85vh] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] bg-white shadow-2xl md:flex-row"
+                        className="relative z-[210] flex h-full max-h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-[3rem] bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] md:flex-row"
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="portfolio-detail-title"
                         onClick={(e) => e.stopPropagation()}
                     >
+                        {/* ❌ Close Button - High Contrast */}
                         <button
                             type="button"
                             onClick={onClose}
-                            className="absolute right-6 top-6 z-[220] rounded-full bg-white/80 p-2.5 text-zinc-900 shadow-sm backdrop-blur-md transition-all hover:bg-white hover:scale-110 active:scale-95"
+                            className="absolute right-8 top-8 z-[250] rounded-full bg-zinc-950 p-3 text-white shadow-2xl transition-all hover:bg-[#7A4FFF] hover:scale-110 active:scale-95"
                             aria-label="닫기"
                         >
-                            <X size={20} className="stroke-[2.5px] opacity-80" />
+                            <X size={20} className="stroke-[3px]" />
                         </button>
 
-                        {/* LEFT: Image Section - Expanded for landscape feel */}
-                        <div className="relative flex min-h-[45%] w-full shrink-0 flex-col bg-zinc-100 md:h-full md:w-[62%]">
-                            <div className="flex flex-1 flex-col p-4 pb-3 md:p-6 md:pb-5">
-                                <div className="group relative flex flex-1 flex-col overflow-hidden rounded-2xl bg-white p-3 shadow-sm ring-1 ring-zinc-200/60">
-                                    <div className="relative flex-1 overflow-hidden rounded-xl bg-zinc-900">
-                                        <AnimatePresence mode="wait">
-                                            <motion.img
-                                                key={images[activeImageIndex] || 'fallback'}
-                                                initial={{ opacity: 0, scale: 0.98 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                exit={{ opacity: 0, scale: 1.02 }}
-                                                transition={{ duration: 0.3 }}
-                                                src={mainSrc}
-                                                alt=""
-                                                className="h-full w-full object-contain"
-                                            />
-                                        </AnimatePresence>
+                        {/* LEFT: Visual Showcase Section */}
+                        <div className="relative flex min-h-[40%] w-full shrink-0 flex-col bg-zinc-50 md:h-full md:w-[60%] border-r border-zinc-100">
+                            <div className="flex flex-1 flex-col p-4 md:p-10">
+                                <div className="relative flex flex-1 flex-col overflow-hidden rounded-[2.5rem] bg-zinc-900 shadow-2xl group">
+                                    <AnimatePresence mode="wait">
+                                        <motion.img
+                                            key={images[activeImageIndex] || 'fallback'}
+                                            initial={{ opacity: 0, scale: 1.1 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                                            src={mainSrc}
+                                            alt=""
+                                            className="h-full w-full object-contain"
+                                        />
+                                    </AnimatePresence>
 
-                                        {showCarousel && (
-                                            <>
+                                    {showCarousel && (
+                                        <>
+                                            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 opacity-0 group-hover:opacity-100 transition-all duration-500">
                                                 <button
                                                     type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setActiveImageIndex((prev) =>
-                                                            prev === 0 ? images.length - 1 : prev - 1
-                                                        );
-                                                    }}
-                                                    className="absolute left-6 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/40 bg-white/60 p-3 text-zinc-900 shadow-xl backdrop-blur-xl transition-all hover:bg-white hover:scale-110 active:scale-90 md:opacity-0 md:group-hover:opacity-100"
-                                                    aria-label="이전 이미지"
+                                                    onClick={(e) => { e.stopPropagation(); setActiveImageIndex((p) => p === 0 ? images.length - 1 : p - 1); }}
+                                                    className="h-14 w-14 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-xl border border-white/20 text-white shadow-2xl hover:bg-white hover:text-zinc-900 transition-all"
                                                 >
-                                                    <ChevronLeft size={22} strokeWidth={2.5} />
+                                                    <ChevronLeft size={24} strokeWidth={3} />
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setActiveImageIndex((prev) =>
-                                                            prev === images.length - 1 ? 0 : prev + 1
-                                                        );
-                                                    }}
-                                                    className="absolute right-6 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/40 bg-white/60 p-3 text-zinc-900 shadow-xl backdrop-blur-xl transition-all hover:bg-white hover:scale-110 active:scale-90 md:opacity-0 md:group-hover:opacity-100"
-                                                    aria-label="다음 이미지"
+                                                    onClick={(e) => { e.stopPropagation(); setActiveImageIndex((p) => p === images.length - 1 ? 0 : p + 1); }}
+                                                    className="h-14 w-14 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-xl border border-white/20 text-white shadow-2xl hover:bg-white hover:text-zinc-900 transition-all"
                                                 >
-                                                    <ChevronRight size={22} strokeWidth={2.5} />
+                                                    <ChevronRight size={24} strokeWidth={3} />
                                                 </button>
-                                                <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-2 rounded-full bg-black/40 px-4 py-2.5 backdrop-blur-md">
-                                                    {images.map((_, idx) => (
-                                                        <button
-                                                            key={`dot-${idx}`}
-                                                            onClick={() => setActiveImageIndex(idx)}
-                                                            className={`h-1.5 rounded-full transition-all duration-300 ${
-                                                                idx === activeImageIndex
-                                                                    ? 'w-6 bg-white'
-                                                                    : 'w-1.5 bg-white/40 hover:bg-white/60'
-                                                            }`}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
+                                            </div>
+                                            
+                                            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5 p-1.5 rounded-full bg-black/30 backdrop-blur-xl border border-white/10">
+                                                {images.map((_, idx) => (
+                                                    <div
+                                                        key={`dot-${idx}`}
+                                                        className={`h-1.5 rounded-full transition-all duration-500 ${idx === activeImageIndex ? 'w-8 bg-white' : 'w-1.5 bg-white/20'}`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
+
                             {showCarousel && (
-                                <div className="flex shrink-0 justify-center gap-3 overflow-x-auto border-t border-zinc-200/50 bg-zinc-50/80 px-6 py-5 no-scrollbar">
+                                <div className="flex shrink-0 justify-center gap-4 overflow-x-auto bg-white/50 border-t border-zinc-100 px-10 py-8 no-scrollbar">
                                     {images.map((img: string, idx: number) => (
                                         <button
                                             type="button"
                                             key={idx}
                                             onClick={() => setActiveImageIndex(idx)}
-                                            className={`group relative h-16 w-16 shrink-0 overflow-hidden rounded-xl transition-all duration-300 ${
-                                                idx === activeImageIndex
-                                                    ? 'ring-2 ring-[#7A4FFF] ring-offset-4 ring-offset-zinc-50 scale-105'
-                                                    : 'opacity-50 hover:opacity-100 hover:scale-105'
-                                            }`}
+                                            className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl transition-all duration-500 ${idx === activeImageIndex ? 'ring-4 ring-[#7A4FFF] ring-offset-4 ring-offset-white scale-110' : 'opacity-40 hover:opacity-100 hover:scale-105'}`}
                                         >
                                             <img src={img} alt="" className="h-full w-full object-cover" />
-                                            {idx === activeImageIndex && (
-                                                <div className="absolute inset-0 bg-[#7A4FFF]/10" />
-                                            )}
                                         </button>
                                     ))}
                                 </div>
                             )}
                         </div>
 
-                        {/* RIGHT: Content Section */}
-                        <div className="flex flex-1 flex-col overflow-y-auto bg-white thin-scrollbar">
-                            <div className="flex flex-1 flex-col px-8 py-10 md:px-12 md:py-12">
-                                <div className="flex flex-1 flex-col">
-                                    {/* 👤 Author Info */}
-                                    {(authorNickname || authorProfileImage) && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="mb-8 flex items-center justify-between"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                {/* 📸 Profile Image (Interactive) */}
-                                                <button
-                                                    onClick={() => {
-                                                        if (readOnly && fullProfileHref) {
-                                                            onClose();
-                                                            router.push(fullProfileHref);
-                                                        }
-                                                    }}
-                                                    className={`group relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-white bg-zinc-100 shadow-lg ring-1 ring-zinc-100 transition-all duration-500 ${readOnly && fullProfileHref ? 'cursor-pointer hover:scale-105 hover:shadow-purple-100 hover:ring-[#7A4FFF]/30' : 'cursor-default'}`}
-                                                >
-                                                    <img 
-                                                        src={authorProfileImage || 'https://ui-avatars.com/api/?name=User&background=F4F4F5&color=A1A1AA'} 
-                                                        alt={authorNickname}
-                                                        className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110"
-                                                    />
-                                                    <div className="absolute inset-0 bg-[#7A4FFF]/0 transition-colors duration-500 group-hover:bg-[#7A4FFF]/5" />
-                                                </button>
-
-                                                <div className="flex flex-col gap-1.5">
-                                                    {/* 🎖 Grade Badge (Static) */}
-                                                    <div className="flex items-center">
-                                                        <span className="rounded-full bg-[#7A4FFF] px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-[0.15em] shadow-lg shadow-purple-200/50 ring-1 ring-purple-100/20">
-                                                            {authorGradeName || '일반'}
-                                                        </span>
-                                                    </div>
-
-                                                    {/* 👤 Nickname (Interactive) */}
-                                                    <button
-                                                        onClick={() => {
-                                                            if (readOnly && fullProfileHref) {
-                                                                onClose();
-                                                                router.push(fullProfileHref);
-                                                            }
-                                                        }}
-                                                        className={`flex items-center gap-2.5 transition-all duration-300 ${readOnly && fullProfileHref ? 'cursor-pointer hover:text-[#7A4FFF] active:scale-95' : 'cursor-default'}`}
-                                                    >
-                                                        <p className="text-base font-black text-zinc-900 tracking-tight transition-colors">{authorNickname || 'Unknown Artist'}</p>
-                                                        {authorRating != null && (
-                                                            <div className="flex items-center gap-1">
-                                                                <Star size={12} fill="#7A4FFF" className="text-[#7A4FFF]" />
-                                                                <span className="text-sm font-black text-[#7A4FFF] font-mono">{authorRating.toFixed(1)}</span>
-                                                            </div>
-                                                        )}
-                                                    </button>
+                        {/* RIGHT: Detailed Content Section */}
+                        <div className="flex flex-1 flex-col overflow-y-auto bg-white">
+                            <div className="flex flex-1 flex-col px-10 py-12 md:px-16 md:py-16">
+                                
+                                {/* 👤 Premium Author Card */}
+                                {(authorNickname || authorProfileImage) && (
+                                    <div className="mb-12 p-6 rounded-[2rem] bg-zinc-50 border border-zinc-100 flex items-center justify-between group/author">
+                                        <div className="flex items-center gap-5">
+                                            <button
+                                                onClick={() => { if (readOnly && fullProfileHref) { onClose(); router.push(fullProfileHref); } }}
+                                                className="relative h-16 w-16 rounded-2xl overflow-hidden shadow-xl ring-2 ring-white group-hover/author:scale-105 transition-transform duration-500"
+                                            >
+                                                <img src={authorProfileImage || 'https://ui-avatars.com/api/?name=User&background=F4F4F5&color=A1A1AA'} alt={authorNickname} className="h-full w-full object-cover" />
+                                            </button>
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-black text-white bg-[#7A4FFF] px-2 py-0.5 rounded-md tracking-widest uppercase">
+                                                        {authorGradeName || 'NORMAL'}
+                                                    </span>
+                                                    {authorRating != null && (
+                                                        <div className="flex items-center gap-1 text-[#7A4FFF]">
+                                                            <Star size={12} fill="currentColor" />
+                                                            <span className="text-xs font-black">{authorRating.toFixed(1)}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
+                                                <button
+                                                    onClick={() => { if (readOnly && fullProfileHref) { onClose(); router.push(fullProfileHref); } }}
+                                                    className="text-lg font-black text-zinc-900 tracking-tight hover:text-[#7A4FFF] transition-colors"
+                                                >
+                                                    {authorNickname}
+                                                </button>
                                             </div>
-                                        </motion.div>
-                                    )}
-
-                                    <h2
-                                        id="portfolio-detail-title"
-                                        className="mb-6 text-2xl font-black leading-tight tracking-tight text-zinc-950 md:mb-8 md:text-3xl"
-                                    >
-                                        {portfolio.title}
-                                    </h2>
-
-
-
-                                    <div className="mb-10 space-y-4 md:mb-12">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="h-[2px] w-8 bg-[#7A4FFF]" />
-                                            <h3 className="text-xs font-black uppercase tracking-[0.25em] text-[#7A4FFF] font-mono">
-                                                Project_Overview
-                                            </h3>
                                         </div>
-                                        <div className="relative group">
-                                            <div className="absolute -left-4 top-0 bottom-0 w-1 bg-zinc-100 group-hover:bg-[#7A4FFF]/20 transition-colors rounded-full" />
-                                            <p className="text-[15px] md:text-base font-medium leading-relaxed text-zinc-600 whitespace-pre-wrap pl-2">
-                                                {portfolio.desc}
-                                            </p>
+                                        {readOnly && fullProfileHref && (
+                                            <button
+                                                onClick={() => { onClose(); router.push(fullProfileHref); }}
+                                                className="h-12 w-12 flex items-center justify-center rounded-full bg-white text-zinc-400 hover:text-[#7A4FFF] hover:shadow-lg transition-all"
+                                            >
+                                                <ChevronRight size={20} />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="space-y-12">
+                                    <div className="space-y-4">
+                                        <h1 id="portfolio-detail-title" className="text-4xl font-black text-zinc-950 tracking-tighter leading-tight">
+                                            {portfolio.title}
+                                        </h1>
+                                        <div className="flex items-center gap-6 text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
+                                            <div className="flex items-center gap-2">
+                                                <Calendar size={14} className="text-zinc-300" /> {new Date(portfolio.createdAt).toLocaleDateString()}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <ImageIcon size={14} className="text-zinc-300" /> {images.length || 1} ASSETS
+                                            </div>
                                         </div>
                                     </div>
 
+                                    {/* 📝 Core Overview */}
+                                    <div className="space-y-6">
+                                        <p className="text-sm font-black text-[#7A4FFF] tracking-[0.1em] uppercase border-b border-zinc-100 pb-4">
+                                            핵심 프로젝트 설명
+                                        </p>
+                                        <div className="text-base text-zinc-600 leading-[1.8] font-medium whitespace-pre-wrap pl-1">
+                                            {portfolio.desc}
+                                        </div>
+                                    </div>
+
+                                    {/* 🛠️ Tech Stack */}
                                     {portfolio.skills && portfolio.skills.length > 0 && (
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <div className="h-[2px] w-8 bg-[#7A4FFF]" />
-                                                <h3 className="text-xs font-black uppercase tracking-[0.25em] text-[#7A4FFF] font-mono">
-                                                    Tech_Implementation
-                                                </h3>
-                                            </div>
-                                            <div className="flex flex-wrap gap-2">
+                                        <div className="space-y-6">
+                                            <p className="text-sm font-black text-[#7A4FFF] tracking-[0.1em] uppercase border-b border-zinc-100 pb-4">
+                                                핵심 기술 스택
+                                            </p>
+                                            <div className="flex flex-wrap gap-2.5">
                                                 {portfolio.skills.map((s, idx) => (
                                                     <span
                                                         key={`port-detail-skill-${s.skillId ?? s.id ?? idx}`}
-                                                        className="cursor-default rounded-xl border border-zinc-200/60 bg-white px-3.5 py-2 text-[12px] font-black text-zinc-600 uppercase font-mono shadow-sm transition-all hover:bg-[#7A4FFF] hover:text-white hover:border-[#7A4FFF] hover:-translate-y-0.5"
+                                                        className="px-4 py-2.5 rounded-xl bg-zinc-50 border border-zinc-100 text-[11px] font-black text-zinc-600 uppercase tracking-wider hover:bg-[#7A4FFF] hover:text-white hover:border-[#7A4FFF] transition-all"
                                                     >
                                                         {s.name}
                                                     </span>
@@ -304,46 +266,23 @@ export default function PortfolioDetailModal({
                                         </div>
                                     )}
 
-                                    {/* 📦 Minified Metadata at the bottom */}
-                                    <div className="flex flex-wrap items-center gap-4 pt-8 mt-4 border-t border-zinc-100/50 text-[11px] text-zinc-400">
-                                        <div className="flex items-center gap-1.5">
-                                            <Calendar size={12} className="text-zinc-300" />
-                                            <span className="font-bold font-mono text-zinc-400">
-                                                {new Date(portfolio.createdAt).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                        <div className="w-px h-2.5 bg-zinc-200" />
-                                        <div className="flex items-center gap-1.5">
-                                            <ImageIcon size={12} className="text-zinc-300" />
-                                            <span className="font-bold font-mono text-zinc-400 uppercase">
-                                                {images.length || (portfolio.thumbnailUrl ? 1 : 0)} FILES
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-12 md:mt-16">
-
-
+                                    {/* 🕹️ Actions */}
                                     {!readOnly && (onEdit || onDelete) && (
-                                        <div className="flex flex-col gap-2.5 border-t border-zinc-100 pt-8 sm:flex-row">
+                                        <div className="flex flex-col sm:flex-row gap-3 pt-8 border-t border-zinc-100">
                                             {onEdit && (
                                                 <button
-                                                    type="button"
                                                     onClick={onEdit}
-                                                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-zinc-900 py-4 text-xs font-black text-white uppercase tracking-widest shadow-lg transition-all hover:bg-black hover:-translate-y-0.5 active:translate-y-0"
+                                                    className="flex-1 h-16 flex items-center justify-center gap-3 rounded-[1.5rem] bg-zinc-950 text-white text-sm font-black uppercase tracking-widest hover:bg-[#7A4FFF] transition-all active:scale-95 shadow-xl"
                                                 >
-                                                    <Edit3 size={14} /> Edit Project
+                                                    <Edit3 size={18} /> 프로젝트 수정
                                                 </button>
                                             )}
                                             {onDelete && (
                                                 <button
-                                                    type="button"
                                                     onClick={() => onDelete(portfolio.id)}
-                                                    className="flex items-center justify-center rounded-xl bg-red-50 px-6 py-4 text-xs font-black text-red-500 uppercase tracking-widest shadow-sm transition-all hover:bg-red-100 active:scale-95"
-                                                    aria-label="삭제"
+                                                    className="h-16 w-16 flex items-center justify-center rounded-[1.5rem] bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all active:scale-95"
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Trash2 size={20} />
                                                 </button>
                                             )}
                                         </div>
