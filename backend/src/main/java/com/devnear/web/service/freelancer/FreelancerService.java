@@ -184,8 +184,11 @@ public class FreelancerService {
         } else if ("grade".equalsIgnoreCase(sortField) || "grade.id".equalsIgnoreCase(sortField)) {
             // 등급 정렬: ID가 낮을수록(1: TOP) 높은 등급
             // desc(기본)일 때 높은 등급(ID 1)이 먼저 오게 하려면 naturalOrder() 사용
-            Comparator<Long> gradeComp = isAsc ? Comparator.reverseOrder() : Comparator.naturalOrder();
-            comparator = Comparator.comparing(p -> p.getGrade() != null ? p.getGrade().getId() : Long.MAX_VALUE, gradeComp);
+            Comparator<Long> gradeIdComp = isAsc ? Comparator.reverseOrder() : Comparator.naturalOrder();
+            comparator = Comparator.comparing(
+                p -> p.getGrade() != null ? p.getGrade().getId() : null,
+                Comparator.nullsLast(gradeIdComp)
+            );
         } else if ("hourlyrate".equalsIgnoreCase(sortField) || "rate".equalsIgnoreCase(sortField)) {
             Comparator<Integer> rateComp = isAsc ? Comparator.naturalOrder() : Comparator.reverseOrder();
             comparator = Comparator.comparing(FreelancerProfile::getHourlyRate, Comparator.nullsLast(rateComp));

@@ -787,12 +787,14 @@ export default function ClientDashboardPage() {
                                                             </div>
 
                                                             <div className="flex gap-3">
-                                                                <button 
-                                                                    onClick={() => router.push(`/client/freelancers/${proposal.freelancerProfileId}`)}
-                                                                    className="flex items-center gap-2 px-6 py-3.5 bg-zinc-950 text-white hover:bg-[#FF7D00] rounded-2xl text-[13px] font-black transition-all active:scale-95 shadow-xl shadow-zinc-100"
-                                                                >
-                                                                    다시 제안하기
-                                                                </button>
+                                                                {proposal.status !== 'ACCEPTED' && (
+                                                                    <button 
+                                                                        onClick={() => openProposalModal({ profileId: proposal.freelancerProfileId, userName: proposal.freelancerName })}
+                                                                        className="flex items-center gap-2 px-6 py-3.5 bg-zinc-950 text-white hover:bg-[#FF7D00] rounded-2xl text-[13px] font-black transition-all active:scale-95 shadow-xl shadow-zinc-100"
+                                                                    >
+                                                                        다시 제안하기
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>

@@ -244,7 +244,7 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                         key="edit"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
+                        exit={{ opacity: 0, y: 20 }}
                         onSubmit={handleSubmit}
                         className="space-y-10"
                     >

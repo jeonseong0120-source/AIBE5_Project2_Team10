@@ -3,18 +3,52 @@
 import { MAX_SELECTED_SKILLS } from '@/app/lib/skillLimits';
 import { Settings, User as UserIcon, Loader2, Upload, Save, MapPin, Clock, Activity, X, CheckCircle2, Globe, Cpu, Sparkles, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
+
+export interface Skill {
+    id?: number;
+    skillId?: number;
+    name: string;
+}
+
+export interface FreelancerProfile {
+    profileImageUrl?: string;
+    nickname?: string;
+    userName?: string;
+    workStyle?: 'ONLINE' | 'OFFLINE' | 'HYBRID';
+    hourlyRate?: number;
+    introduction?: string;
+    location?: string;
+    isActive?: boolean;
+    latitude?: number;
+    longitude?: number;
+    skills?: Skill[];
+}
+
+export interface EditableFreelancerProfile {
+    profileImageUrl?: string;
+    userName?: string;
+    workStyle?: 'ONLINE' | 'OFFLINE' | 'HYBRID' | string;
+    hourlyRate?: number | string;
+    introduction?: string;
+    location?: string;
+    latitude?: number;
+    longitude?: number;
+    isActive?: boolean;
+    skills?: Skill[];
+}
 
 interface MypageProfileTabProps {
-    profile: any;
+    profile: FreelancerProfile | null;
     isEditingProfile: boolean;
     setIsEditingProfile: (val: boolean) => void;
-    editProfileData: any;
-    setEditProfileData: (data: any) => void;
+    editProfileData: EditableFreelancerProfile;
+    setEditProfileData: (data: Partial<EditableFreelancerProfile>) => void;
     mySkillIds: number[];
     toggleSkill: (skillId: number) => void;
     skillSearchQuery: string;
     setSkillSearchQuery: (val: string) => void;
-    allGlobalSkills: any[];
+    allGlobalSkills: Skill[];
     handleProfileAndSkillUpdate: () => void;
     isProfileUploading: boolean;
     profileFileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -66,7 +100,12 @@ export default function MypageProfileTab({
                                     <div className={`absolute -inset-1 rounded-[2.5rem] bg-gradient-to-tr from-[#7A4FFF] to-[#B393FF] opacity-20 blur-sm group-hover:opacity-40 transition-opacity duration-500 ${profile?.isActive ? 'opacity-30 blur-md' : 'opacity-0'}`} />
                                     <div className="relative w-28 h-28 rounded-[2.2rem] bg-white border border-zinc-100 shadow-2xl overflow-hidden flex-shrink-0">
                                         {profile?.profileImageUrl ? (
-                                            <img src={profile.profileImageUrl} alt="profile" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                            <Image 
+                                                src={profile.profileImageUrl} 
+                                                alt={profile?.userName || "profile"} 
+                                                fill 
+                                                className="object-cover transition-transform duration-700 group-hover:scale-110" 
+                                            />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center bg-zinc-50 text-zinc-300">
                                                 <UserIcon size={40} strokeWidth={1.5} />
@@ -199,7 +238,7 @@ export default function MypageProfileTab({
                                 </div>
                                 <div className="flex flex-wrap gap-2.5 flex-1 content-start">
                                     {(profile?.skills || []).length > 0 ? (
-                                        (profile.skills).map((s: any, idx: number) => (
+                                        (profile!.skills!).map((s, idx) => (
                                             <span 
                                                 key={`skill-${s.skillId || s.id || idx}`} 
                                                 className="px-4 py-2.5 bg-zinc-50 text-zinc-800 border border-zinc-100 rounded-xl text-[11px] font-bold hover:border-[#7A4FFF]/20 hover:bg-[#7A4FFF]/5 transition-all duration-300 cursor-default leading-none"
@@ -252,7 +291,12 @@ export default function MypageProfileTab({
                                             <Loader2 className="animate-spin mb-1" size={24} />
                                         </div>
                                     ) : editProfileData?.profileImageUrl ? (
-                                        <img src={editProfileData.profileImageUrl} alt="profile" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                        <Image 
+                                            src={editProfileData.profileImageUrl} 
+                                            alt="profile" 
+                                            fill 
+                                            className="object-cover transition-transform duration-500 group-hover:scale-110" 
+                                        />
                                     ) : (
                                         <div className="w-full h-full bg-zinc-100 flex items-center justify-center text-zinc-300">
                                             <UserIcon size={32} strokeWidth={1.5} />
@@ -360,7 +404,7 @@ export default function MypageProfileTab({
                                         <label className="text-[11px] font-black tracking-[0.1em] uppercase text-zinc-400 flex items-center gap-2">
                                             <Sparkles size={12} /> 전문가 커리어 소개
                                         </label>
-                                        <span className={`text-[10px] font-mono font-bold ${editProfileData.introduction?.length > 3500 ? 'text-orange-500' : 'text-zinc-400'}`}>
+                                        <span className={`text-[10px] font-mono font-bold ${(editProfileData.introduction?.length || 0) > 3500 ? 'text-orange-500' : 'text-zinc-400'}`}>
                                             {(editProfileData.introduction?.length ?? 0).toLocaleString()} / 4,000
                                         </span>
                                     </div>
@@ -409,7 +453,13 @@ export default function MypageProfileTab({
                                                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-zinc-900 text-white shadow-sm"
                                                     >
                                                         {skillObj ? skillObj.name : skillId}
-                                                        <button onClick={() => toggleSkill(skillId)} className="text-zinc-400 hover:text-white transition-colors"><X size={12} /></button>
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => toggleSkill(skillId)} 
+                                                            className="text-zinc-400 hover:text-white transition-colors"
+                                                        >
+                                                            <X size={12} />
+                                                        </button>
                                                     </motion.span>
                                                 );
                                             })
@@ -432,7 +482,7 @@ export default function MypageProfileTab({
                                             {allGlobalSkills
                                                 .filter(s => s.name.toLowerCase().includes(skillSearchQuery.toLowerCase()))
                                                 .map((skill, idx) => {
-                                                    const sId = skill.skillId || skill.id;
+                                                    const sId = (skill.skillId || skill.id) as number;
                                                     const isSelected = mySkillIds.includes(sId);
                                                     const atCap = !isSelected && mySkillIds.length >= MAX_SELECTED_SKILLS;
                                                     return (
@@ -478,7 +528,7 @@ export default function MypageProfileTab({
                                         isActive: profile?.isActive !== false,
                                         skills: profile?.skills || []
                                     });
-                                    setMySkillIds((profile?.skills || []).map((s: any) => s.skillId || s.id));
+                                    setMySkillIds((profile?.skills || []).map((s: Skill) => (s.skillId || s.id) as number));
                                     setValidationError('');
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}

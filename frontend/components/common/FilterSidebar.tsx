@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check, SlidersHorizontal, MapPin, Briefcase, Cpu, RotateCcw, Banknote } from 'lucide-react';
 import { SKILL_CATEGORIES } from '@/constants/skills';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface FilterSidebarProps {
     mode: 'CLIENT' | 'FREELANCER';
@@ -33,12 +33,12 @@ export default function FilterSidebar({
     onPriceChange
 }: FilterSidebarProps) {
     const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
-    const [prevSelectedSkills, setPrevSelectedSkills] = useState<string[]>([]);
+    const prevSelectedSkillsRef = useRef<string[]>([]);
 
     // 🎯 스택이 새롭게 선택되어 개수가 0 -> 1이 되는 카테고리만 자동으로 엽니다.
     useEffect(() => {
         // 새로 추가된 스택 찾기
-        const addedSkills = selectedSkills.filter(s => !prevSelectedSkills.includes(s));
+        const addedSkills = selectedSkills.filter(s => !prevSelectedSkillsRef.current.includes(s));
         
         if (addedSkills.length > 0) {
             // 새로 추가된 스택이 속한 카테고리들 찾기
@@ -55,8 +55,8 @@ export default function FilterSidebar({
             }
         }
         
-        setPrevSelectedSkills(selectedSkills);
-    }, [selectedSkills, prevSelectedSkills]);
+        prevSelectedSkillsRef.current = selectedSkills;
+    }, [selectedSkills]);
 
     const toggleCategory = (id: string, isOpen: boolean) => {
         setOpenCategories(prev => {
