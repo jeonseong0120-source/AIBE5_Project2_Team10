@@ -4,8 +4,16 @@ import Link from 'next/link';
 import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { motion } from 'framer-motion';
-// 🎯 Heart 아이콘 추가
-import { ChevronLeft, ChevronRight, Loader2, MapPin, Star, Heart } from 'lucide-react';
+import { 
+    ChevronLeft, 
+    ChevronRight, 
+    Loader2, 
+    MapPin, 
+    Star, 
+    Heart, 
+    Sparkles, 
+    Check 
+} from 'lucide-react';
 import { FreelancerProfile } from '@/types/freelancer';
 import api from '@/app/lib/axios';
 import PortfolioDetailModal, {
@@ -162,13 +170,14 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
 
     return (
         <>
-            <div className="relative group">
+            <div className="relative group h-full">
                 {/* ✨ Decorative background glow on hover */}
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-[#FF7D00] to-[#7A4FFF] rounded-[1.5rem] opacity-0 group-hover:opacity-20 blur transition duration-500" />
                 
+                {/* 🎯 [개선] 카드 전체 높이를 h-full로 고정하고 Flex 레이아웃 적용 */}
                 <motion.div
                     whileHover={{ y: -8 }}
-                    className="relative overflow-hidden rounded-[1.4rem] border border-zinc-200/80 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-2xl hover:border-zinc-300"
+                    className="relative overflow-hidden rounded-[1.4rem] border border-zinc-200/80 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-2xl hover:border-zinc-300 h-full flex flex-col"
                 >
                     <div
                         role="button"
@@ -184,7 +193,7 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                                 void openPortfolioDetail();
                             }
                         }}
-                        className="group/carousel relative block h-[12rem] w-full cursor-pointer overflow-hidden bg-zinc-100 text-left outline-none"
+                        className="group/carousel relative block h-[12rem] w-full shrink-0 cursor-pointer overflow-hidden bg-zinc-100 text-left outline-none"
                         aria-label="포트폴리오 상세 보기"
                     >
                         <img
@@ -197,18 +206,6 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                             }}
                             className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                         />
-
-                        {/* 🛠 Work Style Badge */}
-                        <div className="absolute left-3 top-3 z-20 flex gap-1.5">
-                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-widest uppercase backdrop-blur-md border shadow-sm flex items-center gap-1 ${
-                                data.workStyle === 'ONLINE' ? 'bg-zinc-950/80 text-white border-white/20' : 
-                                data.workStyle === 'OFFLINE' ? 'bg-white/90 text-zinc-900 border-zinc-200' : 
-                                'bg-[#FF7D00]/90 text-white border-[#FF7D00]/20'
-                            }`}>
-                                <span className="text-[8px] opacity-60 font-bold">작업 형태:</span>
-                                {data.workStyle === 'ONLINE' ? '온라인' : data.workStyle === 'OFFLINE' ? '오프라인' : '하이브리드'}
-                            </span>
-                        </div>
 
                         {/* 🎯 Heart Button */}
                         <button
@@ -249,27 +246,13 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                             </div>
                         )}
 
-                        {/* 👁️ VIEW PROFILE Overlay (Hover) */}
-                        <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-all duration-300">
-                             <motion.div 
-                                 initial={{ scale: 0.9, opacity: 0 }}
-                                 animate={{ scale: 1, opacity: 1 }}
-                                 whileHover={{ scale: 1.05 }}
-                                 className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 shadow-2xl flex items-center gap-2 group/btn"
-                             >
-                                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white drop-shadow-md">프로필 상세보기</span>
-                                 <div className="bg-[#7A4FFF] p-1 rounded-full text-white shadow-lg group-hover/btn:translate-x-0.5 transition-transform">
-                                     <ChevronRight size={12} strokeWidth={3} />
-                                 </div>
-                             </motion.div>
-                        </div>
-
                         {/* Image overlay gradient */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none opacity-60" />
                     </div>
 
-                    <Link href={`/client/freelancers/${data.id}`} className="block">
-                        <div className="p-5">
+                    {/* 🎯 [개선] Link 영역도 공간을 가득 채우도록 flex-1 flex flex-col 설정 */}
+                    <Link href={`/client/freelancers/${data.id}`} className="flex flex-col flex-1">
+                        <div className="p-5 flex flex-col flex-1">
                             <div className="mb-4 flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-3 min-w-0">
                                     {/* 👤 Small Profile Avatar */}
@@ -287,9 +270,32 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                                                 <Star size={11} fill="currentColor" className="mr-1" />
                                                 <span className="font-sans">{(Math.round((data.averageRating || 0) * 10) / 10).toFixed(1)}</span>
                                             </div>
-                                            <span className="shrink-0 rounded-md bg-[#7A4FFF]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[#7A4FFF] ring-1 ring-[#7A4FFF]/20">
-                                                {data.gradeName || '일반'}
-                                            </span>
+                                            
+                                            {/* 🎯 [개선] 등급별 프리미엄 배지 시스템 */}
+                                            {(() => {
+                                                const grade = data.gradeName?.toUpperCase() || '일반';
+                                                if (grade.includes('TOP') || grade.includes('TALENT')) {
+                                                    return (
+                                                        <span className="shrink-0 flex items-center gap-1 rounded-md bg-gradient-to-r from-amber-400 to-[#FF7D00] px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white shadow-[0_0_12px_rgba(255,125,0,0.3)] ring-1 ring-white/20">
+                                                            <Sparkles size={10} className="animate-pulse" />
+                                                            TOP TALENT
+                                                        </span>
+                                                    );
+                                                }
+                                                if (grade.includes('인증') || grade.includes('VERIFIED')) {
+                                                    return (
+                                                        <span className="shrink-0 flex items-center gap-1 rounded-md bg-orange-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[#FF7D00] ring-1 ring-orange-200">
+                                                            <Check size={10} strokeWidth={3} />
+                                                            인증 프리랜서
+                                                        </span>
+                                                    );
+                                                }
+                                                return (
+                                                    <span className="shrink-0 rounded-md bg-zinc-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-zinc-400 ring-1 ring-zinc-200">
+                                                        일반
+                                                    </span>
+                                                );
+                                            })()}
                                         </div>
                                         <div className="flex items-center gap-2 max-w-full">
                                             <h3 className="truncate text-[18px] font-bold tracking-tight text-zinc-900 group-hover:text-[#FF7D00] transition-colors">
@@ -300,11 +306,12 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                                 </div>
                             </div>
 
-                            <p className="mb-5 line-clamp-2 text-[13px] font-medium leading-[1.6] text-zinc-500 h-[2.6rem]">
+                            <p className="mb-5 line-clamp-2 text-[13px] font-medium leading-[1.6] text-zinc-500 h-[2.6rem] shrink-0">
                                 {data.introduction}
                             </p>
 
-                            <div className="flex flex-wrap gap-1.5 mb-6">
+                            {/* 🎯 [개선] 기술 스택 최소 높이 고정으로 카드 높이 균형 유지 */}
+                            <div className="flex flex-wrap gap-1.5 mb-6 min-h-[52px] content-start">
                                 {data.skills.slice(0, 5).map((skill) => (
                                     <span
                                         key={skill.id}
@@ -320,8 +327,9 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                                 )}
                             </div>
 
-                            <div>
-                                <div className="flex items-center justify-start mb-3 text-[11px] font-black text-[#7A4FFF]">
+                            {/* 🎯 [개선] mt-auto를 적용하여 시급/위치 정보가 항상 맨 아래에 고정되도록 설정 */}
+                            <div className="mt-auto">
+                                <div className="flex items-center justify-start mb-3 text-[11px] font-black text-[#FF7D00]">
                                     <span className="text-[9px] opacity-60 mr-1.5 uppercase font-mono tracking-widest text-zinc-400">희망시급:</span>
                                     {data.hourlyRate != null ? `₩${data.hourlyRate.toLocaleString()}` : "—"}
                                 </div>

@@ -115,17 +115,21 @@ export default function FilterSidebar({
                     </h3>
                     <div className="flex bg-zinc-100/50 p-1.5 rounded-[1.4rem] border border-zinc-200/30">
                         {workStyles.map((style) => {
+                            const isActive = style.label === '전체' 
+                                ? (!workStyle || workStyle === '전체' || workStyle === '')
+                                : (isClient ? workStyle === style.value : workStyle === style.label);
+
                             return (
                                 <button
                                     key={style.label}
                                     onClick={() => onWorkStyleChange(isClient ? style.value : (style.label === '전체' ? '' : style.label))}
                                     className={`relative flex-1 py-3 rounded-[1rem] text-[13px] font-bold transition-all z-10 ${
-                                        (isClient ? workStyle === style.value : (style.label === '전체' ? workStyle === '' : workStyle === style.label))
+                                        isActive
                                             ? 'text-white'
                                             : 'text-zinc-400 hover:text-zinc-600'
                                     }`}
                                 >
-                                    {(isClient ? workStyle === style.value : (style.label === '전체' ? workStyle === '' : workStyle === style.label)) && (
+                                    {isActive && (
                                         <motion.div
                                             layoutId={`workstyle-bg-${mode}`}
                                             className={`absolute inset-0 ${accentBg} rounded-[1rem] shadow-md z-[-1]`}
@@ -164,7 +168,7 @@ export default function FilterSidebar({
                                     open={openCategories.has(cat.id)}
                                     onToggle={(e) => toggleCategory(cat.id, (e.target as HTMLDetailsElement).open)}
                                 >
-                                    <summary className="flex items-center justify-between list-none cursor-pointer px-5 py-4 rounded-[1.4rem] bg-white/60 hover:bg-white border border-transparent hover:border-zinc-100 transition-all shadow-sm">
+                                    <summary className="flex items-center justify-between list-none cursor-pointer px-5 py-2.5 rounded-[1.4rem] bg-white/60 hover:bg-white border border-transparent hover:border-zinc-100 transition-all shadow-sm">
                                         <div className="flex items-center gap-3">
                                             <div className={`w-1.5 h-1.5 rounded-full ${selectedInCat > 0 ? accentBg : 'bg-zinc-200'}`} />
                                             <span className={`text-[14px] font-bold tracking-tight ${selectedInCat > 0 ? 'text-zinc-950' : 'text-zinc-500'}`}>
@@ -240,7 +244,7 @@ export default function FilterSidebar({
                                 <button
                                     key={range.label}
                                     onClick={() => onPriceChange(range.min, range.max)}
-                                    className={`px-3 py-3 rounded-[1.2rem] text-[11px] font-bold transition-all border ${
+                                    className={`px-1 py-3 rounded-[1.2rem] text-[13px] font-bold transition-all border whitespace-nowrap tracking-tighter ${
                                         index === 0 ? 'col-span-2 py-3.5' : ''
                                     } ${
                                         isSelected 

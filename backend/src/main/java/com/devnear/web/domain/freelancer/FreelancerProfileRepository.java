@@ -33,6 +33,7 @@ public interface FreelancerProfileRepository extends JpaRepository<FreelancerPro
 
     // [API] 목록 탐색 필터링용 (skill, region, workStyle)
     // 활동중(isActive=true)인 사용자만 노출
+    // 포트폴리오가 1개 이상 있는 프리랜서만 노출
     @Query("SELECT DISTINCT fp FROM FreelancerProfile fp " +
            "LEFT JOIN FETCH fp.freelancerSkills fs " +
            "LEFT JOIN FETCH fs.skill " +
@@ -43,7 +44,8 @@ public interface FreelancerProfileRepository extends JpaRepository<FreelancerPro
            "AND (:keyword IS NULL OR (fp.introduction LIKE %:keyword% OR fp.user.nickname LIKE %:keyword%)) " +
            "AND (:minHourlyRate IS NULL OR fp.hourlyRate >= :minHourlyRate) " +
            "AND (:maxHourlyRate IS NULL OR fp.hourlyRate <= :maxHourlyRate) " +
-           "AND (:skills IS NULL OR fs.skill.name IN :skills)")
+           "AND (:skills IS NULL OR fs.skill.name IN :skills) " +
+           "AND EXISTS (SELECT 1 FROM Portfolio p WHERE p.user = fp.user)")
     List<FreelancerProfile> searchFreelancers(
             @Param("skills") List<String> skills,
             @Param("region") String region,

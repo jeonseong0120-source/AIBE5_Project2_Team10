@@ -2,16 +2,20 @@ package com.devnear.web.domain.project;
 
 import com.devnear.web.domain.enums.ProjectListingKind;
 import com.devnear.web.domain.enums.ProjectStatus;
+import com.querydsl.core.types.Order;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.support.PageableExecutionUtils;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -43,13 +47,13 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                         budgetGoe(cond.getMinBudget()),
                         budgetLoe(cond.getMaxBudget()),
                         excludeOwner(cond.getExcludeOwnerUserId()),
-                        project.status.eq(ProjectStatus.OPEN), // 탐색 페이지 노출 로직 (OPEN만 노출)
+                        project.status.eq(ProjectStatus.OPEN),
                         isNotExpired(today),
                         marketplaceListingOnly()
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(project.createdAt.desc())
+                .orderBy(getOrderSpecifiers(pageable.getSort())) // 🎯 [개선] 동적 정렬 적용
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
@@ -66,12 +70,46 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
                         budgetGoe(cond.getMinBudget()),
                         budgetLoe(cond.getMaxBudget()),
                         excludeOwner(cond.getExcludeOwnerUserId()),
-                        project.status.eq(ProjectStatus.OPEN), // 탐색 페이지 노출 로직
+                        project.status.eq(ProjectStatus.OPEN),
                         isNotExpired(today),
                         marketplaceListingOnly()
                 );
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
+    }
+
+    /**
+     * 🎯 [추가] Pageable의 Sort 정보를 QueryDSL OrderSpecifier로 변환
+     */
+    private OrderSpecifier<?>[] getOrderSpecifiers(Sort sort) {
+        List<OrderSpecifier<?>> orders = new ArrayList<>();
+
+        if (sort != null) {
+            for (Sort.Order order : sort) {
+                Order direction = order.isAscending() ? Order.ASC : Order.DESC;
+                String property = order.getProperty();
+
+                switch (property) {
+                    case "budget":
+                        orders.add(new OrderSpecifier<>(direction, project.budget));
+                        break;
+                    case "createdAt":
+                    case "id":
+                        orders.add(new OrderSpecifier<>(direction, project.createdAt));
+                        break;
+                    default:
+                        // 기본 정렬 (등록일 최신순)
+                        orders.add(new OrderSpecifier<>(Order.DESC, project.createdAt));
+                        break;
+                }
+            }
+        }
+
+        if (orders.isEmpty()) {
+            orders.add(new OrderSpecifier<>(Order.DESC, project.createdAt));
+        }
+
+        return orders.toArray(new OrderSpecifier[0]);
     }
 
     private BooleanExpression nameLike(String keyword) {
@@ -88,16 +126,14 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
         return project.projectSkills.any().skill.id.in(skillIds);
     }
 
-    /** 🎯 [수정] 모든 스택을 포함하는 프로젝트만 노출 (AND 필터 + 입력값 정규화) */
     private BooleanExpression skillNamesAllMatch(List<String> skillNames) {
         if (skillNames == null || skillNames.isEmpty()) return null;
 
-        // 입력값 정규화: 트리밍, 빈 문자열 필터링, 대소문자 무시 중복 제거
         List<String> cleanedNames = skillNames.stream()
                 .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(name -> !name.isEmpty())
-                .map(String::toLowerCase) // 중복 제거를 위해 일단 소문자로 변환
+                .map(String::toLowerCase)
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -105,7 +141,6 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
 
         BooleanExpression expression = null;
         for (String name : cleanedNames) {
-            // 각 스킬이 존재하는지 체크하는 any()를 and로 엮으면 해당 스킬들이 모두 존재하는 프로젝트만 필터링됨
             BooleanExpression itemMatch = project.projectSkills.any().skill.name.equalsIgnoreCase(name);
             expression = (expression == null) ? itemMatch : expression.and(itemMatch);
         }
@@ -140,7 +175,6 @@ public class ProjectRepositoryImpl implements ProjectRepositoryCustom {
         return maxBudget != null ? project.budget.loe(maxBudget) : null;
     }
 
-    /** 제안서 단독 공고는 QueryDSL 검색에서 제외 (null = 레거시 마켓 공고) */
     private BooleanExpression marketplaceListingOnly() {
         return project.listingKind.isNull().or(project.listingKind.eq(ProjectListingKind.MARKETPLACE));
     }
