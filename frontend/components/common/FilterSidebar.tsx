@@ -95,7 +95,8 @@ export default function FilterSidebar({
             <motion.button
                 whileHover={hasFilters ? { scale: 1.02, translateY: -2 } : {}}
                 whileTap={hasFilters ? { scale: 0.98 } : {}}
-                onClick={hasFilters ? onReset : undefined}
+                onClick={onReset}
+                disabled={!hasFilters}
                 className={`group relative overflow-hidden flex items-center justify-center gap-3 w-full py-5 rounded-[1.8rem] text-[14px] font-black transition-all shadow-xl tracking-tighter ${
                     hasFilters 
                         ? 'bg-zinc-900 text-white cursor-pointer active:scale-95 shadow-zinc-200' 

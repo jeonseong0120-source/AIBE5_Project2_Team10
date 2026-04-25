@@ -464,7 +464,11 @@ export default function FreelancerProfileDetail({
                                             <h1 className="text-4xl font-black tracking-tight text-zinc-950">
                                                 {freelancer.nickname}
                                             </h1>
-                                            <span className="rounded-2xl bg-[#7A4FFF] px-4 py-1.5 text-[16px] font-black uppercase tracking-[0.1em] text-white shadow-xl shadow-purple-200 ring-1 ring-purple-100/20">
+                                            <span className={`rounded-2xl px-4 py-1.5 text-[16px] font-black uppercase tracking-[0.1em] ${
+                                                freelancer.gradeName 
+                                                    ? 'bg-[#7A4FFF] text-white shadow-xl shadow-purple-200 ring-1 ring-purple-100/20' 
+                                                    : 'bg-zinc-100 text-zinc-400 ring-1 ring-zinc-200'
+                                            }`}>
                                                 {freelancer.gradeName || '일반'}
                                             </span>
                                         </div>

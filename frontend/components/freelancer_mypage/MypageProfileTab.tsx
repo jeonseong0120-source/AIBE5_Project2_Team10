@@ -131,7 +131,7 @@ export default function MypageProfileTab({
                                         <button
                                             onClick={handleToggleStatus}
                                             disabled={isTogglingStatus}
-                                            className={`group relative inline-flex h-8 w-16 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-all duration-500 ease-[0.34, 1.56, 0.64, 1] focus:outline-none ${
+                                            className={`group relative inline-flex h-8 w-16 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] focus:outline-none ${
                                                 profile?.isActive 
                                                     ? 'bg-[#7A4FFF] shadow-md shadow-[#7A4FFF]/30' 
                                                     : 'bg-zinc-300'
@@ -141,7 +141,7 @@ export default function MypageProfileTab({
                                             type="button"
                                         >
                                             <span 
-                                                className={`pointer-events-none flex items-center justify-center h-6 w-6 transform rounded-full bg-white shadow-sm ring-0 transition duration-500 ease-[0.34, 1.56, 0.64, 1] ${
+                                                className={`pointer-events-none flex items-center justify-center h-6 w-6 transform rounded-full bg-white shadow-sm ring-0 transition duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
                                                     profile?.isActive ? 'translate-x-8' : 'translate-x-0'
                                                 }`}
                                             >

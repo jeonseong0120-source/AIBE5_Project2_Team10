@@ -8,7 +8,9 @@ import com.devnear.web.dto.freelancer.FreelancerProfileResponse;
 import com.devnear.web.service.ai.AiRecommendationService;
 import com.devnear.web.service.freelancer.FreelancerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 import com.devnear.global.auth.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -87,6 +89,17 @@ public class FreelancerController {
         String safeKeyword = (keyword != null && keyword.trim().isEmpty()) ? null : keyword;
         
         Long excludeUserId = (principal != null) ? principal.getId() : null;
+
+        // [검증] 시급 범위 파라미터 유효성 검사
+        if (minHourlyRate != null && minHourlyRate < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "minHourlyRate는 0 이상이어야 합니다.");
+        }
+        if (maxHourlyRate != null && maxHourlyRate < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "maxHourlyRate는 0 이상이어야 합니다.");
+        }
+        if (minHourlyRate != null && maxHourlyRate != null && minHourlyRate > maxHourlyRate) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "minHourlyRate는 maxHourlyRate보다 클 수 없습니다.");
+        }
 
         return ResponseEntity.ok(freelancerService.searchFreelancers(
                 safeSkills, safeRegion, safeSort, safeWorkStyle, safeKeyword, minHourlyRate, maxHourlyRate, excludeUserId));

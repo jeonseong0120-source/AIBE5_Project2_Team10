@@ -106,7 +106,7 @@ export default function ClientDashboard() {
         }
     }, [authorized]);
 
-    const fetchFreelancers = useCallback(async () => {
+    const fetchFreelancers = useCallback(async (searchKeyword: string) => {
         setLoading(true);
         try {
             const searchParams = new URLSearchParams();
@@ -120,7 +120,7 @@ export default function ClientDashboard() {
             if (filter.minRate !== undefined) searchParams.append('minHourlyRate', filter.minRate.toString());
             if (filter.maxRate !== undefined) searchParams.append('maxHourlyRate', filter.maxRate.toString());
             filter.skill.forEach(s => searchParams.append('skill', s));
-            if (keyword) searchParams.append('keyword', keyword);
+            if (searchKeyword) searchParams.append('keyword', searchKeyword);
 
             const { data } = await api.get<ApiFreelancerDto[]>('/v1/freelancers', { params: searchParams });
             const mappedData = data.map(mapFreelancerDtoToProfile);
@@ -130,11 +130,16 @@ export default function ClientDashboard() {
         } finally {
             setLoading(false);
         }
-    }, [filter, keyword]);
+    }, [filter]);
 
     useEffect(() => {
-        if (authorized) fetchFreelancers();
-    }, [authorized, fetchFreelancers]);
+        if (authorized) {
+            const timer = setTimeout(() => {
+                fetchFreelancers(keyword);
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [authorized, fetchFreelancers, keyword]);
 
     // 🎯 [개선] 텍스트 심플하게 변경
     const sortOptions = [

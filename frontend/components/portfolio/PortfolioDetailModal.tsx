@@ -182,12 +182,13 @@ export default function PortfolioDetailModal({
                                 {(authorNickname || authorProfileImage) && (
                                     <div className="mb-10 flex items-center gap-5">
                                         <button
+                                            type="button"
                                             onClick={() => { if (readOnly && fullProfileHref) { onClose(); router.push(fullProfileHref); } }}
                                             className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-[1.2rem] bg-zinc-100 shadow-sm transition-transform duration-500 ${readOnly && fullProfileHref ? 'hover:scale-105' : 'cursor-default'}`}
                                         >
                                             <img 
                                                 src={authorProfileImage || 'https://ui-avatars.com/api/?name=User&background=F4F4F5&color=A1A1AA'} 
-                                                alt={authorNickname}
+                                                alt={authorNickname || '크리에이터'}
                                                 className="h-full w-full object-cover"
                                             />
                                         </button>
@@ -204,6 +205,7 @@ export default function PortfolioDetailModal({
                                                 )}
                                             </div>
                                             <button
+                                                type="button"
                                                 onClick={() => { if (readOnly && fullProfileHref) { onClose(); router.push(fullProfileHref); } }}
                                                 className={`text-2xl font-black text-zinc-950 tracking-tight transition-colors text-left ${readOnly && fullProfileHref ? 'hover:text-[#7A4FFF]' : 'cursor-default'}`}
                                             >

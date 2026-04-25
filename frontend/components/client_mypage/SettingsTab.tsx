@@ -213,7 +213,7 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                                     </div>
                                     <div className="space-y-1.5 pt-6 border-t border-zinc-50">
                                         <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">사업자 등록번호</span>
-                                        <p className="font-black text-zinc-950 text-2xl tracking-[0.05em] font-mono leading-none">{originalData?.bn || 'UNREGISTERED'}</p>
+                                        <p className="font-black text-zinc-950 text-2xl tracking-[0.05em] font-mono leading-none">{originalData?.bn || '미설정'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -233,7 +233,7 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                                     </div>
                                     <div className="space-y-1.5 pt-6 border-t border-zinc-50">
                                         <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">직통 연락처</span>
-                                        <p className="font-black text-zinc-950 text-2xl tracking-[0.05em] font-mono leading-none">{originalData?.phoneNum || 'CONTACT UNSET'}</p>
+                                        <p className="font-black text-zinc-950 text-2xl tracking-[0.05em] font-mono leading-none">{originalData?.phoneNum || '미설정'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -324,7 +324,6 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
                                 <div className="space-y-3 md:col-span-2">
                                     <div className="flex items-center justify-between pl-1">
                                         <label className="text-[11px] font-black tracking-[0.1em] uppercase text-zinc-400">비즈니스 가치 소개</label>
-                                        <span className="text-[10px] font-mono text-zinc-300">Markdown Support</span>
                                     </div>
                                     <textarea rows={6} value={formData.introduction} onChange={(e) => setFormData({ ...formData, introduction: e.target.value })} className="w-full bg-zinc-50/50 px-6 py-6 rounded-[2rem] border border-zinc-100 outline-none focus:border-[#FF7D00] focus:bg-white text-sm font-medium shadow-sm transition-all focus:ring-4 focus:ring-[#FF7D00]/5 resize-none leading-relaxed" placeholder="기업의 미션과 프리랜서들에게 제공할 수 있는 가치를 설명해주세요." />
                                 </div>

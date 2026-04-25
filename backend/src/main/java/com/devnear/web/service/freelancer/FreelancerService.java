@@ -9,6 +9,7 @@ import com.devnear.web.domain.skill.SkillRepository;
 import com.devnear.web.domain.user.User;
 import com.devnear.web.dto.freelancer.FreelancerProfileRequest;
 import com.devnear.web.dto.freelancer.FreelancerProfileResponse;
+import com.devnear.web.exception.DuplicateProfileException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,9 +65,16 @@ public class FreelancerService {
 
         // 닉네임 업데이트 (User 엔티티 직접 수정 및 저장)
         if (request.getUserName() != null && !request.getUserName().trim().isEmpty()) {
+            String newNickname = request.getUserName().trim();
             User managedUser = profile.getUser();
-            managedUser.setNickname(request.getUserName().trim());
-            userRepository.save(managedUser);
+            
+            if (!newNickname.equals(managedUser.getNickname())) {
+                if (userRepository.existsByNickname(newNickname)) {
+                    throw new DuplicateProfileException("이미 사용 중인 닉네임입니다.");
+                }
+                managedUser.setNickname(newNickname);
+                userRepository.save(managedUser);
+            }
         }
 
         if (request.getSkillIds() != null) {
@@ -114,8 +122,46 @@ public class FreelancerService {
             } catch (IllegalArgumentException ignored) {}
         }
 
-        List<FreelancerProfile> profiles = profileRepository.searchFreelancers(
-                skills, region, workStyleEnum, keyword, minHourlyRate, maxHourlyRate, excludeUserId);
+        // 1단계: 검색어 특수문자 이스케이프 (LIKE 검색 시 %, _, \ 처리)
+        String escapedRegion = escapeLike(region);
+        String escapedKeyword = escapeLike(keyword);
+
+        // 1단계: 필터 조건에 맞는 프로필 ID 목록 조회 (스킬 JOIN FETCH 없이 경량 쿼리)
+        List<FreelancerProfile> filteredProfiles = profileRepository.searchFreelancers(
+                skills, escapedRegion, workStyleEnum, escapedKeyword, minHourlyRate, maxHourlyRate, excludeUserId);
+
+        if (filteredProfiles.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> filteredIds = filteredProfiles.stream()
+                .map(FreelancerProfile::getId)
+                .collect(Collectors.toList());
+
+        // 2단계: 배치 JOIN FETCH — 전체 스킬 컬렉션을 완전하게 로드 (Hibernate 컬렉션 trimming 방지)
+        Map<Long, FreelancerProfile> profileWithSkillsMap = profileRepository
+                .findAllWithSkillsByProfileIds(filteredIds)
+                .stream()
+                .collect(Collectors.toMap(FreelancerProfile::getId, p -> p));
+
+        // 필터 순서를 유지하며 전체-스킬이 로드된 프로필 목록 조립
+        List<FreelancerProfile> profiles = filteredIds.stream()
+                .map(profileWithSkillsMap::get)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // 3단계: AND 필터 — 선택한 모든 스킬을 보유한 프리랜서만 최종 노출
+        if (skills != null && !skills.isEmpty()) {
+            Set<String> requiredSkills = new HashSet<>(skills);
+            profiles = profiles.stream()
+                    .filter(p -> {
+                        Set<String> profileSkillNames = p.getFreelancerSkills().stream()
+                                .map(fs -> fs.getSkill().getName())
+                                .collect(Collectors.toSet());
+                        return profileSkillNames.containsAll(requiredSkills);
+                    })
+                    .collect(Collectors.toList());
+        }
 
         // 🎯 [개선] 정렬 파라미터 파싱 및 동적 정렬 구현 ( Perfect Sort )
         String sortField = "id";
@@ -224,5 +270,14 @@ public class FreelancerService {
         FreelancerProfile profile = profileRepository.findByUser_Id(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("프로필이 존재하지 않습니다."));
         profileRepository.delete(profile);
+    }
+
+    private String escapeLike(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        return input.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
     }
 }
