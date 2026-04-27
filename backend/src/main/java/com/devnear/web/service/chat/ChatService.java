@@ -235,13 +235,32 @@ public class ChatService {
         }
 
         Map<Long, ChatRoom> latestRoomByOpponentId = new LinkedHashMap<>();
+
         for (ChatRoom room : rooms) {
             Long opponentId = room.getOpponent(me).getId();
-            latestRoomByOpponentId.putIfAbsent(opponentId, room);
+
+            latestRoomByOpponentId.compute(opponentId, (key, existingRoom) -> {
+                if (existingRoom == null) {
+                    return room;
+                }
+
+                if (room.getUpdatedAt() == null) {
+                    return existingRoom;
+                }
+
+                if (existingRoom.getUpdatedAt() == null) {
+                    return room;
+                }
+
+                return room.getUpdatedAt().isAfter(existingRoom.getUpdatedAt())
+                        ? room
+                        : existingRoom;
+            });
         }
 
-        List<ChatRoom> deduplicatedRooms = latestRoomByOpponentId.values().stream().toList();
-        List<Long> roomIds = deduplicatedRooms.stream()
+        List<ChatRoom> visibleRooms = latestRoomByOpponentId.values().stream().toList();
+
+        List<Long> roomIds = visibleRooms.stream()
                 .map(ChatRoom::getId)
                 .toList();
 
@@ -263,7 +282,7 @@ public class ChatService {
             unreadCountMap.put(roomIdNum.longValue(), countNum.longValue());
         }
 
-        return deduplicatedRooms.stream()
+        return visibleRooms.stream()
                 .map(room -> {
                     ChatMessage lastMessage = lastMessageMap.get(room.getId());
                     long unreadCount = unreadCountMap.getOrDefault(room.getId(), 0L);
