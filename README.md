@@ -3,132 +3,198 @@
 <p align="center">
   <img width="633" height="298" alt="image" src="https://github.com/user-attachments/assets/5c21e5b1-72f7-42b5-987b-0c6f87d31d2f" />
 
-  
-</p>
-
 ## 📌 프로젝트 개요
-**DevNear**는 기존 직무 중심 프리랜서 플랫폼의 한계를 극복하고, **‘재능(Skill)’**과 **‘지역(Location)’**을 기반으로 사용자와 프리랜서를 연결하는 하이브리드 매칭 플랫폼입니다. AI 기반 추천 시스템을 통해 최적의 파트너를 자동으로 매칭하며, 온라인뿐만 아니라 오프라인 협업 환경까지 완벽하게 지원합니다.
+DevNear는 기존 직무 중심 프리랜서 플랫폼의 한계를 개선하기 위해  
+**재능(Skill)**과 **지역(Location)** 기반으로 사용자와 프리랜서를 연결하는 하이브리드 매칭 플랫폼입니다.
 
-* **개발 기간:** 2026.04.06 ~ 2026.04.27
-* **참여 인원:** 4명
+규칙 기반 스코어링 + AI 텍스트 임베딩을 결합하여  
+사용자에게 최적의 협업 파트너를 자동 추천합니다.
+
+- 개발 기간: 2026.04.015 ~ 2026.04.27  
+- 참여 인원: 4명  
 
 ---
 
-## 🧭 협업 컨벤션 (Conventions)
+## 👨‍💻 팀원 및 역할
 
-### 🌿 브랜치 전략
-- **형식**: `타입/#이슈번호-기능명`
-- `feature/`: 신규 기능 (`feature/#1-comic-add`)
-- `fix/`: 오류 수정 (`fix/#5-db-close`)
-- `docs/`: 문서 수정 (`docs/#2-readme`)
+### 👑 전성 (Maintainer)
+- 전체 시스템 아키텍처 설계
+- 핵심 도메인 및 비즈니스 로직 구현
+- 규칙 기반 자동 매칭 알고리즘 설계 및 구현
+- JWT + OAuth2 기반 인증 시스템 구축 (Stateless)
+- Redis 기반 UserContext 캐싱 도입
+- Docker 개발 환경 구축
+- GitHub PR 기반 협업 관리 및 코드 리뷰
+- 프론트: 랜딩페이지, 온보딩, 대시보드 UI 구현
 
-### 🚫 main 브랜치 정책 (중요)
-main 브랜치에는 직접 push하지 않습니다.
-모든 작업은 기능 브랜치에서 작업 후 Pull Request(PR)를 통해 병합합니다.
-PR을 통해 팀원과 코드 내용을 공유하고 리뷰 후 병합합니다.
+---
 
-### 💬 커밋 메시지
-- **형식**: `[타입] #이슈번호 - 내용`
-- 예: `[Feat] #1 - 만화책 등록 기능 및 JDBC 연동 구현
+### 🛠️ leejy1019
+- 프리랜서 도메인 전체 구현
+- 마이페이지, 리뷰, 포트폴리오 기능 개발
+- N+1 문제 해결 및 Fetch Join 최적화
+- DB 인덱싱 기반 조회 성능 개선
+- Toss 결제 시스템 연동 및 동시성 제어
+- Cloudinary 이미지 업로드 시스템 구축
 
+---
+
+### 💬 GyuSikYoon
+- WebSocket 기반 실시간 채팅 시스템 구현 (STOMP)
+- 메시지 읽음 처리 및 페이징 처리
+- 리뷰 기반 등급 자동 갱신 시스템 (비관적 락 적용)
+- 커뮤니티 게시글 및 댓글 시스템 최적화
+
+---
+
+### 📱 warcat12
+- 클라이언트 도메인 및 프로젝트 제안 기능 구현
+- AI 추천 시스템 및 검색 필터 개선
+- 실시간 알림 시스템 구현
+- 테스트용 벌크 데이터 구축
+- CodeRabbit 기반 코드 품질 개선 및 버그 수정
+- 공통 UI 컴포넌트 및 UX 개선
+
+---
 
 ## 📘 기획 및 컨셉
 
-### 1.문제의식
-
-- 직무 중심 카테고리로는 재능을 세분화해 표현하기 어려움
-- 키워드 검색 위주라 사용자가 직접 탐색 부담이 큼
-- 역량/신뢰도 판단이 어려움
-- 오프라인 협업 고려 부족
-
-### 2.해결 방향(핵심 아이디어)
-
-- 재능 태그 기반 구조로 역량을 정교하게 표현
-- AI 기반 추천으로 탐색 비용 감소
-- 지역 기반 매칭으로 오프라인 협업 지원
-- 리뷰/평점 및 검증으로 신뢰도 강화
+### 🔍 문제점
+- 직무 중심 구조 → 세분화된 재능 표현 어려움
+- 키워드 검색 기반 → 사용자 탐색 피로도 증가
+- 신뢰도 판단 지표 부족
+- 오프라인 협업 파트너 찾기 어려움
 
 ---
 
-## 🎯 주요 기능 (Core Features)
-
-### 1. 사용자 맞춤형 역할 시스템
-* **클라이언트 (Client):** 프로젝트 등록, 조건(예산, 기술, 지역 등) 설정, 프리랜서 탐색 및 제안
-* **프리랜서 (Freelancer):** 프로필 및 포트폴리오 관리, 재능/지역 설정, 프로젝트 지원
-* **겸업 사용자 (Both):** 하나의 계정으로 클라이언트/프리랜서 모드를 자유롭게 전환 (GNB 토글 지원)
-
-### 2. AI & 지역 기반 매칭 시스템 (핵심 도메인)
-* **재능 태그 유사도 분석:** 요구 기술과 보유 기술을 비교하여 일치율 계산
-* **지역 기반 필터링:** 오프라인 협업 시 좌표 및 거리 기반 근거리 사용자 우선 탐색
-* **매칭 점수 산정:** `재능 태그 일치율` + `평점` + `등급 가중치`를 종합하여 최적의 파트너 추천
-
-### 3. 신뢰 기반 리뷰 및 사용자 검증
-* **상호 평가 시스템:** 프로젝트 완료 후 클라이언트와 프리랜서 양방향 5점 만점 별점 및 리뷰 작성
-* **프리랜서 등급제:** 인증 프리랜서, TOP Talent 등 조건 달성에 따른 등급 부여 (매칭 가중치 반영)
-
-### 4. 탐색 및 커뮤니케이션
-* **Pinterest형 피드:** 직관적인 포트폴리오 탐색 환경 제공
-* **1:1 채팅:** 프로젝트 단위 채팅방 생성 및 실시간 메시지 송수신
-* **커뮤니티:** 프리랜서 간 정보 공유 및 네트워킹을 위한 게시판
-
-### 5.기대 효과
-
-- 맞춤형 매칭 정확도 향상
-- 탐색 시간 감소
-- 오프라인 협업 확장
-- 검증 기반 신뢰도 강화
----
-
-## ⚙️ 시스템 아키텍처 및 기술 스택 (Tech Stack)
-
-### Backend
-* [Java 17+] / [Spring Boot]
-* [MySQL] / [JPA (Hibernate)]
-* [JWT (JSON Web Token)]
-
-### Frontend
-* [React] / [Vue.js]
-* [Tailwind CSS] / [Styled Components]
-
-### Infrastructure & Tools
-* [AWS EC2 / RDS]
-* [Git / GitHub] / [Figma]
-
-*(※ 위 기술 스택은 예시이므로 실제 프로젝트 환경에 맞게 수정해 주세요.)*
+### 💡 해결 전략
+- 재능 태그 기반 구조 도입
+- AI + 규칙 기반 하이브리드 추천
+- 지역 기반 필터링
+- 리뷰 기반 자동 등급 시스템
 
 ---
 
-## 🔐 백엔드 환경 변수 설정
+## 🎯 핵심 기술 및 기능
 
-백엔드 실행 전에 `backend/.env.example`의 키를 기준으로 OS/IDE 환경 변수에 값을 설정하세요.
-
-필수 변수:
-- `DB_URL`
-- `DB_USERNAME`
-- `DB_PASSWORD`
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-- `JWT_SECRET`
-- `JWT_EXPIRATION_MS`
-- `KAKAO_MAPS_API_KEY`
-- `KAKAO_REST_API_KEY`
-
-`application.yml`과 `application.yml.sample`은 위 변수들을 `${변수명}` 형태로 참조합니다.
+### 1️⃣ Stateless 인증 & 성능 최적화
+- JWT + OAuth2 인증 구조
+- Redis UserContext 캐싱
+- DB 조회 횟수 약 80% 감소
 
 ---
 
-## 📊 데이터베이스 모델링 (ERD)
-<img width="2840" height="1892" alt="Project_erd" src="https://github.com/user-attachments/assets/5ee13eed-e49a-4ee1-b0ee-8653ce9bb0b9" />
+### 2️⃣ 하이브리드 AI 추천 시스템
+- 텍스트 임베딩 기반 데이터 구조 설계
+- 규칙 기반 스코어링 알고리즘
 
+#### 📊 매칭 점수 구성
+- 스킬 유사도 (36%) — Jaccard
+- 예산 적합도 (26%)
+- 지역 (20%)
+- 근무 형태 (18%)
 
-*(프로젝트의 주요 테이블 구조: User, Project, Freelancer, Review, Chat, Community 등)*
++ 추가 가중치: 사용자 평점
 
 ---
 
-## 📍 향후 고도화 계획 (Roadmap)
-- [ ] 추천 알고리즘 고도화 (머신러닝 API 연동)
-- [ ] 오프라인 매칭을 위한 지도 기반 UI/UX 적용
-- [ ] 실시간 채팅 내 이미지 전송 및 알림 고도화 (WebSocket 적용)
-- [ ] 허위 리뷰 방지 및 신고 시스템 도입
+### 3️⃣ 실시간 시스템 & 동시성 제어
+- WebSocket 기반 1:1 채팅 (STOMP)
+- 메시지 읽음 처리 및 페이징
+- 비관적 락 적용 (결제 / 등급 시스템)
+
+---
+
+### 4️⃣ UX 및 커뮤니티
+- 클라이언트 ↔ 프리랜서 모드 즉시 전환
+- 커뮤니티 게시판 + 좋아요 동기화
+- 실시간 알림 시스템
+
+---
+
+## ⚙️ 기술 스택
+
+| 영역 | 기술 |
+|------|------|
+| Frontend | Next.js 14, React 18, TypeScript, Tailwind |
+| Backend | Spring Boot 3, Java 17, JPA |
+| DB/Cache | MySQL, Redis |
+| Infra | Docker |
+| AI | Gemini API |
+| External | Cloudinary, Toss Payments |
+| DevOps | GitHub Actions, CodeRabbit |
+
+---
+
+## 🧭 협업 컨벤션
+
+### 🌿 브랜치 전략
+
+feat/#1-feature-name
+fix/#2-bug-fix
+docs/#3-readme
+
+
+---
+
+### 🚫 main 정책
+- main 직접 push 금지
+- PR 기반 merge 필수
+- CodeRabbit + 팀원 리뷰 후 merge
+
+---
+
+## 🔐 환경 변수
+
+
+DB_URL=
+DB_USERNAME=
+DB_PASSWORD=
+
+REDIS_HOST=
+REDIS_PORT=
+
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+GEMINI_API_KEY=
+CLOUDINARY_URL=
+
+JWT_SECRET=
+JWT_EXPIRATION_MS=
+
+
+---
+
+
+## 🏗️ 시스템 아키텍처 (System Architecture)
+
+<p align="center">
+  <img src="<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/09c05b7d-7027-463d-81e8-48fab33363c5" />
+" width="900" />
+</p>
+
+### 📌 아키텍처 설명
+- **Frontend (Next.js)**: 사용자 인터페이스 및 API 요청 처리
+- **Security Layer**: JWT 기반 인증 및 Redis UserContext 캐싱
+- **Backend (Spring Boot)**: 비즈니스 로직 및 추천 엔진 처리
+- **Data Layer**: MySQL + Redis 기반 데이터 관리
+- **External API**: Gemini API를 활용한 텍스트 임베딩
+
+> ✔ Redis 기반 UserContext 캐싱으로 불필요한 DB 접근 최소화  
+> ✔ Rule-based + AI Embedding 구조의 하이브리드 추천 시스템  
+> ✔ WebSocket(STOMP) 기반 실시간 통신 처리
+
+---
+
+---
+
+## 📍 향후 개선 방향 (Roadmap)
+
+- 코사인 유사도 기반 추천 고도화
+- 분산 락 도입 (Redis / Redisson)
+- AWS 기반 클라우드 배포
+- 무중단 배포 파이프라인 구축
+- 악성 유저 탐지 시스템
 
 ---
