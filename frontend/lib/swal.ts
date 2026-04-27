@@ -1,5 +1,4 @@
 import Swal, { type SweetAlertIcon, type SweetAlertOptions } from 'sweetalert2';
-import 'sweetalert2/dist/sweetalert2.min.css';
 
 const baseCustomClass: SweetAlertOptions['customClass'] = {
     popup: 'dn-swal-popup',
@@ -47,3 +46,5 @@ export async function dnConfirm(
     });
     return res.isConfirmed;
 }
+
+//swal.ts 추가
