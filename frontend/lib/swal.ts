@@ -1,5 +1,4 @@
 import Swal, { type SweetAlertIcon, type SweetAlertOptions } from 'sweetalert2';
-import 'sweetalert2/dist/sweetalert2.min.css';
 
 const baseCustomClass: SweetAlertOptions['customClass'] = {
     popup: 'dn-swal-popup',
@@ -44,7 +43,7 @@ export async function dnConfirm(
         showCancelButton: true,
         confirmButtonText: options?.confirmText ?? '확인',
         cancelButtonText: options?.cancelText ?? '취소',
-    }); 
+    });
     return res.isConfirmed;
 }
 
