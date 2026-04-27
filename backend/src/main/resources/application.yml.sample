@@ -47,6 +47,7 @@ app:
   #   부분 수정만: 계정/공고 유지한 채 SQL 패치만 실행 가능
   #     예) backend/scripts/bulk_demo_portfolio_skills_only.sql
   #         backend/scripts/bulk_demo_patch_project_skills_max5.sql
+  #         backend/scripts/bulk_demo_community_seed.sql (커뮤니티 글/댓글/좋아요 샘플)
   #         backend/scripts/gangnam_map_seed_freelancers.sql (강남 좌표 분산 프리랜서 10명, 단독)
   seed:
     bulk-demo: ${APP_SEED_BULK_DEMO:false}
