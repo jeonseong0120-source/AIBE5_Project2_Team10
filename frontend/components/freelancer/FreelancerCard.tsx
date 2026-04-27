@@ -19,6 +19,7 @@ import api from '@/app/lib/axios';
 import PortfolioDetailModal, {
     type PortfolioDetailShape,
 } from '@/components/portfolio/PortfolioDetailModal';
+import { dnAlert } from '@/lib/swal';
 
 interface Props {
     data: FreelancerProfile;
@@ -81,7 +82,7 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
             if (err.response?.status === 409) {
                 setIsBookmarked(true);
             } else {
-                alert("찜 처리 중 에러가 발생했습니다.");
+                await dnAlert("찜 처리 중 에러가 발생했습니다.", "error");
             }
         } finally {
             setBookmarkLoading(false);
@@ -113,7 +114,7 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
         const uid = data.userId;
         if (uid == null) {
             portfolioFetchLock.current = false;
-            alert('포트폴리오 정보를 불러올 수 없습니다.');
+            await dnAlert('포트폴리오 정보를 불러올 수 없습니다.', 'error');
             return;
         }
 
@@ -130,10 +131,10 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
                     slideUrl === (data.profileImageUrl || FALLBACK_IMAGE_URL) ||
                     slideUrl === FALLBACK_IMAGE_URL;
                 if (isOnlyProfile) {
-                    alert('등록된 포트폴리오가 없습니다.');
+                    await dnAlert('등록된 포트폴리오가 없습니다.', 'info');
                     return;
                 }
-                alert('등록된 포트폴리오가 없습니다.');
+                await dnAlert('등록된 포트폴리오가 없습니다.', 'info');
                 return;
             }
 
@@ -158,7 +159,7 @@ export default function FreelancerCard({ data, initialIsBookmarked = false }: Pr
             setPortfolioModalImageIndex(initialIdx);
             setPortfolioModal(chosen);
         } catch {
-            alert('포트폴리오를 불러오지 못했습니다.');
+            await dnAlert('포트폴리오를 불러오지 못했습니다.', 'error');
         } finally {
             setPortfolioLoading(false);
             portfolioFetchLock.current = false;

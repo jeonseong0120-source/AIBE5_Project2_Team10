@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { createCommunityPost } from "@/app/lib/communityApi";
 import GlobalNavbar from "@/components/common/GlobalNavbar";
 import { useSessionBootstrap } from "@/app/hooks/useSessionBootstrap";
+import { dnAlert, dnConfirm } from "@/lib/swal";
 
 export default function CommunityWritePage() {
     const router = useRouter();
@@ -43,30 +44,30 @@ export default function CommunityWritePage() {
 
     const handleSubmit = async () => {
         if (!title.trim()) {
-            alert("제목을 입력해주세요.");
+            await dnAlert("제목을 입력해주세요.", "warning");
             return;
         }
 
         if (!content.trim()) {
-            alert("내용을 입력해주세요.");
+            await dnAlert("내용을 입력해주세요.", "warning");
             return;
         }
 
         try {
             setLoading(true);
             await createCommunityPost({ title, content });
-            alert("게시글이 등록되었습니다.");
+            await dnAlert("게시글이 등록되었습니다.", "success");
             router.push("/community");
         } catch (error) {
             console.error("글 등록 실패:", error);
-            alert("게시글 등록에 실패했습니다.");
+            await dnAlert("게시글 등록에 실패했습니다.", "error");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCancel = () => {
-        if (confirm("작성 중인 내용이 사라집니다. 나가시겠습니까?")) {
+    const handleCancel = async () => {
+        if (await dnConfirm("작성 중인 내용이 사라집니다. 나가시겠습니까?")) {
             router.push("/community");
         }
     };

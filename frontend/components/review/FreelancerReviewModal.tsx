@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, X, MessageSquare, Award } from 'lucide-react';
 import api from '@/app/lib/axios';
+import { dnAlert } from '@/lib/swal';
 
 interface Props {
     isOpen: boolean;
@@ -24,7 +25,10 @@ export default function FreelancerReviewModal({ isOpen, onClose, projectId, free
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async () => {
-        if (!comment.trim()) return alert("리뷰 내용을 입력해주세요.");
+        if (!comment.trim()) {
+            await dnAlert("리뷰 내용을 입력해주세요.", "warning");
+            return;
+        }
 
         // 🎯 [마스터 확인용] 서버 전송 데이터
         const payload = {
@@ -40,13 +44,13 @@ export default function FreelancerReviewModal({ isOpen, onClose, projectId, free
         try {
             // Swagger: POST /api/reviews/freelancers
             await api.post('/reviews/freelancers', payload);
-            alert("리뷰가 성공적으로 등록되었습니다!");
+            await dnAlert("리뷰가 성공적으로 등록되었습니다!", "success");
             setComment("");
             setScores({ workQuality: 5, deadline: 5, communication: 5, expertise: 5 });
             onClose();
         } catch (err: any) {
             console.error("❌ 리뷰 등록 실패:", err.response?.data);
-            alert(err.response?.data?.message || "리뷰 등록 실패");
+            await dnAlert(err.response?.data?.message || "리뷰 등록 실패", "error");
         } finally {
             setSubmitting(false);
         }

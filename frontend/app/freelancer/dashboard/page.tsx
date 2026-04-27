@@ -16,6 +16,7 @@ import GlobalNavbar from '@/components/common/GlobalNavbar';
 import DashboardSidebar from '@/components/common/DashboardSidebar';
 import FreelancerProjectDetailModal from '@/components/freelancer/FreelancerProjectDetailModal';
 import { DEVNEAR_BOOKMARK_CHANGED, BookmarkChangeEventDetail, notifyBookmarkChanged } from '@/app/lib/bookmarkEvents';
+import { dnAlert, dnConfirm } from '@/lib/swal';
 
 export default function FreelancerDashboardPage() {
     const router = useRouter();
@@ -63,7 +64,7 @@ export default function FreelancerDashboardPage() {
                 const res = await api.get("/v1/users/me");
                 const roles = res.data.role || "";
                 if (!roles.includes("FREELANCER") && !roles.includes("BOTH")) {
-                    alert("프리랜서 또는 BOTH 계정만 접근 가능합니다.");
+                    await dnAlert("프리랜서 또는 BOTH 계정만 접근 가능합니다.", "warning");
                     if (roles.includes("CLIENT")) return router.replace("/client/dashboard");
                     return router.replace("/onboarding");
                 }
@@ -135,12 +136,12 @@ export default function FreelancerDashboardPage() {
     }, [bookmarkPage, bookmarkedProjects.length, sortOrder]);
 
     const handleRemoveBookmark = async (projectId: number) => {
-        if (!confirm("관심 프로젝트에서 삭제하시겠습니까?")) return;
+        if (!(await dnConfirm("관심 프로젝트에서 삭제하시겠습니까?"))) return;
         try {
             await api.delete(`/v1/bookmarks/projects/${projectId}`);
             notifyBookmarkChanged(projectId, false);
         } catch (err) {
-            alert("삭제에 실패했습니다.");
+            await dnAlert("삭제에 실패했습니다.", "error");
         }
     };
 
@@ -168,15 +169,15 @@ export default function FreelancerDashboardPage() {
 
     const handleProposalStatus = async (proposalId: number, status: 'ACCEPTED' | 'REJECTED') => {
         const actionText = status === 'ACCEPTED' ? '수락' : '거절';
-        if (!confirm(`이 제안을 ${actionText}하시겠습니까?`)) return;
+        if (!(await dnConfirm(`이 제안을 ${actionText}하시겠습니까?`))) return;
 
         try {
             await api.patch(`/v1/proposals/${proposalId}/status`, { status });
-            alert(`제안이 ${actionText}되었습니다.`);
+            await dnAlert(`제안이 ${actionText}되었습니다.`, 'success');
             fetchReceivedProposals();
         } catch (error) {
             console.error("제안 상태 변경 실패:", error);
-            alert('상태 변경에 실패했습니다.');
+            await dnAlert('상태 변경에 실패했습니다.', 'error');
         }
     };
 

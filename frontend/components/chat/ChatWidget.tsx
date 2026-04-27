@@ -25,6 +25,7 @@ import type {
     ChatReadReceiptResponse,
     ChatRoomListResponse,
 } from "../../types/chat";
+import { dnAlert, dnConfirm } from "@/lib/swal";
 
 type ChatView = "list" | "room";
 
@@ -403,7 +404,7 @@ export default function ChatWidget() {
     const handleLeaveRoom = async () => {
         if (!selectedRoomId || leaving) return;
 
-        const ok = window.confirm("채팅방을 나가시겠습니까?");
+        const ok = await dnConfirm("채팅방을 나가시겠습니까?");
         if (!ok) return;
 
         try {
@@ -422,7 +423,7 @@ export default function ChatWidget() {
             await fetchRooms();
         } catch (error) {
             console.error("채팅방 나가기 실패", error);
-            alert("채팅방 나가기에 실패했습니다. 다시 시도해주세요.");
+            await dnAlert("채팅방 나가기에 실패했습니다. 다시 시도해주세요.", "error");
         } finally {
             setLeaving(false);
         }
@@ -434,7 +435,7 @@ export default function ChatWidget() {
         if (!trimmed || !selectedRoomId || sending) return;
 
         if (trimmed.length > 500) {
-            alert("메시지는 500자 이하로 입력해주세요.");
+            await dnAlert("메시지는 500자 이하로 입력해주세요.", "warning");
             return;
         }
 
@@ -466,7 +467,7 @@ export default function ChatWidget() {
             setInput("");
         } catch (error) {
             console.error("메시지 전송 실패", error);
-            alert("메시지 전송에 실패했습니다. 다시 시도해주세요.");
+            await dnAlert("메시지 전송에 실패했습니다. 다시 시도해주세요.", "error");
         } finally {
             setSending(false);
         }

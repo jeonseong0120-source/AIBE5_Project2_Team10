@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GlobalNavbar, { type UserData, type ProfileData } from '@/components/common/GlobalNavbar';
 import FilterSidebar from '@/components/common/FilterSidebar';
 import { SKILL_CATEGORIES } from '@/constants/skills';
+import { dnAlert } from '@/lib/swal';
 
 export default function ClientDashboard() {
     const router = useRouter();
@@ -48,7 +49,7 @@ export default function ClientDashboard() {
         const checkAccess = async () => {
             const token = localStorage.getItem("accessToken");
             if (!token) {
-                alert("로그인이 필요합니다.");
+                await dnAlert("로그인이 필요합니다.", "warning");
                 router.replace("/");
                 return;
             }
@@ -71,7 +72,7 @@ export default function ClientDashboard() {
                     !normalizedRoles.includes("CLIENT") &&
                     !normalizedRoles.includes("BOTH")
                 ) {
-                    alert("해당 대시보드는 클라이언트 전용 화면입니다.");
+                    await dnAlert("해당 대시보드는 클라이언트 전용 화면입니다.", "warning");
                     router.replace("/");
                     return;
                 }

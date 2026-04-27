@@ -13,6 +13,7 @@ import MypageWithdrawFooter from '@/components/layout/MypageWithdrawFooter';
 import GlobalNavbar, { type UserData, type ProfileData } from '@/components/common/GlobalNavbar';
 import SettingsTab from '@/components/client_mypage/SettingsTab';
 import { MypageNotificationsTab } from '@/components/mypage/MypageNotificationsTab';
+import { dnAlert } from '@/lib/swal';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -63,7 +64,7 @@ export default function ClientMyPage() {
                 const roles = res.data.role || "";
 
                 if (!roles.includes("CLIENT") && !roles.includes("BOTH")) {
-                    alert("클라이언트 또는 BOTH 계정만 접근 가능합니다.");
+                    await dnAlert("클라이언트 또는 BOTH 계정만 접근 가능합니다.", "warning");
                     if (roles.includes("FREELANCER")) return router.replace("/");
                     return router.replace("/onboarding");
                 }

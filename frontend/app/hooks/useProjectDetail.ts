@@ -7,6 +7,7 @@ import { getCurrentUserId } from '@/app/lib/auth';
 import { createOrGetChatRoom } from '@/app/lib/chatApi';
 import { useChatStore } from '@/app/store/chatStore';
 import { DEVNEAR_BOOKMARK_CHANGED, BookmarkChangeEventDetail, notifyBookmarkChanged, getLocalBookmarkState } from '@/app/lib/bookmarkEvents';
+import { dnAlert } from '@/lib/swal';
 
 export type SkillItem = string | { name: string };
 
@@ -195,7 +196,7 @@ export function useProjectDetail(projectId: number | null) {
                 await api.post(`/v1/bookmarks/projects/${projectId}`);
             }
         } catch {
-            alert('찜하기 처리에 실패했습니다.');
+            await dnAlert('찜하기 처리에 실패했습니다.', 'error');
             setIsBookmarked(prevState); // Rollback
             notifyBookmarkChanged(projectId, prevState);
         }
@@ -208,7 +209,7 @@ export function useProjectDetail(projectId: number | null) {
             const token = localStorage.getItem('accessToken');
 
             if (!token) {
-                alert('로그인 후 문의할 수 있습니다.');
+                await dnAlert('로그인 후 문의할 수 있습니다.', 'warning');
                 return;
             }
 
@@ -223,19 +224,19 @@ export function useProjectDetail(projectId: number | null) {
             const currentUserId = getCurrentUserId();
 
             if (currentUserId !== null && targetUserId === currentUserId) {
-                alert('본인에게는 문의할 수 없습니다.');
+                await dnAlert('본인에게는 문의할 수 없습니다.', 'warning');
                 return;
             }
 
             if (!targetUserId) {
                 console.error('프로젝트 응답에 작성자 userId가 없습니다.', project);
-                alert('채팅 대상 정보가 없습니다.');
+                await dnAlert('채팅 대상 정보가 없습니다.', 'error');
                 return;
             }
 
             if (!project.projectId) {
                 console.error('프로젝트 응답에 projectId가 없습니다.', project);
-                alert('프로젝트 정보가 올바르지 않습니다.');
+                await dnAlert('프로젝트 정보가 올바르지 않습니다.', 'error');
                 return;
             }
 
@@ -253,16 +254,16 @@ export function useProjectDetail(projectId: number | null) {
                 console.error('채팅방 생성/조회 실패:', error);
 
                 if (error.response?.status === 400) {
-                    alert('채팅방 생성 요청값이 올바르지 않습니다.');
+                    await dnAlert('채팅방 생성 요청값이 올바르지 않습니다.', 'warning');
                     return;
                 }
 
                 if (error.response?.status === 403) {
-                    alert('채팅방을 생성할 권한이 없습니다.');
+                    await dnAlert('채팅방을 생성할 권한이 없습니다.', 'warning');
                     return;
                 }
 
-                alert('문의하기를 열지 못했습니다.');
+                await dnAlert('문의하기를 열지 못했습니다.', 'error');
             } finally {
                 setChatLoading(false);
             }
@@ -276,7 +277,7 @@ export function useProjectDetail(projectId: number | null) {
         const bid = Number(bidPrice);
 
         if (!bidPrice || !Number.isFinite(bid) || bid <= 0 || !message.trim()) {
-            alert('금액과 메시지를 입력해 주세요.');
+            await dnAlert('금액과 메시지를 입력해 주세요.', 'warning');
             return;
         }
 
@@ -289,11 +290,11 @@ export function useProjectDetail(projectId: number | null) {
                 message: message.trim(),
             });
 
-            alert('지원이 완료되었습니다!');
+            await dnAlert('지원이 완료되었습니다!', 'success');
             setIsApplied(true);
             setIsApplyOpen(false);
         } catch {
-            alert('지원 중 오류가 발생했습니다.');
+            await dnAlert('지원 중 오류가 발생했습니다.', 'error');
         } finally {
             setSubmitting(false);
         }

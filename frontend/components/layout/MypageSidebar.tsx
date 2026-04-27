@@ -4,6 +4,7 @@ import { LogOut, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { logout } from '@/app/lib/authEvents';
 import { motion } from 'framer-motion';
+import { dnConfirm } from '@/lib/swal';
 
 interface MypageSidebarProps {
     tabs: { id: string, label: string, icon: any }[];
@@ -75,7 +76,12 @@ export default function MypageSidebar({ tabs, activeTab, setActiveTab, accentCol
             {/* 🚪 Logout Section */}
             <div className="bg-white/30 backdrop-blur-sm rounded-[1.8rem] p-2 border border-white/40 shadow-sm group">
                 <button
-                    onClick={() => { if (confirm('로그아웃 하시겠습니까?')) { logout(); router.push('/'); } }}
+                    onClick={async () => {
+                        if (await dnConfirm('로그아웃 하시겠습니까?')) {
+                            logout();
+                            router.push('/');
+                        }
+                    }}
                     className="w-full flex items-center justify-center gap-3 py-4 hover:bg-red-50 rounded-[1.2rem] transition-all duration-300 text-[12px] font-bold text-zinc-400 hover:text-red-500 tracking-tight"
                 >
                     <LogOut size={16} className="group-hover:rotate-12 transition-transform" />

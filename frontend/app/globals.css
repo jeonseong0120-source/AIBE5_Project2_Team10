@@ -58,3 +58,90 @@
 .animate-spin-slow {
   animation: spin 3s linear infinite;
 }
+
+/* SweetAlert2 — DevNear (보라/크림/지오메트리) */
+.dn-swal-popup {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  border-radius: 1.25rem;
+  padding: 1.5rem 1.25rem 1.25rem;
+  background: #fdfcf6;
+  color: #18181b;
+  border: 1px solid rgba(122, 79, 255, 0.12);
+  box-shadow:
+    0 25px 50px -12px rgba(24, 24, 27, 0.18),
+    0 0 0 1px rgba(255, 125, 0, 0.06);
+}
+
+.dn-swal-popup.swal2-icon-success .swal2-success-ring {
+  border-color: rgba(122, 79, 255, 0.35);
+}
+
+.dn-swal-popup .swal2-success-line-tip,
+.dn-swal-popup .swal2-success-line-long {
+  background-color: #7a4fff;
+}
+
+.dn-swal-popup .swal2-title.dn-swal-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #18181b;
+  letter-spacing: -0.02em;
+}
+
+.dn-swal-popup .swal2-html-container.dn-swal-html {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: #3f3f46;
+  font-weight: 500;
+}
+
+.dn-swal-popup .swal2-icon.swal2-warning {
+  border-color: #ff7d00;
+  color: #ff7d00;
+}
+
+.dn-swal-popup .swal2-icon.swal2-error {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.dn-swal-popup .swal2-icon.swal2-question {
+  border-color: #7a4fff;
+  color: #7a4fff;
+}
+
+.dn-swal-popup .swal2-icon.swal2-info {
+  border-color: #7a4fff;
+  color: #7a4fff;
+}
+
+.dn-swal-confirm {
+  border-radius: 0.875rem !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  padding: 0.65rem 1.35rem !important;
+  margin: 0.35rem 0.35rem 0 !important;
+  background: linear-gradient(135deg, #7a4fff 0%, #5b36d6 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(122, 79, 255, 0.32);
+}
+
+.dn-swal-confirm:focus {
+  box-shadow: 0 0 0 3px rgba(122, 79, 255, 0.35) !important;
+}
+
+.dn-swal-cancel {
+  border-radius: 0.875rem !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  padding: 0.65rem 1.35rem !important;
+  margin: 0.35rem 0.35rem 0 !important;
+  background: #fff !important;
+  color: #52525b !important;
+  border: 1px solid #e4e4e7 !important;
+}
+
+.dn-swal-cancel:focus {
+  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.08) !important;
+}

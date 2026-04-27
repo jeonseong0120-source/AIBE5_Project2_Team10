@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { User, Settings, Phone, Landmark, Globe, FileText, CheckCircle2, Save, Loader2, Upload, Activity } from 'lucide-react';
 import api from '@/app/lib/axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { dnAlert } from '@/lib/swal';
 
 interface SettingsTabProps {
     onUpdateSuccess: (updatedData: any) => void;
@@ -73,9 +74,9 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
         try {
             const { data } = await api.post('/images/portfolio', uploadForm);
             setFormData(prev => ({ ...prev, logoUrl: data.imageUrl }));
-            alert('로고 이미지가 업로드되었습니다. 저장 버튼을 눌러야 반영됩니다.');
+            await dnAlert('로고 이미지가 업로드되었습니다. 저장 버튼을 눌러야 반영됩니다.', 'success');
         } catch (err) {
-            alert('이미지 업로드 실패');
+            await dnAlert('이미지 업로드 실패', 'error');
         } finally {
             setIsLogoUploading(false);
         }
@@ -85,13 +86,13 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
         fetchData();
     }, []);
 
-    const handleBnCheck = () => {
+    const handleBnCheck = async () => {
         // 사업자번호 형식만 검증 (실제 인증은 제출 시 서버에서 수행됨)
         if (formData.bn.match(/^\d{3}-\d{2}-\d{5}$/)) {
             setIsBnVerified(true);
-            alert("사업자번호 형식이 확인되었습니다. 실제 상세 인증은 저장 시 서버에서 처리됩니다.");
+            await dnAlert("사업자번호 형식이 확인되었습니다. 실제 상세 인증은 저장 시 서버에서 처리됩니다.", 'success');
         } else {
-            alert("사업자번호 형식을 확인해주세요. (000-00-00000)");
+            await dnAlert("사업자번호 형식을 확인해주세요. (000-00-00000)", 'warning');
             setIsBnVerified(false);
         }
     };
@@ -101,13 +102,13 @@ export default function SettingsTab({ onUpdateSuccess }: SettingsTabProps) {
         setIsSubmitting(true);
         try {
             await api.put('/client/profile', formData);
-            alert("회원 정보가 수정되었습니다.");
+            await dnAlert("회원 정보가 수정되었습니다.", 'success');
             setOriginalData(formData);
             onUpdateSuccess(formData);
             setIsEditing(false);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (err) {
-            alert("수정 실패: 양식을 확인해주세요.");
+            await dnAlert("수정 실패: 양식을 확인해주세요.", 'error');
         } finally {
             setIsSubmitting(false);
         }

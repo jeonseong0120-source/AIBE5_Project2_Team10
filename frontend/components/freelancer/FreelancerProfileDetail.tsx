@@ -16,6 +16,7 @@ import ProposalSendModal, {
 } from '@/components/proposal/ProposalSendModal';
 import { useNotifications } from '@/components/notifications/notificationContext';
 import ChatStartButton from '@/components/chat/ChatStartButton';
+import { dnAlert } from '@/lib/swal';
 
 export type FreelancerProfileDetailVariant = 'freelancer' | 'client';
 
@@ -215,25 +216,30 @@ export default function FreelancerProfileDetail({
     const handleSendProposal = async () => {
         if (!freelancer?.id) return;
         if (proposalMode === 'PROJECT' && !selectedProjectId) {
-            return alert('연결할 프로젝트를 선택해주세요.');
+            await dnAlert('연결할 프로젝트를 선택해주세요.', 'warning');
+            return;
         }
 
         const parsedPrice = Number(offeredPrice);
         if (!Number.isFinite(parsedPrice) || parsedPrice < 1) {
-            return alert('제안 금액은 1원 이상으로 입력해주세요.');
+            await dnAlert('제안 금액은 1원 이상으로 입력해주세요.', 'warning');
+            return;
         }
 
         if (proposalMode === 'FORM' && !positionTitle.trim()) {
-            return alert('포지션명을 입력해주세요.');
+            await dnAlert('포지션명을 입력해주세요.', 'warning');
+            return;
         }
 
         if (proposalMode === 'FORM' && !workScope.trim()) {
-            return alert('업무 범위를 입력해주세요.');
+            await dnAlert('업무 범위를 입력해주세요.', 'warning');
+            return;
         }
 
         const composedMessage = proposalMode === 'FORM' ? buildMessageFromForm() : message.trim();
         if (!composedMessage) {
-            return alert('제안 메시지를 입력해주세요.');
+            await dnAlert('제안 메시지를 입력해주세요.', 'warning');
+            return;
         }
 
         setIsSendingProposal(true);
@@ -255,7 +261,7 @@ export default function FreelancerProfileDetail({
                 });
             }
 
-            alert('제안을 전송했습니다. 🚀');
+            await dnAlert('제안을 전송했습니다. 🚀', 'success');
             setIsProposalModalOpen(false);
             setOfferedPrice('');
             setMessage('');
@@ -265,9 +271,9 @@ export default function FreelancerProfileDetail({
         } catch (e: any) {
             const text = e?.response?.data?.message;
             if (typeof text === 'string' && text.includes('ALREADY_PROPOSED')) {
-                alert('이미 해당 프로젝트로 이 프리랜서에게 제안을 보냈습니다.');
+                await dnAlert('이미 해당 프로젝트로 이 프리랜서에게 제안을 보냈습니다.', 'warning');
             } else {
-                alert('제안 전송에 실패했습니다.');
+                await dnAlert('제안 전송에 실패했습니다.', 'error');
             }
         } finally {
             setIsSendingProposal(false);

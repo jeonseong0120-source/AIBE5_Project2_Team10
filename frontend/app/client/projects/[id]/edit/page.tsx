@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import api from "@/app/lib/axios";
 import { useParams, useRouter } from "next/navigation";
 import ProjectEditContent from "@/components/project/ProjectEditContent";
+import { dnAlert } from "@/lib/swal";
 
 export default function ClientProjectEditPage() {
     const params = useParams();
@@ -28,7 +29,7 @@ export default function ClientProjectEditPage() {
 
                 setInitialData(mappedData);
             } catch (err) {
-                alert("데이터 로드 실패 (404/500)");
+                await dnAlert("데이터 로드 실패 (404/500)", "error");
                 router.push("/client/dashboard");
             } finally { setLoading(false); }
         };

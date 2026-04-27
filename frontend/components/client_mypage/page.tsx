@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, User, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/app/lib/axios';
+import { dnAlert } from '@/lib/swal';
 
 interface ProfileEditModalProps {
     isOpen: boolean;
@@ -43,10 +44,10 @@ export default function ProfileEditModal({ isOpen, onClose, onSuccess }: Profile
         try {
             // ⚠️ 주의: 백엔드 PUT DTO에 nickname 필드가 있어야 저장됩니다!
             await api.put('/client/profile', editForm);
-            alert("개인 프로필이 수정되었습니다.");
+            await dnAlert("개인 프로필이 수정되었습니다.", "success");
             onSuccess(editForm.nickname);
             onClose();
-        } catch (err) { alert("수정 실패: 양식을 확인해주세요."); }
+        } catch (err) { await dnAlert("수정 실패: 양식을 확인해주세요.", "error"); }
         finally { setIsSubmitting(false); }
     };
 
