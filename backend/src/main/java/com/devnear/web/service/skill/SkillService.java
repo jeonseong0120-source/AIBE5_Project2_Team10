@@ -122,8 +122,9 @@ public class SkillService {
         if (geminiSkillTagSuggestionClient.isConfigured()) {
             try {
                 List<Skill> catalog = catalogForNlp(text, allSkills, koreanAliasEnglishHits);
+                String documentForGemini = appendKoreanAliasHintsForGemini(rawText, allSkills, koreanAliasEnglishHits);
                 List<GeminiSkillPick> picks = geminiSkillTagSuggestionClient.suggestFromDocument(
-                        rawText, context, catalog, topN);
+                        documentForGemini, context, catalog, topN);
                 if (!picks.isEmpty()) {
                     Map<Long, Skill> byId = allSkills.stream()
                             .filter(s -> s.getId() != null)
@@ -148,6 +149,30 @@ public class SkillService {
             }
         }
         return heuristicSuggestTagsFromText(text, allSkills, topN, koreanAliasEnglishHits);
+    }
+
+    /**
+     * 한글 별칭으로 이미 짚은 스킬을 DOCUMENT 끝에 짧게 덧붙여 Gemini가 카탈로그 id와 연결하기 쉽게 합니다.
+     * (본문은 수정하지 않고, 모델 입력에만 추가합니다.)
+     */
+    private static String appendKoreanAliasHintsForGemini(
+            String rawText, List<Skill> allSkills, Set<String> koreanAliasEnglishHits) {
+        if (rawText == null) {
+            rawText = "";
+        }
+        if (koreanAliasEnglishHits == null || koreanAliasEnglishHits.isEmpty()) {
+            return rawText;
+        }
+        List<String> hintLabels = allSkills.stream()
+                .filter(s -> s.getName() != null && koreanAliasEnglishHits.contains(normalize(s.getName())))
+                .map(Skill::getName)
+                .sorted()
+                .distinct()
+                .toList();
+        if (hintLabels.isEmpty()) {
+            return rawText;
+        }
+        return rawText + "\n\n[KO_ALIAS_HINTS: " + String.join(", ", hintLabels) + "]";
     }
 
     /**
@@ -322,6 +347,8 @@ public class SkillService {
         List<KrSkillAlias> rules = new ArrayList<>(List.of(
                 KrSkillAlias.of("스프링 부트", "Spring Boot"),
                 KrSkillAlias.of("스프링부트", "Spring Boot"),
+                /** 말로 쓸 때 흔한 줄임 — 긴 별칭이 먼저 매칭됨 */
+                KrSkillAlias.of("스프링", "Spring Boot"),
                 KrSkillAlias.ofUnlessDocContains("리액트", "React", "리액트 네이티브"),
                 KrSkillAlias.of("리액트 네이티브", "React Native"),
                 KrSkillAlias.of("리액트네이티브", "React Native"),
@@ -379,6 +406,7 @@ public class SkillService {
                 KrSkillAlias.of("자바", "Java"),
                 KrSkillAlias.of("도커", "Docker"),
                 KrSkillAlias.of("레디스", "Redis"),
+                KrSkillAlias.of("피그마", "Figma"),
                 KrSkillAlias.of("에이더블유에스", "AWS"),
                 KrSkillAlias.of("지피알씨", "gRPC"),
                 KrSkillAlias.of("파이어베이스", "Firebase"),
