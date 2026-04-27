@@ -44,6 +44,8 @@ export async function dnConfirm(
         showCancelButton: true,
         confirmButtonText: options?.confirmText ?? '확인',
         cancelButtonText: options?.cancelText ?? '취소',
-    });
+    }); 
     return res.isConfirmed;
 }
+
+//swal.ts 추가
