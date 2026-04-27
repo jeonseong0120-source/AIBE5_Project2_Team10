@@ -18,6 +18,7 @@ import { notifyAuthChanged } from "../lib/authEvents";
 import { postLoginPathForRole } from "../lib/postLoginRedirect"; // 🎯 [추가] 공통 리다이렉트 경로 모듈
 import ClientExtraForm from "@/components/onboarding/ClientExtraForm";
 import FreelancerExtraForm from "@/components/onboarding/FreelancerExtraForm";
+import { dnAlert } from "@/lib/swal";
 
 const fadeUp: Variants = {
     hidden: { opacity: 0, y: 20 },
@@ -55,14 +56,17 @@ export default function OnboardingPage() {
         checkGuest();
     }, [router]);
 
-    const handleNext = () => {
+    const handleNext = async () => {
         setDirection(1);
         if (step === 1) {
-            if (!nickname.trim() || !role) return alert("닉네임과 역할을 선택해주세요.");
+            if (!nickname.trim() || !role) {
+                await dnAlert("닉네임과 역할을 선택해주세요.", "warning");
+                return;
+            }
             if (role === "FREELANCER") setStep(3); else setStep(2);
         } else if (step === 2) {
-            if (role === "BOTH") setStep(3); else handleSubmit();
-        } else if (step === 3) handleSubmit();
+            if (role === "BOTH") setStep(3); else void handleSubmit();
+        } else if (step === 3) void handleSubmit();
     };
 
     const handleBack = () => {
@@ -94,14 +98,14 @@ export default function OnboardingPage() {
                 notifyAuthChanged();
             }
 
-            alert("권한 설정 완료!");
+            await dnAlert("권한 설정 완료!", "success");
             setTimeout(() => {
                 // 🎯 백엔드 트랜잭션이 완전히 끝날 수 있도록 1초(1000ms)만 기다림
                 window.location.href = postLoginPathForRole(role);
             }, 1000);
 
         } catch (err: any) {
-            alert("설정 중 오류가 발생했습니다.");
+            await dnAlert("설정 중 오류가 발생했습니다.", "error");
         } finally {
             setSubmitting(false);
         }

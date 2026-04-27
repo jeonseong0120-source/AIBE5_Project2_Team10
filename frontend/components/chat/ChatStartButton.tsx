@@ -2,6 +2,7 @@
 
 import { createOrGetChatRoom } from "../../app/lib/chatApi";
 import { useChatStore } from "../../app/store/chatStore";
+import { dnAlert } from "@/lib/swal";
 
 interface ChatStartButtonProps {
     targetUserId: number;
@@ -21,7 +22,7 @@ export default function ChatStartButton({
     const handleStartChat = async () => {
         try {
             if (!targetUserId || !projectId) {
-                alert("채팅방 생성에 필요한 정보가 없습니다.");
+                await dnAlert("채팅방 생성에 필요한 정보가 없습니다.", "warning");
                 return;
             }
 
@@ -29,7 +30,7 @@ export default function ChatStartButton({
             openChat(roomId);
         } catch (error) {
             console.error("채팅방 생성 실패", error);
-            alert("채팅방 생성에 실패했습니다.");
+            await dnAlert("채팅방 생성에 실패했습니다.", "error");
         }
     };
 

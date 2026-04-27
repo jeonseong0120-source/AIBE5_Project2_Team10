@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import api from '@/app/lib/axios';
 import FreelancerProfileDetail from '@/components/freelancer/FreelancerProfileDetail';
 import GlobalNavbar from '@/components/common/GlobalNavbar';
+import { dnAlert } from '@/lib/swal';
 
 function ClientFreelancerProfileContent() {
     const { id } = useParams();
@@ -27,7 +28,7 @@ function ClientFreelancerProfileContent() {
                 const roles = res.data.role || '';
 
                 if (!roles.includes('CLIENT') && !roles.includes('BOTH')) {
-                    alert('클라이언트 또는 BOTH 계정만 접근 가능합니다.');
+                    await dnAlert('클라이언트 또는 BOTH 계정만 접근 가능합니다.', 'warning');
                     if (roles.includes('FREELANCER')) router.replace('/');
                     else router.replace('/onboarding');
                     return;

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import api from "../lib/axios";
 import { notifyAuthChanged } from "../lib/authEvents";
+import { dnAlert } from "@/lib/swal";
 
 const fadeUp: Variants = {
     hidden: { opacity: 0, y: 20 },
@@ -87,13 +88,13 @@ export default function SignupPage() {
             } catch (loginErr) {
                 // 🎯 로그인만 실패한 경우: 가입 성공 상태로 전환
                 setSignupSuccess(true);
-                alert("회원가입에 성공했습니다! 생성하신 계정으로 로그인을 진행해 주세요.");
+                await dnAlert("회원가입에 성공했습니다! 생성하신 계정으로 로그인을 진행해 주세요.", "success");
                 // 필요 시 로그인을 유도하는 모달을 띄우거나 이동
                 router.push("/"); // 혹은 로그인 페이지
             }
         } catch (err: any) {
             // 회원가입 자체가 실패한 경우만 기존 에러 메시지 출력
-            alert(err.response?.data?.message || "이미 등록된 이메일이거나 서버 오류가 발생했습니다.");
+            await dnAlert(err.response?.data?.message || "이미 등록된 이메일이거나 서버 오류가 발생했습니다.", "error");
         } finally {
             setLoading(false);
         }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, CheckCircle2, Globe, FileText, Landmark } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/app/lib/axios';
+import { dnAlert } from '@/lib/swal';
 
 interface CompanyEditModalProps {
     isOpen: boolean;
@@ -44,26 +45,26 @@ export default function CompanyEditModal({ isOpen, onClose, onSuccess }: Company
         }
     }, [isOpen]);
 
-    const handleBnCheck = () => {
+    const handleBnCheck = async () => {
         if (editForm.bn.match(/^\d{3}-\d{2}-\d{5}$/)) {
             setIsBnVerified(true);
-            alert("사업자 번호가 인증되었습니다.");
+            await dnAlert("사업자 번호가 인증되었습니다.", 'success');
         } else {
-            alert("사업자번호 형식을 확인해주세요. (000-00-00000)");
+            await dnAlert("사업자번호 형식을 확인해주세요. (000-00-00000)", 'warning');
             setIsBnVerified(false);
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!isBnVerified) { alert("사업자 번호 인증이 필요합니다."); return; }
+        if (!isBnVerified) { await dnAlert("사업자 번호 인증이 필요합니다.", 'warning'); return; }
         setIsSubmitting(true);
         try {
             await api.put('/client/profile', editForm);
-            alert("기업 정보가 성공적으로 수정되었습니다.");
+            await dnAlert("기업 정보가 성공적으로 수정되었습니다.", 'success');
             onSuccess();
             onClose();
-        } catch (err) { alert("수정 실패: 양식을 확인해주세요."); }
+        } catch (err) { await dnAlert("수정 실패: 양식을 확인해주세요.", 'error'); }
         finally { setIsSubmitting(false); }
     };
 

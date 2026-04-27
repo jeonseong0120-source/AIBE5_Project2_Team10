@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { getCommunityPostDetail, updateCommunityPost } from "@/app/lib/communityApi";
 import GlobalNavbar from "@/components/common/GlobalNavbar";
 import { useSessionBootstrap } from "@/app/hooks/useSessionBootstrap";
+import { dnAlert } from "@/lib/swal";
 
 export default function CommunityEditPage() {
     const params = useParams();
@@ -53,7 +54,7 @@ export default function CommunityEditPage() {
             setContent(data.content);
         } catch (error) {
             console.error("게시글 조회 실패:", error);
-            alert("게시글 정보를 불러오지 못했습니다.");
+            await dnAlert("게시글 정보를 불러오지 못했습니다.", "error");
             router.push("/community");
         } finally {
             setInitLoading(false);
@@ -72,23 +73,23 @@ export default function CommunityEditPage() {
 
     const handleSubmit = async () => {
         if (!title.trim()) {
-            alert("제목을 입력해주세요.");
+            await dnAlert("제목을 입력해주세요.", "warning");
             return;
         }
 
         if (!content.trim()) {
-            alert("내용을 입력해주세요.");
+            await dnAlert("내용을 입력해주세요.", "warning");
             return;
         }
 
         try {
             setLoading(true);
             await updateCommunityPost(postId, { title, content });
-            alert("게시글이 수정되었습니다.");
+            await dnAlert("게시글이 수정되었습니다.", "success");
             router.push(`/community/${postId}`);
         } catch (error) {
             console.error("게시글 수정 실패:", error);
-            alert("게시글 수정에 실패했습니다.");
+            await dnAlert("게시글 수정에 실패했습니다.", "error");
         } finally {
             setLoading(false);
         }

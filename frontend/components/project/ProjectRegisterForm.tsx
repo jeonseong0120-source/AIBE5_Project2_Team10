@@ -9,6 +9,7 @@ import { MAX_PROJECT_SKILLS } from "@/app/lib/skillLimits";
 import { DollarSign, MapPin, ArrowLeft, XCircle, Briefcase, FileText, Target, Calendar, Globe, Building2, Cpu, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MatchingresultForm from "./MatchingresultForm";
+import { dnAlert } from "@/lib/swal";
 
 function tomorrowISODate(): string {
     const d = new Date();
@@ -113,7 +114,7 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                 if (embedded) {
                     onSaved?.();
                 } else {
-                    alert("프로젝트가 등록되었습니다.");
+                    await dnAlert("프로젝트가 등록되었습니다.", "success");
                     router.push("/client/dashboard");
                 }
             }

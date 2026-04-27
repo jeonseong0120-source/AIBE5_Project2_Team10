@@ -6,6 +6,7 @@ import { User as UserIcon, Briefcase, Star, Award, CreditCard, Bell } from 'luci
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { MAX_SELECTED_SKILLS } from '@/app/lib/skillLimits';
+import { dnAlert, dnConfirm } from '@/lib/swal';
 // New Components
 import MypageSidebar from '@/components/layout/MypageSidebar';
 import MypageWithdrawFooter from '@/components/layout/MypageWithdrawFooter';
@@ -97,7 +98,7 @@ function FreelancerMyPageContent() {
         const init = async () => {
             const token = localStorage.getItem("accessToken");
             if (!token) {
-                alert("로그인이 필요합니다.");
+                await dnAlert("로그인이 필요합니다.", "warning");
                 router.replace("/");
                 return;
             }
@@ -110,7 +111,7 @@ function FreelancerMyPageContent() {
                     return;
                 }
                 if (role === "CLIENT" || role === "ROLE_CLIENT") {
-                    alert("프리랜서 전용 화면입니다.");
+                    await dnAlert("프리랜서 전용 화면입니다.", "warning");
                     router.replace("/dashboard");
                     return;
                 }
@@ -239,7 +240,7 @@ function FreelancerMyPageContent() {
                 skillIds: mySkillIds 
             };
             await api.put('/v1/freelancers/me', requestBody);
-            alert('정보가 업데이트 되었습니다.');
+            await dnAlert('정보가 업데이트 되었습니다.', 'success');
             setIsEditingProfile(false);
             window.scrollTo({ top: 0, behavior: 'smooth' });
             fetchProfile();
@@ -257,7 +258,7 @@ function FreelancerMyPageContent() {
             await api.patch('/v1/freelancers/status', { isActive: newStatus });
             setProfile((prev: any) => ({ ...prev, isActive: newStatus }));
             setEditProfileData((prev: any) => ({ ...prev, isActive: newStatus }));
-        } catch (error) { alert('상태 변경 실패'); } finally { setIsTogglingStatus(false); }
+        } catch (error) { await dnAlert('상태 변경 실패', 'error'); } finally { setIsTogglingStatus(false); }
     }
 
     const toggleSkill = (skillId: number) => {
@@ -278,8 +279,8 @@ function FreelancerMyPageContent() {
             const { data } = await api.post('/images/profile', formData);
             setProfile((prev: any) => ({ ...prev, profileImageUrl: data.imageUrl }));
             setEditProfileData((prev: any) => ({ ...prev, profileImageUrl: data.imageUrl }));
-            alert('프로필 이미지가 변경되었습니다.');
-        } catch (error: any) { alert('프로필 업로드 실패'); } finally { setIsProfileUploading(false); }
+            await dnAlert('프로필 이미지가 변경되었습니다.', 'success');
+        } catch (error: any) { await dnAlert('프로필 업로드 실패', 'error'); } finally { setIsProfileUploading(false); }
     };
 
     const handleThumbUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -291,21 +292,21 @@ function FreelancerMyPageContent() {
         try {
             const { data } = await api.post('/images/portfolio', formData);
             setPortfolioForm(prev => ({ ...prev, thumbnailUrl: data.imageUrl }));
-        } catch (error: any) { alert('썸네일 업로드 실패'); } finally { setIsThumbUploading(false); }
+        } catch (error: any) { await dnAlert('썸네일 업로드 실패', 'error'); } finally { setIsThumbUploading(false); }
     };
 
     const handleBulkImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
         const remainingSlots = 10 - portfolioForm.portfolioImages.length;
-        if (files.length > remainingSlots) { alert(`최대 ${remainingSlots}장만 더 업로드할 수 있습니다.`); return; }
+        if (files.length > remainingSlots) { await dnAlert(`최대 ${remainingSlots}장만 더 업로드할 수 있습니다.`, 'warning'); return; }
         setIsBulkUploading(true);
         const formData = new FormData();
         Array.from(files).forEach((file) => formData.append('files', file));
         try {
             const { data } = await api.post('/images/portfolios/bulk', formData);
             setPortfolioForm(prev => ({ ...prev, portfolioImages: [...prev.portfolioImages, ...data.imageUrls].slice(0, 10) }));
-        } catch (error: any) { alert('다중 이미지 업로드 실패'); } finally { setIsBulkUploading(false); }
+        } catch (error: any) { await dnAlert('다중 이미지 업로드 실패', 'error'); } finally { setIsBulkUploading(false); }
     };
 
     const removePortfolioImage = (indexToRemove: number) => {
@@ -326,31 +327,34 @@ function FreelancerMyPageContent() {
 
     const handleSavePortfolio = async () => {
         if (!portfolioForm.title || !portfolioForm.desc) {
-            alert("제목과 내용을 입력해주세요.");
+            await dnAlert("제목과 내용을 입력해주세요.", "warning");
             return;
         }
         if (portfolioForm.skills.length === 0) {
-            alert("사용 기술을 1개 이상 선택해주세요.");
+            await dnAlert("사용 기술을 1개 이상 선택해주세요.", "warning");
             return;
         }
         if (portfolioForm.skills.length > MAX_SELECTED_SKILLS) {
-            alert(`사용 기술은 최대 ${MAX_SELECTED_SKILLS}개까지 선택할 수 있습니다.`);
+            await dnAlert(`사용 기술은 최대 ${MAX_SELECTED_SKILLS}개까지 선택할 수 있습니다.`, "warning");
             return;
         }
         try {
             const requestBody = { title: portfolioForm.title, desc: portfolioForm.desc, thumbnailUrl: portfolioForm.thumbnailUrl || null, portfolioImages: portfolioForm.portfolioImages.length > 0 ? portfolioForm.portfolioImages : ["https://placehold.co/600x400?text=No+Image"], skills: portfolioForm.skills };
-            if (portfolioForm.id) { await api.put(`/portfolios/${portfolioForm.id}`, requestBody); alert('포트폴리오가 수정되었습니다.'); }
-            else { await api.post('/portfolios', requestBody); alert('포트폴리오가 등록되었습니다.'); }
+            if (portfolioForm.id) { await api.put(`/portfolios/${portfolioForm.id}`, requestBody); await dnAlert('포트폴리오가 수정되었습니다.', 'success'); }
+            else { await api.post('/portfolios', requestBody); await dnAlert('포트폴리오가 등록되었습니다.', 'success'); }
             setIsPortfolioModalOpen(false);
             fetchPortfolios();
             setPortfolioForm(EMPTY_PORTFOLIO_FORM);
-        } catch (e) { alert('상세 정보를 확인해주세요.'); }
+            } catch (e: any) {
+                const msg = e?.response?.data?.message ?? '포트폴리오 저장에 실패했습니다. 상세 정보를 확인해주세요.';
+                await dnAlert(msg, 'error');
+            }
     };
 
     const handleDeletePortfolio = async (id: number) => {
-        if (!confirm("이 포트폴리오를 삭제하시겠습니까?")) return;
-        try { await api.delete(`/portfolios/${id}`); alert("포트폴리오가 삭제되었습니다."); setSelectedPortfolio(null); fetchPortfolios(); }
-        catch (err) { alert("포트폴리오 삭제에 실패했습니다."); }
+        if (!(await dnConfirm("이 포트폴리오를 삭제하시겠습니까?"))) return;
+        try { await api.delete(`/portfolios/${id}`); await dnAlert("포트폴리오가 삭제되었습니다.", "success"); setSelectedPortfolio(null); fetchPortfolios(); }
+        catch (err) { await dnAlert("포트폴리오 삭제에 실패했습니다.", "error"); }
     };
 
     if (!authorized) return <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#7A4FFF] font-black text-xl animate-pulse uppercase font-mono tracking-[0.2em]">보안 인증 중...</div>;

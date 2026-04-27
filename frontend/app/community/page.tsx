@@ -9,6 +9,7 @@ import type { CommunityPost } from "@/types/community";
 import CommunityPostCard from "@/components/community/CommunityPostCard";
 import GlobalNavbar from "@/components/common/GlobalNavbar";
 import { useSessionBootstrap } from "@/app/hooks/useSessionBootstrap";
+import { dnAlert } from "@/lib/swal";
 
 export default function CommunityPage() {
     const router = useRouter();
@@ -32,7 +33,7 @@ export default function CommunityPage() {
             setPosts(data.content);
             setTotalPages(data.totalPages);
         } catch (error) {
-            alert("게시글 목록을 불러오지 못했습니다.");
+            await dnAlert("게시글 목록을 불러오지 못했습니다.", "error");
         } finally {
             setLoading(false);
         }
@@ -47,10 +48,10 @@ export default function CommunityPage() {
         setKeyword(keywordInput.trim());
     };
 
-    const handleMoveWrite = () => {
+    const handleMoveWrite = async () => {
         const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
         if (!token) {
-            alert("로그인 후 글쓰기가 가능합니다.");
+            await dnAlert("로그인 후 글쓰기가 가능합니다.", "warning");
             router.push("/");
             return;
         }

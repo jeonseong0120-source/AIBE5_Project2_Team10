@@ -13,6 +13,7 @@ import {
 import type { CommunityComment, CommunityPost } from "@/types/community";
 import GlobalNavbar from "@/components/common/GlobalNavbar";
 import { useSessionBootstrap } from "@/app/hooks/useSessionBootstrap";
+import { dnAlert, dnConfirm } from "@/lib/swal";
 
 export default function CommunityDetailPage() {
     const params = useParams();
@@ -66,7 +67,7 @@ export default function CommunityDetailPage() {
 
     const handleLikeToggle = async () => {
         const token = getAccessToken();
-        if (!token) { alert("로그인 후 좋아요가 가능합니다."); router.push("/"); return; }
+        if (!token) { await dnAlert("로그인 후 좋아요가 가능합니다.", "warning"); router.push("/"); return; }
         try {
             setLikeLoading(true);
             if (liked) {
@@ -78,13 +79,13 @@ export default function CommunityDetailPage() {
                 setPost((prev) => prev ? { ...prev, likeCount: result.likeCount } : prev);
                 setLiked(true);
             }
-        } catch (error) { alert("좋아요 처리에 실패했습니다."); }
+        } catch (error) { await dnAlert("좋아요 처리에 실패했습니다.", "error"); }
         finally { setLikeLoading(false); }
     };
 
     const handleCreateComment = async () => {
         const token = getAccessToken();
-        if (!token) { alert("로그인 후 댓글 작성이 가능합니다."); router.push("/"); return; }
+        if (!token) { await dnAlert("로그인 후 댓글 작성이 가능합니다.", "warning"); router.push("/"); return; }
         if (!commentContent.trim()) return;
         try {
             setCommentLoading(true);
@@ -92,19 +93,19 @@ export default function CommunityDetailPage() {
             setCommentContent("");
             await fetchComments();
             setPost((prev) => prev ? { ...prev, commentCount: prev.commentCount + 1 } : prev);
-        } catch (error) { alert("댓글 등록에 실패했습니다."); }
+        } catch (error) { await dnAlert("댓글 등록에 실패했습니다.", "error"); }
         finally { setCommentLoading(false); }
     };
 
     const handleMoveEdit = () => router.push(`/community/${postId}/edit`);
 
     const handleDelete = async () => {
-        if (!confirm("게시글을 삭제하시겠습니까?")) return;
+        if (!(await dnConfirm("게시글을 삭제하시겠습니까?"))) return;
         try {
             setDeleteLoading(true);
             await deleteCommunityPost(postId);
             router.push("/community");
-        } catch (error) { alert("게시글 삭제에 실패했습니다."); }
+        } catch (error) { await dnAlert("게시글 삭제에 실패했습니다.", "error"); }
         finally { setDeleteLoading(false); }
     };
 
@@ -118,18 +119,18 @@ export default function CommunityDetailPage() {
             await updateCommunityComment(id, editingCommentContent);
             await fetchComments();
             cancelEditComment();
-        } catch (error) { alert("댓글 수정에 실패했습니다."); }
+        } catch (error) { await dnAlert("댓글 수정에 실패했습니다.", "error"); }
         finally { setCommentActionLoading(false); }
     };
 
     const handleDeleteComment = async (id: number) => {
-        if (!confirm("댓글을 삭제하시겠습니까?")) return;
+        if (!(await dnConfirm("댓글을 삭제하시겠습니까?"))) return;
         try {
             setCommentActionLoading(true);
             await deleteCommunityComment(id);
             await fetchComments();
             setPost((prev) => prev ? { ...prev, commentCount: Math.max(prev.commentCount - 1, 0) } : prev);
-        } catch (error) { alert("댓글 삭제에 실패했습니다."); }
+        } catch (error) { await dnAlert("댓글 삭제에 실패했습니다.", "error"); }
         finally { setCommentActionLoading(false); }
     };
 

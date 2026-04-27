@@ -42,7 +42,13 @@ app:
   #   프리랜서: bulk-demo-freelancer-01@local.test ~ bulk-demo-freelancer-10@local.test
   #   클라이언트: bulk-demo-client-01@local.test ~ bulk-demo-client-10@local.test
   #   비밀번호(공통): BulkDemo1!
-  #   재시드: 마커 계정이 있으면 스킵 → backend/scripts/clear_bulk_demo_seed.sql 후 재기동
+  #   재시드: 마커 계정이 있으면 앱 시드는 전체 스킵 → 전부 갈아엎으려면
+  #   backend/scripts/clear_bulk_demo_seed.sql 후 재기동
+  #   부분 수정만: 계정/공고 유지한 채 SQL 패치만 실행 가능
+  #     예) backend/scripts/bulk_demo_portfolio_skills_only.sql
+  #         backend/scripts/bulk_demo_patch_project_skills_max5.sql
+  #         backend/scripts/bulk_demo_community_seed.sql (커뮤니티 글/댓글/좋아요 샘플)
+  #         backend/scripts/gangnam_map_seed_freelancers.sql (강남 좌표 분산 프리랜서 10명, 단독)
   seed:
     bulk-demo: ${APP_SEED_BULK_DEMO:false}
 

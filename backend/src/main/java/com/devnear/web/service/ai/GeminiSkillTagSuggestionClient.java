@@ -138,7 +138,11 @@ public class GeminiSkillTagSuggestionClient {
                 + "2. Every skillId MUST be an \"id\" from ALLOWED_SKILLS_JSON. Never invent ids or output free-text skill names.\n"
                 + "3. Sort by confidence descending. At most " + limit + " items.\n"
                 + "4. If nothing fits, return {\"skills\":[]}.\n"
-                + "5. CONTEXT=" + context + " — portfolio: personal work / portfolio description; project: client job posting.\n\n"
+                + "5. CONTEXT=" + context + " — portfolio: personal work / portfolio description; project: client job posting.\n"
+                + "6. Korean colloquial tech terms map to the closest English \"name\" in ALLOWED_SKILLS_JSON when the text clearly implies that tool/stack "
+                + "(e.g. 스프링/스프링으로 → Spring Boot; 피그마 → Figma; 도커 → Docker; 리액트 → React; 타입스크립트 → TypeScript; "
+                + "마이에스큐엘/마이에스큐 → MySQL; 에이더블유에스 or AWS → AWS). "
+                + "If DOCUMENT ends with [KO_ALIAS_HINTS: ...], treat those names as strongly supported by Korean wording.\n\n"
                 + "ALLOWED_SKILLS_JSON:\n"
                 + catalogJson
                 + "\n\nDOCUMENT:\n"
@@ -169,7 +173,7 @@ public class GeminiSkillTagSuggestionClient {
             return List.of();
         }
 
-        List<GeminiSkillPick> picks = new ArrayList<>();
+        Map<Long, Double> bestById = new HashMap<>();
         for (JsonNode n : skills) {
             if (!n.hasNonNull("skillId")) {
                 continue;
@@ -180,11 +184,13 @@ public class GeminiSkillTagSuggestionClient {
             }
             double conf = n.path("confidence").asDouble(0.5);
             conf = Math.max(0, Math.min(1, conf));
-            picks.add(new GeminiSkillPick(id, conf));
+            bestById.merge(id, conf, Math::max);
         }
-
-        picks.sort((a, b) -> Double.compare(b.confidence(), a.confidence()));
-        return picks.stream().limit(limit).collect(Collectors.toList());
+        return bestById.entrySet().stream()
+                .map(e -> new GeminiSkillPick(e.getKey(), e.getValue()))
+                .sorted((a, b) -> Double.compare(b.confidence(), a.confidence()))
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 
     private static String unwrapJsonBlock(String text) {

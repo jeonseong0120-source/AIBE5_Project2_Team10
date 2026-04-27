@@ -38,8 +38,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -64,7 +65,11 @@ public class DemoBulkSeedService {
     private static final int PORTFOLIOS_PER_FREELANCER = 3;
     /** 벌크 시드: 프리랜서 프로필에 합쳐 담을 최대 스킬 수 — {`@link` com.devnear.web.dto.freelancer.FreelancerProfileRequest} 상한과 맞춤 */
     private static final int SEED_PROFILE_SKILLS_MAX = 50;
-    /** 벌크 시드: 포트폴리오 1건당 태그할 최대 스킬 수 */
+    /**
+     * 벌크 시드: 기본 스킬 카탈로그에서 무작위로 뽑을 태그 풀 크기(이름 기준, 앞에서부터 {@value}개).
+     */
+    private static final int SEED_SKILL_TAG_POOL_SIZE = 50;
+    /** 벌크 시드: 포트폴리오 1건당 태그할 스킬 수(무작위 풀에서 뽑음) */
     private static final int SEED_PORTFOLIO_SKILLS_MAX = 2;
     /** 벌크 시드: 공고 1건당 태그할 최대 스킬 수 */
     private static final int SEED_PROJECT_SKILLS_MAX = 5;
@@ -104,9 +109,6 @@ public class DemoBulkSeedService {
      */
     private static final int PROJECT_SEED_RADIUS_MIN_M = 200;
     private static final int PROJECT_SEED_RADIUS_MAX_M = 12_000;
-
-    /** {@link com.devnear.global.config.DefaultSkillCatalog}와 동일한 이름이어야 조회됨 */
-    private static final String[] DEFAULT_SKILL_NAMES_FOR_SEED = DefaultSkillCatalog.NAMES;
 
     private static final String[] TOPICS = {
             "Spring Boot REST API",
@@ -318,7 +320,7 @@ public class DemoBulkSeedService {
                                 + " 도메인에서 API 설계, DB 모델링, 배포 자동화까지 수행했습니다. (시드 데이터)")
                         .thumbnailUrl(thumb)
                         .build();
-                attachSeedPortfolioSkills(portfolio, topic, portfolioSeq);
+                attachSeedPortfolioSkills(portfolio, rnd);
                 portfolio.addPortfolioImage(PortfolioImage.builder()
                         .portfolio(portfolio)
                         .imageUrl(picsumUrl("bulk-pf-img-" + portfolioSeq + "-a", 1200, 800))
@@ -363,7 +365,7 @@ public class DemoBulkSeedService {
                         .latitude(spot.latitude() + spotOff[0])
                         .longitude(spot.longitude() + spotOff[1])
                         .build();
-                attachSeedProjectSkills(project, topic, projectSeq);
+                attachSeedProjectSkills(project, rnd);
                 Project saved = projectRepository.save(project);
                 projectIds.add(saved.getId());
                 projectSeq++;
@@ -463,6 +465,13 @@ public class DemoBulkSeedService {
         return "https://picsum.photos/seed/" + s + "/" + w + "/" + h;
     }
 
+    /** {@link DefaultSkillCatalog} 앞쪽 {@value #SEED_SKILL_TAG_POOL_SIZE}개 이름 — 벌크 시드 무작위 태그 풀 */
+    private static List<String> seedSkillTagPool() {
+        String[] all = DefaultSkillCatalog.NAMES;
+        int n = Math.min(SEED_SKILL_TAG_POOL_SIZE, all.length);
+        return List.of(Arrays.copyOfRange(all, 0, n));
+    }
+
     private static String buildFreelancerDisplayName(int seq, String suffix) {
         String base = FREELANCER_NAME_BASES[(seq - 1) % FREELANCER_NAME_BASES.length];
         return base + suffix;
@@ -474,62 +483,17 @@ public class DemoBulkSeedService {
     }
 
     /**
-     * 토픽 문자열로 시드용 스킬 이름 집합을 만듭니다. 공고·포트폴리오 시드에서 공통 사용.
+     * 풀 {@link #seedSkillTagPool()}을 섞은 뒤 DB에 존재하는 스킬을 최대 {@code limit}개까지 채웁니다.
      */
-    private LinkedHashSet<String> buildSeedSkillNamesFromTopic(String topic, int index) {
-        LinkedHashSet<String> names = new LinkedHashSet<>();
-        String t = topic.toLowerCase();
-        if (t.contains("spring") || t.contains("java") || t.contains("jpa")) {
-            names.add("Java");
-            names.add("Spring Boot");
-        }
-        if (t.contains("react") || t.contains("next")) {
-            names.add("React");
-            if (t.contains("next")) {
-                names.add("Next.js");
-            }
-        }
-        if (t.contains("typescript") || t.contains("풀스택")) {
-            names.add("TypeScript");
-        }
-        if (t.contains("node")) {
-            names.add("Node.js");
-        }
-        if (t.contains("python")) {
-            names.add("Python");
-        }
-        if (t.contains("aws") || t.contains("kubernetes") || t.contains("docker")
-                || t.contains("인프라") || t.contains("배포") || t.contains("devops")) {
-            names.add("AWS");
-            names.add("Docker");
-        }
-        if (t.contains("figma") || t.contains("ui") || t.contains("디자인")) {
-            names.add("Figma");
-        }
-        int fill = 0;
-        while (names.size() < SEED_PROFILE_SKILLS_MAX && fill < DEFAULT_SKILL_NAMES_FOR_SEED.length * 2) {
-            names.add(DEFAULT_SKILL_NAMES_FOR_SEED[(index + fill) % DEFAULT_SKILL_NAMES_FOR_SEED.length]);
-            fill++;
-        }
-        return names;
-    }
-
-    /**
-     * 시드용 스킬 이름 집합을 DB {@link Skill} 로 해석해 최대 {@code limit}개까지 채웁니다(중복 제거, 순서 유지).
-     */
-    private LinkedHashMap<Long, Skill> resolveSkillsFromNamesUpTo(LinkedHashSet<String> names, int salt, int limit) {
+    private LinkedHashMap<Long, Skill> resolveRandomSkillsFromPool(ThreadLocalRandom rnd, int limit) {
+        List<String> pool = new ArrayList<>(seedSkillTagPool());
+        Collections.shuffle(pool, rnd);
         LinkedHashMap<Long, Skill> out = new LinkedHashMap<>();
-        for (String n : names) {
+        for (String name : pool) {
             if (out.size() >= limit) {
                 break;
             }
-            skillRepository.findByName(n).ifPresent(s -> out.putIfAbsent(s.getId(), s));
-        }
-        int fill = 0;
-        while (out.size() < limit && fill < DEFAULT_SKILL_NAMES_FOR_SEED.length * 4) {
-            String n = DEFAULT_SKILL_NAMES_FOR_SEED[(salt + fill) % DEFAULT_SKILL_NAMES_FOR_SEED.length];
-            skillRepository.findByName(n).ifPresent(s -> out.putIfAbsent(s.getId(), s));
-            fill++;
+            skillRepository.findByName(name).ifPresent(s -> out.putIfAbsent(s.getId(), s));
         }
         return out;
     }
@@ -557,13 +521,13 @@ public class DemoBulkSeedService {
     }
 
     /**
-     * 포트폴리오에 {@link PortfolioSkill} 연결 (마이페이지·프로필 API의 skills 배열과 동일).
+     * 포트폴리오에 {@link PortfolioSkill} 연결 — 태그 풀 {@value #SEED_SKILL_TAG_POOL_SIZE}개 중 무작위
+     * {@value #SEED_PORTFOLIO_SKILLS_MAX}개.
      */
-    private void attachSeedPortfolioSkills(Portfolio portfolio, String topic, int index) {
-        LinkedHashSet<String> names = buildSeedSkillNamesFromTopic(topic, index);
-        LinkedHashMap<Long, Skill> resolved = resolveSkillsFromNamesUpTo(names, index, SEED_PORTFOLIO_SKILLS_MAX);
+    private void attachSeedPortfolioSkills(Portfolio portfolio, ThreadLocalRandom rnd) {
+        LinkedHashMap<Long, Skill> resolved = resolveRandomSkillsFromPool(rnd, SEED_PORTFOLIO_SKILLS_MAX);
         if (resolved.isEmpty()) {
-            log.warn("[DemoBulkSeed] 포트폴리오 스킬을 DB에서 찾지 못했습니다. 요청 이름: {}", names);
+            log.warn("[DemoBulkSeed] 포트폴리오 스킬을 DB에서 찾지 못했습니다. DataInitializer 기본 스킬 시드 후 다시 실행하세요.");
             return;
         }
         for (Skill skill : resolved.values()) {
@@ -575,13 +539,13 @@ public class DemoBulkSeedService {
     }
 
     /**
-     * 공고별 요구 스킬 태그({@link ProjectSkill}). 토픽 키워드 우선, 부족하면 기본 풀에서 채움.
+     * 공고별 요구 스킬 태그({@link ProjectSkill}) — 태그 풀 {@value #SEED_SKILL_TAG_POOL_SIZE}개 중 무작위
+     * 최대 {@value #SEED_PROJECT_SKILLS_MAX}개.
      */
-    private void attachSeedProjectSkills(Project project, String topic, int index) {
-        LinkedHashSet<String> names = buildSeedSkillNamesFromTopic(topic, index);
-        LinkedHashMap<Long, Skill> resolved = resolveSkillsFromNamesUpTo(names, index, SEED_PROJECT_SKILLS_MAX);
+    private void attachSeedProjectSkills(Project project, ThreadLocalRandom rnd) {
+        LinkedHashMap<Long, Skill> resolved = resolveRandomSkillsFromPool(rnd, SEED_PROJECT_SKILLS_MAX);
         if (resolved.isEmpty()) {
-            log.warn("[DemoBulkSeed] 스킬을 DB에서 찾지 못했습니다. DataInitializer 기본 스킬 시드 후 다시 실행하세요. 요청 이름: {}", names);
+            log.warn("[DemoBulkSeed] 공고 스킬을 DB에서 찾지 못했습니다. DataInitializer 기본 스킬 시드 후 다시 실행하세요.");
             return;
         }
         List<ProjectSkill> projectSkills = resolved.values().stream()

@@ -5,6 +5,7 @@ import api from '@/app/lib/axios';
 import { Bookmark, MapPin, DollarSign, Calendar, ChevronRight, Loader2, Sparkles, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { dnAlert } from '@/lib/swal';
 
 interface BookmarkedProject {
     projectId: number;
@@ -38,7 +39,7 @@ export default function MypageBookmarksTab() {
             await api.delete(`/v1/bookmarks/projects/${projectId}`);
             setBookmarks(prev => prev.filter(b => b.projectId !== projectId));
         } catch (error) {
-            alert("북마크 해제에 실패했습니다.");
+            await dnAlert("북마크 해제에 실패했습니다.", "error");
         }
     };
 

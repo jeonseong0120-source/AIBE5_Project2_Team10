@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { logout } from '@/app/lib/authEvents';
+import { dnAlert, dnConfirm } from '@/lib/swal';
 
 /**
  * 마이페이지 우측 메인 카드 안 하단 — 기존 흰 카드 배경을 그대로 이어 받침대만 두고,
@@ -15,15 +16,16 @@ export default function MypageWithdrawFooter() {
 
     const handleWithdraw = async () => {
         if (isWithdrawing) return;
-        const confirmed = confirm(
-            '정말 회원 탈퇴하시겠습니까?\n탈퇴 후에는 계정을 복구할 수 없습니다.'
+        const confirmed = await dnConfirm(
+            '정말 회원 탈퇴하시겠습니까?\n탈퇴 후에는 계정을 복구할 수 없습니다.',
+            { icon: 'warning' }
         );
         if (!confirmed) return;
 
         try {
             setIsWithdrawing(true);
             await api.delete('/v1/users/me/account');
-            alert('회원 탈퇴가 완료되었습니다.');
+            await dnAlert('회원 탈퇴가 완료되었습니다.', 'success');
             logout();
             router.push('/');
         } catch (error: unknown) {
@@ -35,7 +37,7 @@ export default function MypageWithdrawFooter() {
                     'string'
                     ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
                     : null;
-            alert(message || '회원 탈퇴에 실패했습니다. 조건을 확인해주세요.');
+            await dnAlert(message || '회원 탈퇴에 실패했습니다. 조건을 확인해주세요.', 'error');
             setIsWithdrawing(false);
         }
     };

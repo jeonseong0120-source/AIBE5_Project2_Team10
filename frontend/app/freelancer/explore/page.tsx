@@ -18,6 +18,7 @@ import GlobalNavbar, { type UserData, type ProfileData } from '../../../componen
 import FilterSidebar from '@/components/common/FilterSidebar';
 import { EstimatedBudgetBlock } from '@/components/freelancer/EstimatedBudgetBlock';
 import { SKILL_CATEGORIES } from '@/constants/skills';
+import { dnAlert } from '@/lib/swal';
 
 /** AI 추천 카드 영역 — 루트와 동일하게 Geist */
 const geistSans = Geist({
@@ -165,7 +166,7 @@ export default function FreelancerExplorePage() {
         const checkAccess = async () => {
             const token = localStorage.getItem("accessToken");
             if (!token) {
-                alert("로그인이 필요합니다.");
+                await dnAlert("로그인이 필요합니다.", "warning");
                 router.replace("/");
                 return;
             }
@@ -177,7 +178,7 @@ export default function FreelancerExplorePage() {
                     return;
                 }
                 if (role === "CLIENT" || role === "ROLE_CLIENT") {
-                    alert("프리랜서 전용 화면입니다.");
+                    await dnAlert("프리랜서 전용 화면입니다.", "warning");
                     router.replace("/dashboard");
                     return;
                 }

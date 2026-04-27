@@ -21,6 +21,7 @@ import MatchingresultForm from '@/components/project/MatchingresultForm';
 import ClientProjectCard from '@/components/project/ClientProjectCard';
 import FreelancerBookmarkCard from '@/components/freelancer/FreelancerBookmarkCard';
 import DashboardSidebar from '@/components/common/DashboardSidebar';
+import { dnAlert, dnConfirm } from '@/lib/swal';
 
 export default function ClientDashboardPage() {
     const router = useRouter();
@@ -87,7 +88,7 @@ export default function ClientDashboardPage() {
                 const res = await api.get("/v1/users/me");
                 const roles = res.data.role || "";
                 if (!roles.includes("CLIENT") && !roles.includes("BOTH")) {
-                    alert("클라이언트 또는 BOTH 계정만 접근 가능합니다.");
+                    await dnAlert("클라이언트 또는 BOTH 계정만 접근 가능합니다.", "warning");
                     if (roles.includes("FREELANCER")) return router.replace("/");
                     return router.replace("/onboarding");
                 }
@@ -145,11 +146,11 @@ export default function ClientDashboardPage() {
     };
 
     const handleRemoveBookmark = async (profileId: number) => {
-        if (!confirm("찜 목록에서 삭제하시겠습니까?")) return;
+        if (!(await dnConfirm("찜 목록에서 삭제하시겠습니까?"))) return;
         try {
             await api.delete(`/v1/bookmarks/freelancers/${profileId}`);
             fetchBookmarks(false);
-        } catch (err) { alert("삭제에 실패했습니다."); }
+        } catch (err) { await dnAlert("삭제에 실패했습니다.", "error"); }
     };
 
     const openProposalModal = async (freelancer: any) => {
@@ -223,28 +224,28 @@ export default function ClientDashboardPage() {
     const handleSendProposal = async () => {
         if (!proposalTargetFreelancer?.profileId) return;
         if (proposalMode === 'PROJECT' && !proposalProjectId) {
-            alert('연결할 프로젝트를 선택해주세요.');
+            await dnAlert('연결할 프로젝트를 선택해주세요.', 'warning');
             return;
         }
 
         const parsedPrice = Number(proposalOfferedPrice);
         if (!Number.isInteger(parsedPrice) || parsedPrice < 1) {
-            alert('제안 금액은 1원 이상의 정수로 입력해주세요.');
+            await dnAlert('제안 금액은 1원 이상의 정수로 입력해주세요.', 'warning');
             return;
         }
         if (proposalMode === 'FORM' && !proposalPositionTitle.trim()) {
-            alert('포지션명을 입력해주세요.');
+            await dnAlert('포지션명을 입력해주세요.', 'warning');
             return;
         }
 
         if (proposalMode === 'FORM' && !proposalWorkScope.trim()) {
-            alert('업무 범위를 입력해주세요.');
+            await dnAlert('업무 범위를 입력해주세요.', 'warning');
             return;
         }
 
         const composedMessage = proposalMode === 'FORM' ? buildProposalMessageFromForm() : proposalMessage.trim();
         if (!composedMessage) {
-            alert('제안 메시지를 입력해주세요.');
+            await dnAlert('제안 메시지를 입력해주세요.', 'warning');
             return;
         }
 
@@ -267,7 +268,7 @@ export default function ClientDashboardPage() {
             } else {
                 await api.post('/v1/proposals', payload);
             }
-            alert('제안을 전송했습니다.');
+            await dnAlert('제안을 전송했습니다.', 'success');
             closeProposalModal();
             fetchSentProposals();
         } catch (e: any) {
@@ -280,9 +281,9 @@ export default function ClientDashboardPage() {
             const likelyAlreadyProposed =
                 msg.includes('ALREADY_PROPOSED') || (status === 400 && wasStandaloneRequest);
             if (likelyAlreadyProposed) {
-                alert('이미 해당 프로젝트로 이 프리랜서에게 제안을 보냈습니다.');
+                await dnAlert('이미 해당 프로젝트로 이 프리랜서에게 제안을 보냈습니다.', 'warning');
             } else {
-                alert('제안 전송에 실패했습니다.');
+                await dnAlert('제안 전송에 실패했습니다.', 'error');
             }
         } finally {
             setProposalSending(false);
@@ -321,15 +322,15 @@ export default function ClientDashboardPage() {
         const acceptedApp = currentApplicants?.find(a => a.status === 'ACCEPTED');
 
         if (!acceptedApp) {
-            alert("수락된 지원자 정보를 찾을 수 없습니다. 프로젝트 진행을 위해 먼저 파트너를 수락해주세요.");
+            await dnAlert("수락된 지원자 정보를 찾을 수 없습니다. 프로젝트 진행을 위해 먼저 파트너를 수락해주세요.", "warning");
             return;
         }
 
-        if (!confirm('작업을 완료처리하시겠습니까? 마감 후 프리랜서 리뷰 작성이 가능합니다.')) return;
+        if (!(await dnConfirm('작업을 완료처리하시겠습니까? 마감 후 프리랜서 리뷰 작성이 가능합니다.'))) return;
 
         try {
             await api.patch(`/v1/projects/${project.projectId}/complete`, {});
-            alert('프로젝트가 완료되었습니다.');
+            await dnAlert('프로젝트가 완료되었습니다.', 'success');
 
             setSelectedProjectForReview({
                 projectId: project.projectId,
@@ -341,13 +342,13 @@ export default function ClientDashboardPage() {
             fetchMyProjects();
             setFilterStatus('COMPLETED'); // 완료 후 '마감됨' 탭으로 이동
         } catch (err) {
-            alert('완료 처리 실패 (상태를 확인해주세요)');
+            await dnAlert('완료 처리 실패 (상태를 확인해주세요)', 'error');
         }
     };
 
     const handleDeleteProject = async (projectId: number) => {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
-        try { await api.delete(`/v1/projects/${projectId}`); fetchMyProjects(); } catch (err) { alert('삭제 실패'); }
+        if (!(await dnConfirm('정말 삭제하시겠습니까?'))) return;
+        try { await api.delete(`/v1/projects/${projectId}`); fetchMyProjects(); } catch (err) { await dnAlert('삭제 실패', 'error'); }
     };
 
     const handleViewApplicants = async (project: any) => {
@@ -366,19 +367,19 @@ export default function ClientDashboardPage() {
 
     const handleApplicationStatus = async (applicationId: number, status: 'ACCEPTED' | 'REJECTED') => {
         if (status === 'ACCEPTED') {
-            alert('결제를 완료하시면 자동으로 수락 처리됩니다.');
+            await dnAlert('결제를 완료하시면 자동으로 수락 처리됩니다.', 'info');
             return;
         }
 
         try {
             await api.patch(`/applications/${applicationId}/status`, { status });
-            alert(`지원자가 거절 처리되었습니다.`);
+            await dnAlert(`지원자가 거절 처리되었습니다.`, 'success');
             fetchMyProjects();
             if (selectedProjectForApplicant) {
                 const { data } = await api.get(`/projects/${selectedProjectForApplicant.projectId}/applications`);
                 setApplicantsByProject(prev => ({ ...prev, [selectedProjectForApplicant.projectId]: data }));
             }
-        } catch (err) { alert('상태 처리 중 오류가 발생했습니다.'); }
+        } catch (err) { await dnAlert('상태 처리 중 오류가 발생했습니다.', 'error'); }
     };
 
     const handlePayment = async (project: any, application: any) => {
@@ -386,7 +387,7 @@ export default function ClientDashboardPage() {
             setPaymentProjectIdInFlight(project.projectId);
             const tossClientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
             if (!tossClientKey) {
-                alert('결제 환경 변수가 설정되지 않았습니다.');
+                await dnAlert('결제 환경 변수가 설정되지 않았습니다.', 'error');
                 setPaymentProjectIdInFlight(null);
                 return;
             }
@@ -396,13 +397,13 @@ export default function ClientDashboardPage() {
             const orderName = project.projectName || '프로젝트 결제';
 
             if (!amount || amount <= 0) {
-                alert(`유효하지 않은 결제 금액입니다: ${amount}`);
+                await dnAlert(`유효하지 않은 결제 금액입니다: ${amount}`, 'warning');
                 setPaymentProjectIdInFlight(null);
                 return;
             }
 
             if (!project.projectId) {
-                alert('프로젝트 ID를 찾을 수 없습니다.');
+                await dnAlert('프로젝트 ID를 찾을 수 없습니다.', 'error');
                 setPaymentProjectIdInFlight(null);
                 return;
             }
@@ -442,7 +443,7 @@ export default function ClientDashboardPage() {
                 setPaymentProjectIdInFlight(null);
                 return;
             }
-            alert(err?.response?.data?.message || err?.message || err?.code || '결제 진행 중 오류가 발생했습니다.');
+            await dnAlert(err?.response?.data?.message || err?.message || err?.code || '결제 진행 중 오류가 발생했습니다.', 'error');
             setPaymentProjectIdInFlight(null);
         }
     };
@@ -471,7 +472,7 @@ export default function ClientDashboardPage() {
             }, 1500);
 
         } catch (err: any) {
-            alert(err?.response?.data?.message || err?.message || err?.code || '데모 결제 준비 중 오류가 발생했습니다.');
+            await dnAlert(err?.response?.data?.message || err?.message || err?.code || '데모 결제 준비 중 오류가 발생했습니다.', 'error');
             setPaymentProjectIdInFlight(null);
         }
     };

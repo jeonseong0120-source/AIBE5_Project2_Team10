@@ -7,6 +7,7 @@ import { X, Mail, Lock, ArrowRight } from "lucide-react";
 import api, { resolveApiBaseUrl } from '@/app/lib/axios';
 import { notifyAuthChanged } from "@/app/lib/authEvents";
 import { postLoginPathForRole } from "@/app/lib/postLoginRedirect";
+import { dnAlert } from "@/lib/swal";
 
 const overlayVariant: Variants = {
     hidden: { opacity: 0 },
@@ -59,7 +60,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
             // 🎯 [수정] 토큰 누락 시 얼럿 후 중단
             if (!accessToken) {
-                alert("인증 토큰을 수신하지 못했습니다. 관리자에게 문의하세요.");
+                await dnAlert("인증 토큰을 수신하지 못했습니다. 관리자에게 문의하세요.", "error");
                 setLoading(false);
                 return;
             }
@@ -79,7 +80,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 router.replace("/");
             }
         } catch (err: any) {
-            alert(err.response?.data?.message || "이메일 또는 비밀번호를 확인해주세요.");
+            await dnAlert(err.response?.data?.message || "이메일 또는 비밀번호를 확인해주세요.", "error");
         } finally {
             setLoading(false);
         }
