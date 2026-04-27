@@ -236,7 +236,7 @@ export default function MypageProfileTab({
                                     </p>
                                     <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-wider">Total {(profile?.skills || []).length}</span>
                                 </div>
-                                <div className="flex flex-wrap gap-2.5 flex-1 content-start">
+                                <div className="flex flex-wrap gap-2.5 flex-1 content-start max-h-[180px] overflow-y-auto custom-scrollbar pr-2">
                                     {(profile?.skills || []).length > 0 ? (
                                         (profile!.skills!).map((s, idx) => (
                                             <span 
