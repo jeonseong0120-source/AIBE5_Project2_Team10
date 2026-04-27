@@ -69,13 +69,12 @@ public class DemoBulkSeedService {
      * 벌크 시드: 기본 스킬 카탈로그에서 무작위로 뽑을 태그 풀 크기(이름 기준, 앞에서부터 {@value}개).
      */
     private static final int SEED_SKILL_TAG_POOL_SIZE = 50;
-    /** 포트폴리오 1건당 붙일 무작위 스킬 개수(범위 양끝 포함) */
-    private static final int SEED_PORTFOLIO_RANDOM_SKILL_MIN = 3;
-    private static final int SEED_PORTFOLIO_RANDOM_SKILL_MAX = 8;
+    /** 벌크 시드: 포트폴리오 1건당 태그할 스킬 수(무작위 풀에서 뽑음) */
+    private static final int SEED_PORTFOLIO_SKILLS_MAX = 2;
+    /** 벌크 시드: 공고 1건당 태그할 최대 스킬 수 */
+    private static final int SEED_PROJECT_SKILLS_MAX = 5;
     /** 클라이언트 1인당 모집 공고 개수 */
     private static final int PROJECTS_PER_CLIENT = 3;
-    /** 벌크 시드: 클라이언트 공고(project_skills)에 붙는 요구 스킬 최대 개수 */
-    private static final int SEED_PROJECT_SKILLS_MAX = 5;
     private static final int PORTFOLIOS = FREELANCERS * PORTFOLIOS_PER_FREELANCER;
     private static final int PROJECTS = CLIENTS * PROJECTS_PER_CLIENT;
 
@@ -169,6 +168,14 @@ public class DemoBulkSeedService {
             "실시간 지표 수집",
             "멀티브랜드 화이트라벨"
     };
+    private static final String[] FREELANCER_NAME_BASES = {
+            "코드장인", "버그헌터", "리액트러버", "스프링마스터", "배포장인",
+            "클린코더", "테스트요정", "데이터러너", "디자인러", "풀스택냥"
+    };
+    private static final String[] CLIENT_COMPANY_BASES = {
+            "네오", "오로라", "브릿지", "모멘텀", "원픽",
+            "하이브", "루미", "스파크", "코어", "플로우"
+    };
 
     private final UserRepository userRepository;
     private final ClientProfileRepository clientProfileRepository;
@@ -231,10 +238,11 @@ public class DemoBulkSeedService {
         List<ClientProfile> clientProfiles = new ArrayList<>();
         for (int i = 1; i <= CLIENTS; i++) {
             String suffix = String.format("%02d", i);
+            String companyName = buildClientCompanyName(i, suffix);
             User user = userRepository.save(User.builder()
                     .email("bulk-demo-client-" + suffix + "@local.test")
                     .password(encoded)
-                    .name("데모 클라이언트 " + suffix)
+                    .name(companyName)
                     .nickname("bulk_cl_" + suffix)
                     .phoneNumber("0109001" + String.format("%04d", i))
                     .profileImageUrl(picsumUrl("bulk-cl-avatar-" + suffix, 400, 400))
@@ -245,7 +253,7 @@ public class DemoBulkSeedService {
 
             ClientProfile cp = ClientProfile.builder()
                     .user(user)
-                    .companyName("데모 주식회사 " + suffix)
+                    .companyName(companyName)
                     .representativeName("대표 " + suffix)
                     .bn("SEEDBN" + String.format("%014d", 100000 + i))
                     .introduction("벌크 시드 클라이언트 " + i + " — 웹/앱 프로젝트를 자주 의뢰합니다.")
@@ -261,11 +269,12 @@ public class DemoBulkSeedService {
         for (int i = 1; i <= FREELANCERS; i++) {
             String suffix = String.format("%02d", i);
             String avatarUrl = picsumUrl("bulk-fl-avatar-" + suffix, 400, 400);
+            String freelancerDisplayName = buildFreelancerDisplayName(i, suffix);
             User user = userRepository.save(User.builder()
                     .email("bulk-demo-freelancer-" + suffix + "@local.test")
                     .password(encoded)
-                    .name("데모 프리랜서 " + suffix)
-                    .nickname("bulk_fl_" + suffix)
+                    .name(freelancerDisplayName)
+                    .nickname(freelancerDisplayName)
                     .phoneNumber("0108001" + String.format("%04d", i))
                     .profileImageUrl(avatarUrl)
                     .role(Role.FREELANCER)
@@ -326,7 +335,8 @@ public class DemoBulkSeedService {
                 portfoliosThisUser.add(portfolio);
                 portfolioSeq++;
             }
-            syncFreelancerProfileSkillsFromPortfolios(fp, portfoliosThisUser, rnd);
+            // 포트폴리오에 연결된 스킬만 프리랜서 프로필 스킬로 동기화합니다.
+            syncFreelancerProfileSkillsFromPortfolios(fp, portfoliosThisUser);
             freelancerProfileRepository.save(fp);
         }
 
@@ -462,6 +472,16 @@ public class DemoBulkSeedService {
         return List.of(Arrays.copyOfRange(all, 0, n));
     }
 
+    private static String buildFreelancerDisplayName(int seq, String suffix) {
+        String base = FREELANCER_NAME_BASES[(seq - 1) % FREELANCER_NAME_BASES.length];
+        return base + suffix;
+    }
+
+    private static String buildClientCompanyName(int seq, String suffix) {
+        String base = CLIENT_COMPANY_BASES[(seq - 1) % CLIENT_COMPANY_BASES.length];
+        return base + "컴퍼니 " + suffix;
+    }
+
     /**
      * 풀 {@link #seedSkillTagPool()}을 섞은 뒤 DB에 존재하는 스킬을 최대 {@code limit}개까지 채웁니다.
      */
@@ -478,13 +498,9 @@ public class DemoBulkSeedService {
         return out;
     }
 
-    /**
-     * 같은 프리랜서의 포트폴리오에 붙은 스킬을 합쳐 프로필 스킬을 채웁니다(최대 {@value #SEED_PROFILE_SKILLS_MAX}개).
-     * 부족하면 {@value #SEED_SKILL_TAG_POOL_SIZE}개 태그 풀에서 무작위로 보충합니다.
-     */
+    /** 같은 프리랜서의 포트폴리오에 붙은 스킬만 합쳐 프로필 스킬로 동기화합니다. */
     private void syncFreelancerProfileSkillsFromPortfolios(FreelancerProfile fp,
-                                                         List<Portfolio> portfolios,
-                                                         ThreadLocalRandom rnd) {
+                                                         List<Portfolio> portfolios) {
         LinkedHashMap<Long, Skill> merged = new LinkedHashMap<>();
         for (Portfolio p : portfolios) {
             for (PortfolioSkill ps : p.getPortfolioSkills()) {
@@ -495,21 +511,6 @@ public class DemoBulkSeedService {
         List<Skill> picked = merged.values().stream()
                 .limit(SEED_PROFILE_SKILLS_MAX)
                 .collect(Collectors.toList());
-        while (picked.size() < SEED_PROFILE_SKILLS_MAX) {
-            int before = picked.size();
-            LinkedHashMap<Long, Skill> more = resolveRandomSkillsFromPool(rnd, SEED_PROFILE_SKILLS_MAX);
-            for (Skill s : more.values()) {
-                if (picked.size() >= SEED_PROFILE_SKILLS_MAX) {
-                    break;
-                }
-                if (picked.stream().noneMatch(x -> x.getId().equals(s.getId()))) {
-                    picked.add(s);
-                }
-            }
-            if (picked.size() == before) {
-                break;
-            }
-        }
         List<FreelancerSkill> links = picked.stream()
                 .map(skill -> FreelancerSkill.builder()
                         .freelancerProfile(fp)
@@ -521,11 +522,10 @@ public class DemoBulkSeedService {
 
     /**
      * 포트폴리오에 {@link PortfolioSkill} 연결 — 태그 풀 {@value #SEED_SKILL_TAG_POOL_SIZE}개 중 무작위
-     * {@value #SEED_PORTFOLIO_RANDOM_SKILL_MIN}~{@value #SEED_PORTFOLIO_RANDOM_SKILL_MAX}개.
+     * {@value #SEED_PORTFOLIO_SKILLS_MAX}개.
      */
     private void attachSeedPortfolioSkills(Portfolio portfolio, ThreadLocalRandom rnd) {
-        int count = rnd.nextInt(SEED_PORTFOLIO_RANDOM_SKILL_MIN, SEED_PORTFOLIO_RANDOM_SKILL_MAX + 1);
-        LinkedHashMap<Long, Skill> resolved = resolveRandomSkillsFromPool(rnd, count);
+        LinkedHashMap<Long, Skill> resolved = resolveRandomSkillsFromPool(rnd, SEED_PORTFOLIO_SKILLS_MAX);
         if (resolved.isEmpty()) {
             log.warn("[DemoBulkSeed] 포트폴리오 스킬을 DB에서 찾지 못했습니다. DataInitializer 기본 스킬 시드 후 다시 실행하세요.");
             return;
