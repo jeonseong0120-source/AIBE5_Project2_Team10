@@ -52,14 +52,14 @@ EXECUTE stmt_preflight;
 DEALLOCATE PREPARE stmt_preflight;
 
 DELETE fs
-FROM freelancer_skill fs
-INNER JOIN freelancer_profile fp ON fs.freelancer_profile_id = fp.freelancer_profile_id
+FROM `FreelancerSkill` fs
+INNER JOIN `FreelancerProfile` fp ON fs.freelancer_profile_id = fp.freelancer_profile_id
 INNER JOIN users u ON fp.user_id = u.user_id
 WHERE u.email LIKE 'bulk-demo-freelancer%@local.test';
 
 DELETE ps
-FROM portfolio_skill ps
-INNER JOIN portfolio pf ON ps.portfolio_id = pf.portfolio_id
+FROM `PortfolioSkill` ps
+INNER JOIN `Portfolio` pf ON ps.portfolio_id = pf.portfolio_id
 INNER JOIN users u ON pf.user_id = u.user_id
 WHERE u.email LIKE 'bulk-demo-freelancer%@local.test';
 

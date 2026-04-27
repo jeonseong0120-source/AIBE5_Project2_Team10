@@ -113,7 +113,7 @@ WHERE @pwd IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM users u WHERE u.email = v.email);
 
 -- 강남역 일대(대략 37.498, 127.029) 주변으로 서로 다른 좌표(약 수백 m ~ 1km+ 분산)
-INSERT INTO freelancer_profile (
+INSERT INTO `FreelancerProfile` (
     user_id,
     profile_image_url,
     introduction,
@@ -171,7 +171,7 @@ FROM users u
 ) g ON g.email = u.email
 WHERE @grade_id IS NOT NULL
   AND u.provider = 'gangnam-map-seed'
-  AND NOT EXISTS (SELECT 1 FROM freelancer_profile fp WHERE fp.user_id = u.user_id);
+  AND NOT EXISTS (SELECT 1 FROM `FreelancerProfile` fp WHERE fp.user_id = u.user_id);
 
 SET SESSION sql_safe_updates = IFNULL(@__prev_safe, 1);
 
@@ -182,7 +182,7 @@ COMMIT;
 -- =============================================================================
 -- SELECT u.email, fp.latitude, fp.longitude, fp.location
 -- FROM users u
--- JOIN freelancer_profile fp ON fp.user_id = u.user_id
+-- JOIN `FreelancerProfile` fp ON fp.user_id = u.user_id
 -- WHERE u.email LIKE 'gangnam-map-seed-%@local.test';
 
 -- =============================================================================
@@ -190,7 +190,7 @@ COMMIT;
 -- =============================================================================
 -- START TRANSACTION;
 -- SET SESSION sql_safe_updates = 0;
--- DELETE fp FROM freelancer_profile fp
+-- DELETE fp FROM `FreelancerProfile` fp
 -- INNER JOIN users u ON fp.user_id = u.user_id
 -- WHERE u.provider = 'gangnam-map-seed';
 -- DELETE FROM users WHERE provider = 'gangnam-map-seed';
