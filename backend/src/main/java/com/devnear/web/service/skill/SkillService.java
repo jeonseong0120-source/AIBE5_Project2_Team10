@@ -523,3 +523,5 @@ public class SkillService {
     private record ScoredSkill(Skill skill, double score) {
     }
 }
+
+//푸시용
