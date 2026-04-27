@@ -35,11 +35,11 @@ FROM projects p
 INNER JOIN client_profile cp ON p.client_id = cp.client_id
 INNER JOIN users u ON cp.user_id = u.user_id
 INNER JOIN (
-    SELECT @p1 AS skill_name
-    UNION ALL SELECT @p2
-    UNION ALL SELECT @p3
-    UNION ALL SELECT @p4
-    UNION ALL SELECT @p5
+    SELECT `@p1` AS skill_name WHERE `@p1` IS NOT NULL
+    UNION SELECT `@p2` WHERE `@p2` IS NOT NULL
+    UNION SELECT `@p3` WHERE `@p3` IS NOT NULL
+    UNION SELECT `@p4` WHERE `@p4` IS NOT NULL
+    UNION SELECT `@p5` WHERE `@p5` IS NOT NULL
 ) t ON TRUE
 INNER JOIN Skills s ON s.name = t.skill_name
 WHERE u.email LIKE 'bulk-demo-client%@local.test';

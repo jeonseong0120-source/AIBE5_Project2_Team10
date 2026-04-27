@@ -172,7 +172,11 @@ public class SkillService {
         if (hintLabels.isEmpty()) {
             return rawText;
         }
-        return rawText + "\n\n[KO_ALIAS_HINTS: " + String.join(", ", hintLabels) + "]";
+        String hint = "\n\n[KO_ALIAS_HINTS: " + String.join(", ", hintLabels) + "]";
+        // Reserve budget for hint so downstream truncate() doesn't drop it.
+        int budget = 12_000 - hint.length();
+        String body = rawText.length() > budget ? rawText.substring(0, Math.max(0, budget)) : rawText;
+        return body + hint;
     }
 
     /**
@@ -523,5 +527,3 @@ public class SkillService {
     private record ScoredSkill(Skill skill, double score) {
     }
 }
-
-//푸시용

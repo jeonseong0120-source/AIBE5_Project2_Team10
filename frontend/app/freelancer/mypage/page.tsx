@@ -345,7 +345,10 @@ function FreelancerMyPageContent() {
             setIsPortfolioModalOpen(false);
             fetchPortfolios();
             setPortfolioForm(EMPTY_PORTFOLIO_FORM);
-        } catch (e) { await dnAlert('상세 정보를 확인해주세요.', 'warning'); }
+            } catch (e: any) {
+                const msg = e?.response?.data?.message ?? '포트폴리오 저장에 실패했습니다. 상세 정보를 확인해주세요.';
+                await dnAlert(msg, 'error');
+            }
     };
 
     const handleDeletePortfolio = async (id: number) => {
