@@ -190,7 +190,8 @@ JWT_EXPIRATION_MS=
 
 
 ## 🏗️ 시스템 아키텍처 (System Architecture)
-  <img width="1728" height="1117" alt="image" src="https://github.com/user-attachments/assets/9051fdb3-760c-4e1a-987c-a50e52e5373a" />
+  <img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/b7fb855c-0ff2-4c88-85da-709ba8dea511" />
+
 
 
 ### 📌 아키텍처 설명
