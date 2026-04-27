@@ -505,10 +505,15 @@ export default function ChatWidget() {
                 <button
                     type="button"
                     onClick={handleOpenToggle}
-                    className="fixed bottom-6 right-6 z-[9999] flex h-16 w-16 items-center justify-center rounded-full bg-violet-600 text-2xl text-white shadow-xl transition hover:scale-105 hover:bg-violet-700"
+                    className="fixed bottom-6 right-6 z-[9999] h-16 w-16 rounded-full shadow-xl transition hover:scale-105 overflow-hidden"
                     aria-label="채팅 열기"
                 >
-                    💬
+                    {/* 사용자가 첨부한 이미지의 파일명에 맞게 src 경로를 수정해주세요. 예: /chat-icon.png */}
+                    <img 
+                        src="/chat-icon.png" 
+                        alt="채팅 아이콘" 
+                        className="h-full w-full object-cover"
+                    />
                 </button>
             )}
         </>
