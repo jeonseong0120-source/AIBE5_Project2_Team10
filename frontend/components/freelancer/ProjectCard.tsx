@@ -3,8 +3,10 @@
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, ArrowUpRight, ShieldCheck, Heart, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { EstimatedBudgetBlock } from '@/components/freelancer/EstimatedBudgetBlock';
+import api from '@/app/lib/axios';
+import { DEVNEAR_BOOKMARK_CHANGED, BookmarkChangeEventDetail, notifyBookmarkChanged, getLocalBookmarkState } from '@/app/lib/bookmarkEvents';
 
 interface ProjectCardProps {
     data: any;
@@ -19,7 +21,45 @@ const getSkillName = (skill: SkillItem): string =>
 
 export default function ProjectCard({ data, index, onOpenProject }: ProjectCardProps) {
     const router = useRouter();
-    const [isBookmarked, setIsBookmarked] = useState(false);
+    const projectId = data.projectId || data.id;
+    
+    // 로컬 메모리 캐시 상태를 가장 우선적으로 확인 (낙관적 UI 상태 유지)
+    const [isBookmarked, setIsBookmarked] = useState(() => {
+        if (projectId) {
+            const cachedState = getLocalBookmarkState(Number(projectId));
+            if (cachedState !== undefined) return cachedState;
+        }
+        return data.isBookmarked || false;
+    });
+    
+    const [isToggling, setIsToggling] = useState(false);
+
+    // 데이터 소스가 변경될 때 로컬 상태 동기화 (단, 캐시된 상태가 있다면 덮어쓰지 않음)
+    useEffect(() => {
+        if (projectId) {
+            const cachedState = getLocalBookmarkState(Number(projectId));
+            if (cachedState !== undefined) {
+                setIsBookmarked(cachedState);
+                return;
+            }
+        }
+        setIsBookmarked(data.isBookmarked || false);
+    }, [data.isBookmarked, projectId]);
+
+    // 글로벌 북마크 상태 동기화
+    useEffect(() => {
+        if (!projectId) return;
+
+        const handleBookmarkChange = (e: Event) => {
+            const customEvent = e as CustomEvent<BookmarkChangeEventDetail>;
+            if (customEvent.detail.projectId === Number(projectId)) {
+                setIsBookmarked(customEvent.detail.isBookmarked);
+            }
+        };
+
+        window.addEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
+        return () => window.removeEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
+    }, [projectId]);
 
     // [수정] 백엔드 로그 확인 결과: projectSkills가 아니라 skills로 오고 있음
     const skillList: SkillItem[] = data.skills || [];
@@ -90,7 +130,7 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                     <div className="h-16 w-16 md:h-20 md:w-20 shrink-0 overflow-hidden rounded-2xl md:rounded-[1.5rem] border border-zinc-100 bg-zinc-50 shadow-sm transition-all duration-500 group-hover:scale-105 group-hover:shadow-[#7A4FFF]/10 p-1">
                         <img 
                             src={data.logoUrl || `https://ui-avatars.com/api/?name=${data.companyName || 'C'}&background=F4F4F5&color=A1A1AA`} 
-                            alt={data.companyName || 'Company logo'}
+                            alt={data.companyName || '회사 로고'}
                             className="h-full w-full object-cover rounded-xl md:rounded-[1.2rem]"
                         />
                     </div>
@@ -102,7 +142,7 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                                 {data.projectName || "제목 없는 프로젝트"}
                             </h2>
                             <div className="flex items-center gap-1.5 shrink-0">
-                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${statusConfig.classes}`}>
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest border ${statusConfig.classes}`}>
                                     {statusConfig.text}
                                 </span>
                                 {dDay && (
@@ -133,8 +173,33 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
                     {/* 북마크 버튼 */}
                     <button 
                         type="button"
-                        onClick={() => setIsBookmarked(!isBookmarked)}
-                        aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+                        disabled={isToggling}
+                        onClick={async (e) => {
+                            e.stopPropagation();
+                            if (isToggling) return;
+                            
+                            if (!projectId) return;
+
+                            setIsToggling(true);
+                            const prevState = isBookmarked;
+                            setIsBookmarked(!prevState); // Optimistic UI
+                            notifyBookmarkChanged(Number(projectId), !prevState); // 🚀 즉시 글로벌 알림 (Optimistic Sync)
+
+                            try {
+                                if (prevState) {
+                                    await api.delete(`/v1/bookmarks/projects/${projectId}`);
+                                } else {
+                                    await api.post(`/v1/bookmarks/projects/${projectId}`);
+                                }
+                            } catch (err) {
+                                console.error("Bookmark toggle failed:", err);
+                                setIsBookmarked(prevState); // Rollback
+                                notifyBookmarkChanged(Number(projectId), prevState); // 🔄 롤백 알림
+                            } finally {
+                                setIsToggling(false);
+                            }
+                        }}
+                        aria-label={isBookmarked ? '북마크 해제' : '북마크 추가'}
                         aria-pressed={isBookmarked}
                         className="bookmark-btn p-3.5 md:p-4 rounded-2xl border border-zinc-100 hover:border-red-100 hover:bg-red-50 text-zinc-200 hover:text-red-500 transition-all active:scale-90 bg-white/50 backdrop-blur-sm shadow-sm shrink-0"
                     >
@@ -167,7 +232,7 @@ export default function ProjectCard({ data, index, onOpenProject }: ProjectCardP
 
                         <motion.button
                             whileTap={{ scale: 0.97 }}
-                            className="bg-zinc-950 text-white h-12 md:h-14 px-6 md:px-8 rounded-xl md:rounded-2xl font-bold text-[13px] uppercase tracking-wider flex items-center justify-center gap-3 group-hover:bg-[#7A4FFF] transition-all shadow-xl group-hover:shadow-[#7A4FFF]/20"
+                            className="bg-zinc-950 text-white h-12 md:h-14 px-6 md:px-8 rounded-xl md:rounded-2xl font-bold text-[13px] tracking-wider flex items-center justify-center gap-3 group-hover:bg-[#7A4FFF] transition-all shadow-xl group-hover:shadow-[#7A4FFF]/20"
                         >
                             상세 정보 확인 <ArrowUpRight size={16} className="group-hover:rotate-45 transition-transform duration-500" />
                         </motion.button>

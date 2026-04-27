@@ -39,9 +39,9 @@ export default function MypageReviewTab({ reviews, profile }: MypageReviewTabPro
                 </div>
 
                 <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-8">
-                        <span className="w-10 h-[2px] bg-[#7A4FFF]"></span>
-                        <h3 className="text-[11px] font-mono tracking-[0.4em] uppercase text-zinc-500 font-black">Performance_Core_Matrix</h3>
+                    <div className="flex items-center gap-3 mb-10">
+                        <span className="w-12 h-[3px] bg-[#7A4FFF] rounded-full"></span>
+                        <h3 className="text-[13px] font-bold tracking-widest uppercase text-zinc-500">성과 지표</h3>
                     </div>
 
                     <div className="flex flex-col md:flex-row md:items-end gap-8 mb-12">
@@ -62,8 +62,8 @@ export default function MypageReviewTab({ reviews, profile }: MypageReviewTabPro
                                     />
                                 ))}
                             </div>
-                            <p className="text-xs text-zinc-500 font-mono tracking-[0.2em] uppercase">
-                                Verified by <strong className="text-white">{profile?.reviewCount || 0}</strong> successful operations
+                            <p className="text-sm text-zinc-500 font-medium tracking-tight">
+                                총 <strong className="text-white text-base">{profile?.reviewCount || 0}</strong>건의 프로젝트를 성공적으로 완료했습니다
                             </p>
                         </div>
                     </div>
@@ -77,8 +77,8 @@ export default function MypageReviewTab({ reviews, profile }: MypageReviewTabPro
                         ].map((item, idx) => (
                             <div key={idx} className="space-y-4">
                                 <div className="flex justify-between items-center">
-                                    <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest font-mono">{item.label}</p>
-                                    <span className="text-xs text-white font-black font-mono">{item.val}</span>
+                                    <p className="text-[12px] text-zinc-500 font-bold tracking-tight">{item.label}</p>
+                                    <span className="text-sm text-white font-black">{item.val}</span>
                                 </div>
                                 <div className="h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800 p-[1px]">
                                     <motion.div
@@ -97,13 +97,13 @@ export default function MypageReviewTab({ reviews, profile }: MypageReviewTabPro
             {/* 💬 후기 리스트 */}
             <div>
                 <div className="flex items-center justify-between mb-8 px-2">
-                    <h3 className="font-black text-xl text-zinc-900 flex items-center gap-3 tracking-tight uppercase">
-                        <MessageSquare size={20} className="text-[#7A4FFF]" />
-                        Latest_Feedback_Log
+                    <h3 className="font-black text-2xl text-zinc-900 flex items-center gap-4 tracking-tight">
+                        <MessageSquare size={24} className="text-[#7A4FFF]" />
+                        최근 후기
                     </h3>
-                    <div className="h-[1px] flex-1 mx-6 bg-zinc-100 hidden md:block"></div>
-                    <span className="px-4 py-1.5 bg-zinc-900 text-[#7A4FFF] rounded-xl text-[10px] font-black font-mono tracking-widest">
-                        RECORDS_{reviewCount}
+                    <div className="h-[1px] flex-1 mx-8 bg-zinc-100 hidden md:block"></div>
+                    <span className="px-5 py-2 bg-zinc-950 text-[#7A4FFF] rounded-2xl text-[12px] font-bold tracking-tight">
+                        전체 {reviewCount}건
                     </span>
                 </div>
 
@@ -112,7 +112,7 @@ export default function MypageReviewTab({ reviews, profile }: MypageReviewTabPro
                         <div className="w-16 h-16 bg-zinc-50 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Star size={32} className="text-zinc-200" />
                         </div>
-                        <p className="text-zinc-400 text-sm font-mono font-black tracking-[0.3em] uppercase italic">Awaiting_Your_First_Glory</p>
+                        <p className="text-zinc-400 text-base font-bold tracking-tight">첫 번째 영광을 기다리고 있습니다</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-6">
@@ -134,13 +134,13 @@ export default function MypageReviewTab({ reviews, profile }: MypageReviewTabPro
                                                 strokeWidth={2}
                                             />
                                         ))}
-                                        <span className="font-mono font-black text-base text-zinc-900 ml-3">
+                                        <span className="font-black text-lg text-zinc-900 ml-4 tracking-tight">
                                             {(r.averageScore || 0).toFixed(1)}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2 text-zinc-300">
                                         <CheckCircle2 size={16} />
-                                        <span className="text-[10px] font-bold uppercase font-mono tracking-widest">Client_Verified</span>
+                                        <span className="text-[12px] font-bold text-zinc-400">인증된 클라이언트</span>
                                     </div>
                                 </div>
 

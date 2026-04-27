@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { User as UserIcon, Briefcase, Star, Award, Bookmark, CreditCard, Bell } from 'lucide-react';
+import { User as UserIcon, Briefcase, Star, Award, CreditCard, Bell } from 'lucide-react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { MAX_SELECTED_SKILLS } from '@/app/lib/skillLimits';
@@ -16,18 +16,17 @@ import MypageReviewTab from '@/components/freelancer_mypage/MypageReviewTab';
 import MypageGradeTab from '@/components/freelancer_mypage/MypageGradeTab';
 import PortfolioFormModal from '@/components/freelancer_mypage/PortfolioFormModal';
 import PortfolioDetailModal from '@/components/freelancer_mypage/PortfolioDetailModal';
-import BookmarkTab from '../../../components/freelancer_mypage/MypageBookmarksTab';
+
 import MypageSettlementTab from '@/components/freelancer_mypage/MypageSettlementTab';
 import { MypageNotificationsTab } from '@/components/mypage/MypageNotificationsTab';
 
 const TABS = [
-    { id: 'profile', label: 'MY PROFILE', icon: UserIcon },
-    { id: 'portfolio', label: 'PORTFOLIO', icon: Briefcase },
-    { id: 'reviews', label: 'REVIEWS', icon: Star },
-    { id: 'grade', label: 'RANK', icon: Award },
-    { id: 'bookmarks', label: 'BOOKMARKS', icon: Bookmark },
-    { id: 'settlement', label: 'SETTLEMENT', icon: CreditCard },
-    { id: 'notifications', label: 'NOTIFICATIONS', icon: Bell },
+    { id: 'profile', label: '내 프로필', icon: UserIcon },
+    { id: 'portfolio', label: '포트폴리오', icon: Briefcase },
+    { id: 'reviews', label: '리뷰 관리', icon: Star },
+    { id: 'grade', label: '내 등급', icon: Award },
+    { id: 'settlement', label: '정산 내역', icon: CreditCard },
+    { id: 'notifications', label: '알림', icon: Bell },
 ];
 
 const LOCATION_COORDS: Record<string, { lat: number, lng: number }> = {
@@ -161,6 +160,7 @@ function FreelancerMyPageContent() {
             if (data) {
                 setProfile(data);
                 setEditProfileData({
+                    userName: data.userName || '',
                     profileImageUrl: data.profileImageUrl || '',
                     introduction: data.introduction || '',
                     location: data.location || '',
@@ -226,7 +226,18 @@ function FreelancerMyPageContent() {
         const coords = LOCATION_COORDS[locationKey] || LOCATION_COORDS['서울'];
 
         try {
-            const requestBody = { profileImageUrl: editProfileData.profileImageUrl || null, introduction: editProfileData.introduction || '', location: locationKey, latitude: coords.lat, longitude: coords.lng, hourlyRate: hRate, workStyle: editProfileData.workStyle || 'ONLINE', isActive: editProfileData.isActive !== false, skillIds: mySkillIds };
+            const requestBody = { 
+                userName: editProfileData.userName || '',
+                profileImageUrl: editProfileData.profileImageUrl || null, 
+                introduction: editProfileData.introduction || '', 
+                location: locationKey, 
+                latitude: coords.lat, 
+                longitude: coords.lng, 
+                hourlyRate: hRate, 
+                workStyle: editProfileData.workStyle || 'ONLINE', 
+                isActive: editProfileData.isActive !== false, 
+                skillIds: mySkillIds 
+            };
             await api.put('/v1/freelancers/me', requestBody);
             alert('정보가 업데이트 되었습니다.');
             setIsEditingProfile(false);
@@ -342,7 +353,7 @@ function FreelancerMyPageContent() {
         catch (err) { alert("포트폴리오 삭제에 실패했습니다."); }
     };
 
-    if (!authorized) return <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#7A4FFF] font-black text-xl animate-pulse uppercase font-mono tracking-[0.2em]">SYSTEM_AUTHORIZING...</div>;
+    if (!authorized) return <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-[#7A4FFF] font-black text-xl animate-pulse uppercase font-mono tracking-[0.2em]">보안 인증 중...</div>;
     if (!profile && !isEditingProfile) return null;
 
     return (
@@ -371,7 +382,7 @@ function FreelancerMyPageContent() {
                                 {activeTab === 'reviews' && <MypageReviewTab reviews={reviews} profile={profile} />}
 
                                 {activeTab === 'grade' && <MypageGradeTab profile={profile} />}
-                                {activeTab === 'bookmarks' && <BookmarkTab />}
+
                                 {activeTab === 'settlement' && <MypageSettlementTab profile={profile} />}
                                 {activeTab === 'notifications' && <MypageNotificationsTab accentColor="#7A4FFF" />}
                             </div>
@@ -392,7 +403,7 @@ export default function FreelancerMyPage() {
         <Suspense
             fallback={
                 <div className="flex min-h-screen items-center justify-center bg-zinc-50 text-[#7A4FFF] font-black text-xl animate-pulse">
-                    LOADING...
+                    로딩 중...
                 </div>
             }
         >

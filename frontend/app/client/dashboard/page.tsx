@@ -666,62 +666,137 @@ export default function ClientDashboardPage() {
                         )}
 
                         {activeMainTab === 'PROPOSALS' && (
-                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                                 <div className="sticky top-4 z-40 backdrop-blur-md pb-6 flex items-center justify-between">
-                                    <button 
-                                        onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
-                                        className="px-8 py-3.5 bg-zinc-950 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all flex items-center gap-3 shadow-xl shadow-zinc-100"
-                                    >
-                                        <Clock size={16} /> {sortOrder === 'DESC' ? '최신순' : '과거순'}
-                                    </button>
+                                    <div className="bg-white/80 border border-zinc-100 rounded-full shadow-sm p-1.5 flex items-center gap-4">
+                                        <button 
+                                            onClick={() => setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC')}
+                                            className="px-8 py-3 bg-zinc-950 text-white rounded-full text-[12px] font-bold hover:bg-[#FF7D00] transition-all flex items-center gap-2 shadow-lg"
+                                        >
+                                            <Clock size={16} /> {sortOrder === 'DESC' ? '최신순' : '과거순'}
+                                        </button>
+                                        <div className="h-6 w-px bg-zinc-200" />
+                                        <div className="px-5 text-[11px] font-black text-zinc-400 uppercase tracking-widest font-mono">
+                                            TOTAL_SENT: {sentProposals.length}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {sentProposals.length === 0 ? (
                                     <div className="text-center py-48 bg-white/30 backdrop-blur-sm rounded-[3rem] border-2 border-dashed border-zinc-200">
-                                        <Send size={64} className="text-zinc-200 mx-auto mb-8" strokeWidth={0.5} />
-                                        <h3 className="text-zinc-300 font-black text-2xl font-mono uppercase tracking-[0.3em]">No_Outbound_Offers</h3>
-                                        <p className="text-zinc-400 text-xs mt-2 italic">전송된 제안서가 없습니다. 전문가에게 먼저 다가가보세요.</p>
+                                        <div className="w-20 h-20 bg-zinc-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                            <Send size={32} className="text-zinc-300" />
+                                        </div>
+                                        <h3 className="text-zinc-400 font-black text-xl font-mono uppercase tracking-widest">No_Sent_Proposals</h3>
+                                        <p className="text-zinc-400 text-xs mt-2 italic font-medium tracking-tight">전송된 제안서가 없습니다. 전문가에게 먼저 다가가보세요.</p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 gap-8">
+                                    <div className="grid grid-cols-1 gap-6">
                                         {[...sentProposals].sort((a,b) => {
                                             const timeA = new Date(a.createdAt || 0).getTime();
                                             const timeB = new Date(b.createdAt || 0).getTime();
                                             return sortOrder === 'DESC' ? timeB - timeA : timeA - timeB;
                                         }).map((proposal, idx) => (
                                             <motion.div 
-                                                initial={{ opacity: 0, x: -20 }} 
-                                                animate={{ opacity: 1, x: 0 }} 
+                                                initial={{ opacity: 0, y: 20 }} 
+                                                animate={{ opacity: 1, y: 0 }} 
                                                 transition={{ delay: idx * 0.05 }} 
                                                 key={proposal.proposalId || idx} 
-                                                className="bg-white p-10 rounded-[3rem] border-2 border-zinc-50 hover:border-[#FF7D00] hover:shadow-2xl transition-all relative group/prop flex flex-col md:flex-row gap-10 items-start md:items-center"
+                                                className="bg-white p-8 md:p-10 rounded-[3rem] border border-zinc-100 hover:border-[#FF7D00]/30 hover:shadow-[0_30px_60px_-15px_rgba(255,125,0,0.1)] transition-all group/prop relative overflow-hidden"
                                             >
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-4 mb-6">
-                                                        <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] font-mono border-2 ${
-                                                            proposal.status === 'ACCEPTED' ? 'bg-green-50 text-green-500 border-green-100' : 
-                                                            proposal.status === 'REJECTED' ? 'bg-red-50 text-red-500 border-red-100' : 
-                                                            'bg-zinc-50 text-zinc-400 border-zinc-100'
-                                                        }`}>
-                                                            {proposal.status || 'PENDING'}
-                                                        </span>
-                                                        <span className="text-[10px] font-black text-zinc-200 font-mono tracking-widest">{new Date(proposal.createdAt || Date.now()).toLocaleDateString()}</span>
-                                                    </div>
-                                                    
-                                                    <h3 className="text-2xl font-black text-zinc-950 mb-3 truncate tracking-tighter group-hover/prop:text-[#FF7D00] transition-colors leading-none">
-                                                        {proposal.projectName || proposal.positionTitle || 'Strategic Collaboration Offer'}
-                                                    </h3>
-                                                    
-                                                    <p className="text-xs text-zinc-500 leading-relaxed italic max-w-xl">"{proposal.message}"</p>
-                                                </div>
+                                                {/* Status Light Decorator */}
+                                                <div className={`absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-10 pointer-events-none ${
+                                                    proposal.status === 'ACCEPTED' ? 'bg-green-500' : 
+                                                    proposal.status === 'REJECTED' ? 'bg-red-500' : 'bg-orange-500'
+                                                }`} />
 
-                                                <div className="flex items-center gap-8 pl-10 border-l border-zinc-50">
-                                                    <div className="flex flex-col items-end">
-                                                        <p className="text-[8px] font-black text-zinc-300 uppercase tracking-widest mb-2 italic">Proposed_Budget</p>
-                                                        <p className="text-2xl font-black text-[#FF7D00] font-mono italic tracking-tighter leading-none">₩{proposal.offeredPrice?.toLocaleString() || '0'}</p>
+                                                <div className="flex flex-col lg:flex-row gap-10 items-start">
+                                                    {/* Left Section: Freelancer Info & Status */}
+                                                    <div className="flex flex-col gap-6 w-full lg:w-60 shrink-0">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-14 h-14 rounded-2xl bg-zinc-950 flex items-center justify-center text-white text-xl font-black shadow-xl shadow-zinc-200 group-hover/prop:bg-[#FF7D00] group-hover/prop:scale-105 transition-all duration-500">
+                                                                {proposal.freelancerName?.charAt(0) || 'U'}
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-lg font-black text-zinc-950 tracking-tight leading-none mb-1.5">{proposal.freelancerName || '요원'}</span>
+                                                                <button 
+                                                                    onClick={() => router.push(`/client/freelancers/${proposal.freelancerProfileId}`)}
+                                                                    className="text-[11px] font-bold text-zinc-400 hover:text-[#FF7D00] flex items-center gap-1 transition-colors uppercase tracking-wider"
+                                                                >
+                                                                    Profile <ExternalLink size={10} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className={`flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest border-2 shadow-sm ${
+                                                            proposal.status === 'ACCEPTED' ? 'bg-green-50 text-green-600 border-green-100' : 
+                                                            proposal.status === 'REJECTED' ? 'bg-red-50 text-red-500 border-red-100' : 
+                                                            'bg-orange-50 text-[#FF7D00] border-orange-100'
+                                                        }`}>
+                                                            {proposal.status === 'ACCEPTED' && <CheckCircle size={16} strokeWidth={3} />}
+                                                            {proposal.status === 'REJECTED' && <XCircle size={16} strokeWidth={3} />}
+                                                            {proposal.status === 'PENDING' && <Clock size={16} strokeWidth={3} className="animate-pulse" />}
+                                                            {proposal.statusDescription || (proposal.status === 'PENDING' ? '검토 중' : proposal.status)}
+                                                        </div>
                                                     </div>
-                                                    <div className="w-16 h-16 rounded-3xl bg-zinc-950 flex items-center justify-center text-white shadow-xl shadow-zinc-950/20 group-hover/prop:scale-110 transition-transform duration-500">
-                                                        {proposal.freelancerName?.charAt(0) || 'U'}
+
+                                                    {/* Right Section: Proposal Details */}
+                                                    <div className="flex-1 min-w-0 flex flex-col gap-6 w-full">
+                                                        <div className="flex flex-col gap-1.5">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="px-2 py-0.5 rounded bg-zinc-100 text-[9px] font-black text-zinc-400 uppercase tracking-widest font-mono">Mission_Target</span>
+                                                                <div className="h-px flex-1 bg-zinc-50" />
+                                                            </div>
+                                                            <h3 
+                                                                onClick={() => router.push(`/client/projects/${proposal.projectId}`)}
+                                                                className="text-3xl font-black text-zinc-950 tracking-tighter hover:text-[#FF7D00] cursor-pointer transition-colors leading-[1.1] max-w-2xl"
+                                                            >
+                                                                {proposal.projectName || '프로젝트 제안'}
+                                                            </h3>
+                                                        </div>
+
+                                                        <div className="relative p-6 bg-zinc-50/50 rounded-[2rem] border border-zinc-100 group-hover/prop:bg-white group-hover/prop:border-[#FF7D00]/20 transition-all duration-500">
+                                                            <p className="text-[15px] text-zinc-600 leading-relaxed font-medium whitespace-pre-wrap">
+                                                                <span className="text-[#FF7D00] font-black mr-2 opacity-30 italic">"</span>
+                                                                {proposal.message}
+                                                                <span className="text-[#FF7D00] font-black ml-1 opacity-30 italic">"</span>
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="flex flex-wrap items-center justify-between gap-6 pt-6 border-t border-zinc-50">
+                                                            <div className="flex items-center gap-8">
+                                                                <div className="flex flex-col gap-1.5">
+                                                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Proposed Budget</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-[#FF7D00]">
+                                                                            <DollarSign size={16} strokeWidth={3} />
+                                                                        </div>
+                                                                        <span className="text-2xl font-black text-zinc-950 font-mono tracking-tighter">₩{proposal.offeredPrice?.toLocaleString()}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="w-px h-10 bg-zinc-100 hidden sm:block" />
+                                                                <div className="flex flex-col gap-1.5">
+                                                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Sent Date</span>
+                                                                    <div className="flex items-center gap-2.5">
+                                                                        <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400">
+                                                                            <Calendar size={16} strokeWidth={2.5} />
+                                                                        </div>
+                                                                        <span className="text-[15px] font-black text-zinc-600 tracking-tight">{new Date(proposal.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex gap-3">
+                                                                {proposal.status !== 'ACCEPTED' && (
+                                                                    <button 
+                                                                        onClick={() => openProposalModal({ profileId: proposal.freelancerProfileId, userName: proposal.freelancerName })}
+                                                                        className="flex items-center gap-2 px-6 py-3.5 bg-zinc-950 text-white hover:bg-[#FF7D00] rounded-2xl text-[13px] font-black transition-all active:scale-95 shadow-xl shadow-zinc-100"
+                                                                    >
+                                                                        다시 제안하기
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </motion.div>

@@ -79,23 +79,16 @@ export default function ProposalSendModal({
             <div className="h-1.5 w-full flex-none bg-gradient-to-r from-[#7A4FFF] via-[#FF7D00] to-[#7A4FFF]" />
 
             {/* Header section - Fixed */}
-            <div className="p-6 md:p-8 pb-4 flex-none">
+            <div className="p-6 md:p-8 pt-6 pb-0 flex-none">
                 <div className="flex items-start justify-between">
                     <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="p-2 bg-purple-50 rounded-xl text-[#7A4FFF]">
-                                <Send size={18} strokeWidth={2.5} />
-                            </div>
-                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7A4FFF]">프로젝트 제안서</span>
-                        </div>
                         <h3 className="text-3xl font-black tracking-tighter text-zinc-950">
                             프로젝트 <span className="text-zinc-400">제안 보내기</span>
                         </h3>
                         {targetName && (
-                            <div className="mt-3 flex items-center gap-2 px-3 py-1.5 bg-zinc-50 border border-zinc-100 rounded-xl w-fit">
-                                <Sparkles size={14} className="text-[#FF7D00]" />
+                            <div className="mt-2 flex items-center gap-2 px-3 py-1.5 bg-zinc-50 border border-zinc-100 rounded-xl w-fit">
                                 <p className="text-[13px] font-bold text-zinc-600">
-                                    대상 요원: <span className="text-zinc-950 font-black">{targetName}</span>
+                                    대상: <span className="text-zinc-950 font-black">{targetName}</span>
                                 </p>
                             </div>
                         )}
@@ -111,11 +104,11 @@ export default function ProposalSendModal({
                 </div>
 
                 {/* Mode Selector */}
-                <div className="mt-8 grid grid-cols-2 gap-2 rounded-[1.2rem] bg-zinc-100 p-1.5">
+                <div className="mt-5 grid grid-cols-2 gap-2 rounded-[1.2rem] bg-zinc-100 p-1.5">
                     <button
                         type="button"
                         onClick={() => onChangeMode('PROJECT')}
-                        className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-black tracking-tight transition-all ${
+                        className={`flex items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-black tracking-tight transition-all ${
                             mode === 'PROJECT'
                                 ? 'bg-white text-zinc-950 shadow-md'
                                 : 'text-zinc-500 hover:text-zinc-900'
@@ -127,7 +120,7 @@ export default function ProposalSendModal({
                     <button
                         type="button"
                         onClick={() => onChangeMode('FORM')}
-                        className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-[13px] font-black tracking-tight transition-all ${
+                        className={`flex items-center justify-center gap-2 rounded-xl py-3 text-[13px] font-black tracking-tight transition-all ${
                             mode === 'FORM'
                                 ? 'bg-white text-zinc-950 shadow-md'
                                 : 'text-zinc-500 hover:text-zinc-900'
@@ -140,7 +133,7 @@ export default function ProposalSendModal({
             </div>
 
             {/* Scrollable Content section */}
-            <div className="flex-1 overflow-y-auto no-scrollbar p-6 md:p-8 pt-2 space-y-6">
+            <div className="flex-1 overflow-y-auto no-scrollbar p-6 md:p-8 pt-0 space-y-4">
                 {/* Project Selection or Info */}
                 <div>
                     <div className="mb-2 flex items-center gap-2">
@@ -272,7 +265,7 @@ export default function ProposalSendModal({
             </div>
 
             {/* Actions - Fixed Footer */}
-            <div className="p-6 md:p-8 flex-none border-t border-zinc-100 bg-zinc-50/50 backdrop-blur-sm">
+            <div className="px-6 py-5 md:px-8 md:py-6 flex-none border-t border-zinc-100 bg-zinc-50/50 backdrop-blur-sm">
                 <div className="flex flex-col-reverse md:flex-row justify-end gap-3">
                     <button
                         type="button"

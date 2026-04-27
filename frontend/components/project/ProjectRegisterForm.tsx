@@ -6,7 +6,7 @@ import { createProject, type CreateProjectBody } from "@/app/lib/projectApi";
 import KakaoLocationPicker from "@/components/project/KakaoLocationPicker";
 import SkillTagSelector from "@/components/project/SkillTagSelector";
 import { MAX_PROJECT_SKILLS } from "@/app/lib/skillLimits";
-import { DollarSign, MapPin, ArrowLeft, X } from "lucide-react";
+import { DollarSign, MapPin, ArrowLeft, XCircle, Briefcase, FileText, Target, Calendar, Globe, Building2, Cpu, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MatchingresultForm from "./MatchingresultForm";
 
@@ -143,7 +143,7 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <span className="w-6 h-[2px] bg-[#FF7D00]"></span>
-                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono">Mission_Creator</span>
+                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono">MISSION_CREATOR</span>
                             </div>
                             <h1 className="text-4xl font-black tracking-tight text-zinc-950">프로젝트 등록</h1>
                         </div>
@@ -152,105 +152,210 @@ export default function ProjectRegisterForm({ embedded = false, onClose, onSaved
             </section>
             )}
 
-            <form onSubmit={handleSubmit} className="mx-auto max-w-xl bg-white p-10 rounded-[2.5rem] shadow-xl border border-zinc-100 space-y-8 relative z-10">
+            <form onSubmit={handleSubmit} className={`mx-auto max-w-xl flex flex-col w-full overflow-hidden rounded-[2rem] border border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-xl relative z-10 ${embedded ? 'max-h-[90vh]' : ''}`}>
+                {/* Top Accent Bar */}
+                <div className="h-1.5 w-full flex-none bg-gradient-to-r from-[#7A4FFF] via-[#FF7D00] to-[#7A4FFF]" />
+
+                {/* Header Section */}
                 {embedded && (
-                    <div className="flex items-center justify-between mb-2">
-                        <h2 className="text-2xl font-black tracking-tight text-zinc-950">프로젝트 등록</h2>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="p-2 rounded-full bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors"
-                            aria-label="Close modal"
-                        >
-                            <X size={18} />
-                        </button>
+                    <div className="p-6 md:p-8 pb-0 flex-none">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="p-2 bg-purple-50 rounded-xl text-[#7A4FFF]">
+                                        <Briefcase size={18} strokeWidth={2.5} />
+                                    </div>
+                                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7A4FFF]">NEW_PROJECT</span>
+                                </div>
+                                <h3 className="text-3xl font-black tracking-tighter text-zinc-950">
+                                    새 프로젝트 <span className="text-zinc-400">등록하기</span>
+                                </h3>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                aria-label="닫기"
+                                className="group relative flex h-10 w-10 items-center justify-center rounded-full bg-zinc-50 text-zinc-400 transition-all hover:bg-zinc-900 hover:text-white"
+                            >
+                                <XCircle size={24} />
+                            </button>
+                        </div>
                     </div>
                 )}
-                {error && <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-bold animate-shake">{error}</div>}
 
-                <div className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Project_Title</label>
-                        <input required className="w-full rounded-2xl border border-zinc-100 bg-zinc-50 p-4 font-bold outline-none transition-[box-shadow,border-color] focus:ring-2 focus:ring-[#FF7D00]" value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="프로젝트명을 입력하세요" />
-                    </div>
+                {/* Scrollable Content */}
+                <div className={`flex-1 overflow-y-auto no-scrollbar p-6 md:p-8 pt-0 space-y-8`}>
+                    {error && <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-[13px] font-bold animate-shake">{error}</div>}
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Budget (₩)</label>
-                            <div className="relative">
-                                <input type="number" required min="1" className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]" value={budget} onChange={(e) => setBudget(e.target.value)} />
-                                <DollarSign className="absolute right-4 top-1/2 -translate-y-1/2 text-[#FF7D00]" size={16} />
+                    <div className="space-y-6">
+                        {/* Project Title */}
+                        <div>
+                            <div className="mb-2 flex items-center gap-2">
+                                <Target size={14} className="text-[#7A4FFF]" />
+                                <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">프로젝트 제목</label>
+                            </div>
+                            <input 
+                                required 
+                                className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-[15px] font-black text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white focus:ring-4 focus:ring-purple-50" 
+                                value={projectName} 
+                                onChange={(e) => setProjectName(e.target.value)} 
+                                placeholder="예: 차세대 모바일 앱 프론트엔드 개발" 
+                            />
+                        </div>
+
+                        {/* Budget and Deadline */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <div className="mb-2 flex items-center gap-2">
+                                    <DollarSign size={14} className="text-[#FF7D00]" />
+                                    <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">예상 예산 (원)</label>
+                                </div>
+                                <div className="relative group">
+                                    <input 
+                                        type="number" 
+                                        required 
+                                        min="1" 
+                                        className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 pr-12 text-[15px] font-black text-zinc-950 outline-none transition-all focus:border-[#FF7D00] focus:bg-white focus:ring-4 focus:ring-orange-50" 
+                                        value={budget} 
+                                        onChange={(e) => setBudget(e.target.value)} 
+                                        placeholder="예: 5,000,000"
+                                    />
+                                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-black text-zinc-400">원</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="mb-2 flex items-center gap-2">
+                                    <Calendar size={14} className="text-zinc-400" />
+                                    <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">모집 마감일</label>
+                                </div>
+                                <input 
+                                    type="date" 
+                                    required 
+                                    className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-[15px] font-black text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white focus:ring-4 focus:ring-purple-50" 
+                                    value={deadline} 
+                                    onChange={(e) => setDeadline(e.target.value)} 
+                                />
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Deadline</label>
-                            <input type="date" required className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl font-mono font-bold outline-none focus:ring-2 focus:ring-[#FF7D00]" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+
+                        {/* Description */}
+                        <div>
+                            <div className="mb-2 flex items-center gap-2">
+                                <FileText size={14} className="text-zinc-400" />
+                                <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">프로젝트 상세 내용</label>
+                            </div>
+                            <textarea 
+                                className="w-full rounded-[2rem] border border-zinc-200 bg-zinc-50 px-6 py-5 text-[15px] font-bold text-zinc-950 outline-none transition-all focus:border-[#7A4FFF] focus:bg-white resize-none min-h-[160px] leading-relaxed" 
+                                value={detail} 
+                                onChange={(e) => setDetail(e.target.value)} 
+                                placeholder="프로젝트의 주요 목표, 필요 기술, 주요 업무 내용을 구체적으로 작성해주세요." 
+                            />
                         </div>
-                    </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Description</label>
-                        <textarea className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-2xl min-h-[150px] outline-none focus:ring-2 focus:ring-[#FF7D00] text-sm font-medium resize-none" value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="상세 내용을 입력하세요" />
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Work_Style</label>
-                        <div className="p-5 bg-zinc-50 rounded-2xl border border-zinc-100 flex gap-8">
-                            <label className="flex items-center gap-3 font-bold text-xs cursor-pointer"><input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)} className="w-4 h-4 accent-[#FF7D00]" />온라인</label>
-                            <label className="flex items-center gap-3 font-bold text-xs cursor-pointer"><input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} className="w-4 h-4 accent-[#FF7D00]" />오프라인</label>
+                        {/* Work Style */}
+                        <div>
+                            <div className="mb-2 flex items-center gap-2">
+                                <Globe size={14} className="text-zinc-400" />
+                                <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">근무 형태 설정</label>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <label className={`flex cursor-pointer items-center justify-center gap-3 rounded-2xl border px-5 py-4 transition-all focus-within:ring-2 focus-within:ring-[#7A4FFF] focus-within:ring-offset-2 ${online ? 'border-[#7A4FFF] bg-purple-50 text-[#7A4FFF]' : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'}`}>
+                                    <input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)} className="sr-only" />
+                                    <span className="text-[14px] font-black">온라인 (재택)</span>
+                                </label>
+                                <label className={`flex cursor-pointer items-center justify-center gap-3 rounded-2xl border px-5 py-4 transition-all focus-within:ring-2 focus-within:ring-[#FF7D00] focus-within:ring-offset-2 ${offline ? 'border-[#FF7D00] bg-orange-50 text-[#FF7D00]' : 'border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-100'}`}>
+                                    <input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} className="sr-only" />
+                                    <span className="text-[14px] font-black">오프라인 (출근)</span>
+                                </label>
+                            </div>
                         </div>
-                    </div>
 
-                    <AnimatePresence>
-                        {offline && (
-                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                                <div className="p-6 bg-orange-50/50 rounded-2xl border border-orange-100 space-y-4 transition-all">
-                                    <div className="flex items-center gap-2"><MapPin size={14} className="text-[#FF7D00]" /><span className="text-[10px] font-black text-[#FF7D00] uppercase font-mono tracking-widest">Location_Setting</span></div>
+                        {/* Location Picker (if offline) */}
+                        <AnimatePresence>
+                            {offline && (
+                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                                    <div className="mt-4 rounded-[2rem] border border-orange-200 bg-orange-50/30 p-6 space-y-4">
+                                        <div className="flex items-center gap-2">
+                                            <Building2 size={14} className="text-[#FF7D00]" />
+                                            <span className="text-[12px] font-black text-[#FF7D00] uppercase tracking-[0.3em]">출근 위치 설정</span>
+                                        </div>
 
-                                    {kakaoJavascriptKey ? (
-                                        <KakaoLocationPicker javascriptKey={kakaoJavascriptKey} value={{ address: location, latitude: String(latitude), longitude: String(longitude) }} onChangeAction={(v) => { setLocation(v.address); setLatitude(String(v.latitude)); setLongitude(String(v.longitude)); }} />
-                                    ) : (
-                                        <div className="p-4 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100">⚠️ API 키를 확인해주세요.</div>
-                                    )}
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                        {kakaoJavascriptKey ? (
+                                            <KakaoLocationPicker javascriptKey={kakaoJavascriptKey} value={{ address: location, latitude: String(latitude), longitude: String(longitude) }} onChangeAction={(v) => { setLocation(v.address); setLatitude(String(v.latitude)); setLongitude(String(v.longitude)); }} />
+                                        ) : (
+                                            <div className="p-4 bg-red-50 text-red-600 text-[13px] font-bold rounded-xl border border-red-100">⚠️ API 키를 확인해주세요.</div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1 font-mono">Requirement</label>
-                        <SkillTagSelector
-                            selectedSkillIds={selectedSkillIds}
-                            onChangeAction={setSelectedSkillIds}
-                            suggestSourceText={detail}
-                            suggestContext="project"
-                            maxSelected={MAX_PROJECT_SKILLS}
-                        />
+                        {/* Skills Requirement */}
+                        <div>
+                            <div className="mb-2 flex items-center gap-2">
+                                <Cpu size={14} className="text-[#7A4FFF]" />
+                                <label className="text-[12px] font-black uppercase tracking-[0.3em] text-zinc-400">요구 기술 스택</label>
+                            </div>
+                            <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-2 focus-within:border-[#7A4FFF] focus-within:bg-white focus-within:ring-4 focus-within:ring-purple-50 transition-all">
+                                <SkillTagSelector
+                                    selectedSkillIds={selectedSkillIds}
+                                    onChangeAction={setSelectedSkillIds}
+                                    suggestSourceText={detail}
+                                    suggestContext="project"
+                                    maxSelected={MAX_PROJECT_SKILLS}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {embedded ? (
-                    <div className="flex gap-4 pt-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-black rounded-xl text-sm transition-colors"
-                        >
-                            취소
+                {/* Footer Actions */}
+                <div className="p-6 md:p-8 flex-none border-t border-zinc-100 bg-zinc-50/50 backdrop-blur-sm">
+                    {embedded ? (
+                        <div className="flex flex-col-reverse md:flex-row justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="rounded-xl px-8 py-4 text-[13px] font-black text-zinc-400 transition-all hover:bg-zinc-100 hover:text-zinc-600 tracking-tight"
+                            >
+                                취소하기
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={submitting || isSkillsLoading}
+                                className="group relative flex items-center justify-center gap-3 overflow-hidden rounded-2xl bg-zinc-950 px-10 py-4.5 text-[14px] font-black text-white transition-all hover:bg-[#7A4FFF] hover:shadow-[0_12px_30px_rgba(122,79,255,0.4)] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {submitting || isSkillsLoading ? (
+                                    <>
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                                        <span>등록 중...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send size={18} strokeWidth={2.5} />
+                                        <span>프로젝트 등록하기</span>
+                                    </>
+                                )}
+                                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:animate-shimmer" />
+                            </button>
+                        </div>
+                    ) : (
+                        <button type="submit" disabled={submitting || isSkillsLoading} className="group relative w-full flex items-center justify-center gap-3 overflow-hidden py-5 bg-zinc-950 text-white rounded-2xl text-[15px] font-black uppercase tracking-widest hover:bg-[#7A4FFF] transition-all hover:shadow-[0_12px_30px_rgba(122,79,255,0.4)] disabled:cursor-not-allowed disabled:opacity-50">
+                            {submitting || isSkillsLoading ? (
+                                <>
+                                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                                    <span>등록 중...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Send size={20} strokeWidth={2.5} />
+                                    <span>프로젝트 등록하기</span>
+                                </>
+                            )}
+                            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:animate-shimmer" />
                         </button>
-                        <button
-                            type="submit"
-                            disabled={submitting || isSkillsLoading}
-                            className="flex-1 py-4 bg-zinc-950 text-white rounded-xl font-black text-sm hover:bg-[#FF7D00] transition-all disabled:bg-zinc-200"
-                        >
-                            {submitting || isSkillsLoading ? "Processing..." : "프로젝트 등록하기"}
-                        </button>
-                    </div>
-                ) : (
-                    <button type="submit" disabled={submitting || isSkillsLoading} className="w-full py-5 bg-zinc-950 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#FF7D00] transition-all shadow-xl shadow-zinc-200 active:scale-95 disabled:bg-zinc-200">
-                        {submitting || isSkillsLoading ? "Processing..." : "프로젝트 등록하기"}
-                    </button>
-                )}
+                    )}
+                </div>
             </form>
 
             {/* 🎯 [ 모달 팝업 추가] */}

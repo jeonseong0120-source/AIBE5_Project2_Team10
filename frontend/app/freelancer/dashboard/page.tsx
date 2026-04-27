@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/app/lib/axios';
 import { NotificationBell } from '@/components/notifications/NotificationProvider';
@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GlobalNavbar from '@/components/common/GlobalNavbar';
 import DashboardSidebar from '@/components/common/DashboardSidebar';
 import FreelancerProjectDetailModal from '@/components/freelancer/FreelancerProjectDetailModal';
+import { DEVNEAR_BOOKMARK_CHANGED, BookmarkChangeEventDetail, notifyBookmarkChanged } from '@/app/lib/bookmarkEvents';
 
 export default function FreelancerDashboardPage() {
     const router = useRouter();
@@ -137,11 +138,33 @@ export default function FreelancerDashboardPage() {
         if (!confirm("관심 프로젝트에서 삭제하시겠습니까?")) return;
         try {
             await api.delete(`/v1/bookmarks/projects/${projectId}`);
-            fetchBookmarks(false);
+            notifyBookmarkChanged(projectId, false);
         } catch (err) {
             alert("삭제에 실패했습니다.");
         }
     };
+
+    const fetchBookmarksRef = useRef(fetchBookmarks);
+    useEffect(() => {
+        fetchBookmarksRef.current = fetchBookmarks;
+    }, [fetchBookmarks]);
+
+    useEffect(() => {
+        const handleBookmarkChange = (e: Event) => {
+            const customEvent = e as CustomEvent<BookmarkChangeEventDetail>;
+            const { projectId, isBookmarked } = customEvent.detail;
+            
+            if (!isBookmarked) {
+                setBookmarkedProjects(prev => prev.filter(p => p.projectId !== projectId));
+                setTotalBookmarks(prev => Math.max(0, prev - 1));
+            } else {
+                fetchBookmarksRef.current(false);
+            }
+        };
+
+        window.addEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
+        return () => window.removeEventListener(DEVNEAR_BOOKMARK_CHANGED, handleBookmarkChange);
+    }, []);
 
     const handleProposalStatus = async (proposalId: number, status: 'ACCEPTED' | 'REJECTED') => {
         const actionText = status === 'ACCEPTED' ? '수락' : '거절';
@@ -159,14 +182,16 @@ export default function FreelancerDashboardPage() {
 
     useEffect(() => {
         if (!authorized) return;
+        
+        // 🎯 사이드바 배지를 위해 초기 1회 제안 목록 로드
+        fetchReceivedProposals();
+    }, [authorized]);
+
+    useEffect(() => {
+        if (!authorized) return;
         if (activeMainTab === 'APPLICATIONS') fetchApplications();
         if (activeMainTab === 'RECEIVED_PROPOSALS') fetchReceivedProposals();
         if (activeMainTab === 'BOOKMARKS') fetchBookmarks(false);
-        
-        // 🎯 사이드바 배지를 위해 초기 1회 제안 목록 로드
-        if (activeMainTab !== 'RECEIVED_PROPOSALS') {
-            fetchReceivedProposals();
-        }
     }, [authorized, activeMainTab, sortOrder]);
 
     const handleToggleExpand = (uniqueId: string) => {

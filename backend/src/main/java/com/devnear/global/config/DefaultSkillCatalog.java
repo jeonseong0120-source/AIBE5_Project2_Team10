@@ -20,6 +20,7 @@ public final class DefaultSkillCatalog {
             new Entry("Spring Boot", "Backend"),
             new Entry("React", "Frontend"),
             new Entry("Next.js", "Frontend"),
+            new Entry("JavaScript", "Frontend"),
             new Entry("TypeScript", "Frontend"),
             new Entry("Node.js", "Backend"),
             new Entry("Python", "Backend"),

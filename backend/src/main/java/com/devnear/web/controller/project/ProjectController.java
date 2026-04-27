@@ -71,6 +71,8 @@ public class ProjectController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
             @RequestParam(required = false, name = "skill") List<String> skills,
+            @RequestParam(required = false) Long minBudget,
+            @RequestParam(required = false) Long maxBudget,
             @RequestParam(required = false) Boolean online,
             @RequestParam(required = false) Boolean offline,
             @RequestParam(required = false) Boolean excludeOwn,
@@ -78,7 +80,7 @@ public class ProjectController {
 
         Long excludeOwnerUserId = resolveExcludeOwnerUserId(viewer, excludeOwn);
         Page<ProjectResponse> responses = projectService.searchProjects(
-                keyword, location, skills, online, offline, excludeOwnerUserId, pageable);
+                viewer, keyword, location, skills, minBudget, maxBudget, online, offline, excludeOwnerUserId, pageable);
         return ResponseEntity.ok(responses);
     }
 
@@ -117,16 +119,19 @@ public class ProjectController {
     @Operation(summary = "특정 프리랜서의 프로젝트 목록 조회", description = "특정 프리랜서가 수행 중이거나 완료한 프로젝트를 조회합니다.")
     @GetMapping("/freelancers/{freelancerId}")
     public ResponseEntity<Page<ProjectResponse>> getFreelancerProjects(
+            @Nullable @LoginUser User viewer,
             @PathVariable Long freelancerId,
             @RequestParam(defaultValue = "COMPLETED") ProjectStatus status,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(projectService.getFreelancerProjectList(freelancerId, status, pageable));
+        return ResponseEntity.ok(projectService.getFreelancerProjectList(viewer, freelancerId, status, pageable));
     }
 
     @Operation(summary = "프로젝트 공고 단건 조회", description = "프로젝트 공고 상세를 조회합니다.")
     @GetMapping("/{projectId}")
-    public ResponseEntity<ProjectResponse> getProject(@PathVariable Long projectId) {
-        ProjectResponse response = projectService.getProject(projectId);
+    public ResponseEntity<ProjectResponse> getProject(
+            @Nullable @LoginUser User viewer,
+            @PathVariable Long projectId) {
+        ProjectResponse response = projectService.getProject(viewer, projectId);
         return ResponseEntity.ok(response);
     }
 

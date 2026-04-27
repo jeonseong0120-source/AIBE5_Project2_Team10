@@ -30,8 +30,8 @@ export default function BookmarkedFreelancers() {
     if (loading) return (
         <div className="h-60 flex flex-col items-center justify-center gap-4">
             <div className="w-10 h-10 border-[3px] border-orange-100 border-t-[#FF7D00] rounded-full animate-spin" />
-            <p className="font-mono text-[9px] font-black text-zinc-400 uppercase tracking-[0.4em] animate-pulse">
-                Fetching_Master_List...
+            <p className="text-[13px] font-bold text-zinc-400 animate-pulse">
+                목록을 불러오는 중…
             </p>
         </div>
     );
@@ -43,7 +43,7 @@ export default function BookmarkedFreelancers() {
                     <div className="w-16 h-16 bg-zinc-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Heart className="w-6 h-6 text-zinc-200" />
                     </div>
-                    <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest font-mono">No_Bookmarked_Agents_In_Dossier</p>
+                    <p className="text-[13px] font-bold text-zinc-400 tracking-tight">아직 찜한 프리랜서가 없습니다</p>
                 </div>
             ) : (
                 bookmarks.map((bookmark, idx) => {
@@ -91,12 +91,12 @@ export default function BookmarkedFreelancers() {
                                         {bookmark.nickname}
                                     </h4>
                                     <div className="flex items-center justify-center md:justify-start gap-2">
-                                        <span className="px-2 py-0.5 bg-zinc-950 text-white text-[8px] font-black uppercase tracking-widest rounded-md font-mono">
-                                            Verified_Agent
+                                        <span className="px-3 py-1 bg-zinc-950 text-white text-[11px] font-bold rounded-lg">
+                                            인증된 전문가
                                         </span>
-                                        <div className="flex items-center text-[#FF7D00] font-mono text-[10px] font-black">
-                                            <Star size={12} className="fill-current mr-1" />
-                                            4.9
+                                        <div className="flex items-center text-[#FF7D00] text-sm font-black">
+                                            <Star size={14} className="fill-current mr-1" />
+                                            {bookmark.averageRating?.toFixed(1) || '0.0'}
                                         </div>
                                     </div>
                                 </div>
@@ -106,11 +106,11 @@ export default function BookmarkedFreelancers() {
                                 </p>
 
                                 <div className="mt-3 flex flex-wrap justify-center md:justify-start gap-4">
-                                    <div className="flex items-center text-[10px] font-bold text-zinc-400 font-mono uppercase tracking-tight">
-                                        <Target size={12} className="mr-1.5 text-zinc-300" /> ID: #{targetId}
+                                    <div className="flex items-center text-[12px] font-bold text-zinc-400 tracking-tight">
+                                        <Target size={14} className="mr-2 text-zinc-300" /> ID: #{targetId}
                                     </div>
-                                    <div className="flex items-center text-[10px] font-bold text-zinc-400 font-mono uppercase tracking-tight">
-                                        <Briefcase size={12} className="mr-1.5 text-zinc-300" /> 12 Projects
+                                    <div className="flex items-center text-[12px] font-bold text-zinc-400 tracking-tight">
+                                        <Briefcase size={14} className="mr-2 text-zinc-300" /> {bookmark.completedProjects || 0}건의 프로젝트 완료
                                     </div>
                                 </div>
                             </div>

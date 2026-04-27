@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Map as MapIcon, List, X, MapPin, Globe, Zap, Send, Search } from "lucide-react";
+import { Star, Map as MapIcon, List, X, MapPin, Globe, Send } from "lucide-react";
 import { getMatchingResults, type FreelancerMatch } from "@/app/lib/projectApi";
 import api from '@/app/lib/axios';
 import { useRouter } from "next/navigation";
@@ -134,7 +134,7 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                     // 1. 내 프로젝트 위치 마커
                     const projectOverlay = new kakao.maps.CustomOverlay({
                         position: centerPos,
-                        content: `<div style="background: #FF7D00; color: white; padding: 6px 12px; border-radius: 12px; font-weight: 900; font-size: 11px; border: 2px solid white; box-shadow: 0 4px 15px rgba(255, 125, 0, 0.4); transform: translateY(-10px); white-space: nowrap;">📍 내 프로젝트 위치</div>`,
+                        content: `<div style="background: #FF7D00; color: white; padding: 6px 12px; border-radius: 12px; font-weight: 900; font-size: 11px; border: 2px solid white; box-shadow: 0 4px 15px rgba(255, 125, 0, 0.4); transform: translateY(-10px); white-space: nowrap;">내 프로젝트 위치</div>`,
                         yAnchor: 1
                     });
                     projectOverlay.setMap(map);
@@ -186,7 +186,7 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
                 {/* 헤더 영역 */}
                 <header className="bg-white px-8 py-5 border-b border-zinc-100 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-[#FF7D00]"><Star fill="currentColor" size={20} /></div>
+                        <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-[#FF7D00]">AI</div>
                         <div>
                             <h2 className="text-xl font-black text-zinc-900 flex items-center gap-2">
                                 AI 자동 매칭 결과
@@ -255,7 +255,7 @@ export default function MatchingresultForm({ projectId, onClose }: Props) {
 
                                             <div className={`relative border-l-4 border-[#FF7D00] bg-gradient-to-r from-orange-50/50 to-transparent ${isMapView ? 'p-2.5 mb-2' : 'p-4 mb-3'} rounded-r-2xl`}>
                                                 <div className="flex items-start gap-2.5">
-                                                    <Zap size={isMapView ? 12 : 14} className="text-[#FF7D00] mt-0.5 shrink-0 fill-current" />
+                                                    <div className="w-1 h-1 bg-[#FF7D00] rounded-full mt-1.5 shrink-0" />
                                                     <div className="space-y-0.5">
                                                         {!isMapView && <span className="text-[9px] font-black uppercase tracking-tighter text-[#FF7D00]/70">AI Match Analysis</span>}
                                                         <p className={`font-bold text-zinc-700 leading-relaxed break-keep ${isMapView ? 'text-[11px]' : 'text-[13px]'}`}>
